@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Fitness | Dashboard de Progreso</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+    }
+
+    .navbar {
+      background-color: #111827;
+    }
+    .navbar-brand {
+      color: #3b82f6 !important;
+      font-weight: 700;
+    }
+
+    /* Hero actualizado */
+        .hero {
+            background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(37,99,235,0.4)), 
+                        url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 75vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+    .hero h1 {
+      font-weight: 700;
+      font-size: 3rem;
+    }
+    .hero p {
+      color: #cbd5e1;
+      font-size: 1.2rem;
+    }
+
+    /* Cards */
+    .dashboard-section {
+      padding: 4rem 0;
+    }
+    .stat-card {
+      background-color: #111827;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 20px rgba(37,99,235,0.3);
+    }
+    .stat-icon {
+      font-size: 2.5rem;
+      color: #3b82f6;
+      margin-bottom: 10px;
+    }
+    .progress-bar {
+      background-color: #3b82f6;
+    }
+
+    /* Motivation */
+    .motivation {
+      background-color: #111827;
+      padding: 4rem 0;
+      text-align: center;
+    }
+    .motivation h2 {
+      color: #3b82f6;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .motivation img {
+      border-radius: 10px;
+      margin-top: 1rem;
+      box-shadow: 0 0 20px rgba(37,99,235,0.3);
+      transition: 0.4s ease;
+    }
+    .motivation img:hover {
+      transform: scale(1.03);
+      filter: brightness(1.1);
+    }
+
+    footer {
+      background-color: #111827;
+      color: #9ca3af;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="/">AI Fitness</a>
+      <div class="d-flex">
+        <a href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
+        <a href="/plan" class="btn btn-primary btn-sm">Mi Plan</a>
+        <a href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero con nueva imagen -->
+  <section class="hero">
+    <div class="container">
+      <h1>Tu Evolución Refleja Tu Esfuerzo</h1>
+      <p class="lead mt-3">
+        Visualiza tus avances, analiza tu progreso y sigue mejorando cada día.
+      </p>
+      <a href="#stats" class="btn btn-primary mt-3 px-4 py-2">Ver mi progreso</a>
+    </div>
+  </section>
+
+  <!-- Estadísticas -->
+  <section id="stats" class="dashboard-section">
+    <div class="container text-center mb-5">
+      <h2 class="fw-bold text-light">Resumen de Rendimiento</h2>
+      <p class="text-secondary">Estos datos reflejan tu progreso físico y nutricional.</p>
+    </div>
+
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon">💪</div>
+            <h5>Peso Actual</h5>
+            <h3>70 kg</h3>
+            <p class="text-secondary">+2.5 kg desde el inicio</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <h5>Grasa Corporal</h5>
+            <h3>14%</h3>
+            <p class="text-secondary">-3% en 6 semanas</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <h5>Rendimiento</h5>
+            <h3>85%</h3>
+            <div class="progress mt-2">
+              <div class="progress-bar" style="width: 85%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon">🥗</div>
+            <h5>Adherencia Nutricional</h5>
+            <h3>90%</h3>
+            <div class="progress mt-2">
+              <div class="progress-bar" style="width: 90%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección de motivación con nueva imagen -->
+  <section class="motivation">
+    <div class="container">
+      <h2>El progreso no se mide solo en kilos, sino en constancia</h2>
+      <p class="text-light mx-auto" style="max-width: 700px;">
+        Cada día que cumples con tu plan, fortaleces tu disciplina.  
+        Este dashboard es tu espejo digital: refleja tu esfuerzo, tu dedicación y tu evolución real.  
+        No mires lo que te falta, celebra lo que has logrado.
+      </p>
+      <img src="https://img.freepik.com/foto-gratis/vista-lateral-hombre-haciendo-deporte-estadisticas_23-2150040513.jpg?semt=ais_hybrid&w=740&q=80" 
+           alt="Motivación Fitness" class="img-fluid mt-4">
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 AI Fitness | Dashboard de Progreso y Motivación</p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+/* Imagen lateral */
+#form-section img {
+    border-radius: 12px;
+    filter: brightness(0.9);
+    transition: 0.4s ease;
+}
+#form-section img:hover {
+    transform: scale(1.02);
+    filter: brightness(1);
+}
+
+.workout-card img {
+    border-radius: 10px;
+    transition: 0.4s ease;
+    filter: brightness(0.9);
+}
+.workout-card img:hover {
+    transform: scale(1.05);
+    filter: brightness(1);
+}

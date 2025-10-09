@@ -32,14 +32,44 @@ logger.info("🚀 Aplicación AI Fitness iniciada correctamente")
 # ======================================================
 # CONEXIÓN MONGODB
 # ======================================================
+#try:
+#    import certifi
+#    client = MongoClient(os.getenv("MONGO_URI"))
+#    db = client[os.getenv("MONGO_DB")]
+#    logger.info("✅ Conexión exitosa con MongoDB Atlas")
+#except Exception as e:
+#    logger.error(f"❌ Error al conectar a MongoDB: {str(e)}", exc_info=True)
+#    db = None
+
+
+# === Conexión MongoDB Atlas === #
 try:
     import certifi
-    client = MongoClient(os.getenv("MONGO_URI"))
+    from pymongo import MongoClient
+    import ssl
+
+    mongo_uri = os.getenv("MONGO_URI")
+    if not mongo_uri:
+        raise ValueError("❌ No se encontró la variable MONGO_URI en el entorno")
+
+    client = MongoClient(
+        mongo_uri,
+        tls=True,                     # Fuerza TLS
+        tlsAllowInvalidCertificates=False,
+        tlsCAFile=certifi.where(),    # Usa certificados raíz válidos
+        serverSelectionTimeoutMS=30000,
+        connectTimeoutMS=20000,
+        socketTimeoutMS=20000,
+        ssl_cert_reqs=ssl.CERT_REQUIRED
+    )
+
     db = client[os.getenv("MONGO_DB")]
-    logger.info("✅ Conexión exitosa con MongoDB Atlas")
+    logger.info("✅ Conexión segura con MongoDB Atlas establecida")
+
 except Exception as e:
-    logger.error(f"❌ Error al conectar a MongoDB: {str(e)}", exc_info=True)
+    logger.error(f"❌ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
     db = None
+
 
 
 # ======================================================

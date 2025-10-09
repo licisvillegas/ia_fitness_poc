@@ -5,100 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Fitness | Dashboard de Progreso</title>
 
-  <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #0a0a0a;
-      color: #e5e7eb;
+    body { font-family: 'Poppins', sans-serif; background-color: #0a0a0a; color: #e5e7eb; }
+    .navbar { background-color: #111827; }
+    .navbar-brand { color: #3b82f6 !important; font-weight: 700; }
+    .hero {
+      background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(37,99,235,0.4)),
+                  url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover; background-position: center;
+      height: 65vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white;
     }
-
-    .navbar {
-      background-color: #111827;
+    .stat-card { background-color: #111827; border-radius: 15px; padding: 1.5rem; text-align: center; transition: 0.3s ease; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(37,99,235,0.3); }
+    .stat-icon { font-size: 2.5rem; color: #3b82f6; margin-bottom: 10px; }
+    .progress-bar { background-color: #3b82f6; }
+    canvas { background-color: #111827; border-radius: 10px; padding: 10px; min-height: 280px; width: 100%; }
+    .chart-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #9ca3af; font-size: 1rem; background: rgba(17, 24, 39, 0.75);
+      border-radius: 10px; visibility: hidden;
     }
-    .navbar-brand {
-      color: #3b82f6 !important;
-      font-weight: 700;
-    }
-
-    /* Hero actualizado */
-        .hero {
-            background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(37,99,235,0.4)), 
-                        url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            height: 75vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-        }
-    .hero h1 {
-      font-weight: 700;
-      font-size: 3rem;
-    }
-    .hero p {
-      color: #cbd5e1;
-      font-size: 1.2rem;
-    }
-
-    /* Cards */
-    .dashboard-section {
-      padding: 4rem 0;
-    }
-    .stat-card {
-      background-color: #111827;
-      border-radius: 15px;
-      padding: 1.5rem;
-      text-align: center;
-      transition: 0.3s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 0 20px rgba(37,99,235,0.3);
-    }
-    .stat-icon {
-      font-size: 2.5rem;
-      color: #3b82f6;
-      margin-bottom: 10px;
-    }
-    .progress-bar {
-      background-color: #3b82f6;
-    }
-
-    /* Motivation */
-    .motivation {
-      background-color: #111827;
-      padding: 4rem 0;
-      text-align: center;
-    }
-    .motivation h2 {
-      color: #3b82f6;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    .motivation img {
-      border-radius: 10px;
-      margin-top: 1rem;
-      box-shadow: 0 0 20px rgba(37,99,235,0.3);
-      transition: 0.4s ease;
-    }
-    .motivation img:hover {
-      transform: scale(1.03);
-      filter: brightness(1.1);
-    }
-
-    footer {
-      background-color: #111827;
-      color: #9ca3af;
-      text-align: center;
-      padding: 1rem 0;
-      margin-top: 2rem;
-    }
+    footer { background-color: #111827; color: #9ca3af; text-align: center; padding: 1rem 0; margin-top: 3rem; }
+    #loading { display: none; text-align: center; color: #3b82f6; margin-top: 1rem; }
+    #message { text-align: center; margin-top: 1rem; font-weight: 500; }
   </style>
 </head>
 
@@ -109,90 +42,133 @@
       <a class="navbar-brand" href="/">AI Fitness</a>
       <div class="d-flex">
         <a href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
-        <a href="/plan" class="btn btn-primary btn-sm">Mi Plan</a>
+        <a href="/plan" class="btn btn-outline-light btn-sm me-2">Mi Plan</a>
         <a href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
-
+        <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero con nueva imagen -->
+  <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <h1>Tu Evolución Refleja Tu Esfuerzo</h1>
-      <p class="lead mt-3">
-        Visualiza tus avances, analiza tu progreso y sigue mejorando cada día.
-      </p>
-      <a href="#stats" class="btn btn-primary mt-3 px-4 py-2">Ver mi progreso</a>
+      <h1>Monitorea tu evolución</h1>
+      <p class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en tiempo real.</p>
     </div>
   </section>
+
+  <!-- Selector de usuario -->
+  <div class="container text-center mt-5">
+    <label class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
+    <div class="input-group mb-3 justify-content-center" style="max-width: 400px; margin: 0 auto;">
+      <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
+      <button id="loadDataBtn" class="btn btn-primary">Cargar progreso</button>
+    </div>
+    <div id="loading"><div class="spinner-border text-primary" role="status"></div><p>Cargando datos...</p></div>
+    <p id="message" class="text-light"></p>
+  </div>
 
   <!-- Estadísticas -->
-  <section id="stats" class="dashboard-section">
-    <div class="container text-center mb-5">
-      <h2 class="fw-bold text-light">Resumen de Rendimiento</h2>
-      <p class="text-secondary">Estos datos reflejan tu progreso físico y nutricional.</p>
-    </div>
-
-    <div class="container">
-      <div class="row g-4">
-        <div class="col-md-3">
-          <div class="stat-card">
-            <div class="stat-icon">💪</div>
-            <h5>Peso Actual</h5>
-            <h3>70 kg</h3>
-            <p class="text-secondary">+2.5 kg desde el inicio</p>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stat-card">
-            <div class="stat-icon">🔥</div>
-            <h5>Grasa Corporal</h5>
-            <h3>14%</h3>
-            <p class="text-secondary">-3% en 6 semanas</p>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stat-card">
-            <div class="stat-icon">⚡</div>
-            <h5>Rendimiento</h5>
-            <h3>85%</h3>
-            <div class="progress mt-2">
-              <div class="progress-bar" style="width: 85%;"></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stat-card">
-            <div class="stat-icon">🥗</div>
-            <h5>Adherencia Nutricional</h5>
-            <h3>90%</h3>
-            <div class="progress mt-2">
-              <div class="progress-bar" style="width: 90%;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <section id="stats" class="mt-5 container">
+    <div class="row g-4">
+      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">💪</div><h5>Peso Actual</h5><h3 id="stat-weight">—</h3><p class="text-secondary">Último registro</p></div></div>
+      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🔥</div><h5>Grasa Corporal</h5><h3 id="stat-fat">—</h3><p class="text-secondary">Último registro</p></div></div>
+      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">⚡</div><h5>Rendimiento</h5><h3 id="stat-performance">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-performance" style="width:0%"></div></div></div></div>
+      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🥗</div><h5>Adherencia Nutricional</h5><h3 id="stat-nutrition">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-nutrition" style="width:0%"></div></div></div></div>
     </div>
   </section>
 
-  <!-- Sección de motivación con nueva imagen -->
-  <section class="motivation">
-    <div class="container">
-      <h2>El progreso no se mide solo en kilos, sino en constancia</h2>
-      <p class="text-light mx-auto" style="max-width: 700px;">
-        Cada día que cumples con tu plan, fortaleces tu disciplina.  
-        Este dashboard es tu espejo digital: refleja tu esfuerzo, tu dedicación y tu evolución real.  
-        No mires lo que te falta, celebra lo que has logrado.
-      </p>
-      <img src="https://img.freepik.com/foto-gratis/vista-lateral-hombre-haciendo-deporte-estadisticas_23-2150040513.jpg?semt=ais_hybrid&w=740&q=80" 
-           alt="Motivación Fitness" class="img-fluid mt-4">
+  <!-- Gráficos -->
+  <section id="charts" class="container mt-5">
+    <div class="row g-4">
+      <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas><div class="chart-overlay" id="msg-weight">Sin datos disponibles</div></div>
+      <div class="col-md-6 position-relative"><canvas id="fatChart"></canvas><div class="chart-overlay" id="msg-fat">Sin datos disponibles</div></div>
+      <div class="col-md-6 position-relative"><canvas id="performanceChart"></canvas><div class="chart-overlay" id="msg-performance">Sin datos disponibles</div></div>
+      <div class="col-md-6 position-relative"><canvas id="nutritionChart"></canvas><div class="chart-overlay" id="msg-nutrition">Sin datos disponibles</div></div>
     </div>
   </section>
 
-  <footer>
-    <p>© 2025 AI Fitness | Dashboard de Progreso y Motivación</p>
-  </footer>
+  <footer><p>© 2025 AI Fitness | Dashboard de Progreso Inteligente</p></footer>
 
+  <script>
+  const btn = document.getElementById("loadDataBtn");
+  const userIdInput = document.getElementById("userIdInput");
+  const message = document.getElementById("message");
+  const loading = document.getElementById("loading");
+  let charts = [];
+
+  async function loadProgress(userId) {
+    if (!userId) return;
+    message.textContent = "";
+    loading.style.display = "block";
+
+    const res = await fetch(`/get_progress/${userId}`);
+    const data = await res.json();
+    loading.style.display = "none";
+
+    const overlays = ["weight", "fat", "performance", "nutrition"];
+    overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "hidden");
+
+    if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
+      message.textContent = data.error || "❌ No se encontraron registros de progreso.";
+      clearDashboard();
+      overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "visible");
+      return;
+    }
+
+    message.textContent = "✅ Datos cargados correctamente.";
+    localStorage.setItem("ai_fitness_uid", userId);
+
+    const last = data[data.length - 1];
+    document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
+    document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
+    document.getElementById("stat-performance").innerText = `${last.performance}%`;
+    document.getElementById("bar-performance").style.width = `${last.performance}%`;
+    document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
+    document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
+
+    charts.forEach(c => c.destroy());
+    charts = [];
+
+    const labels = data.map(d => d.date);
+    const weights = data.map(d => d.weight_kg);
+    const fats = data.map(d => d.body_fat);
+    const performance = data.map(d => d.performance);
+    const nutrition = data.map(d => d.nutrition_adherence);
+
+    const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
+    const opts = { plugins: { legend: { labels: { color: "#e5e7eb" } } }, scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } } };
+
+    charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: "Peso (kg)", data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+    charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: "Grasa corporal (%)", data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+    charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: "Rendimiento (%)", data: performance, backgroundColor: colors.green }] }, options: opts }));
+    charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: "Adherencia nutricional (%)", data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+  }
+
+  function clearDashboard() {
+    document.getElementById("stat-weight").innerText = "—";
+    document.getElementById("stat-fat").innerText = "—";
+    document.getElementById("stat-performance").innerText = "—";
+    document.getElementById("bar-performance").style.width = "0%";
+    document.getElementById("stat-nutrition").innerText = "—";
+    document.getElementById("bar-nutrition").style.width = "0%";
+    charts.forEach(c => c.destroy());
+    charts = [];
+  }
+
+  btn.addEventListener("click", () => {
+    const userId = userIdInput.value.trim();
+    if (!userId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
+    loadProgress(userId);
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const lastUser = localStorage.getItem("ai_fitness_uid");
+    if (lastUser) {
+      userIdInput.value = lastUser;
+      loadProgress(lastUser);
+    }
+  });
+  </script>
 </body>
 </html>

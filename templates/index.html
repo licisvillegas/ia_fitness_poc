@@ -331,11 +331,22 @@ sendBtn.addEventListener("click", () => {
                     <button type="submit" class="btn btn-primary px-4">Generar Plan</button>
                 </div>
 
+                <!-- Loader visual -->
+                <div id="loading" class="text-center mt-4" style="display:none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="text-light mt-2">Generando tu plan personalizado...</p>
+                </div>
+
+                <!-- Contenedor del resultado -->
                 <div id="result"></div>
             </form>
         </div>
     </div>
 </section>
+
+
 
 
     <!-- Footer -->
@@ -348,8 +359,14 @@ sendBtn.addEventListener("click", () => {
 
 <!-- Script para conectar con Flask y mostrar resultados -->
 <script>
-document.getElementById("planForm").addEventListener("submit", async (e) => {
+const loading = document.getElementById("loading");
+const container = document.getElementById("result");
+const form = document.getElementById("planForm");
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  container.innerHTML = "";
+  loading.style.display = "block";
 
   const data = {
     _id: document.getElementById("userId").value,
@@ -357,36 +374,49 @@ document.getElementById("planForm").addEventListener("submit", async (e) => {
     goal: document.getElementById("goal").value
   };
 
-  const response = await fetch("/generate_plan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+  try {
+    const response = await fetch("/generate_plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    loading.style.display = "none";
 
-  const result = await response.json();
-  const container = document.getElementById("result");
-
-  if (response.status === 201) {
-    container.innerHTML = `
-      <div class="card mt-5 shadow-sm bg-dark text-light p-4">
-        <h4 class="text-primary fw-bold">Plan generado con éxito</h4>
-        <p><strong>Calorías por día:</strong> ${result.nutrition_plan.calories_per_day.toFixed(0)}</p>
-        <p><strong>Proteínas:</strong> ${result.nutrition_plan.macros.protein.toFixed(1)} g</p>
-        <p><strong>Carbohidratos:</strong> ${result.nutrition_plan.macros.carbs.toFixed(1)} g</p>
-        <p><strong>Grasas:</strong> ${result.nutrition_plan.macros.fat.toFixed(1)} g</p>
-        <p><strong>Rutina semanal:</strong> ${result.training_plan.routines.join(", ")}</p>
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <div class="alert alert-danger mt-4">
-        ${result.error || "Ocurrió un error al generar el plan."}
-      </div>
-    `;
+    if (response.status === 201) {
+      container.innerHTML = `
+        <div class="card mt-4 bg-dark text-light shadow p-4">
+          <h4 class="text-primary fw-bold">✅ Plan generado con éxito</h4>
+          <p><strong>Calorías/día:</strong> ${result.nutrition_plan.calories_per_day.toFixed(0)}</p>
+          <p><strong>Proteínas:</strong> ${result.nutrition_plan.macros.protein.toFixed(1)} g</p>
+          <p><strong>Carbohidratos:</strong> ${result.nutrition_plan.macros.carbs.toFixed(1)} g</p>
+          <p><strong>Grasas:</strong> ${result.nutrition_plan.macros.fat.toFixed(1)} g</p>
+          <p><strong>Rutina:</strong> ${result.training_plan.routines.join(", ")}</p>
+        </div>`;
+    } else {
+      container.innerHTML = `
+        <div class="alert alert-danger mt-4">
+          ❌ ${result.error || "Ocurrió un error al generar el plan."}
+        </div>`;
+    }
+  } catch (err) {
+    loading.style.display = "none";
+    container.innerHTML = `<div class="alert alert-danger mt-4">❌ Error de conexión con el servidor.</div>`;
   }
 });
 </script>
     
+<script>
+// Recuperar ID almacenado
+const uidInput = document.getElementById("userId");
+const savedUid = localStorage.getItem("ai_fitness_uid");
+if (savedUid) uidInput.value = savedUid;
+
+// Guardar al enviar el formulario
+form.addEventListener("submit", () => {
+  localStorage.setItem("ai_fitness_uid", uidInput.value);
+});
+</script>
 
 </body>
 </html>

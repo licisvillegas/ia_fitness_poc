@@ -18,3 +18,30 @@
     transform: scale(1.05);
     filter: brightness(1);
 }
+
+canvas:hover {
+  transform: scale(1.01);
+  transition: 0.3s ease;
+}
+
+canvas {
+  background-color: #111827;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 280px; /* 👈 evita que se encoja */
+  width: 100%;
+}
+
+
+.chart-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 1rem;
+  background: rgba(17, 24, 39, 0.75);
+  border-radius: 10px;
+  visibility: hidden; /* se muestra solo si no hay data */
+}

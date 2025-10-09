@@ -33,6 +33,7 @@ logger.info("🚀 Aplicación AI Fitness iniciada correctamente")
 # CONEXIÓN MONGODB
 # ======================================================
 try:
+    import certifi
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client[os.getenv("MONGO_DB")]
     logger.info("✅ Conexión exitosa con MongoDB Atlas")

@@ -42,34 +42,31 @@ logger.info("🚀 Aplicación AI Fitness iniciada correctamente")
 #    db = None
 
 
-# === Conexión MongoDB Atlas === #
+# === Conexión MongoDB Atlas (versión final compatible PyMongo 4.7+) === #
 try:
     import certifi
     from pymongo import MongoClient
-    import ssl
 
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
         raise ValueError("❌ No se encontró la variable MONGO_URI en el entorno")
 
+    # Configurar conexión segura con certificados válidos
     client = MongoClient(
         mongo_uri,
-        tls=True,                     # Fuerza TLS
-        tlsAllowInvalidCertificates=False,
-        tlsCAFile=certifi.where(),    # Usa certificados raíz válidos
+        tls=True,
+        tlsCAFile=certifi.where(),  # Certificados raíz actualizados
         serverSelectionTimeoutMS=30000,
         connectTimeoutMS=20000,
-        socketTimeoutMS=20000,
-        ssl_cert_reqs=ssl.CERT_REQUIRED
+        socketTimeoutMS=20000
     )
 
     db = client[os.getenv("MONGO_DB")]
-    logger.info("✅ Conexión segura con MongoDB Atlas establecida")
+    logger.info("✅ Conexión segura con MongoDB Atlas establecida correctamente")
 
 except Exception as e:
     logger.error(f"❌ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
     db = None
-
 
 
 # ======================================================

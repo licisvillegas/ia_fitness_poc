@@ -1,4 +1,12 @@
+# === Requerimientos AI Fitness ===
 Flask==3.0.3
 pymongo==4.7.2
 python-dotenv==1.0.1
 gunicorn==21.2.0
+dnspython==2.6.1
+
+# (Opcional pero recomendado para compatibilidad)
+Werkzeug==3.0.3
+Jinja2==3.1.4
+MarkupSafe==2.1.5
+itsdangerous==2.2.0

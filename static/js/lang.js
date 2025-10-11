@@ -350,6 +350,9 @@
   window.setLang = setLang;
   window.translatePage = translatePage;
 
+  // Traducción para placeholder del chat flotante
+  try { dict['placeholder_chat'] = { es: 'Escribe tu pregunta...', en: 'Type your question...' }; } catch (e) {}
+
   document.addEventListener('DOMContentLoaded', () => {
     const stored = localStorage.getItem('ai_fitness_lang') || 'es';
     // apply

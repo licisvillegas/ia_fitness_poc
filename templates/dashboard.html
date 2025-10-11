@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Fitness | Dashboard de Progreso</title>
 
+  <!-- CDNs: Bootstrap para estilos, Google Fonts (Poppins) y Chart.js para gráficos -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Estilos base del dashboard (tema oscuro) -->
   <style>
     body { font-family: 'Poppins', sans-serif; background-color: #0a0a0a; color: #e5e7eb; }
     .navbar { background-color: #111827; }
@@ -19,7 +21,23 @@
       background-size: cover; background-position: center;
       height: 65vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white;
     }
-    .stat-card { background-color: #111827; border-radius: 15px; padding: 1.5rem; text-align: center; transition: 0.3s ease; }
+    /* Estadísticas: mantener tarjetas del mismo tamaño (referencia: Peso Actual) */
+    /* Hacemos que las columnas se estiren y que la tarjeta ocupe toda la altura disponible */
+    #stats .row { align-items: stretch; }
+    #stats .col-md-3 { display: flex; }
+    .stat-card {
+      background-color: #111827;
+      border-radius: 15px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex: 1; /* permite que la tarjeta llene la columna */
+      min-height: 160px; /* referencia mínima — ajusta si quieres un tamaño distinto */
+    }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(37,99,235,0.3); }
     .stat-icon { font-size: 2.5rem; color: #3b82f6; margin-bottom: 10px; }
     .progress-bar { background-color: #3b82f6; }
@@ -40,11 +58,16 @@
   <nav class="navbar navbar-expand-lg">
     <div class="container">
       <a class="navbar-brand" href="/">AI Fitness</a>
-      <div class="d-flex">
-        <a href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
-        <a href="/plan" class="btn btn-outline-light btn-sm me-2">Mi Plan</a>
-        <a href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
-        <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+      <div class="d-flex align-items-center">
+        <a id="nav-home" href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
+        <a id="nav-plan" href="/plan" class="btn btn-outline-light btn-sm me-2">Mi Plan</a>
+        <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+        <a id="nav-dashboard" href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+        <!-- Language selector -->
+        <div class="btn-group ms-3" role="group" aria-label="Language selector">
+          <button id="lang-es" class="btn btn-sm btn-outline-light">ES</button>
+          <button id="lang-en" class="btn btn-sm btn-outline-light">EN</button>
+        </div>
       </div>
     </div>
   </nav>
@@ -52,34 +75,38 @@
   <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <h1>Monitorea tu evolución</h1>
-      <p class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en tiempo real.</p>
+      <!-- Título principal y subtítulo del dashboard -->
+    <h1 id="dashboard-hero-title">Monitorea tu evolución</h1>
+    <p id="dashboard-hero-p" class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en tiempo real.</p>
     </div>
   </section>
 
   <!-- Selector de usuario -->
   <div class="container text-center mt-5">
-    <label class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
+    <!-- Input del ID de usuario y botón; el spinner aparece durante la carga -->
+     <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
     <div class="input-group mb-3 justify-content-center" style="max-width: 400px; margin: 0 auto;">
       <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
       <button id="loadDataBtn" class="btn btn-primary">Cargar progreso</button>
     </div>
-    <div id="loading"><div class="spinner-border text-primary" role="status"></div><p>Cargando datos...</p></div>
+    <div id="loading"><div class="spinner-border text-primary" role="status"></div><p id="loading-text">Cargando datos...</p></div>
     <p id="message" class="text-light"></p>
   </div>
 
   <!-- Estadísticas -->
   <section id="stats" class="mt-5 container">
+    <!-- Tarjetas con último registro (peso, grasa, rendimiento, adherencia) -->
     <div class="row g-4">
-      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">💪</div><h5>Peso Actual</h5><h3 id="stat-weight">—</h3><p class="text-secondary">Último registro</p></div></div>
-      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🔥</div><h5>Grasa Corporal</h5><h3 id="stat-fat">—</h3><p class="text-secondary">Último registro</p></div></div>
-      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">⚡</div><h5>Rendimiento</h5><h3 id="stat-performance">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-performance" style="width:0%"></div></div></div></div>
-      <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🥗</div><h5>Adherencia Nutricional</h5><h3 id="stat-nutrition">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-nutrition" style="width:0%"></div></div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">💪</div><h5 id="stat-weight-title">Peso Actual</h5><h3 id="stat-weight">—</h3><p id="stat-last-0" class="text-secondary">Último registro</p></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🔥</div><h5 id="stat-fat-title">Grasa Corporal</h5><h3 id="stat-fat">—</h3><p id="stat-last-1" class="text-secondary">Último registro</p></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">⚡</div><h5 id="stat-performance-title">Rendimiento</h5><h3 id="stat-performance">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-performance" style="width:0%"></div></div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🥗</div><h5 id="stat-nutrition-title">Adherencia Nutricional</h5><h3 id="stat-nutrition">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-nutrition" style="width:0%"></div></div></div></div>
     </div>
   </section>
 
   <!-- Gráficos -->
   <section id="charts" class="container mt-5">
+    <!-- 4 gráficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
     <div class="row g-4">
       <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas><div class="chart-overlay" id="msg-weight">Sin datos disponibles</div></div>
       <div class="col-md-6 position-relative"><canvas id="fatChart"></canvas><div class="chart-overlay" id="msg-fat">Sin datos disponibles</div></div>
@@ -88,9 +115,12 @@
     </div>
   </section>
 
-  <footer><p>© 2025 AI Fitness | Dashboard de Progreso Inteligente</p></footer>
+  <footer><p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p></footer>
 
   <script>
+  // JS del dashboard: maneja carga de progreso, actualización de tarjetas y gráficos
+  // Endpoint: GET /get_progress/{userId}
+  // Respuesta: Array de { date, weight_kg, body_fat, performance, nutrition_adherence }
   const btn = document.getElementById("loadDataBtn");
   const userIdInput = document.getElementById("userIdInput");
   const message = document.getElementById("message");
@@ -102,13 +132,16 @@
     message.textContent = "";
     loading.style.display = "block";
 
+    // Petición al backend para obtener el historial de progreso del usuario
     const res = await fetch(`/get_progress/${userId}`);
     const data = await res.json();
     loading.style.display = "none";
 
+    // Oculta overlays de "Sin datos" antes de validar la respuesta
     const overlays = ["weight", "fat", "performance", "nutrition"];
     overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "hidden");
 
+    // Manejo de error o falta de datos: limpiar UI y mostrar overlays
     if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
       message.textContent = data.error || "❌ No se encontraron registros de progreso.";
       clearDashboard();
@@ -116,7 +149,8 @@
       return;
     }
 
-    message.textContent = "✅ Datos cargados correctamente.";
+  message.textContent = t('data_loaded');
+    // Guardar el último usuario consultado en localStorage para precargarlo la próxima vez
     localStorage.setItem("ai_fitness_uid", userId);
 
     const last = data[data.length - 1];
@@ -127,24 +161,45 @@
     document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
     document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
 
+    // Limpiar gráficos previos antes de volver a dibujar
     charts.forEach(c => c.destroy());
     charts = [];
 
+    // Preparar series para Chart.js
     const labels = data.map(d => d.date);
     const weights = data.map(d => d.weight_kg);
     const fats = data.map(d => d.body_fat);
     const performance = data.map(d => d.performance);
     const nutrition = data.map(d => d.nutrition_adherence);
 
+    // Paleta y opciones de tema oscuro para Chart.js
     const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
     const opts = { plugins: { legend: { labels: { color: "#e5e7eb" } } }, scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } } };
 
-    charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: "Peso (kg)", data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-    charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: "Grasa corporal (%)", data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-    charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: "Rendimiento (%)", data: performance, backgroundColor: colors.green }] }, options: opts }));
-    charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: "Adherencia nutricional (%)", data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+    // Gráfico de peso (línea)
+    charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+    // Gráfico de grasa corporal (línea)
+    charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+    // Gráfico de rendimiento (barras)
+    charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
+    // Gráfico de adherencia nutricional (barras)
+    charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+
+    // Expose a helper to update chart labels when language changes
+    window.updateChartLabels = function(){
+      try{
+        // Update dataset labels
+        if (!charts) return;
+        if (charts[0] && charts[0].data && charts[0].data.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
+        if (charts[1] && charts[1].data && charts[1].data.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
+        if (charts[2] && charts[2].data && charts[2].data.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
+        if (charts[3] && charts[3].data && charts[3].data.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
+        charts.forEach(c => c.update());
+      }catch(e){/* ignore */}
+    };
   }
 
+  // Restablece las tarjetas y limpia los gráficos cuando no hay datos
   function clearDashboard() {
     document.getElementById("stat-weight").innerText = "—";
     document.getElementById("stat-fat").innerText = "—";
@@ -156,12 +211,14 @@
     charts = [];
   }
 
+  // Click: valida el input y dispara la carga de datos
   btn.addEventListener("click", () => {
     const userId = userIdInput.value.trim();
     if (!userId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
     loadProgress(userId);
   });
 
+  // Al cargar la página, recupera el último usuario desde localStorage
   window.addEventListener("DOMContentLoaded", () => {
     const lastUser = localStorage.getItem("ai_fitness_uid");
     if (lastUser) {
@@ -170,5 +227,8 @@
     }
   });
   </script>
+  <!-- Language selector script: guarda la preferencia en localStorage y actualiza document.lang -->
+  <!-- centralized language script -->
+  <script src="/static/js/lang.js"></script>
 </body>
 </html>

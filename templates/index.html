@@ -110,8 +110,8 @@
     </div>
     <div id="chat-messages"></div>
     <div id="chat-input">
-      <input type="text" id="userInput" placeholder="Escribe tu pregunta..." />
-      <button id="sendBtn">Enviar</button>
+  <input type="text" id="userInput" placeholder="Escribe tu pregunta..." />
+  <button id="sendBtn" data-i18n="enviar">Enviar</button>
     </div>
   </div>
 </div>
@@ -205,6 +205,8 @@
 
 <!-- ==== SCRIPT ==== -->
 <script>
+// Using shared translations from /static/js/lang.js (window.t, window.i18n)
+
 const messages = document.getElementById("chat-messages");
 const input = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -234,20 +236,21 @@ function appendMessage(sender, text) {
 
 function generateResponse(userMsg) {
   userMsg = userMsg.toLowerCase();
+  const lang = document.documentElement.lang || localStorage.getItem('ai_fitness_lang') || 'es';
 
-  if (userMsg.includes("hola")) return "¡Hola! 👋 Soy tu Coach AI Fitness. ¿En qué puedo ayudarte hoy?";
-  if (userMsg.includes("alimentación") || userMsg.includes("comer"))
-    return "🍎 Te recomiendo alimentos ricos en proteínas y carbohidratos complejos antes del entrenamiento.";
-  if (userMsg.includes("rutina") || userMsg.includes("ejercicio"))
-    return "🏋️‍♂️ Puedes revisar tu rutina personalizada en el Dashboard. ¡Recuerda calentar antes de entrenar!";
-  if (userMsg.includes("motivación"))
-    return "🔥 La constancia vence al talento. ¡Hoy es un gran día para entrenar!";
-  if (userMsg.includes("gracias"))
-    return "💪 ¡Siempre aquí para ayudarte! Sigue con tu plan.";
-  if (userMsg.includes("contacto"))
-    return "📩 Puedes dejar tu duda y te contactaremos desde el portal principal.";
+  if (userMsg.includes("hola") || userMsg.includes("hello")) return t('chat_hi');
+  if (userMsg.includes("alimentación") || userMsg.includes("comer") || userMsg.includes("eat"))
+    return t('chat_eat');
+  if (userMsg.includes("rutina") || userMsg.includes("ejercicio") || userMsg.includes("routine"))
+    return t('chat_routine');
+  if (userMsg.includes("motivación") || userMsg.includes("motivation"))
+    return t('chat_motivation');
+  if (userMsg.includes("gracias") || userMsg.includes("thanks"))
+    return t('chat_thanks');
+  if (userMsg.includes("contacto") || userMsg.includes("contact"))
+    return t('chat_contact');
 
-  return "🤖 No estoy seguro de eso, pero puedo ayudarte con alimentación, rutinas o motivación.";
+  return t('chat_default');
 }
 
 // Enviar respuesta
@@ -264,30 +267,37 @@ sendBtn.addEventListener("click", () => {
   }, 500);
 });
 </script>
+<!-- centralized language script -->
+<script src="/static/js/lang.js"></script>
 
 
 
 
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="/">AI Fitness</a>
-            <div class="d-flex">
-                <a href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
-                <a href="/plan" class="btn btn-primary btn-sm">Mi Plan</a>
-                <a href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
-            </div>
+  <!-- Navbar (unificada con dashboard.html) -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="/">AI Fitness</a>
+      <div class="d-flex align-items-center">
+  <a id="nav-dashboard" href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+  <a id="nav-plan" href="/plan" class="btn btn-outline-light btn-sm me-2">Mi Plan</a>
+  <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+  <a id="nav-home" href="/" class="btn btn-primary btn-sm">Inicio</a>
+        <div class="btn-group ms-3" role="group" aria-label="Language selector">
+          <button id="lang-es" class="btn btn-sm btn-outline-light">ES</button>
+          <button id="lang-en" class="btn btn-sm btn-outline-light">EN</button>
         </div>
-    </nav>
+      </div>
+    </div>
+  </nav>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="container text-center">
-            <h1>Tu Entrenador Inteligente</h1>
-            <p>Genera tu plan personalizado de alimentación y entrenamiento con IA.</p>
-            <a href="#form-section" class="btn btn-primary mt-3 px-4 py-2">Comenzar Ahora</a>
+            <h1 id="hero-title">Tu Entrenador Inteligente</h1>
+            <p id="hero-p">Genera tu plan personalizado de alimentación y entrenamiento con IA.</p>
+            <a id="cta-start" href="#form-section" class="btn btn-primary mt-3 px-4 py-2">Comenzar Ahora</a>
         </div>
     </section>
 
@@ -304,31 +314,31 @@ sendBtn.addEventListener("click", () => {
 
         <!-- Columna Formulario -->
         <div class="col-md-6 px-4 py-4">
-            <h2 class="text-center text-light mb-4">Genera tu Plan</h2>
+            <h2 id="generate-section-title" class="text-center text-light mb-4">Genera tu Plan</h2>
             
             <form id="planForm">
                 <div class="mb-3">
-                    <label for="userId" class="form-label">ID de Usuario</label>
+                    <label id="label-userid" for="userId" class="form-label">ID de Usuario</label>
                     <input type="text" class="form-control" id="userId" placeholder="Ej. usr_001" required>
                 </div>
 
                 <div class="mb-3">
-                    <label for="weight" class="form-label">Peso (kg)</label>
+                    <label id="label-weight" for="weight" class="form-label">Peso (kg)</label>
                     <input type="number" class="form-control" id="weight" required>
                 </div>
 
                 <div class="mb-3">
-                    <label for="goal" class="form-label">Objetivo</label>
-                    <select class="form-select" id="goal" required>
-                        <option value="">Selecciona...</option>
-                        <option value="gain_muscle">Ganar músculo</option>
-                        <option value="lose_fat">Perder grasa</option>
-                        <option value="maintain">Mantener</option>
-                    </select>
+          <label id="label-goal" for="goal" class="form-label">Objetivo</label>
+          <select class="form-select" id="goal" required>
+            <option id="opt-select" value="">Selecciona...</option>
+            <option id="opt-gain" value="gain_muscle">Ganar músculo</option>
+            <option id="opt-lose" value="lose_fat">Perder grasa</option>
+            <option id="opt-maintain" value="maintain">Mantener</option>
+          </select>
                 </div>
 
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary px-4">Generar Plan</button>
+                    <button id="btn-generate" type="submit" class="btn btn-primary px-4">Generar Plan</button>
                 </div>
 
                 <!-- Loader visual -->
@@ -336,7 +346,7 @@ sendBtn.addEventListener("click", () => {
                   <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Cargando...</span>
                   </div>
-                  <p class="text-light mt-2">Generando tu plan personalizado...</p>
+                  <p id="loading-text" class="text-light mt-2">Generando tu plan personalizado...</p>
                 </div>
 
                 <!-- Contenedor del resultado -->
@@ -351,7 +361,7 @@ sendBtn.addEventListener("click", () => {
 
     <!-- Footer -->
     <footer>
-        <p>© 2025 AI Fitness | Desarrollado por Ismael Villegas</p>
+  <p id="footer-text">© 2025 AI Fitness | Desarrollado por Ismael Villegas</p>
     </footer>
 
     <!-- Bootstrap JS -->
@@ -386,7 +396,7 @@ form.addEventListener("submit", async (e) => {
     if (response.status === 201) {
       container.innerHTML = `
         <div class="card mt-4 bg-dark text-light shadow p-4">
-          <h4 class="text-primary fw-bold">✅ Plan generado con éxito</h4>
+          <h4 class="text-primary fw-bold">${t('plan_ok')}</h4>
           <p><strong>Calorías/día:</strong> ${result.nutrition_plan.calories_per_day.toFixed(0)}</p>
           <p><strong>Proteínas:</strong> ${result.nutrition_plan.macros.protein.toFixed(1)} g</p>
           <p><strong>Carbohidratos:</strong> ${result.nutrition_plan.macros.carbs.toFixed(1)} g</p>
@@ -396,7 +406,7 @@ form.addEventListener("submit", async (e) => {
     } else {
       container.innerHTML = `
         <div class="alert alert-danger mt-4">
-          ❌ ${result.error || "Ocurrió un error al generar el plan."}
+          ${t('plan_error')} ${result.error ? (' - ' + result.error) : ''}
         </div>`;
     }
   } catch (err) {

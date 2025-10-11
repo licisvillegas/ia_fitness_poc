@@ -92,14 +92,19 @@
 </head>
 <body>
 
-    <!-- Navbar -->
+    <!-- Navbar (unificada con dashboard.html) -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/">AI Fitness</a>
-            <div class="d-flex">
-                <a href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
-                <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
-                <a href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+            <div class="d-flex align-items-center">
+                <a id="nav-home" href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
+                <a id="nav-dashboard" href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+                <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+                <a id="nav-plan" href="/plan" class="btn btn-primary btn-sm">Mi Plan</a>
+                <div class="btn-group ms-3" role="group" aria-label="Language selector">
+                  <button id="lang-es" class="btn btn-sm btn-outline-light">ES</button>
+                  <button id="lang-en" class="btn btn-sm btn-outline-light">EN</button>
+                </div>
 
             </div>
         </div>
@@ -108,8 +113,8 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <h1>Plan de Alimentación y Entrenamiento</h1>
-            <p class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus resultados físicos.</p>
+            <h1 id="plan-hero-title">Plan de Alimentación y Entrenamiento</h1>
+            <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus resultados físicos.</p>
         </div>
     </section>
 
@@ -118,15 +123,15 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h2>La importancia de una buena alimentación</h2>
-                    <p class="text-light">
+                    <h2 id="nutrition-importance">La importancia de una buena alimentación</h2>
+                    <p class="text-light" data-i18n="nutrition_intro">
                         Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación.
                         En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.
                     </p>
                     <ul>
-                        <li>Balance correcto de macronutrientes (proteínas, carbohidratos y grasas).</li>
-                        <li>Planificación personalizada según tus objetivos y nivel de actividad.</li>
-                        <li>Recomendaciones de alimentos naturales y saludables.</li>
+                        <li data-i18n="balance_correcto_de_macronutrientes_proteínas_carbohidratos_">Balance correcto de macronutrientes (proteínas, carbohidratos y grasas).</li>
+                        <li data-i18n="planificación_personalizada_según_tus_objetivos_y_nivel_de_a">Planificación personalizada según tus objetivos y nivel de actividad.</li>
+                        <li data-i18n="recomendaciones_de_alimentos_naturales_y_saludables">Recomendaciones de alimentos naturales y saludables.</li>
                     </ul>
                 </div>
                 <div class="col-md-6 text-center">
@@ -139,8 +144,8 @@
 
  <!-- Sección de Entrenamientos -->
 <section class="workouts">
-  <div class="container">
-    <h2 class="text-center mb-5">Entrenamientos por Grupo Muscular</h2>
+    <div class="container">
+    <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular</h2>
 
     <!-- Primera fila -->
     <div class="row g-4">
@@ -149,9 +154,9 @@
         <div class="workout-card text-center">
           <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=600&q=80" 
                class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
-          <h5 class="text-light fw-bold mt-3">Pecho y Tríceps</h5>
-          <p>Fortalece tu tren superior con ejercicios compuestos como press de banca, fondos y flexiones. 
-             Desarrolla masa muscular y potencia en tus empujes.</p>
+             <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
+             <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr">Fortalece tu tren superior con ejercicios compuestos como press de banca, fondos y flexiones. 
+                 Desarrolla masa muscular y potencia en tus empujes.</p>
         </div>
       </div>
 
@@ -160,8 +165,8 @@
         <div class="workout-card text-center">
           <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=600&q=80" 
                class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
-          <h5 class="text-light fw-bold mt-3">Espalda y Bíceps</h5>
-          <p>Rutinas centradas en dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
+          <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
+          <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la">Rutinas centradas en dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
         </div>
       </div>
 
@@ -170,8 +175,8 @@
         <div class="workout-card text-center">
           <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=600&q=80" 
                class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
-          <h5 class="text-light fw-bold mt-3">Piernas y Glúteos</h5>
-          <p>Ejercicios de fuerza como sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
+          <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
+          <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas">Ejercicios de fuerza como sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
         </div>
       </div>
     </div>
@@ -183,8 +188,8 @@
         <div class="workout-card text-center">
           <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=600&q=80" 
                class="img-fluid" alt="Entrenamiento de Hombros y Core">
-          <h5 class="text-light fw-bold mt-3">Hombros y Core</h5>
-          <p>Desarrolla equilibrio y fuerza funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
+          <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
+          <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para">Desarrolla equilibrio y fuerza funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
         </div>
       </div>
 
@@ -193,9 +198,9 @@
         <div class="workout-card text-center">
           <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=600&q=80" 
                class="img-fluid" alt="Entrenamiento Full Body">
-          <h5 class="text-light fw-bold mt-3">Entrenamiento Full Body</h5>
-          <p>Sesiones completas que activan todos los grupos musculares. 
-             Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
+             <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
+             <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p">Sesiones completas que activan todos los grupos musculares. 
+                 Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
         </div>
       </div>
     </div>
@@ -203,8 +208,11 @@
 </section>
 
     <footer>
-        <p>© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente</p>
+        <p id="footer-text">© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente</p>
     </footer>
+
+        <!-- centralized language script -->
+        <script src="/static/js/lang.js"></script>
 
 </body>
 </html>

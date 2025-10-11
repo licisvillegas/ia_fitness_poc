@@ -103,11 +103,15 @@
   <nav class="navbar navbar-expand-lg">
     <div class="container">
       <a class="navbar-brand" href="/">AI Fitness</a>
-      <div class="d-flex">
-        <a href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
-        <a href="/plan" class="btn btn-outline-light btn-sm me-2">Plan</a>
-        <a href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
-        <a href="/nutrition" class="btn btn-primary btn-sm">Nutrición</a>
+      <div class="d-flex align-items-center">
+        <a id="nav-home" href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
+        <a id="nav-plan" href="/plan" class="btn btn-outline-light btn-sm me-2">Plan</a>
+        <a id="nav-dashboard" href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+        <a id="nav-nutrition" href="/nutrition" class="btn btn-primary btn-sm">Nutrición</a>
+        <div class="btn-group ms-3" role="group" aria-label="Language selector">
+          <button id="lang-es" class="btn btn-sm btn-outline-light">ES</button>
+          <button id="lang-en" class="btn btn-sm btn-outline-light">EN</button>
+        </div>
       </div>
     </div>
   </nav>
@@ -115,17 +119,17 @@
   <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <h1>Nutrición Inteligente para un Rendimiento Óptimo</h1>
-      <p class="lead mt-3">Descubre recetas saludables y aprende a equilibrar tus alimentos con equivalencias precisas.</p>
-    </div>
+        <h1 id="nutrition-hero-title">Nutrición Inteligente para un Rendimiento Óptimo</h1>
+        <p id="nutrition-hero-p" class="lead mt-3">Descubre recetas saludables y aprende a equilibrar tus alimentos con equivalencias precisas.</p>
+      </div>
   </section>
 
   <!-- Recetas -->
   <section class="recipes">
     <div class="container text-center mb-5">
-      <h2 class="fw-bold text-light">Recetas Fitness</h2>
-      <p class="text-secondary">Fáciles, nutritivas y llenas de energía para acompañar tus entrenamientos.</p>
-    </div>
+        <h2 id="recipes-title" class="fw-bold text-light">Recetas Fitness</h2>
+        <p id="recipes-sub" class="text-secondary">Fáciles, nutritivas y llenas de energía para acompañar tus entrenamientos.</p>
+      </div>
 
     <div class="container">
       <div class="row g-4">
@@ -133,8 +137,8 @@
           <div class="recipe-card">
             <img src="https://storage.googleapis.com/fitia_public_images/recipes%2FGR-R-V-00006049_k7e35yjcue169n3bjafdcxao_large.jpg" alt="Avena proteica">
             <div class="p-3">
-              <h5>Avena Proteica</h5>
-              <p class="text-secondary small">Avena, proteína en polvo, banana y canela. Ideal para comenzar el día lleno de energía.</p>
+              <h5 data-i18n="avena_proteica">Avena Proteica</h5>
+              <p class="text-secondary small" data-i18n="avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_">Avena, proteína en polvo, banana y canela. Ideal para comenzar el día lleno de energía.</p>
             </div>
           </div>
         </div>
@@ -143,8 +147,8 @@
           <div class="recipe-card">
             <img src="https://storage.googleapis.com/avena-recipes-v2/2019/10/1571783768842.jpeg" alt="Bowl de pollo y quinoa">
             <div class="p-3">
-              <h5>Bowl de Pollo y Quinoa</h5>
-              <p class="text-secondary small">Combinación equilibrada de proteínas, granos y vegetales para recuperación muscular.</p>
+              <h5 data-i18n="bowl_de_pollo_y_quinoa">Bowl de Pollo y Quinoa</h5>
+              <p class="text-secondary small" data-i18n="combinación_equilibrada_de_proteínas_granos_y_vegetales_para">Combinación equilibrada de proteínas, granos y vegetales para recuperación muscular.</p>
             </div>
           </div>
         </div>
@@ -153,8 +157,8 @@
           <div class="recipe-card">
             <img src="https://zenu.com.co/wp-content/uploads/2023/12/wrap-de-atun-zenu.jpeg" alt="Wrap de atún">
             <div class="p-3">
-              <h5>Wrap de Atún</h5>
-              <p class="text-secondary small">Rico en proteínas y omega-3, ideal como almuerzo rápido y saludable.</p>
+              <h5 data-i18n="wrap_de_atún">Wrap de Atún</h5>
+              <p class="text-secondary small" data-i18n="rico_en_proteínas_y_omega-3_ideal_como_almuerzo_rápido_y_sal">Rico en proteínas y omega-3, ideal como almuerzo rápido y saludable.</p>
             </div>
           </div>
         </div>
@@ -165,43 +169,43 @@
   <!-- Equivalencias -->
   <section class="equivalences">
     <div class="container text-center">
-      <h2>Equivalencias de Alimentos</h2>
-      <p class="text-secondary mb-4">Comprende cómo sustituir alimentos sin perder el equilibrio nutricional.</p>
+  <h2 id="equivalences-title" data-i18n="equivalences_title">Equivalencias de Alimentos</h2>
+  <p id="equivalences-sub" class="text-secondary mb-4" data-i18n="equivalences_sub">Comprende cómo sustituir alimentos sin perder el equilibrio nutricional.</p>
 
       <div class="table-responsive">
         <table class="table table-dark table-striped align-middle">
           <thead>
             <tr>
-              <th>Alimento Base</th>
-              <th>Equivalencia</th>
-              <th>Valor Nutricional Aproximado</th>
+              <th data-i18n="alimento_base">Alimento Base</th>
+              <th data-i18n="equivalencia">Equivalencia</th>
+              <th data-i18n="valor_nutricional_aproximado">Valor Nutricional Aproximado</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>1 taza de arroz cocido</td>
-              <td>1 taza de quinoa cocida</td>
-              <td>Similar en calorías, más proteína y fibra</td>
+              <td data-i18n="1_taza_de_arroz_cocido">1 taza de arroz cocido</td>
+              <td data-i18n="1_taza_de_quinoa_cocida">1 taza de quinoa cocida</td>
+              <td data-i18n="similar_en_calorías_más_proteína_y_fibra">Similar en calorías, más proteína y fibra</td>
             </tr>
             <tr>
-              <td>100g de carne magra</td>
-              <td>100g de pollo o tofu firme</td>
-              <td>Misma proteína, menos grasa saturada</td>
+              <td data-i18n="100g_de_carne_magra">100g de carne magra</td>
+              <td data-i18n="100g_de_pollo_o_tofu_firme">100g de pollo o tofu firme</td>
+              <td data-i18n="misma_proteína_menos_grasa_saturada">Misma proteína, menos grasa saturada</td>
             </tr>
             <tr>
-              <td>1 yogurt natural</td>
-              <td>1 yogurt griego sin azúcar</td>
-              <td>Mayor proteína, menor azúcar</td>
+              <td data-i18n="1_yogurt_natural">1 yogurt natural</td>
+              <td data-i18n="1_yogurt_griego_sin_azúcar">1 yogurt griego sin azúcar</td>
+              <td data-i18n="mayor_proteína_menor_azúcar">Mayor proteína, menor azúcar</td>
             </tr>
             <tr>
-              <td>1 cucharada de mantequilla</td>
-              <td>1 cucharada de aguacate triturado</td>
-              <td>Grasa más saludable (monoinsaturada)</td>
+              <td data-i18n="1_cucharada_de_mantequilla">1 cucharada de mantequilla</td>
+              <td data-i18n="1_cucharada_de_aguacate_triturado">1 cucharada de aguacate triturado</td>
+              <td data-i18n="grasa_más_saludable_monoinsaturada">Grasa más saludable (monoinsaturada)</td>
             </tr>
             <tr>
-              <td>1 pan blanco</td>
-              <td>1 pan integral o de centeno</td>
-              <td>Más fibra y saciedad</td>
+              <td data-i18n="1_pan_blanco">1 pan blanco</td>
+              <td data-i18n="1_pan_integral_o_de_centeno">1 pan integral o de centeno</td>
+              <td data-i18n="más_fibra_y_saciedad">Más fibra y saciedad</td>
             </tr>
           </tbody>
         </table>
@@ -210,8 +214,9 @@
   </section>
 
   <footer>
-    <p>© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria</p>
+    <p id="footer-text">© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria</p>
   </footer>
+  <script src="/static/js/lang.js"></script>
 
 </body>
 </html>

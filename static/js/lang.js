@@ -202,10 +202,29 @@
     const navPlan = document.getElementById('nav-plan');
     const navNutrition = document.getElementById('nav-nutrition');
     const navHome = document.getElementById('nav-home');
-    if (navDashboard) navDashboard.textContent = t('nav_dashboard');
-    if (navPlan) navPlan.textContent = t('nav_plan');
-    if (navNutrition) navNutrition.textContent = t('nav_nutrition');
-    if (navHome) navHome.textContent = t('nav_home');
+    const navAbout = document.getElementById('nav-about');
+    if (navDashboard){ navDashboard.textContent = t('nav_dashboard'); navDashboard.setAttribute('data-i18n','nav_dashboard'); }
+    if (navPlan){ navPlan.textContent = t('nav_plan'); navPlan.setAttribute('data-i18n','nav_plan'); }
+    if (navNutrition){ navNutrition.textContent = t('nav_nutrition'); navNutrition.setAttribute('data-i18n','nav_nutrition'); }
+    if (navHome){ navHome.textContent = t('nav_home'); navHome.setAttribute('data-i18n','nav_home'); }
+    if (navAbout){ navAbout.textContent = t('nav_about'); navAbout.setAttribute('data-i18n','nav_about'); }
+
+    // Ensure active nav button (btn-primary) is placed last before language selector
+    try {
+      const navContainer = document.querySelector('.navbar .d-flex.align-items-center');
+      if (navContainer) {
+        const btnGroup = navContainer.querySelector('.btn-group.ms-3');
+        const links = Array.from(navContainer.querySelectorAll('a.btn.btn-sm'))
+          .filter(a => !btnGroup || !btnGroup.contains(a));
+        const activeBtn = links.find(a => a.classList.contains('btn-primary'));
+        if (btnGroup && activeBtn) {
+          // Ensure all outline links come before the active button
+          links.filter(a => a !== activeBtn).forEach(a => navContainer.insertBefore(a, activeBtn));
+          // Place active button right before the language selector
+          navContainer.insertBefore(activeBtn, btnGroup);
+        }
+      }
+    } catch (e) { /* ignore ordering issues */ }
 
     // Hero
     const heroTitle = document.getElementById('hero-title');
@@ -352,6 +371,26 @@
 
   // Traducción para placeholder del chat flotante
   try { dict['placeholder_chat'] = { es: 'Escribe tu pregunta...', en: 'Type your question...' }; } catch (e) {}
+
+  // About page translations
+  try {
+    dict['nav_about'] = { es: 'Acerca de', en: 'About' };
+    dict['about_hero_title'] = { es: 'Conoce AI Fitness', en: 'Meet AI Fitness' };
+    dict['about_hero_p'] = { es: 'Nuestra misión es ayudarte a entrenar y comer mejor con IA.', en: 'Our mission is to help you train and eat better with AI.' };
+    dict['about_mission_title'] = { es: 'Misión', en: 'Mission' };
+    dict['about_mission_p'] = { es: 'Empoderar a cada persona con planes claros y seguimiento práctico para lograr cambios sostenibles.', en: 'Empower everyone with clear plans and practical tracking to achieve sustainable change.' };
+    dict['about_values_title'] = { es: 'Valores', en: 'Values' };
+    dict['about_value_1'] = { es: 'Consistencia sobre perfección', en: 'Consistency over perfection' };
+    dict['about_value_2'] = { es: 'Claridad y simplicidad', en: 'Clarity and simplicity' };
+    dict['about_value_3'] = { es: 'Datos para tomar mejores decisiones', en: 'Data for better decisions' };
+    dict['about_features_title'] = { es: 'Qué ofrece AI Fitness', en: 'What AI Fitness Offers' };
+    dict['about_feat_1_t'] = { es: 'Plan personalizado', en: 'Personalized plan' };
+    dict['about_feat_1_p'] = { es: 'Nutrición y entrenamiento ajustados a tus objetivos.', en: 'Nutrition and training tailored to your goals.' };
+    dict['about_feat_2_t'] = { es: 'Seguimiento', en: 'Tracking' };
+    dict['about_feat_2_p'] = { es: 'Dashboard con métricas clave y progreso.', en: 'Dashboard with key metrics and progress.' };
+    dict['about_feat_3_t'] = { es: 'Recomendaciones', en: 'Recommendations' };
+    dict['about_feat_3_p'] = { es: 'Tips de alimentación y rutinas basadas en datos.', en: 'Food and routine tips based on data.' };
+  } catch (e) {}
 
   document.addEventListener('DOMContentLoaded', () => {
     const stored = localStorage.getItem('ai_fitness_lang') || 'es';

@@ -107,6 +107,10 @@ def dashboard_page():
 def nutrition_page():
     return render_template("nutrition.html")
 
+@app.route("/about")
+def about_page():
+    return render_template("about.html")
+
 
 # ======================================================
 # ENDPOINTS DE DATOS

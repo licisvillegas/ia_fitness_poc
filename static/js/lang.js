@@ -174,12 +174,48 @@
   dict['plan_hero_p'] = { es: 'Descubre cómo equilibrar tu nutrición y potenciar tus resultados físicos.', en: 'Discover how to balance your nutrition and boost your physical results.' };
   dict['nutrition_importance_title'] = { es: 'La importancia de una buena alimentación', en: 'The importance of good nutrition' };
   dict['workouts_title'] = { es: 'Entrenamientos por Grupo Muscular', en: 'Workouts by Muscle Group' };
+  // Cardio workout translations
+  dict['cardio'] = { es: 'Cardio', en: 'Cardio' };
+  dict['ejercicios_cardio_caminadora_eliptica_natacion'] = {
+    es: 'Ejercicios de cardio como caminadora, elíptica y natación para mejorar la resistencia y la salud cardiovascular.',
+    en: 'Cardio exercises like treadmill, elliptical and swimming to improve endurance and cardiovascular health.'
+  };
 
   // Buttons, loading and labels
   dict['btn_load_progress'] = { es: 'Cargar progreso', en: 'Load progress' };
   dict['loading_data'] = { es: 'Cargando datos...', en: 'Loading data...' };
   dict['select_user_label'] = { es: 'Selecciona tu ID de usuario', en: 'Select your User ID' };
   dict['generate_section_title'] = { es: 'Genera tu Plan', en: 'Generate your Plan' };
+  // Common auth actions
+  dict['logout'] = { es: 'Cerrar sesión', en: 'Log out' };
+
+  // Página: Auth
+  dict['auth_left_title'] = { es: 'Impulsa tu progreso', en: 'Boost your progress' };
+  dict['auth_left_subtitle'] = { es: 'Entrena y alimentate con un plan inteligente.', en: 'Train and eat with an intelligent plan.' };
+  dict['auth_tab_login'] = { es: 'Iniciar sesion', en: 'Sign in' };
+  dict['auth_tab_register'] = { es: 'Registrarse', en: 'Sign up' };
+  dict['auth_identifier_label'] = { es: 'Correo o usuario', en: 'Email or username' };
+  dict['auth_identifier_ph'] = { es: 'correo@dominio.com o usuario', en: 'email@domain.com or username' };
+  dict['auth_password_label'] = { es: 'Contrasena', en: 'Password' };
+  dict['auth_password_ph'] = { es: '********', en: '********' };
+  dict['auth_remember'] = { es: 'Recordarme', en: 'Remember me' };
+  dict['auth_forgot'] = { es: 'Olvidaste tu contrasena?', en: 'Forgot your password?' };
+  dict['auth_enter'] = { es: 'Entrar', en: 'Sign in' };
+  dict['auth_name_label'] = { es: 'Nombre', en: 'Name' };
+  dict['auth_name_ph'] = { es: 'Tu nombre', en: 'Your name' };
+  dict['auth_username_label'] = { es: 'Usuario', en: 'Username' };
+  dict['auth_username_ph'] = { es: 'MiUsuario', en: 'MyUsername' };
+  dict['auth_email_label'] = { es: 'Correo electronico', en: 'Email' };
+  dict['auth_email_ph'] = { es: 'correo@dominio.com', en: 'email@domain.com' };
+  dict['auth_password_min_ph'] = { es: 'Minimo 8 caracteres', en: 'At least 8 characters' };
+  dict['auth_password_confirm_label'] = { es: 'Confirmar contrasena', en: 'Confirm password' };
+  dict['auth_password_confirm_ph'] = { es: 'Repite tu contrasena', en: 'Repeat your password' };
+  dict['auth_create_account'] = { es: 'Crear cuenta', en: 'Create account' };
+  dict['auth_terms_intro'] = { es: 'Al registrarte aceptas nuestros ', en: 'By signing up you accept our ' };
+  dict['auth_terms'] = { es: 'Terminos', en: 'Terms' };
+  dict['auth_and'] = { es: 'y', en: 'and' };
+  dict['auth_privacy'] = { es: 'Privacidad', en: 'Privacy' };
+  dict['auth_user_not_registered'] = { es: 'Usuario no registrado.', en: 'User not registered.' };
 
   function t(key){
     const lang = document.documentElement.lang || localStorage.getItem('ai_fitness_lang') || 'es';
@@ -208,21 +244,41 @@
     if (navNutrition){ navNutrition.textContent = t('nav_nutrition'); navNutrition.setAttribute('data-i18n','nav_nutrition'); }
     if (navHome){ navHome.textContent = t('nav_home'); navHome.setAttribute('data-i18n','nav_home'); }
     if (navAbout){ navAbout.textContent = t('nav_about'); navAbout.setAttribute('data-i18n','nav_about'); }
+    // Smart redirect for Home and brand: if logged in -> /dashboard; else -> /
+    try {
+      const brand = document.querySelector('.navbar .navbar-brand');
+      const homeLink = document.getElementById('nav-home');
+      const bind = (el) => {
+        if (!el || el.getAttribute('data-smart-nav') === '1') return;
+        el.setAttribute('data-smart-nav','1');
+        el.addEventListener('click', (e) => {
+          try { e.preventDefault(); } catch(_) {}
+          const hasUser = !!getCurrentUser();
+          window.location.href = hasUser ? '/dashboard' : '/';
+        });
+      };
+      bind(brand);
+      bind(homeLink);
+    } catch (e) { /* ignore */ }
 
-    // Ensure active nav button (btn-primary) is placed last before language selector
+    // Ensure active nav button sits before auth controls, which are before the language selector
     try {
       const navContainer = document.querySelector('.navbar .d-flex.align-items-center');
       if (navContainer) {
+        // Ensure a stable container for auth controls
+        const authControls = ensureAuthControlsContainer(navContainer);
         const btnGroup = navContainer.querySelector('.btn-group.ms-3');
         const links = Array.from(navContainer.querySelectorAll('a.btn.btn-sm'))
           .filter(a => !btnGroup || !btnGroup.contains(a));
         const activeBtn = links.find(a => a.classList.contains('btn-primary'));
-        if (btnGroup && activeBtn) {
+        if (activeBtn) {
           // Ensure all outline links come before the active button
           links.filter(a => a !== activeBtn).forEach(a => navContainer.insertBefore(a, activeBtn));
-          // Place active button right before the language selector
-          navContainer.insertBefore(activeBtn, btnGroup);
+          // Place active button just before the auth controls container
+          navContainer.insertBefore(activeBtn, authControls);
         }
+        // Render user chip and logout if logged in
+        renderAuthChip(navContainer);
       }
     } catch (e) { /* ignore ordering issues */ }
 
@@ -324,6 +380,65 @@
       if (workoutsTitle) workoutsTitle.textContent = t('workouts_title');
     }
 
+    // Auth page
+    // Left panel
+    const authLeftTitle = document.getElementById('auth-left-title');
+    if (authLeftTitle) authLeftTitle.textContent = t('auth_left_title');
+    const authLeftSubtitle = document.getElementById('auth-left-subtitle');
+    if (authLeftSubtitle) authLeftSubtitle.textContent = t('auth_left_subtitle');
+    // Tabs
+    const authTabLogin = document.getElementById('auth-tab-login');
+    if (authTabLogin) authTabLogin.textContent = t('auth_tab_login');
+    const authTabRegister = document.getElementById('auth-tab-register');
+    if (authTabRegister) authTabRegister.textContent = t('auth_tab_register');
+    // Login identifiers
+    const lblAuthIdentifier = document.getElementById('label-auth-identifier');
+    if (lblAuthIdentifier) lblAuthIdentifier.textContent = t('auth_identifier_label');
+    const inAuthIdentifier = document.getElementById('auth-identifier');
+    if (inAuthIdentifier) inAuthIdentifier.placeholder = t('auth_identifier_ph');
+    const lblAuthPassword = document.getElementById('label-auth-password');
+    if (lblAuthPassword) lblAuthPassword.textContent = t('auth_password_label');
+    const inAuthPassword = document.getElementById('auth-password');
+    if (inAuthPassword) inAuthPassword.placeholder = t('auth_password_ph');
+    const authRememberLabel = document.getElementById('auth-remember-label');
+    if (authRememberLabel) authRememberLabel.textContent = t('auth_remember');
+    const authForgotLink = document.getElementById('auth-forgot-link');
+    if (authForgotLink) authForgotLink.textContent = t('auth_forgot');
+    const authEnterBtn = document.getElementById('auth-enter-btn');
+    if (authEnterBtn) authEnterBtn.textContent = t('auth_enter');
+    // Register fields
+    const lblAuthName = document.getElementById('label-auth-name');
+    if (lblAuthName) lblAuthName.textContent = t('auth_name_label');
+    const inAuthName = document.getElementById('auth-name');
+    if (inAuthName) inAuthName.placeholder = t('auth_name_ph');
+    const lblAuthUsername = document.getElementById('label-auth-username');
+    if (lblAuthUsername) lblAuthUsername.textContent = t('auth_username_label');
+    const inAuthUsername = document.getElementById('auth-username');
+    if (inAuthUsername) inAuthUsername.placeholder = t('auth_username_ph');
+    const lblAuthEmail = document.getElementById('label-auth-email');
+    if (lblAuthEmail) lblAuthEmail.textContent = t('auth_email_label');
+    const inAuthEmail = document.getElementById('auth-email');
+    if (inAuthEmail) inAuthEmail.placeholder = t('auth_email_ph');
+    const lblAuthPasswordConfirm = document.getElementById('label-auth-password-confirm');
+    if (lblAuthPasswordConfirm) lblAuthPasswordConfirm.textContent = t('auth_password_confirm_label');
+    const inAuthPasswordConfirm = document.getElementById('auth-password-confirm');
+    if (inAuthPasswordConfirm) inAuthPasswordConfirm.placeholder = t('auth_password_confirm_ph');
+    const authPasswordMinHelp = document.getElementById('auth-password-min-help');
+    if (authPasswordMinHelp) authPasswordMinHelp.textContent = t('auth_password_min_ph');
+    const authCreateBtn = document.getElementById('auth-create-btn');
+    if (authCreateBtn) authCreateBtn.textContent = t('auth_create_account');
+    // Terms & privacy snippet
+    const authTermsIntro = document.getElementById('auth-terms-intro');
+    if (authTermsIntro) authTermsIntro.textContent = t('auth_terms_intro');
+    const authTermsLink = document.getElementById('auth-terms-link');
+    if (authTermsLink) authTermsLink.textContent = t('auth_terms');
+    const authAnd = document.getElementById('auth-and');
+    if (authAnd) authAnd.textContent = t('auth_and');
+    const authPrivacyLink = document.getElementById('auth-privacy-link');
+    if (authPrivacyLink) authPrivacyLink.textContent = t('auth_privacy');
+    const authUserNotRegistered = document.getElementById('auth-user-not-registered');
+    if (authUserNotRegistered) authUserNotRegistered.textContent = t('auth_user_not_registered');
+
     // Generic: any element annotated with data-i18n will be translated
     const i18nEls = document.querySelectorAll('[data-i18n]');
     if (i18nEls && i18nEls.length) {
@@ -353,6 +468,82 @@
     if (window.updateChartLabels) {
       try { window.updateChartLabels(); } catch (e) { /* ignore */ }
     }
+  }
+
+  function getCurrentUser(){
+    try {
+      const raw = localStorage.getItem('ai_fitness_user');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+
+  function ensureAuthControlsContainer(navContainer){
+    const btnGroup = navContainer.querySelector('.btn-group.ms-3');
+    let container = document.getElementById('auth-controls');
+    if (!container){
+      container = document.createElement('span');
+      container.id = 'auth-controls';
+      container.className = 'd-inline-flex align-items-center ms-2 me-1';
+      if (btnGroup) navContainer.insertBefore(container, btnGroup);
+      else navContainer.appendChild(container);
+    } else if (btnGroup && container.nextSibling !== btnGroup){
+      // Keep container anchored immediately before language selector
+      navContainer.insertBefore(container, btnGroup);
+    }
+    return container;
+  }
+
+  function renderAuthChip(navContainer){
+    try {
+      const user = getCurrentUser();
+      // Use dedicated container for stable placement
+      const controls = ensureAuthControlsContainer(navContainer);
+      // Existing elements
+      let userChip = document.getElementById('user-chip');
+      let logoutBtn = document.getElementById('logout-btn');
+
+      if (!user || (!user.username && !user.name && !user.email)){
+        // Remove if exists
+        if (userChip && userChip.parentElement) userChip.parentElement.removeChild(userChip);
+        if (logoutBtn && logoutBtn.parentElement) logoutBtn.parentElement.removeChild(logoutBtn);
+        return;
+      }
+
+      // Build display name
+      const display = user.username ? `@${user.username}` : (user.name || user.email || '');
+
+      if (!userChip){
+        userChip = document.createElement('span');
+        userChip.id = 'user-chip';
+        userChip.className = 'text-light small ms-3 me-2';
+        userChip.style.whiteSpace = 'nowrap';
+        controls.appendChild(userChip);
+      }
+      userChip.textContent = display;
+
+      if (!logoutBtn){
+        logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-btn';
+        logoutBtn.type = 'button';
+        logoutBtn.className = 'btn btn-sm btn-outline-light';
+        // minimal icon using emoji to avoid extra deps
+        logoutBtn.textContent = '⏻';
+        logoutBtn.title = t('logout');
+        logoutBtn.setAttribute('aria-label', t('logout'));
+        controls.appendChild(logoutBtn);
+        logoutBtn.addEventListener('click', () => {
+          try { localStorage.removeItem('ai_fitness_user'); } catch(_){}
+          // Re-render UI
+          renderAuthChip(navContainer);
+          // Redirect to home or auth
+          try { window.location.href = '/'; } catch(_){}
+        });
+      } else {
+        logoutBtn.title = t('logout');
+        logoutBtn.setAttribute('aria-label', t('logout'));
+      }
+    } catch (e) { /* ignore */ }
   }
 
   function setLang(lang){
@@ -393,6 +584,16 @@
   } catch (e) {}
 
   document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const path = (window.location && window.location.pathname) || '/';
+      if (path !== '/') {
+        const rawUser = localStorage.getItem('ai_fitness_user');
+        if (!rawUser) {
+          try { window.location.replace('/'); } catch (e) { window.location.href = '/'; }
+          return; // stop initializing on protected pages when not logged in
+        }
+      }
+    } catch (e) { /* ignore */ }
     const stored = localStorage.getItem('ai_fitness_lang') || 'es';
     // apply
     setLang(stored);

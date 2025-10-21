@@ -17,7 +17,7 @@
     .navbar-brand { color: #3b82f6 !important; font-weight: 700; }
     .hero {
       background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(37,99,235,0.4)),
-                  url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1920&q=80');
+                  url('/static/images/IMG_1552.jpg');
       background-size: cover; background-position: center;
       height: 65vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white;
     }
@@ -214,17 +214,48 @@
 
   // Click: valida el input y dispara la carga de datos
   btn.addEventListener("click", () => {
-    const userId = userIdInput.value.trim();
-    if (!userId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
-    loadProgress(userId);
+    const typed = userIdInput.value.trim();
+    let targetId = typed;
+    try {
+      const raw = localStorage.getItem('ai_fitness_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        const loggedId = String(u.user_id || u._id || '').trim();
+        const uname = (u.username || '').trim();
+        const email = (u.email || '').trim().toLowerCase();
+        // If the user typed their username/email (or left empty), use the logged-in id
+        if (!typed || typed === uname || typed.toLowerCase() === email) {
+          targetId = loggedId || typed;
+        }
+      }
+    } catch(e) { /* ignore */ }
+    if (!targetId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
+    loadProgress(targetId);
   });
 
   // Al cargar la página, recupera el último usuario desde localStorage
   window.addEventListener("DOMContentLoaded", () => {
+    // Prefer the logged-in user's id for loading, but show their username in the input
+    let loadId = null;
+    let displayLabel = null;
+    try {
+      const raw = localStorage.getItem('ai_fitness_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        loadId = String(u.user_id || u._id || '').trim() || null;
+        displayLabel = (u.username || '').trim() || null;
+      }
+    } catch(e) { /* ignore */ }
     const lastUser = localStorage.getItem("ai_fitness_uid");
-    if (lastUser) {
-      userIdInput.value = lastUser;
-      loadProgress(lastUser);
+    if (!loadId && lastUser) {
+      loadId = lastUser;
+      displayLabel = lastUser;
+    }
+    if (displayLabel) {
+      userIdInput.value = displayLabel;
+    }
+    if (loadId) {
+      loadProgress(loadId);
     }
   });
   </script>

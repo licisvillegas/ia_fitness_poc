@@ -10,6 +10,9 @@ import os
 import logging
 from dotenv import load_dotenv
 import traceback
+import re
+from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo import errors as mongo_errors
 
 # ======================================================
 # CONFIGURACIÓN INICIAL
@@ -74,7 +77,7 @@ except Exception as e:
 # ======================================================
 def validate_user_input(user):
     """Valida los campos obligatorios antes de generar el plan"""
-    required_fields = ["_id", "weight_kg", "goal"]
+    required_fields = ["user_id", "weight_kg", "goal"]
     missing = [f for f in required_fields if f not in user]
 
     if missing:
@@ -92,7 +95,11 @@ def validate_user_input(user):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("auth.html")
+
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html")
 
 @app.route("/plan")
 def plan_page():
@@ -176,7 +183,7 @@ def generate_plan():
             routines = ["Upper Body", "Lower Body", "Core"]
 
         plan = {
-            "user_id": user["_id"],
+            "user_id": user["user_id"],
             "goal": goal,
             "nutrition_plan": {
                 "calories_per_day": calories,
@@ -190,7 +197,7 @@ def generate_plan():
         }
 
         result = db.plans.insert_one(plan)
-        plan["_id"] = str(result.inserted_id)
+        plan["plan_id"] = str(result.inserted_id)
 
         logger.info(f"🎯 Plan generado correctamente para {user['_id']}")
         return jsonify(plan), 201
@@ -198,6 +205,142 @@ def generate_plan():
     except Exception as e:
         logger.error(f"❌ Error al generar plan: {str(e)}", exc_info=True)
         return jsonify({"error": "Error interno al generar plan"}), 500
+
+
+
+# ======================================================
+# AUTENTICACION: REGISTRO E INICIO DE SESION
+# ======================================================
+
+@app.post("/auth/register")
+def auth_register():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
+
+        data = request.get_json() or {}
+        name = (data.get("name") or "").strip()
+        username = (data.get("username") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password") or ""
+
+        if not name or not username or not email or not password:
+            return jsonify({"error": "Nombre, usuario, email y contraseña son obligatorios."}), 400
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{3,20}", username):
+            return jsonify({"error": "El usuario debe tener de 3 a 20 caracteres alfanuméricos (._- permitidos)."}), 400
+        if "@" not in email:
+            return jsonify({"error": "El email no es válido."}), 400
+        if len(password) < 8:
+            return jsonify({"error": "La contraseña debe tener al menos 8 caracteres."}), 400
+
+        username_lower = username.lower()
+        if db.users.find_one({"username_lower": username_lower}):
+            return jsonify({"error": "El usuario ya está en uso."}), 409
+
+        pwd_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+        doc = {
+            "name": name,
+            "username": username,
+            "username_lower": username_lower,
+            "email": email,
+            "password_hash": pwd_hash,
+            "created_at": datetime.utcnow(),
+        }
+        res = db.users.insert_one(doc)
+        try:
+            db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": str(res.inserted_id)}})
+        except Exception:
+            pass
+        user = {"user_id": str(res.inserted_id), "name": name, "username": username, "email": email}
+        logger.info(f"Usuario registrado: {email} ({username})")
+        return jsonify({"message": "Registro exitoso", "user": user}), 201
+
+    except mongo_errors.DuplicateKeyError as e:
+        message = "El email ya está registrado."
+        try:
+            key_pattern = e.details.get("keyPattern") if e.details else {}
+            if key_pattern and "username_lower" in key_pattern:
+                message = "El usuario ya está en uso."
+        except Exception:
+            pass
+        return jsonify({"error": message}), 409
+    except Exception as e:
+        logger.error(f"Error en registro: {e}", exc_info=True)
+        return jsonify({"error": "Error interno en registro"}), 500
+
+
+@app.post("/auth/login")
+def auth_login_api():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
+        data = request.get_json() or {}
+        identifier = (data.get("identifier") or data.get("email") or data.get("username") or "").strip()
+        password = data.get("password") or ""
+        if not identifier or not password:
+            return jsonify({"error": "Email o usuario y contraseña son obligatorios."}), 400
+
+        identifier_lower = identifier.lower()
+        lookup_field = "email" if "@" in identifier else "username_lower"
+        u = db.users.find_one({lookup_field: identifier_lower})
+        if not u or not check_password_hash(u.get("password_hash", ""), password):
+            return jsonify({"error": "Credenciales inválidas."}), 401
+
+        user = {
+            "user_id": str(u.get("user_id") or u["_id"]),
+            "name": u.get("name"),
+            "username": u.get("username"),
+            "email": u.get("email"),
+        }
+        logger.info(f"Usuario accedió: {u.get('email')} ({u.get('username')})")
+        return jsonify({"message": "Inicio de sesión exitoso", "user": user}), 200
+
+    except Exception as e:
+        logger.error(f"Error en login: {e}", exc_info=True)
+        return jsonify({"error": "Error interno en inicio de sesión"}), 500
+
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify({"error": "Bad Request", "message": str(e)}), 400
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Not Found", "message": "La ruta solicitada no existe."}), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    logger.error("Error 500: %s", traceback.format_exc())
+    return jsonify({"error": "Internal Server Error", "message": "Ocurrió un error inesperado."}), 500
+
+
+# ======================================================
+# INDEXACIÓN AUTOMÁTICA (MongoDB)
+# ======================================================
+try:
+    db.plans.create_index([("user_id", 1), ("created_at", -1)])
+    try:
+        existing_indexes = db.users.index_information()
+        for idx_name in ("user_id_1", "user_name_lower_1"):
+            if idx_name in existing_indexes:
+                db.users.drop_index(idx_name)
+                logger.info(f"Índice obsoleto eliminado: {idx_name}")
+    except Exception as drop_err:
+        logger.warning(f"No se pudo limpiar índices obsoletos: {drop_err}")
+    # Índice único por email en colección de usuarios
+    try:
+        db.users.create_index("email", unique=True)
+    except Exception:
+        pass
+    try:
+        db.users.create_index("username_lower", unique=True, sparse=True)
+    except Exception:
+        pass
+    logger.info("✅ Índice creado en MongoDB: user_id + created_at")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo crear el índice: {e}")
+
+
+
 
 
 # ======================================================
@@ -221,11 +364,11 @@ def server_error(e):
 # ======================================================
 # INDEXACIÓN AUTOMÁTICA (MongoDB)
 # ======================================================
-try:
-    db.plans.create_index([("user_id", 1), ("created_at", -1)])
-    logger.info("✅ Índice creado en MongoDB: user_id + created_at")
-except Exception as e:
-    logger.warning(f"⚠️ No se pudo crear el índice: {e}")
+#try:
+#    db.plans.create_index([("user_id", 1), ("created_at", -1)])
+#    logger.info("✅ Índice creado en MongoDB: user_id + created_at")
+#except Exception as e:
+#    logger.warning(f"⚠️ No se pudo crear el índice: {e}")
 
 
 # ======================================================

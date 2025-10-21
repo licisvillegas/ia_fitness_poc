@@ -32,7 +32,7 @@ except Exception as e:
 #  FUNCIONES AUXILIARES
 # ==============================
 def validate_user_input(user):
-    required_fields = ["_id", "weight_kg", "goal"]
+    required_fields = ["user_id", "weight_kg", "goal"]
     missing = [field for field in required_fields if field not in user]
 
     if missing:
@@ -81,7 +81,7 @@ def generate_plan():
             routines = ["Upper Body", "Lower Body", "Core"]
 
         plan = {
-            "user_id": user["_id"],
+            "user_id": user["user_id"],
             "goal": goal,
             "nutrition_plan": {"calories_per_day": calories, "macros": macros},
             "training_plan": {"days_per_week": len(routines), "routines": routines},
@@ -91,7 +91,7 @@ def generate_plan():
         result = db.plans.insert_one(plan)
         logger.info(f"✅ Plan insertado correctamente con timestamp {plan['created_at']}")
 
-        plan["_id"] = str(result.inserted_id)
+        plan["plan_id"] = str(result.inserted_id)
         return jsonify(plan), 201
 
     except Exception as e:

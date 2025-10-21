@@ -119,6 +119,87 @@
         </div>
     </section>
 
+    <!-- Plan Activo -->
+    <section class="container mt-5" id="active-plan">
+      <div class="card" style="background:#111827;border-radius:12px;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Plan activo</h4>
+            <div class="d-flex gap-2">
+              <button id="btnUseLatestAI" class="btn btn-outline-info btn-sm">Usar ajuste AI más reciente</button>
+              <button id="btnReloadActive" class="btn btn-outline-light btn-sm">Refrescar</button>
+            </div>
+          </div>
+          <small id="active-meta" class="text-secondary"></small>
+          <hr/>
+          <div>
+            <div class="mb-2"><span class="text-secondary">Objetivo:</span> <strong id="active-goal">-</strong></div>
+            <h6 class="text-primary">Nutrición</h6>
+            <div id="active-kcal"></div>
+            <div id="active-macros"></div>
+          </div>
+          <div class="mt-3">
+            <h6 class="text-primary">Entrenamiento</h6>
+            <div id="active-training"></div>
+          </div>
+          <div class="mt-3" id="active-ai" style="display:none;">
+            <h6 class="text-primary">Resumen AI</h6>
+            <div id="active-ai-reason"></div>
+            <small id="active-ai-next" class="text-secondary"></small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mis Planes (listado + detalle) -->
+    <section class="container mt-5" id="my-plan">
+      <div class="mb-3 text-center">
+        <div class="input-group justify-content-center" style="max-width:720px;margin:0 auto;gap:8px;">
+          <input type="text" id="planUserId" class="form-control text-center" placeholder="Ingresa tu user_id (o deja vacío para usar el de login)">
+          <button id="btnLoadPlans" class="btn btn-primary">Cargar planes</button>
+        </div>
+        <div id="planMsg" class="mt-2 text-info"></div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-5">
+          <div class="card" style="background:#111827;border-radius:12px;">
+            <div class="card-body">
+              <h5 class="card-title">Histórico de planes</h5>
+              <ul id="plan-list" class="list-group list-group-flush" style="background:#111827;"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="card" style="background:#111827;border-radius:12px;">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Detalle de plan</h5>
+                <button id="btnActivatePlan" class="btn btn-outline-light btn-sm" disabled>Activar este plan</button>
+              </div>
+              <small id="plan-meta" class="text-secondary"></small>
+              <hr/>
+              <div>
+                <div class="mb-2"><span class="text-secondary">Objetivo:</span> <strong id="plan-goal">-</strong></div>
+                <h6 class="text-primary">Nutrición</h6>
+                <div id="plan-kcal"></div>
+                <div id="plan-macros"></div>
+              </div>
+              <div class="mt-3">
+                <h6 class="text-primary">Entrenamiento</h6>
+                <div id="plan-training"></div>
+              </div>
+              <div class="mt-3" id="plan-ai" style="display:none;">
+                <h6 class="text-primary">Resumen AI</h6>
+                <div id="plan-ai-reason"></div>
+                <small id="plan-ai-next" class="text-secondary"></small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Sección de Alimentación -->
     <section class="nutrition">
         <div class="container">
@@ -197,7 +278,7 @@
       <!-- Cardio -->
       <div class="col-md-4">
         <div class="workout-card text-center">
-          <img src="/static/images/IMG_1617.JPG" 
+          <img src="/static/images/TAFT2576.JPEG" 
                class="img-fluid" alt="Entrenamiento de Cardio">
           <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
           <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion">Ejercicios de cardio como caminadora, elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
@@ -224,6 +305,204 @@
 
         <!-- centralized language script -->
         <script src="/static/js/lang.js"></script>
+        <script>
+          (function(){
+            const listEl = document.getElementById('plan-list');
+            const msgEl = document.getElementById('planMsg');
+            const metaEl = document.getElementById('plan-meta');
+            const kcalEl = document.getElementById('plan-kcal');
+            const macrosEl = document.getElementById('plan-macros');
+            const trainEl = document.getElementById('plan-training');
+            const aiBox = document.getElementById('plan-ai');
+            const aiReason = document.getElementById('plan-ai-reason');
+            const aiNext = document.getElementById('plan-ai-next');
+            const activateBtn = document.getElementById('btnActivatePlan');
+            let currentPlanId = null;
+
+            // Active plan refs
+            const aMeta = document.getElementById('active-meta');
+            const aKcal = document.getElementById('active-kcal');
+            const aMacros = document.getElementById('active-macros');
+            const aTrain = document.getElementById('active-training');
+            const aBox = document.getElementById('active-ai');
+            const aReason = document.getElementById('active-ai-reason');
+            const aNext = document.getElementById('active-ai-next');
+            const btnUseLatest = document.getElementById('btnUseLatestAI');
+            const btnReloadActive = document.getElementById('btnReloadActive');
+
+            function resolveUserId(inputVal){
+              const typed = (inputVal || '').trim();
+              try{
+                const raw = localStorage.getItem('ai_fitness_user');
+                if(raw){
+                  const u = JSON.parse(raw);
+                  const loggedId = String(u.user_id || u._id || '').trim();
+                  const uname = (u.username || '').trim();
+                  const email = (u.email || '').trim().toLowerCase();
+                  if(!typed || typed === uname || typed.toLowerCase() === email){
+                    return loggedId || typed;
+                  }
+                }
+              }catch(e){}
+              return typed;
+            }
+
+            async function loadPlans(){
+              const input = document.getElementById('planUserId');
+              const uid = resolveUserId(input.value);
+              if(!uid){ msgEl.textContent = 'Ingresa un user_id'; return; }
+              msgEl.textContent = 'Cargando planes...';
+              listEl.innerHTML='';
+              try{
+                const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=20`);
+                if(!resp.ok){
+                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+                  throw new Error(err.error || `HTTP ${resp.status}`);
+                }
+                const rows = await resp.json();
+                if(!Array.isArray(rows)){ throw new Error('Formato invalido'); }
+                msgEl.textContent = rows.length ? '' : 'No hay planes para este usuario';
+                const frag = document.createDocumentFragment();
+                rows.forEach((p, idx)=>{
+                  const li = document.createElement('li');
+                  li.className = 'list-group-item d-flex justify-content-between align-items-start';
+                  li.style.background = '#111827'; li.style.color = '#e5e7eb';
+                  const left = document.createElement('div');
+                  const ts = (p.created_at || '').toString().replace('T',' ').replace('Z','');
+                  const label = p.source === 'ai_adjustment' ? '[AI]' : '[Manual]';
+                  left.innerHTML = `<div><strong>#${idx+1}</strong> · ${label} · ${ts || 'sin-fecha'}</div>`;
+                  const small = document.createElement('small');
+                  const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
+                  small.textContent = `kcal: ${np.calories_per_day ?? np.kcal_obj ?? '-'} · cardio: ${tr.cardio ?? '-'} · active: ${p.active ? 'sí' : 'no'}`;
+                  left.appendChild(small);
+                  li.appendChild(left);
+                  li.addEventListener('click', ()=> renderPlan(p));
+                  frag.appendChild(li);
+                });
+                listEl.appendChild(frag);
+                if(rows[0]) renderPlan(rows[0]);
+              }catch(e){
+                msgEl.textContent = `Error al cargar planes: ${e.message}`;
+              }
+              }
+
+            function renderPlan(p){
+              currentPlanId = p._id || null;
+              activateBtn.disabled = !currentPlanId;
+              const ts = (p.created_at || '').toString().replace('T',' ').replace('Z','');
+              metaEl.textContent = `id: ${p._id || '-'} · fecha: ${ts || '-'} · activo: ${p.active ? 'sí' : 'no'}`;
+              document.getElementById('plan-goal').textContent = p.goal || '-';
+              const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
+              const macros = np.macros || {}; const macros2 = (np && np.macros) || {};
+              const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
+              const pG = macros.protein ?? macros2.protein ?? macros2.p;
+              const cG = macros.carbs ?? macros2.carbs ?? macros2.c;
+              const fG = macros.fat ?? macros2.fat ?? macros2.g;
+              kcalEl.textContent = `Calorias/día: ${kcal} ${np.kcal_delta!=null ? `(delta: ${np.kcal_delta})` : ''}`;
+              macrosEl.textContent = `Macros (p/c/g): ${pG ?? '-'} / ${cG ?? '-'} / ${fG ?? '-'}`;
+              trainEl.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
+              const ai = p.ai_summary || {};
+              if(ai && (ai.razonamiento_resumido || ai.proxima_revision_dias!=null)){
+                aiBox.style.display = 'block';
+                aiReason.textContent = ai.razonamiento_resumido || '';
+                aiNext.textContent = ai.proxima_revision_dias!=null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
+              } else {
+                aiBox.style.display = 'none';
+                aiReason.textContent = '';
+                aiNext.textContent = '';
+              }
+            }
+
+            async function loadActive(){
+              const input = document.getElementById('planUserId');
+              const uid = resolveUserId(input.value);
+              if(!uid){ aMeta.textContent=''; aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none'; return; }
+              aMeta.textContent = 'Cargando plan activo...';
+              try{
+                const resp = await fetch(`/plans/${encodeURIComponent(uid)}/active`);
+                if(!resp.ok){
+                  aMeta.textContent = 'Sin plan activo';
+                  aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none';
+                  return;
+                }
+                const p = await resp.json();
+                const ts = (p.activated_at || p.created_at || '').toString().replace('T',' ').replace('Z','');
+                aMeta.textContent = `id: ${p._id || '-'} · activado: ${ts || '-'}`;
+                document.getElementById('active-goal').textContent = p.goal || '-';
+                const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
+                const macros = np.macros || {};
+                const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
+                aKcal.textContent = `Calorias/día: ${kcal} ${np.kcal_delta!=null ? `(delta: ${np.kcal_delta})` : ''}`;
+                aMacros.textContent = `Macros (p/c/g): ${macros.protein ?? '-'} / ${macros.carbs ?? '-'} / ${macros.fat ?? '-'}`;
+                aTrain.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
+                const ai = p.ai_summary || {};
+                if(ai && (ai.razonamiento_resumido || ai.proxima_revision_dias!=null)){
+                  aBox.style.display = 'block';
+                  aReason.textContent = ai.razonamiento_resumido || '';
+                  aNext.textContent = ai.proxima_revision_dias!=null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
+                } else {
+                  aBox.style.display = 'none';
+                  aReason.textContent = '';
+                  aNext.textContent = '';
+                }
+              }catch(e){
+                aMeta.textContent = `Error cargando plan activo: ${e.message}`;
+                aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none';
+              }
+            }
+
+            activateBtn.addEventListener('click', async ()=>{
+              if(!currentPlanId){ return; }
+              try{
+                const resp = await fetch(`/plans/${encodeURIComponent(currentPlanId)}/activate`, { method: 'POST' });
+                if(!resp.ok){
+                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+                  throw new Error(err.error || `HTTP ${resp.status}`);
+                }
+                msgEl.textContent = 'Plan activado';
+                loadPlans();
+                loadActive();
+              }catch(e){
+                msgEl.textContent = `No se pudo activar el plan: ${e.message}`;
+              }
+            });
+
+            btnUseLatest.addEventListener('click', async ()=>{
+              const input = document.getElementById('planUserId');
+              const uid = resolveUserId(input.value);
+              if(!uid){ msgEl.textContent = 'Ingresa un user_id'; return; }
+              try{
+                const resp = await fetch(`/ai/adjustments/${encodeURIComponent(uid)}/apply_latest`, { method: 'POST' });
+                if(!resp.ok){
+                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+                  throw new Error(err.error || `HTTP ${resp.status}`);
+                }
+                msgEl.textContent = 'Plan creado y activado desde AI';
+                loadPlans();
+                loadActive();
+              }catch(e){
+                msgEl.textContent = `No se pudo aplicar el último ajuste: ${e.message}`;
+              }
+            });
+
+            btnReloadActive.addEventListener('click', loadActive);
+
+            document.getElementById('btnLoadPlans').addEventListener('click', loadPlans);
+            // Auto-cargar para el usuario logueado
+            window.addEventListener('DOMContentLoaded', ()=>{
+              try{
+                const raw = localStorage.getItem('ai_fitness_user');
+                if(raw){
+                  const u = JSON.parse(raw);
+                  const display = (u.username || '').trim();
+                  if(display){ document.getElementById('planUserId').value = display; }
+                  loadPlans();
+                  loadActive();
+                }
+              }catch(e){}
+            });
+          })();
+        </script>
 
 </body>
 </html>

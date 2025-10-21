@@ -7,3 +7,9 @@ test2.md
 /hello_world
 .env.example
 CON
+temp_block1.txt
+temp_block2.txt
+temp_tail.txt
+dash_copy.txt
+app_copy.txt
+app_before_hist.txt

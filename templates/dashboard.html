@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Fitness | Dashboard de Progreso</title>
 
-  <!-- CDNs: Bootstrap para estilos, Google Fonts (Poppins) y Chart.js para gráficos -->
+  <!-- CDNs: Bootstrap para estilos, Google Fonts (Poppins) y Chart.js para grÃ¡ficos -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,7 +21,7 @@
       background-size: cover; background-position: center;
       height: 65vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white;
     }
-    /* Estadísticas: mantener tarjetas del mismo tamaño (referencia: Peso Actual) */
+    /* EstadÃ­sticas: mantener tarjetas del mismo tamaÃ±o (referencia: Peso Actual) */
     /* Hacemos que las columnas se estiren y que la tarjeta ocupe toda la altura disponible */
     #stats .row { align-items: stretch; }
     #stats .col-md-3 { display: flex; }
@@ -36,7 +36,7 @@
       justify-content: center;
       align-items: center;
       flex: 1; /* permite que la tarjeta llene la columna */
-      min-height: 160px; /* referencia mínima — ajusta si quieres un tamaño distinto */
+      min-height: 160px; /* referencia mÃ­nima â€” ajusta si quieres un tamaÃ±o distinto */
     }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(37,99,235,0.3); }
     .stat-icon { font-size: 2.5rem; color: #3b82f6; margin-bottom: 10px; }
@@ -61,7 +61,7 @@
       <div class="d-flex align-items-center">
         <a id="nav-home" href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
         <a id="nav-plan" href="/plan" class="btn btn-outline-light btn-sm me-2">Mi Plan</a>
-        <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
+        <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">NutriciÃ³n</a>
         <a id="nav-about" href="/about" class="btn btn-outline-light btn-sm me-2" data-i18n="nav_about">Acerca de</a>
         <a id="nav-dashboard" href="/dashboard" class="btn btn-primary btn-sm" data-i18n="nav_dashboard">Dashboard</a>
         <!-- Language selector -->
@@ -76,38 +76,81 @@
   <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <!-- Título principal y subtítulo del dashboard -->
-    <h1 id="dashboard-hero-title">Monitorea tu evolución</h1>
+      <!-- TÃ­tulo principal y subtÃ­tulo del dashboard -->
+    <h1 id="dashboard-hero-title">Monitorea tu evoluciÃ³n</h1>
     <p id="dashboard-hero-p" class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en tiempo real.</p>
     </div>
   </section>
 
   <!-- Selector de usuario -->
   <div class="container text-center mt-5">
-    <!-- Input del ID de usuario y botón; el spinner aparece durante la carga -->
+    <!-- Input del ID de usuario y botÃ³n; el spinner aparece durante la carga -->
      <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
-    <div class="input-group mb-3 justify-content-center" style="max-width: 400px; margin: 0 auto;">
+    <div class="input-group mb-3 justify-content-center" style="max-width: 720px; margin: 0 auto; gap: 8px;">
       <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
       <button id="loadDataBtn" class="btn btn-primary">Cargar progreso</button>
+      <button id="aiSuggestBtn" class="btn btn-outline-info">Ajustes AI</button>
+      <button id="aiHistoryBtn" class="btn btn-outline-secondary">Histórico AI</button>
     </div>
     <div id="loading"><div class="spinner-border text-primary" role="status"></div><p id="loading-text">Cargando datos...</p></div>
     <p id="message" class="text-light"></p>
+    <div id="active-plan-indicator" class="mt-2" style="display:none; color:#10b981;"></div>
   </div>
 
-  <!-- Estadísticas -->
-  <section id="stats" class="mt-5 container">
-    <!-- Tarjetas con último registro (peso, grasa, rendimiento, adherencia) -->
-    <div class="row g-4">
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">💪</div><h5 id="stat-weight-title">Peso Actual</h5><h3 id="stat-weight">—</h3><p id="stat-last-0" class="text-secondary">Último registro</p></div></div>
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🔥</div><h5 id="stat-fat-title">Grasa Corporal</h5><h3 id="stat-fat">—</h3><p id="stat-last-1" class="text-secondary">Último registro</p></div></div>
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">⚡</div><h5 id="stat-performance-title">Rendimiento</h5><h3 id="stat-performance">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-performance" style="width:0%"></div></div></div></div>
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🥗</div><h5 id="stat-nutrition-title">Adherencia Nutricional</h5><h3 id="stat-nutrition">—</h3><div class="progress mt-2"><div class="progress-bar" id="bar-nutrition" style="width:0%"></div></div></div></div>
+  <!-- EstadÃ­sticas -->
+  <!-- Ajustes del Agente -->
+  <section id="ai-section" class="container mt-5" style="display:none;">
+    <div class="card" style="background-color:#111827; color:#e5e7eb; border-radius:12px;">
+      <div class="card-body">
+        <h4 class="card-title mb-3">Ajustes recomendados por el Agente</h4>
+        <div id="ai-loading" class="text-info mb-2" style="display:none;">Calculando ajustes...</div>
+        <div id="ai-error" class="text-danger mb-2" style="display:none;"></div>
+        <div id="ai-content" style="display:none;">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="p-3" style="background:#0f172a; border-radius:10px;">
+                <h6 class="text-primary">Plan de alimentaciÃ³n</h6>
+                <div id="ai-kcal"></div>
+                <div id="ai-macros"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3" style="background:#0f172a; border-radius:10px;">
+                <h6 class="text-primary">Plan de entrenamiento</h6>
+                <div id="ai-train"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <h6 class="text-primary">Resumen</h6>
+            <p id="ai-reason" class="mb-1"></p>
+            <small id="ai-next" class="text-secondary"></small>
+          </div>
+        </div>
+        <hr class="text-secondary"/>
+        <div>
+          <h5 class="mb-2">Histórico de ajustes</h5>
+          <div id="ai-history-loading" class="text-info mb-2" style="display:none;">Cargando histórico...</div>
+          <div id="ai-history-error" class="text-danger mb-2" style="display:none;"></div>
+          <ul id="ai-history-list" class="list-group list-group-flush" style="background:#111827;"></ul>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Gráficos -->
+  <section id="stats" class="mt-5 container">
+    <!-- Tarjetas con Ãºltimo registro (peso, grasa, rendimiento, adherencia) -->
+    <div class="row g-4">
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🔥</div><h5 id="stat-weight-title">Peso Actual</h5><h3 id="stat-weight">â€”</h3><p id="stat-last-0" class="text-secondary">Ãšltimo registro</p></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">💪</div><h5 id="stat-fat-title">Grasa Corporal</h5><h3 id="stat-fat">â€”</h3><p id="stat-last-1" class="text-secondary">Ãšltimo registro</p></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">⚡</div><h5 id="stat-performance-title">Rendimiento</h5><h3 id="stat-performance">â€”</h3><div class="progress mt-2"><div class="progress-bar" id="bar-performance" style="width:0%"></div></div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon">🥗</div><h5 id="stat-nutrition-title">Adherencia Nutricional</h5><h3 id="stat-nutrition">â€”</h3><div class="progress mt-2"><div class="progress-bar" id="bar-nutrition" style="width:0%"></div></div></div></div>
+    </div>
+  </section>
+
+  <!-- GrÃ¡ficos -->
   <section id="charts" class="container mt-5">
-    <!-- 4 gráficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
+    <!-- 4 grÃ¡ficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
     <div class="row g-4">
       <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas><div class="chart-overlay" id="msg-weight">Sin datos disponibles</div></div>
       <div class="col-md-6 position-relative"><canvas id="fatChart"></canvas><div class="chart-overlay" id="msg-fat">Sin datos disponibles</div></div>
@@ -116,10 +159,10 @@
     </div>
   </section>
 
-  <footer><p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p></footer>
+  <footer><p id="footer-text">Â© 2025 AI Fitness | Dashboard de Progreso Inteligente</p></footer>
 
   <script>
-  // JS del dashboard: maneja carga de progreso, actualización de tarjetas y gráficos
+  // JS del dashboard: maneja carga de progreso, actualizaciÃ³n de tarjetas y grÃ¡ficos
   // Endpoint: GET /get_progress/{userId}
   // Respuesta: Array de { date, weight_kg, body_fat, performance, nutrition_adherence }
   const btn = document.getElementById("loadDataBtn");
@@ -133,7 +176,7 @@
     message.textContent = "";
     loading.style.display = "block";
 
-    // Petición al backend para obtener el historial de progreso del usuario
+    // PeticiÃ³n al backend para obtener el historial de progreso del usuario
     const res = await fetch(`/get_progress/${userId}`);
     const data = await res.json();
     loading.style.display = "none";
@@ -144,14 +187,14 @@
 
     // Manejo de error o falta de datos: limpiar UI y mostrar overlays
     if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
-      message.textContent = data.error || "❌ No se encontraron registros de progreso.";
+      message.textContent = data.error || "âŒ No se encontraron registros de progreso.";
       clearDashboard();
       overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "visible");
       return;
     }
 
   message.textContent = t('data_loaded');
-    // Guardar el último usuario consultado en localStorage para precargarlo la próxima vez
+    // Guardar el Ãºltimo usuario consultado en localStorage para precargarlo la prÃ³xima vez
     localStorage.setItem("ai_fitness_uid", userId);
 
     const last = data[data.length - 1];
@@ -162,7 +205,7 @@
     document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
     document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
 
-    // Limpiar gráficos previos antes de volver a dibujar
+    // Limpiar grÃ¡ficos previos antes de volver a dibujar
     charts.forEach(c => c.destroy());
     charts = [];
 
@@ -177,13 +220,13 @@
     const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
     const opts = { plugins: { legend: { labels: { color: "#e5e7eb" } } }, scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } } };
 
-    // Gráfico de peso (línea)
+    // GrÃ¡fico de peso (lÃ­nea)
     charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-    // Gráfico de grasa corporal (línea)
+    // GrÃ¡fico de grasa corporal (lÃ­nea)
     charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-    // Gráfico de rendimiento (barras)
+    // GrÃ¡fico de rendimiento (barras)
     charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
-    // Gráfico de adherencia nutricional (barras)
+    // GrÃ¡fico de adherencia nutricional (barras)
     charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
 
     // Expose a helper to update chart labels when language changes
@@ -200,13 +243,13 @@
     };
   }
 
-  // Restablece las tarjetas y limpia los gráficos cuando no hay datos
+  // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
   function clearDashboard() {
-    document.getElementById("stat-weight").innerText = "—";
-    document.getElementById("stat-fat").innerText = "—";
-    document.getElementById("stat-performance").innerText = "—";
+    document.getElementById("stat-weight").innerText = "â€”";
+    document.getElementById("stat-fat").innerText = "â€”";
+    document.getElementById("stat-performance").innerText = "â€”";
     document.getElementById("bar-performance").style.width = "0%";
-    document.getElementById("stat-nutrition").innerText = "—";
+    document.getElementById("stat-nutrition").innerText = "â€”";
     document.getElementById("bar-nutrition").style.width = "0%";
     charts.forEach(c => c.destroy());
     charts = [];
@@ -229,11 +272,175 @@
         }
       }
     } catch(e) { /* ignore */ }
-    if (!targetId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
+    if (!targetId) { message.textContent = "âš ï¸ Ingresa un ID de usuario."; return; }
     loadProgress(targetId);
+    loadActivePlanIndicator(targetId);
   });
 
-  // Al cargar la página, recupera el último usuario desde localStorage
+  // BotÃ³n: solicitar ajustes AI y mostrar resumen en el mensaje
+  const aiBtn = document.getElementById("aiSuggestBtn");
+  aiBtn.addEventListener("click", async () => {
+    const typed = userIdInput.value.trim();
+    let targetId = typed;
+    try {
+      const raw = localStorage.getItem('ai_fitness_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        const loggedId = String(u.user_id || u._id || '').trim();
+        const uname = (u.username || '').trim();
+        const email = (u.email || '').trim().toLowerCase();
+        if (!typed || typed === uname || typed.toLowerCase() === email) {
+          targetId = loggedId || typed;
+        }
+      }
+    } catch(e) { /* ignore */ }
+    if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
+    return loadAiAdjustments(targetId);
+  });
+
+  // Click: cargar histórico del agente
+  const aiHistoryBtn = document.getElementById('aiHistoryBtn');
+  aiHistoryBtn.addEventListener('click', async () => {
+    const typed = userIdInput.value.trim();
+    let targetId = typed;
+    try {
+      const raw = localStorage.getItem('ai_fitness_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        const loggedId = String(u.user_id || u._id || '').trim();
+        const uname = (u.username || '').trim();
+        const email = (u.email || '').trim().toLowerCase();
+        if (!typed || typed === uname || typed.toLowerCase() === email) {
+          targetId = loggedId || typed;
+        }
+      }
+    } catch(e) { /* ignore */ }
+    if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
+    return loadAiHistory(targetId);
+  });
+
+  // Al cargar la pÃ¡gina, recupera el Ãºltimo usuario desde localStorage
+  async function loadAiAdjustments(userId){
+    const section = document.getElementById('ai-section');
+    const loadEl = document.getElementById('ai-loading');
+    const errEl = document.getElementById('ai-error');
+    const content = document.getElementById('ai-content');
+    const kcalEl = document.getElementById('ai-kcal');
+    const macrosEl = document.getElementById('ai-macros');
+    const trainEl = document.getElementById('ai-train');
+    const reasonEl = document.getElementById('ai-reason');
+    const nextEl = document.getElementById('ai-next');
+
+    if (section) section.style.display = 'block';
+    if (loadEl) loadEl.style.display = 'block';
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    if (content) content.style.display = 'none';
+    try {
+      const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
+      if (!resp.ok) {
+        const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+        throw new Error(err.error || `HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      const out = data.output || {};
+      const adj = out.ajustes || {};
+      const food = adj.plan_alimentacion || {};
+      const macros = food.macros || {};
+      const train = adj.plan_entrenamiento || {};
+
+      if (kcalEl) kcalEl.textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
+      if (macrosEl) macrosEl.textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
+      if (trainEl) trainEl.textContent = `Volumen Î”: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
+      if (reasonEl) reasonEl.textContent = out.razonamiento_resumido || '';
+      if (nextEl) nextEl.textContent = (out.proxima_revision_dias!=null) ? `PrÃ³xima revisiÃ³n: ${out.proxima_revision_dias} dÃ­as` : '';
+
+      if (content) content.style.display = 'block';
+    } catch (e){
+      if (errEl) { errEl.textContent = `No se pudieron obtener los ajustes: ${e.message}`; errEl.style.display = 'block'; }
+    } finally {
+      if (loadEl) loadEl.style.display = 'none';
+    }
+  }
+
+  async function loadAiHistory(userId){
+    const section = document.getElementById('ai-section');
+    const loadEl = document.getElementById('ai-history-loading');
+    const errEl = document.getElementById('ai-history-error');
+    const listEl = document.getElementById('ai-history-list');
+    if (section) section.style.display = 'block';
+    if (loadEl) loadEl.style.display = 'block';
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    if (listEl) listEl.innerHTML = '';
+    try {
+      const resp = await fetch(`/ai/adjustments/${encodeURIComponent(userId)}?limit=10`);
+      if (!resp.ok) {
+        const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+        throw new Error(err.error || `HTTP ${resp.status}`);
+      }
+      const rows = await resp.json();
+      if (!Array.isArray(rows)) throw new Error('Formato inválido');
+      const frag = document.createDocumentFragment();
+      rows.forEach((r, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-start';
+        li.style.background = '#111827'; li.style.color = '#e5e7eb';
+        const title = document.createElement('div');
+        const ts = (r.created_at || '').replace('T',' ').replace('Z','');
+        title.innerHTML = `<div><strong>#${idx+1}</strong> · ${ts || 'sin-fecha'}</div>`;
+        const small = document.createElement('small');
+        const aj = (r.output && r.output.ajustes) || {};
+        const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
+        small.textContent = `kcal: ${food.kcal_obj ?? '-'} (Δ ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
+        title.appendChild(small);
+        li.appendChild(title);
+
+        const actions = document.createElement('div');
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-sm btn-outline-light';
+        saveBtn.textContent = 'Guardar como plan';
+        saveBtn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          try {
+            const resp = await fetch(`/ai/adjustments/${encodeURIComponent(r._id)}/save_plan`, { method: 'POST' });
+            if (!resp.ok) {
+              const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            const out = await resp.json();
+            const msg = document.getElementById('message');
+            if (msg) msg.textContent = 'Plan guardado correctamente';
+          } catch (e){
+            const msg = document.getElementById('message');
+            if (msg) msg.textContent = `No se pudo guardar el plan: ${e.message}`;
+          }
+        });
+        actions.appendChild(saveBtn);
+        li.appendChild(actions);
+        li.addEventListener('click', () => {
+          // Al hacer click, cargar detalle en la tarjeta superior
+          if (r.output) {
+            const macros = (r.output.ajustes && r.output.ajustes.plan_alimentacion && r.output.ajustes.plan_alimentacion.macros) || {};
+            const food2 = (r.output.ajustes && r.output.ajustes.plan_alimentacion) || {};
+            const train2 = (r.output.ajustes && r.output.ajustes.plan_entrenamiento) || {};
+            document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food2.kcal_obj ?? '-'} (delta: ${food2.kcal_delta ?? 0})`;
+            document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
+            document.getElementById('ai-train').textContent = `Volumen Δ: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
+            document.getElementById('ai-reason').textContent = r.output.razonamiento_resumido || '';
+            document.getElementById('ai-next').textContent = (r.output.proxima_revision_dias!=null) ? `Próxima revisión: ${r.output.proxima_revision_dias} días` : '';
+            document.getElementById('ai-section').style.display = 'block';
+            document.getElementById('ai-content').style.display = 'block';
+          }
+        });
+        frag.appendChild(li);
+      });
+      if (listEl) listEl.appendChild(frag);
+    } catch (e){
+      if (errEl) { errEl.textContent = `No se pudo cargar el histórico: ${e.message}`; errEl.style.display = 'block'; }
+    } finally {
+      if (loadEl) loadEl.style.display = 'none';
+    }
+  }
+
   window.addEventListener("DOMContentLoaded", () => {
     // Prefer the logged-in user's id for loading, but show their username in the input
     let loadId = null;
@@ -256,9 +463,50 @@
     }
     if (loadId) {
       loadProgress(loadId);
+      loadActivePlanIndicator(loadId);
     }
   });
   </script>
+  <script>
+    async function loadActivePlanIndicator(userId){
+      const el = document.getElementById('active-plan-indicator');
+      try{
+        if(!userId){ if(el) el.style.display='none'; return; }
+        const resp = await fetch(`/plans/${encodeURIComponent(userId)}/active`);
+        if(resp.ok){
+          const data = await resp.json();
+          const ts = data.activated_at || data.created_at || '';
+          let label = '';
+          try{
+            const d = new Date(ts);
+            if(!isNaN(d.getTime())){
+              const dd = String(d.getDate()).padStart(2,'0');
+              const mm = String(d.getMonth()+1).padStart(2,'0');
+              const yyyy = d.getFullYear();
+              label = `${dd}/${mm}/${yyyy}`;
+            } else {
+              label = ts.toString().split('T')[0];
+              if(label && label.includes('-')){
+                const parts = label.split('-');
+                if(parts.length === 3){ label = `${parts[2]}/${parts[1]}/${parts[0]}`; }
+              }
+            }
+          }catch(_){ label = ts; }
+          if(el){
+            el.innerHTML = `Plan activo desde ${label} · <a href="/plan" class="link-info">ver en Mi Plan</a>`;
+            el.style.display = 'block';
+          }
+        } else {
+          if(el) el.style.display='none';
+        }
+      }catch(e){
+        if(el) el.style.display='none';
+      }
+    }
+  </script>
+  
+  <!-- Ajustes del Agente (secciÃ³n visual) -->
+
   <!-- Language selector script: guarda la preferencia en localStorage y actualiza document.lang -->
   <!-- centralized language script -->
   <script src="/static/js/lang.js"></script>

@@ -14,8 +14,9 @@ import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import errors as mongo_errors
 from ai_agents.reasoning_agent import ReasoningAgent
-from typing import Optional
+from typing import Any, Dict, Optional
 from ai_agents.meal_plan_agent import MealPlanAgent
+from ai_agents.body_assessment_agent import BodyAssessmentAgent
 
 # ======================================================
 # CONFIGURACIÓN INICIAL
@@ -158,6 +159,65 @@ def fetch_user_progress_for_agent(user_id: str, limit: Optional[int] = None):
         # Devuelve estructura consistente para el agente incluso ante error
         return {"progress": []}
 
+
+def normalize_measurements(raw: dict) -> Dict[str, Optional[float]]:
+    """Normaliza claves comunes de medidas (soporta alias en español)."""
+
+    aliases = {
+        "chest": ["chest", "pecho"],
+        "waist": ["waist", "cintura"],
+        "abdomen": ["abdomen"],
+        "hip": ["hip", "cadera"],
+        "arm_relaxed": ["arm_relaxed", "brazo_relajado", "brazo relajado"],
+        "arm_flexed": ["arm_flexed", "brazo_contraido", "brazo_contraído", "brazo contraido", "brazo contraído"],
+        "thigh": ["thigh", "muslo"],
+        "calf": ["calf", "pantorrilla"],
+        "neck": ["neck", "cuello"],
+        "height_cm": ["height_cm", "altura_cm", "altura"],
+        "weight_kg": ["weight_kg", "peso", "peso_kg"],
+    }
+
+    def to_float(value: Any) -> Optional[float]:
+        try:
+            if value is None:
+                return None
+            if isinstance(value, str):
+                value = value.replace(",", ".").strip()
+                if not value:
+                    return None
+            return float(value)
+        except (ValueError, TypeError):
+            return None
+
+    normalized: Dict[str, Optional[float]] = {}
+    for key, keys in aliases.items():
+        for alias in keys:
+            if alias in raw:
+                normalized[key] = to_float(raw.get(alias))
+                break
+    return normalized
+
+
+def sanitize_photos(raw: Any) -> list:
+    """Reduce la información de fotos a metadatos seguros."""
+
+    sanitized = []
+    if isinstance(raw, list):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            view = str(item.get("view", "")).strip()
+            notes = str(item.get("notes", "")).strip()
+            quality = str(item.get("quality", "")).strip()
+            sanitized.append(
+                {
+                    "view": view.lower() or None,
+                    "notes": notes or None,
+                    "quality": quality or None,
+                }
+            )
+    return sanitized
+
 @app.get("/ai/reason/<user_id>")
 def ai_reason_for_user(user_id: str):
     """Ejecuta el agente AI usando el progreso del usuario desde MongoDB.
@@ -256,6 +316,71 @@ def ai_get_adjustments(user_id: str):
     except Exception as e:
         logger.error(f"Error listando historial de ajustes AI: {e}", exc_info=True)
         return jsonify({"error": "Error interno listando historial"}), 500
+
+
+@app.get("/ai/body_assessment/tester")
+def body_assessment_tester():
+    """Renderiza una interfaz web para probar el agente de evaluación corporal."""
+
+    return render_template("body_assessment.html")
+
+
+@app.post("/ai/body_assessment")
+def ai_body_assessment():
+    """Genera evaluación corporal a partir de medidas y fotos."""
+
+    try:
+        payload = request.get_json(silent=True) or {}
+        measurements_raw = payload.get("measurements")
+        if not isinstance(measurements_raw, dict):
+            return jsonify({"error": "'measurements' debe ser un objeto con las medidas"}), 400
+
+        measurements = normalize_measurements(measurements_raw)
+
+        required = ["height_cm", "weight_kg"]
+        if not (measurements.get("waist") or measurements.get("abdomen")):
+            required.append("waist/abdomen")
+        missing = [key for key in required if measurements.get(key if key != "waist/abdomen" else "waist") is None and key != "waist/abdomen"]
+        if "waist/abdomen" in required and not (measurements.get("waist") or measurements.get("abdomen")):
+            missing.append("waist o abdomen")
+
+        if missing:
+            return (
+                jsonify({"error": f"Faltan medidas requeridas: {', '.join(missing)}"}),
+                400,
+            )
+
+        context = {
+            "user_id": payload.get("user_id"),
+            "sex": (payload.get("sex") or "male").lower(),
+            "age": payload.get("age"),
+            "goal": payload.get("goal"),
+            "measurements": measurements,
+            "photos": sanitize_photos(payload.get("photos")),
+            "notes": payload.get("notes"),
+        }
+
+        agent = BodyAssessmentAgent()
+        result = agent.run(context)
+
+        try:
+            if db is not None and context.get("user_id"):
+                db.body_assessments.insert_one(
+                    {
+                        "user_id": context.get("user_id"),
+                        "backend": agent.backend(),
+                        "input": context,
+                        "output": result,
+                        "created_at": datetime.utcnow(),
+                    }
+                )
+        except Exception as persist_err:
+            logger.warning(f"No se pudo guardar evaluación corporal: {persist_err}")
+
+        return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+    except Exception as e:
+        logger.error(f"Error generando evaluación corporal: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al generar evaluación corporal"}), 500
 
 
 @app.route("/ai/nutrition/plan/<user_id>", methods=["GET", "POST"])

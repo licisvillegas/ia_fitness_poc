@@ -81,9 +81,44 @@
             margin-bottom: 1rem;
         }
 
+        /* Ajustes de contraste para textos grises */
+        .text-secondary {
+            color: #ffffff !important;
+        }
+        .text-muted {
+            color: #ffffff !important;
+        }
+
+        /* Ocultar subsecciones "Histórico de planes" y "Detalle de plan" */
+        #my-plan .row.g-4 {
+            display: none !important;
+        }
+
+        /* Ocultar sección de cargar planes (buscador y botón) */
+        #my-plan .mb-3.text-center {
+            display: none !important;
+        }
+
+        /* Ocultar botones de acciones AI en Plan Activo */
+        #active-plan #btnUseLatestAI,
+        #active-plan #btnReloadActive {
+            display: none !important;
+        }
+
+        /* Título "Histórico de planes" en blanco */
+        #my-plan .col-md-5 h5.card-title {
+            color: #ffffff;
+        }
+
+        /* Forzar texto blanco solo en #active-plan */
+        #active-plan { color: #ffffff; }
+        #active-plan .text-secondary,
+        #active-plan .text-muted,
+        #active-plan small { color: #ffffff !important; }
+
         footer {
             background-color: #111827;
-            color: #9ca3af;
+            color: #ffffff;
             text-align: center;
             padding: 1rem 0;
             margin-top: 2rem;
@@ -121,7 +156,7 @@
 
     <!-- Plan Activo -->
     <section class="container mt-5" id="active-plan">
-      <div class="card" style="background:#111827;border-radius:12px;">
+      <div class="card" style="background:#b3b3b3;border-radius:12px;">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">Plan activo</h4>
@@ -366,7 +401,7 @@
                 rows.forEach((p, idx)=>{
                   const li = document.createElement('li');
                   li.className = 'list-group-item d-flex justify-content-between align-items-start';
-                  li.style.background = '#111827'; li.style.color = '#e5e7eb';
+                  li.style.background = '#111827'; li.style.color = '#ffffff';
                   const left = document.createElement('div');
                   const ts = (p.created_at || '').toString().replace('T',' ').replace('Z','');
                   const label = p.source === 'ai_adjustment' ? '[AI]' : '[Manual]';
@@ -413,6 +448,17 @@
               }
             }
 
+            function formatDateDMY(value){
+              try{
+                const d = new Date(value);
+                if (isNaN(d)) return '';
+                const dd = String(d.getDate()).padStart(2,'0');
+                const mm = String(d.getMonth()+1).padStart(2,'0');
+                const yyyy = d.getFullYear();
+                return `${dd}/${mm}/${yyyy}`;
+              }catch(e){ return ''; }
+            }
+
             async function loadActive(){
               const input = document.getElementById('planUserId');
               const uid = resolveUserId(input.value);
@@ -429,6 +475,8 @@
                 const ts = (p.activated_at || p.created_at || '').toString().replace('T',' ').replace('Z','');
                 aMeta.textContent = `id: ${p._id || '-'} · activado: ${ts || '-'}`;
                 document.getElementById('active-goal').textContent = p.goal || '-';
+                const __formattedActiveDate = formatDateDMY(p.activated_at || p.created_at || '');
+                aMeta.textContent = __formattedActiveDate ? `Activado: ${__formattedActiveDate}` : '';
                 const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
                 const macros = np.macros || {};
                 const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');

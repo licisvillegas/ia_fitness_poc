@@ -93,11 +93,12 @@
          <label class="form-label" data-i18n="auth_password_label" for="loginPassword">
           Contrase&ntilde;a
          </label>
-         <input class="form-control" data-i18n="auth_password_ph" id="loginPassword" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required="" type="password"/>
-         <div class="invalid-feedback">
-          Ingrese su contrase&ntilde;a.
-         </div>
+        <input class="form-control" data-i18n="auth_password_ph" id="loginPassword" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required="" type="password"/>
+        <div class="invalid-feedback">
+         Ingrese su contrase&ntilde;a.
         </div>
+       </div>
+        <!-- (Eliminado: Acceso administrador con token) -->
         <div class="d-flex justify-content-between align-items-center mb-3">
          <div class="form-check">
           <input class="form-check-input" id="rememberMe" type="checkbox"/>
@@ -198,6 +199,7 @@
       const alertBox = document.getElementById('authAlert');
       const registerForm = document.getElementById('registerForm');
       const loginForm = document.getElementById('loginForm');
+      // (Eliminado: elementos de token administrador)
 
       const showAlert = (variant, message) => {
         if (!alertBox) {
@@ -348,6 +350,7 @@
             loginForm.reset();
             loginForm.classList.remove('was-validated');
 
+            // Redirección estándar al dashboard
             setTimeout(() => {
               window.location.href = '/dashboard';
             }, 800);
@@ -358,6 +361,8 @@
           }
         });
       }
+
+      // (Eliminado: lógica de toggle de token admin)
     })();
   </script>
   <script src="/static/js/lang.js">

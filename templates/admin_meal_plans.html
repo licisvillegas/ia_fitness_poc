@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Fitness | Admin · Edición de Planes</title>
+  <title>AI Fitness | Admin – Nutrición</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -12,15 +12,18 @@
     .navbar-brand { color: #3b82f6 !important; font-weight: 700; }
     .card { background:#111827; border-radius: 12px; }
     .form-label { color:#9ca3af; }
-    .form-control, .form-select { background:#0f172a; color:#e5e7eb; border-color:#1f2937; }
-    .form-control:focus, .form-select:focus { border-color:#3b82f6; box-shadow: 0 0 0 .2rem rgba(59,130,246,.25); }
+    .form-control, .form-select, textarea { background:#0f172a; color:#e5e7eb; border-color:#1f2937; }
+    .form-control:focus, .form-select:focus, textarea:focus { border-color:#3b82f6; box-shadow: 0 0 0 .2rem rgba(59,130,246,.25); }
     .muted { color:#9ca3af; }
-    .list-group-item { background:#111827; color:#e5e7eb; }
+    .list-group-item { background:#111827; color:#e5e7eb; cursor:pointer; }
     .badge-active { background:#10b981; }
+    pre { background:#0f172a; color:#e5e7eb; padding:10px; border-radius:8px; overflow:auto; }
   </style>
   <meta name="robots" content="noindex,nofollow"/>
   <meta name="referrer" content="no-referrer"/>
   <meta http-equiv="Cache-Control" content="no-store"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg">
@@ -42,8 +45,8 @@
   </nav>
 
   <main class="container py-4">
-    <h2 class="mb-3">Edición ligera de planes (Admin)</h2>
-    <p class="muted mb-4">Busca planes por usuario, edita notas y ajustes manuales. Requiere token de administrador.</p>
+    <h2 class="mb-3">Planes de nutrición (Admin)</h2>
+    <p class="muted mb-4">Busca y gestiona meal_plans por usuario. Requiere token de administrador.</p>
 
     <div class="row g-4">
       <div class="col-lg-4">
@@ -63,7 +66,7 @@
             </div>
             <div id="adminMsg" class="mt-3 text-info"></div>
             <hr/>
-            <h6 class="mb-2">Planes</h6>
+            <h6 class="mb-2">Meal plans</h6>
             <ul id="adminPlanList" class="list-group list-group-flush"></ul>
           </div>
         </div>
@@ -73,66 +76,42 @@
         <div class="card">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">Editar plan</h5>
+              <h5 class="mb-0">Editar meal_plan</h5>
               <span id="adminPlanActiveBadge" class="badge" style="display:none;">Activo</span>
             </div>
             <small id="adminPlanMeta" class="muted"></small>
             <hr/>
 
             <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Calorías/día</label>
-                <input id="fCalories" type="number" class="form-control" placeholder="p.ej. 2300">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Delta kcal</label>
-                <input id="fKcalDelta" type="number" class="form-control" placeholder="p.ej. -250">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Cardio</label>
-                <input id="fCardio" type="text" class="form-control" placeholder="p.ej. 2x LISS 30'">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Objetivo (goal)</label>
-                <select id="fGoal" class="form-select">
-                  <option value="">(sin definir)</option>
-                  <option value="gain_muscle">Ganar músculo</option>
-                  <option value="lose_fat">Perder grasa</option>
-                  <option value="maintain">Mantener</option>
-                </select>
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Proteína (g)</label>
-                <input id="fProt" type="number" class="form-control" placeholder="p.ej. 160">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Carbohidratos (g)</label>
-                <input id="fCarb" type="number" class="form-control" placeholder="p.ej. 250">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Grasas (g)</label>
-                <input id="fFat" type="number" class="form-control" placeholder="p.ej. 70">
-              </div>
-
               <div class="col-md-6">
-                <label class="form-label">Volumen Δ</label>
-                <input id="fVolumeDelta" type="number" step="0.01" class="form-control" placeholder="p.ej. -0.12">
+                <label class="form-label">Backend</label>
+                <input id="fBackend" type="text" class="form-control" placeholder="backend" readonly>
               </div>
+              <div class="col-md-6">
+                <label class="form-label">Plan ID (vinculado)</label>
+                <input id="fPlanId" type="text" class="form-control" placeholder="plan_id">
+              </div>
+
               <div class="col-12">
                 <label class="form-label">Notas</label>
-                <textarea id="fNotes" rows="4" class="form-control" placeholder="Notas internas o indicaciones del coach"></textarea>
+                <input id="fNotes" type="text" class="form-control" placeholder="Notas opcionales">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Output JSON</label>
+                <textarea id="fOutput" class="form-control" rows="14" placeholder="JSON del output"></textarea>
+                <div class="form-text">Puedes editar el JSON completo del output. Debe ser válido.</div>
               </div>
             </div>
 
             <div class="d-flex gap-2 mt-3">
               <button id="btnSavePlan" class="btn btn-success">Guardar cambios</button>
-              <button id="btnReloadPlan" class="btn btn-outline-light">Revertir</button>
-              <button id="btnDeactivatePlan" class="btn btn-warning">Desactivar</button>
-              <button id="btnDeletePlan" class="btn btn-danger">Borrar</button>
+              <button id="btnReloadPlan" class="btn btn-outline-light">Recargar</button>
+              <button id="btnActivatePlan" class="btn btn-outline-info">Activar</button>
+              <button id="btnDeactivatePlan" class="btn btn-outline-warning">Desactivar</button>
+              <button id="btnDeletePlan" class="btn btn-outline-danger">Borrar</button>
             </div>
-            <div id="adminSaveMsg" class="mt-2"></div>
+            <div id="adminSaveMsg" class="mt-2 text-info"></div>
           </div>
         </div>
       </div>
@@ -166,15 +145,15 @@
         const list = document.getElementById('adminPlanList');
         const uid = resolveUserId(document.getElementById('adminUserId').value);
         if(!uid){ msg.textContent = 'Ingresa un user_id'; return; }
-        msg.textContent = 'Buscando planes...'; list.innerHTML = '';
+        msg.textContent = 'Buscando meal_plans...'; list.innerHTML = '';
         try{
-          const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=50`);
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}?limit=50`);
           if(!resp.ok){
             const err = await resp.json().catch(()=>({error:'Error desconocido'}));
             throw new Error(err.error || `HTTP ${resp.status}`);
           }
           const rows = await resp.json();
-          msg.textContent = rows.length ? '' : 'Sin planes';
+          msg.textContent = rows.length ? '' : 'Sin meal_plans';
           const frag = document.createDocumentFragment();
           rows.forEach(p => {
             const li = document.createElement('li');
@@ -198,57 +177,44 @@
         document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at||'').toString().replace('T',' ').replace('Z','')} · id: ${p._id}`;
         const badge = document.getElementById('adminPlanActiveBadge');
         badge.style.display = p.active ? 'inline-block' : 'none';
-        const np = p.nutrition_plan || {}; const tr = p.training_plan || {}; const m = (np.macros || {});
-        document.getElementById('fCalories').value = (np.calories_per_day ?? np.kcal_obj ?? '') || '';
-        document.getElementById('fKcalDelta').value = (np.kcal_delta ?? '') || '';
-        document.getElementById('fCardio').value = (tr.cardio ?? '') || '';
-        document.getElementById('fProt').value = (m.protein ?? m.p ?? '') || '';
-        document.getElementById('fCarb').value = (m.carbs ?? m.c ?? '') || '';
-        document.getElementById('fFat').value = (m.fat ?? m.g ?? '') || '';
-        document.getElementById('fVolumeDelta').value = (tr.ai_volumen_delta_ratio ?? '') || '';
+        document.getElementById('fBackend').value = (p.backend ?? '') || '';
+        document.getElementById('fPlanId').value = (p.plan_id ?? '') || '';
         document.getElementById('fNotes').value = (p.notes ?? '') || '';
-        document.getElementById('fGoal').value = (p.goal ?? '') || '';
+        try {
+          document.getElementById('fOutput').value = JSON.stringify(p.output ?? {}, null, 2);
+        } catch(e) {
+          document.getElementById('fOutput').value = '';
+        }
         document.getElementById('adminSaveMsg').textContent = '';
       }
 
       function collectChanges(){
         const body = { };
-        const np = {};
-        const tr = {};
-        const macros = {};
-        const cal = document.getElementById('fCalories').value.trim();
-        const kcald = document.getElementById('fKcalDelta').value.trim();
-        const cardio = document.getElementById('fCardio').value.trim();
-        const goal = document.getElementById('fGoal').value.trim();
-        const p = document.getElementById('fProt').value.trim();
-        const c = document.getElementById('fCarb').value.trim();
-        const g = document.getElementById('fFat').value.trim();
-        const vol = document.getElementById('fVolumeDelta').value.trim();
         const notes = document.getElementById('fNotes').value.trim();
-        if(cal !== '') np.calories_per_day = Number(cal);
-        if(kcald !== '') np.kcal_delta = Number(kcald);
-        if(p !== '') macros.protein = Number(p);
-        if(c !== '') macros.carbs = Number(c);
-        if(g !== '') macros.fat = Number(g);
-        if(Object.keys(macros).length) np.macros = macros;
-        if(cardio !== '') tr.cardio = cardio;
-        if(vol !== '') tr.ai_volumen_delta_ratio = Number(vol);
-        if(Object.keys(np).length) body.nutrition_plan = np;
-        if(Object.keys(tr).length) body.training_plan = tr;
+        const planId = document.getElementById('fPlanId').value.trim();
+        const out = document.getElementById('fOutput').value;
         if(notes !== '') body.notes = notes; else body.notes = null;
-        if(goal !== '') body.goal = goal; else body.goal = null;
+        if(planId !== '') body.plan_id = planId; else body.plan_id = null;
+        if(out.trim() !== ''){
+          try {
+            body.output = JSON.parse(out);
+          } catch(e) {
+            throw new Error('Output JSON inválido');
+          }
+        }
         return body;
       }
 
       async function savePlan(){
         const msg = document.getElementById('adminSaveMsg');
-        if(!currentPlan){ msg.textContent = 'Selecciona un plan'; return; }
+        if(!currentPlan){ msg.textContent = 'Selecciona un meal_plan'; return; }
         const token = document.getElementById('adminToken').value.trim();
         if(!token){ msg.textContent = 'Ingresa Admin Token'; return; }
-        const body = collectChanges();
+        let body;
+        try { body = collectChanges(); } catch(e){ msg.textContent = `Error: ${e.message}`; return; }
         msg.textContent = 'Guardando...';
         try{
-          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/edit`, {
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
             body: JSON.stringify(body)
@@ -257,7 +223,9 @@
             const err = await resp.json().catch(()=>({error:'Error desconocido'}));
             throw new Error(err.error || `HTTP ${resp.status}`);
           }
+          const updated = await resp.json();
           msg.textContent = 'Cambios guardados';
+          if(updated && updated.meal_plan){ renderPlan(updated.meal_plan); }
         }catch(e){ msg.textContent = `Error: ${e.message}`; }
       }
 
@@ -265,31 +233,45 @@
       document.getElementById('btnSavePlan').addEventListener('click', savePlan);
       document.getElementById('btnReloadPlan').addEventListener('click', ()=>{ if(currentPlan) renderPlan(currentPlan); });
 
+      document.getElementById('btnActivatePlan').addEventListener('click', async ()=>{
+        const msg = document.getElementById('adminSaveMsg');
+        if(!currentPlan){ msg.textContent = 'Selecciona un meal_plan'; return; }
+        const token = document.getElementById('adminToken').value.trim();
+        if(!token){ msg.textContent = 'Ingresa Admin Token'; return; }
+        msg.textContent = 'Activando...';
+        try{
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/activate`, { method:'POST', headers: { 'X-Admin-Token': token } });
+          if(!resp.ok){ const err = await resp.json().catch(()=>({error:'Error desconocido'})); throw new Error(err.error || `HTTP ${resp.status}`); }
+          msg.textContent = 'Meal plan activado';
+          loadPlans();
+        }catch(e){ msg.textContent = `Error: ${e.message}`; }
+      });
+
       document.getElementById('btnDeactivatePlan').addEventListener('click', async ()=>{
         const msg = document.getElementById('adminSaveMsg');
-        if(!currentPlan){ msg.textContent = 'Selecciona un plan'; return; }
+        if(!currentPlan){ msg.textContent = 'Selecciona un meal_plan'; return; }
         const token = document.getElementById('adminToken').value.trim();
         if(!token){ msg.textContent = 'Ingresa Admin Token'; return; }
         msg.textContent = 'Desactivando...';
         try{
-          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method:'POST', headers: { 'X-Admin-Token': token } });
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method:'POST', headers: { 'X-Admin-Token': token } });
           if(!resp.ok){ const err = await resp.json().catch(()=>({error:'Error desconocido'})); throw new Error(err.error || `HTTP ${resp.status}`); }
-          msg.textContent = 'Plan desactivado';
+          msg.textContent = 'Meal plan desactivado';
           loadPlans();
         }catch(e){ msg.textContent = `Error: ${e.message}`; }
       });
 
       document.getElementById('btnDeletePlan').addEventListener('click', async ()=>{
         const msg = document.getElementById('adminSaveMsg');
-        if(!currentPlan){ msg.textContent = 'Selecciona un plan'; return; }
+        if(!currentPlan){ msg.textContent = 'Selecciona un meal_plan'; return; }
         const token = document.getElementById('adminToken').value.trim();
         if(!token){ msg.textContent = 'Ingresa Admin Token'; return; }
-        if(!confirm('¿Seguro que deseas borrar este plan?')) return;
+        if(!confirm('¿Seguro que deseas borrar este meal_plan?')) return;
         msg.textContent = 'Borrando...';
         try{
-          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}`, { method:'DELETE', headers: { 'X-Admin-Token': token } });
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}`, { method:'DELETE', headers: { 'X-Admin-Token': token } });
           if(!resp.ok){ const err = await resp.json().catch(()=>({error:'Error desconocido'})); throw new Error(err.error || `HTTP ${resp.status}`); }
-          msg.textContent = 'Plan borrado';
+          msg.textContent = 'Meal plan borrado';
           currentPlan = null;
           loadPlans();
         }catch(e){ msg.textContent = `Error: ${e.message}`; }

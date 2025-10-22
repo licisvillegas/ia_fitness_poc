@@ -219,9 +219,9 @@ footer {
      <a class="btn btn-outline-light btn-sm me-2" href="/dashboard" id="nav-dashboard">
       Dashboard
      </a>
-     <a class="btn btn-primary btn-sm" href="/nutrition" id="nav-nutrition">
-      Nutrición
-     </a>
+    <a class="btn btn-primary btn-sm me-2" href="/nutrition" id="nav-nutrition">
+     Nutrici�n
+    </a>
      <a class="btn btn-outline-light btn-sm me-2" data-i18n="nav_about" href="/about" id="nav-about">
       Acerca de
      </a>
@@ -254,127 +254,36 @@ footer {
     </p>
    </div>
   </section>
-  <!-- Plan diario (desde test_iX/nutrition.html) -->
+
+  <!-- Generador de plan diario (AI) -->
   <section class="daily-plan">
-   <div class="container mt-4">
-    <h3 class="text-center mb-4">
-     Plan de Nutrición de Hoy
-    </h3>
-    <div class="meal-card">
-     <div class="meal-header" onclick="toggleMealDetails(this)">
-      <h4 class="meal-title">
-       Desayuno
-      </h4>
-      <span>
-       Calorías totales: 350
-      </span>
-      <i class="fas fa-chevron-down">
-      </i>
-     </div>
-     <div class="meal-details" style="display: none;">
-      <ul class="nutrition-list">
-       <li>
-        Avena - 150 kcal
-       </li>
-       <li>
-        Banana - 90 kcal
-       </li>
-       <li>
-        Leche de almendras - 110 kcal
-       </li>
-      </ul>
-      <p>
-       Macronutrientes: Carbohidratos 60g, Proteína 5g, Grasa 7g
-      </p>
-     </div>
+    <div class="container mt-4">
+      <h3 class="text-center mb-4">Plan de Nutrición (AI)</h3>
+      <div class="text-center mb-3">
+        <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
+          <input id="nutriUserId" type="text" class="form-control text-center" placeholder="user_id o deja vacío para usar el del login" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <select id="nutriMeals" class="form-select" style="max-width:120px;">
+            <option value="3">3 comidas</option>
+            <option value="4">4 comidas</option>
+            <option value="5">5 comidas</option>
+            <option value="6" selected>6 comidas</option>
+          </select>
+          <input id="nutriPrefs" type="text" class="form-control" placeholder="preferencias (opcional)">
+          <input id="nutriExclude" type="text" class="form-control" placeholder="exclusiones (opcional)">
+          <button id="btnGenMeals" class="btn btn-primary">Generar plan</button>
+          <button id="btnSaveMealPlan" class="btn btn-success" style="display:none;">
+            Guardar y activar
+          </button>
+        </div>
+        <div class="mt-2">
+          <input id="nutriCuisine" type="text" class="form-control" style="max-width:820px;margin:0 auto;" placeholder="cocina preferida / notas (opcional)">
+        </div>
+        <div id="nutriMsg" class="mt-2 text-info"></div>
+      </div>
+      <div id="mealsContainer"></div>
     </div>
-    <!-- Estructuras similares para Almuerzo, Cena, Snacks se pueden añadir aquí -->
-    <div class="meal-card">
-     <div class="meal-header" onclick="toggleMealDetails(this)">
-      <h4 class="meal-title">
-       Almuerzo
-      </h4>
-      <span>
-       Calorías totales: 600
-      </span>
-      <i class="fas fa-chevron-down">
-      </i>
-     </div>
-     <div class="meal-details" style="display: none;">
-      <ul class="nutrition-list">
-       <li>
-        Pollo a la plancha - 250 kcal
-       </li>
-       <li>
-        Quinoa - 200 kcal
-       </li>
-       <li>
-        Ensalada verde - 150 kcal
-       </li>
-      </ul>
-      <p>
-       Macronutrientes: Carbohidratos 55g, Proteína 35g, Grasa 18g
-      </p>
-     </div>
-    </div>
-    <div class="meal-card">
-     <div class="meal-header" onclick="toggleMealDetails(this)">
-      <h4 class="meal-title">
-       Cena
-      </h4>
-      <span>
-       Calorías totales: 550
-      </span>
-      <i class="fas fa-chevron-down">
-      </i>
-     </div>
-     <div class="meal-details" style="display: none;">
-      <ul class="nutrition-list">
-       <li>
-        Salmón al horno - 300 kcal
-       </li>
-       <li>
-        Verduras asadas - 150 kcal
-       </li>
-       <li>
-        Arroz integral - 100 kcal
-       </li>
-      </ul>
-      <p>
-       Macronutrientes: Carbohidratos 40g, Proteína 35g, Grasa 20g
-      </p>
-     </div>
-    </div>
-    <div class="meal-card">
-     <div class="meal-header" onclick="toggleMealDetails(this)">
-      <h4 class="meal-title">
-       Snacks
-      </h4>
-      <span>
-       Calorías totales: 300
-      </span>
-      <i class="fas fa-chevron-down">
-      </i>
-     </div>
-     <div class="meal-details" style="display: none;">
-      <ul class="nutrition-list">
-       <li>
-        Yogur griego - 120 kcal
-       </li>
-       <li>
-        Frutos secos - 180 kcal
-       </li>
-      </ul>
-      <p>
-       Macronutrientes: Carbohidratos 20g, Proteína 18g, Grasa 15g
-      </p>
-     </div>
-    </div>
-    <button class="btn btn-primary mt-3" onclick="addNewMeal()">
-     Agregar comida
-    </button>
-   </div>
   </section>
+
    <!-- Recetas -->
   <section class="recipes">
     <div class="container text-center mb-5">
@@ -477,6 +386,159 @@ footer {
   <script src="/static/js/session_nav.js">
   </script>
   <script src="/static/js/meal_planner.js">
+  </script>
+  <script>
+    (function(){
+      const msg = document.getElementById('nutriMsg');
+      const btn = document.getElementById('btnGenMeals');
+      const container = document.getElementById('mealsContainer');
+      const btnSave = document.getElementById('btnSaveMealPlan');
+      if(!btn) return;
+
+      // Oculta ejemplos estáticos del template original para evitar confusión
+      function hideSampleCards(){
+        try{
+          const cards = document.querySelectorAll('.daily-plan .meal-card');
+          cards.forEach(card => {
+            if(!container.contains(card)){
+              card.style.display = 'none';
+            }
+          });
+        }catch(e){ /* ignore */ }
+      }
+
+      function resolveUserId(inputVal){
+        const typed = (inputVal || '').trim();
+        try{
+          const raw = localStorage.getItem('ai_fitness_user');
+          if(raw){
+            const u = JSON.parse(raw);
+            const loggedId = String(u.user_id || u._id || '').trim();
+            const uname = (u.username || '').trim();
+            const email = (u.email || '').trim().toLowerCase();
+            if(!typed || typed === uname || typed.toLowerCase() === email){
+              return loggedId || typed;
+            }
+          }
+        }catch(e){}
+        return typed;
+      }
+
+      function renderMeals(data, showSave = true){
+        hideSampleCards();
+        container.innerHTML = '';
+        const out = data.output || {};
+        const meals = out.meals || [];
+        const total = out.total_kcal;
+        if(total){
+          const totalEl = document.createElement('div');
+          totalEl.className = 'mb-3 text-secondary';
+          totalEl.textContent = `Total del día: ${total} kcal`;
+          container.appendChild(totalEl);
+        }
+        meals.forEach(m => {
+          const card = document.createElement('div');
+          card.className = 'meal-card';
+          const header = document.createElement('div');
+          header.className = 'meal-header';
+          header.onclick = function(){ toggleMealDetails(this); };
+          const h = document.createElement('h4'); h.className = 'meal-title'; h.textContent = m.name || 'Comida';
+          const span = document.createElement('span'); span.textContent = `Calorías totales: ${m.kcal ?? '-'}`;
+          const ico = document.createElement('i'); ico.className = 'fas fa-chevron-down';
+          header.appendChild(h); header.appendChild(span); header.appendChild(ico);
+          const details = document.createElement('div'); details.className = 'meal-details'; details.style.display = 'none';
+          const ul = document.createElement('ul'); ul.className='nutrition-list';
+          (m.items || []).forEach(it => {
+            const li = document.createElement('li');
+            const kcal = (it.kcal!=null) ? ` - ${it.kcal} kcal` : '';
+            li.textContent = `${it.food || ''}${kcal}`;
+            ul.appendChild(li);
+          });
+          const p = document.createElement('p');
+          const mac = m.macros || {}; p.textContent = `Macronutrientes: Carbohidratos ${mac.carbs ?? '-'}g, Proteína ${mac.protein ?? '-'}g, Grasa ${mac.fat ?? '-'}g`;
+          details.appendChild(ul); details.appendChild(p);
+          card.appendChild(header); card.appendChild(details);
+          container.appendChild(card);
+        });
+        const tips = out.tips || [];
+        if(tips.length){
+          const tipsBox = document.createElement('div');
+          tipsBox.className = 'mt-3 text-secondary';
+          tipsBox.innerHTML = `<strong>Consejos:</strong> ${tips.join(' · ')}`;
+          container.appendChild(tipsBox);
+        }
+        if(meals.length && showSave){ btnSave.style.display = 'inline-block'; btnSave.dataset.payload = JSON.stringify(data); }
+      }
+
+      async function generate(){
+        const userInput = document.getElementById('nutriUserId');
+        const mealsSel = document.getElementById('nutriMeals');
+        const prefs = document.getElementById('nutriPrefs').value.trim();
+        const exclude = document.getElementById('nutriExclude').value.trim();
+        const cuisine = document.getElementById('nutriCuisine').value.trim();
+        const uid = resolveUserId(userInput.value);
+        if(!uid){ msg.textContent='Ingresa un user_id'; return; }
+        msg.textContent = 'Generando plan de comidas...';
+        btnSave.style.display = 'none';
+        try{
+          const params = new URLSearchParams();
+          params.set('meals', mealsSel.value);
+          if(prefs) params.set('prefs', prefs);
+          if(exclude) params.set('exclude', exclude);
+          if(cuisine) params.set('cuisine', cuisine);
+          const resp = await fetch(`/ai/nutrition/plan/${encodeURIComponent(uid)}?${params.toString()}`);
+          if(!resp.ok){
+            const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+            throw new Error(err.error || `HTTP ${resp.status}`);
+          }
+          const data = await resp.json();
+          renderMeals(data, true);
+          msg.textContent = '';
+        }catch(e){
+          msg.textContent = `No se pudo generar el plan: ${e.message}`;
+        }
+      }
+
+      btn.addEventListener('click', generate);
+      btnSave.addEventListener('click', async ()=>{
+        const payloadStr = btnSave.dataset.payload || '';
+        if(!payloadStr){ return; }
+        try{
+          const data = JSON.parse(payloadStr);
+          const saveBody = { user_id: data.input?.user_id, backend: data.backend, input: data.input, output: data.output };
+          const resp = await fetch('/meal_plans/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(saveBody) });
+          if(!resp.ok){ const err = await resp.json().catch(()=>({error:'Error desconocido'})); throw new Error(err.error || `HTTP ${resp.status}`); }
+          const resj = await resp.json();
+          msg.textContent = 'Plan de nutricion guardado y activado';
+          btnSave.style.display = 'none';
+        }catch(e){ msg.textContent = `No se pudo guardar el plan: ${e.message}`; }
+      });
+
+      async function loadActive(){
+        try{
+          const uid = resolveUserId(document.getElementById('nutriUserId').value);
+          if(!uid){ msg.textContent = 'Ingresa un user_id'; return; }
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}/active`);
+          if(!resp.ok){ msg.textContent = 'No cuenta con plan de nutrición activo'; container.innerHTML=''; btnSave.style.display='none'; return; }
+          const doc = await resp.json();
+          renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
+          msg.textContent = 'Plan de nutrición activo cargado';
+        }catch(e){ msg.textContent = `Error al cargar plan activo: ${e.message}`; }
+      }
+
+      window.addEventListener('DOMContentLoaded', ()=>{
+        hideSampleCards();
+        try{
+          const raw = localStorage.getItem('ai_fitness_user');
+          if(raw){
+            const u = JSON.parse(raw);
+            const display = (u.username || '').trim();
+            if(display){ document.getElementById('nutriUserId').value = display; }
+          }
+        }catch(e){}
+        loadActive();
+      });
+    })();
   </script>
 </body>
 </html>

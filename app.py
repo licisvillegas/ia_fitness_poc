@@ -2,7 +2,7 @@
 # AI FITNESS - BACKEND FLASK FINAL
 # ======================================================
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, make_response
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
@@ -15,48 +15,49 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import errors as mongo_errors
 from ai_agents.reasoning_agent import ReasoningAgent
 from typing import Optional
+from ai_agents.meal_plan_agent import MealPlanAgent
 
 # ======================================================
-# CONFIGURACIÃ“N INICIAL
+# CONFIGURACIÓN INICIAL
 # ======================================================
 
 # Cargar variables de entorno (.env)
 load_dotenv()
 
-# ConfiguraciÃ³n de Flask
+# Configuración de Flask
 app = Flask(__name__)
 
-# ConfiguraciÃ³n de logging global
+# Configuración de logging global
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger("ai_fitness")
-logger.info("ðŸš€ AplicaciÃ³n AI Fitness iniciada correctamente")
+logger.info("✔ Aplicación AI Fitness iniciada correctamente")
 
 # ======================================================
-# CONEXIÃ“N MONGODB
+# CONEXIÓN MONGODB
 # ======================================================
 #try:
 #    import certifi
 #    client = MongoClient(os.getenv("MONGO_URI"))
 #    db = client[os.getenv("MONGO_DB")]
-#    logger.info("âœ… ConexiÃ³n exitosa con MongoDB Atlas")
+#    logger.info("✔ Conexión exitosa con MongoDB Atlas")
 #except Exception as e:
-#    logger.error(f"âŒ Error al conectar a MongoDB: {str(e)}", exc_info=True)
+#    logger.error(f"❌ Error al conectar a MongoDB: {str(e)}", exc_info=True)
 #    db = None
 
 
-# === ConexiÃ³n MongoDB Atlas (versiÃ³n final compatible PyMongo 4.7+) === #
+# === Conexión MongoDB Atlas (versión final compatible PyMongo 4.7+) === #
 try:
     import certifi
     from pymongo import MongoClient
 
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
-        raise ValueError("âŒ No se encontrÃ³ la variable MONGO_URI en el entorno")
+        raise ValueError("❌ No se encontró la variable MONGO_URI en el entorno")
 
-    # Configurar conexiÃ³n segura con certificados vÃ¡lidos
+    # Configurar conexión segura con certificados vÃ¡lidos
     client = MongoClient(
         mongo_uri,
         tls=True,
@@ -67,10 +68,10 @@ try:
     )
 
     db = client[os.getenv("MONGO_DB")]
-    logger.info("âœ… ConexiÃ³n segura con MongoDB Atlas establecida correctamente")
+    logger.info("✔ Conexión segura con MongoDB Atlas establecida correctamente")
 
 except Exception as e:
-    logger.error(f"âŒ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
+    logger.error(f"❌ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
     db = None
 
 
@@ -111,11 +112,11 @@ def fetch_user_progress_for_agent(user_id: str, limit: Optional[int] = None):
 
     - Ordena por fecha ascendente.
     - Convierte fechas datetime a ISO (YYYY-MM-DD).
-    - Aplica `limit` opcional sobre los Ãºltimos N registros.
+    - Aplica `limit` opcional sobre los Últimos N registros.
     """
     try:
         if db is None:
-            raise RuntimeError("ConexiÃ³n a MongoDB no inicializada")
+            raise RuntimeError("Conexión a MongoDB no inicializada")
 
         projection = {
             "_id": 0,
@@ -257,6 +258,73 @@ def ai_get_adjustments(user_id: str):
         return jsonify({"error": "Error interno listando historial"}), 500
 
 
+@app.route("/ai/nutrition/plan/<user_id>", methods=["GET", "POST"])
+def ai_nutrition_plan(user_id: str):
+    """Genera un plan diario de comidas usando el plan activo (kcal/macros).
+
+    Query/JSON opcionales:
+      - meals: int (3-6)
+      - prefs: lista/str (preferencias)
+      - exclude: lista/str (exclusiones)
+      - cuisine: str (cocina preferida)
+      - notes: str (notas breves)
+    """
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+
+        # Leer input (permite GET params en POST para simplicidad)
+        # meals: robust parse and clamp to 3..6
+        meals_raw = request.args.get("meals") or ((request.get_json() or {}).get("meals") if request.is_json else None)
+        meals_val = None
+        try:
+            if meals_raw is not None and str(meals_raw).strip() != "":
+                meals_val = max(3, min(6, int(meals_raw)))
+        except Exception:
+            meals_val = None
+        prefs = request.args.get("prefs") or (request.get_json() or {}).get("prefs") if request.is_json else None
+        exclude = request.args.get("exclude") or (request.get_json() or {}).get("exclude") if request.is_json else None
+        cuisine = request.args.get("cuisine") or (request.get_json() or {}).get("cuisine") if request.is_json else None
+        notes = request.args.get("notes") or (request.get_json() or {}).get("notes") if request.is_json else None
+
+        active = db.plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
+        if not active:
+            return jsonify({"error": "No hay plan activo para el usuario"}), 404
+
+        np = active.get("nutrition_plan") or {}
+        total_kcal = np.get("calories_per_day") or np.get("kcal_obj")
+        if not total_kcal:
+            return jsonify({"error": "El plan activo no contiene calorías objetivo"}), 400
+        macros = np.get("macros") or {}
+
+        # Normaliza macros p/c/g a protein/carbs/fat si vienen del ajuste AI
+        macros_norm = {
+            "protein": macros.get("protein", macros.get("p")),
+            "carbs": macros.get("carbs", macros.get("c")),
+            "fat": macros.get("fat", macros.get("g")),
+        }
+
+        context = {
+            "total_kcal": float(total_kcal),
+            "macros": macros_norm,
+            "meals": meals_val if meals_val is not None else 4,
+            "prefs": prefs,
+            "exclude": exclude,
+            "cuisine": cuisine,
+            "notes": notes,
+            "user_id": user_id,
+            "plan_id": str(active.get("_id")) if active.get("_id") is not None else None,
+        }
+
+        agent = MealPlanAgent()
+        result = agent.run(context)
+        # No persistir automáticamente; el frontend decidirá guardar/activar
+        return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+    except Exception as e:
+        logger.error(f"Error generando plan de nutrición: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
+
+
 @app.post("/ai/adjustments/<adjustment_id>/save_plan")
 def ai_save_adjustment_as_plan(adjustment_id: str):
     """Crea un documento en `plans` a partir de un ajuste del agente.
@@ -314,12 +382,168 @@ def ai_save_adjustment_as_plan(adjustment_id: str):
         return jsonify({"error": "Error interno al guardar plan"}), 500
 
 
+@app.get("/meal_plans/<user_id>/active")
+def get_active_meal_plan(user_id: str):
+    """Obtiene el plan de nutrición activo del usuario, si existe."""
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        doc = db.meal_plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
+        if not doc:
+            return jsonify({"error": "Sin plan de nutrición activo"}), 404
+        doc["_id"] = str(doc.get("_id")) if doc.get("_id") is not None else None
+        c = doc.get("created_at")
+        if isinstance(c, datetime):
+            doc["created_at"] = c.isoformat() + "Z"
+        a = doc.get("activated_at")
+        if isinstance(a, datetime):
+            doc["activated_at"] = a.isoformat() + "Z"
+        return jsonify(doc), 200
+    except Exception as e:
+        logger.error(f"Error al obtener meal plan activo: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al obtener plan de nutrición"}), 500
+
+
+@app.post("/meal_plans/save")
+def save_meal_plan():
+    """Guarda y activa un plan de nutrición enviado por el frontend.
+
+    Espera JSON con: user_id (str), backend (str, opcional), input (dict), output (dict).
+    Desactiva planes previos del usuario y activa el nuevo.
+    """
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        if not request.is_json:
+            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
+        data = request.get_json() or {}
+        user_id = (data.get("user_id") or "").strip()
+        output = data.get("output") or {}
+        input_ctx = data.get("input") or {}
+        backend = data.get("backend") or "unknown"
+        if not user_id or not isinstance(output, dict):
+            return jsonify({"error": "user_id y output son requeridos"}), 400
+
+        try:
+            db.meal_plans.update_many({"user_id": user_id}, {"$set": {"active": False}})
+        except Exception:
+            pass
+        doc = {
+            "user_id": user_id,
+            "plan_id": input_ctx.get("plan_id"),
+            "backend": backend,
+            "input": input_ctx,
+            "output": output,
+            "active": True,
+            "created_at": datetime.utcnow(),
+            "activated_at": datetime.utcnow(),
+        }
+        res = db.meal_plans.insert_one(doc)
+        doc["_id"] = str(res.inserted_id)
+        return jsonify({"message": "Plan de nutrición guardado y activado", "meal_plan": doc}), 201
+    except Exception as e:
+        logger.error(f"Error al guardar/activar meal plan: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al guardar plan de nutrición"}), 500
+
+
 # ======================================================
 # ADMIN: VISTA Y EDICION LIGERA DE PLANES
 # ======================================================
 @app.get("/admin/plans")
 def admin_plans_page():
-    return render_template("admin_plans.html")
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if not admin_token:
+        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+
+    provided = request.args.get("token") or request.cookies.get("admin_token") or request.headers.get("X-Admin-Token")
+    if provided != admin_token:
+        return (
+            "No autorizado. Proporcione ?token=ADMIN_TOKEN o header X-Admin-Token.",
+            403,
+        )
+
+    resp = make_response(render_template("admin_plans.html"))
+    if request.args.get("token"):
+        # Guarda cookie de sesión simple para navegar sin repetir el token
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
+
+
+@app.get("/admin/validate")
+def admin_validate():
+    """Valida que el usuario tiene acceso admin mediante cookie o header.
+    Retorna 200 si ok; 403 si no autorizado.
+    """
+    try:
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token:
+            return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+
+        provided = (
+            request.cookies.get("admin_token")
+            or request.headers.get("X-Admin-Token")
+            or request.args.get("token")
+        )
+        if provided != admin_token:
+            return jsonify({"ok": False, "error": "No autorizado"}), 403
+        return jsonify({"ok": True}), 200
+    except Exception:
+        return jsonify({"error": "Error validando acceso admin"}), 500
+
+
+@app.post("/admin/login")
+def admin_login():
+    """Valida el token de administrador enviado por POST y establece cookie.
+
+    Acepta JSON { token: str } o form-urlencoded con campo 'token'.
+    Responde 200 con { ok: true } y set-cookie si es válido; 403 si no.
+    """
+    try:
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token:
+            return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+
+        token = ""
+        if request.is_json:
+            data = request.get_json() or {}
+            token = (data.get("token") or "").strip()
+        else:
+            token = (request.form.get("token") or "").strip()
+
+        if token != admin_token:
+            return jsonify({"ok": False, "error": "No autorizado"}), 403
+
+        resp = jsonify({"ok": True, "message": "Login admin OK"})
+        # Cookie de sesión simple para navegación admin
+        resp.set_cookie("admin_token", token, httponly=True, samesite="Lax")
+        return resp, 200
+    except Exception as e:
+        logger.error(f"Error en /admin/login: {e}", exc_info=True)
+        return jsonify({"error": "Error interno en login admin"}), 500
+
+
+@app.get("/admin/meal_plans")
+def admin_meal_plans_page():
+    """Vista admin para gestionar meal_plans (nutrición)."""
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if not admin_token:
+        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+
+    provided = (
+        request.args.get("token")
+        or request.cookies.get("admin_token")
+        or request.headers.get("X-Admin-Token")
+    )
+    if provided != admin_token:
+        return (
+            "No autorizado. Proporcione ?token=ADMIN_TOKEN o header X-Admin-Token.",
+            403,
+        )
+
+    resp = make_response(render_template("admin_meal_plans.html"))
+    if request.args.get("token"):
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
 
 
 @app.post("/plans/<plan_id>/edit")
@@ -334,7 +558,7 @@ def edit_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token")
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
         admin_token = os.getenv("ADMIN_TOKEN")
         if not admin_token or token != admin_token:
             return jsonify({"error": "No autorizado"}), 403
@@ -471,7 +695,7 @@ def deactivate_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token")
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
         admin_token = os.getenv("ADMIN_TOKEN")
         if not admin_token or token != admin_token:
             return jsonify({"error": "No autorizado"}), 403
@@ -494,7 +718,7 @@ def delete_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token")
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
         admin_token = os.getenv("ADMIN_TOKEN")
         if not admin_token or token != admin_token:
             return jsonify({"error": "No autorizado"}), 403
@@ -509,6 +733,199 @@ def delete_plan(plan_id: str):
     except Exception as e:
         logger.error(f"Error al eliminar plan: {e}", exc_info=True)
         return jsonify({"error": "Error interno al eliminar plan"}), 500
+
+
+# ======================================================
+# MEAL_PLANS (Nutrición): LISTAR, EDITAR, ACTIVAR/DESACTIVAR, BORRAR
+# ======================================================
+
+@app.get("/meal_plans/<user_id>")
+def list_meal_plans(user_id: str):
+    """Lista meal_plans del usuario (ordenados por fecha desc)."""
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        raw_limit = request.args.get("limit")
+        limit = 20
+        if raw_limit:
+            try:
+                v = int(raw_limit)
+                if v > 0:
+                    limit = v
+            except ValueError:
+                return jsonify({"error": "'limit' debe ser entero positivo"}), 400
+
+        cursor = db.meal_plans.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        items = []
+        for doc in cursor:
+            d = doc.copy()
+            d["_id"] = str(d.get("_id"))
+            c = d.get("created_at")
+            if isinstance(c, datetime):
+                d["created_at"] = c.isoformat() + "Z"
+            a = d.get("activated_at")
+            if isinstance(a, datetime):
+                d["activated_at"] = a.isoformat() + "Z"
+            items.append(d)
+        return jsonify(items), 200
+    except Exception as e:
+        logger.error(f"Error al listar meal_plans: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al listar meal_plans"}), 500
+
+
+@app.post("/meal_plans/<plan_id>/edit")
+def edit_meal_plan(plan_id: str):
+    """Actualiza campos permitidos de un meal_plan. Requiere X-Admin-Token.
+
+    Campos permitidos (PATCH):
+      - notes: string (o null para borrar)
+      - output: dict completo (opcional)
+      - input: dict completo (opcional)
+      - plan_id: str (opcional)
+    """
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+        try:
+            oid = ObjectId(plan_id)
+        except Exception:
+            return jsonify({"error": "plan_id invalido"}), 400
+        if not request.is_json:
+            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
+
+        payload = request.get_json() or {}
+        set_fields = {}
+
+        if "notes" in payload:
+            notes_val = payload.get("notes")
+            if notes_val is None:
+                set_fields["notes"] = None
+            else:
+                set_fields["notes"] = str(notes_val)
+
+        if "output" in payload:
+            if payload.get("output") is None:
+                set_fields["output"] = None
+            elif isinstance(payload.get("output"), dict):
+                set_fields["output"] = payload.get("output")
+            else:
+                return jsonify({"error": "'output' debe ser objeto JSON"}), 400
+
+        if "input" in payload:
+            if payload.get("input") is None:
+                set_fields["input"] = None
+            elif isinstance(payload.get("input"), dict):
+                set_fields["input"] = payload.get("input")
+            else:
+                return jsonify({"error": "'input' debe ser objeto JSON"}), 400
+
+        if "plan_id" in payload:
+            plan_val = payload.get("plan_id")
+            if plan_val is None:
+                set_fields["plan_id"] = None
+            else:
+                set_fields["plan_id"] = str(plan_val)
+
+        if not set_fields:
+            return jsonify({"error": "Sin cambios"}), 400
+
+        db.meal_plans.update_one({"_id": oid}, {"$set": set_fields})
+        doc = db.meal_plans.find_one({"_id": oid})
+        if doc:
+            doc["_id"] = str(doc["_id"]) if doc.get("_id") is not None else None
+            c = doc.get("created_at")
+            if isinstance(c, datetime):
+                doc["created_at"] = c.isoformat() + "Z"
+            a = doc.get("activated_at")
+            if isinstance(a, datetime):
+                doc["activated_at"] = a.isoformat() + "Z"
+        return jsonify({"message": "Meal plan actualizado", "meal_plan": doc}), 200
+    except Exception as e:
+        logger.error(f"Error al editar meal_plan: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al editar meal_plan"}), 500
+
+
+@app.post("/meal_plans/<plan_id>/activate")
+def activate_meal_plan(plan_id: str):
+    """Marca un meal_plan como activo y desactiva el resto del usuario. Requiere admin."""
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+        try:
+            oid = ObjectId(plan_id)
+        except Exception:
+            return jsonify({"error": "plan_id invalido"}), 400
+
+        mp = db.meal_plans.find_one({"_id": oid})
+        if not mp:
+            return jsonify({"error": "Meal plan no encontrado"}), 404
+        user_id = mp.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Meal plan sin user_id"}), 400
+
+        try:
+            db.meal_plans.update_many({"user_id": user_id}, {"$set": {"active": False}})
+        except Exception:
+            pass
+        db.meal_plans.update_one({"_id": oid}, {"$set": {"active": True, "activated_at": datetime.utcnow()}})
+        return jsonify({"message": "Meal plan activado", "meal_plan_id": plan_id}), 200
+    except Exception as e:
+        logger.error(f"Error al activar meal_plan: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al activar meal_plan"}), 500
+
+
+@app.post("/meal_plans/<plan_id>/deactivate")
+def deactivate_meal_plan(plan_id: str):
+    """Desactiva un meal_plan. Requiere X-Admin-Token."""
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+        try:
+            oid = ObjectId(plan_id)
+        except Exception:
+            return jsonify({"error": "plan_id invalido"}), 400
+        res = db.meal_plans.update_one({"_id": oid}, {"$set": {"active": False}})
+        if res.matched_count == 0:
+            return jsonify({"error": "Meal plan no encontrado"}), 404
+        return jsonify({"message": "Meal plan desactivado", "meal_plan_id": plan_id}), 200
+    except Exception as e:
+        logger.error(f"Error al desactivar meal_plan: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al desactivar meal_plan"}), 500
+
+
+@app.delete("/meal_plans/<plan_id>")
+def delete_meal_plan(plan_id: str):
+    """Elimina un meal_plan. Requiere X-Admin-Token."""
+    try:
+        if db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        admin_token = os.getenv("ADMIN_TOKEN")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+        try:
+            oid = ObjectId(plan_id)
+        except Exception:
+            return jsonify({"error": "plan_id invalido"}), 400
+        res = db.meal_plans.delete_one({"_id": oid})
+        if res.deleted_count == 0:
+            return jsonify({"error": "Meal plan no encontrado"}), 404
+        return jsonify({"message": "Meal plan eliminado", "meal_plan_id": plan_id}), 200
+    except Exception as e:
+        logger.error(f"Error al eliminar meal_plan: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al eliminar meal_plan"}), 500
 
 
 @app.get("/plans/<user_id>/active")
@@ -601,16 +1018,16 @@ def ai_apply_latest_adjustment(user_id: str):
 
 
 # ======================================================
-# ENDPOINTS DE PÃGINAS
+# ENDPOINTS DE PÁGINAS
 # ======================================================
 
 @app.route("/")
 def index():
     return render_template("auth.html")
 
-@app.route("/profile")
-def profile_page():
-    return render_template("profile.html")
+@app.route("/admin")
+def admin_auth_page():
+    return render_template("admin_auth.html")
 
 @app.route("/plan")
 def plan_page():
@@ -635,12 +1052,12 @@ def about_page():
 # ------------------------------------------------------
 # QuÃ© hace:
 # - Expone endpoints que reciben un contexto JSON (p. ej. historial
-#   de progreso) y devuelven ajustes de nutriciÃ³n/entrenamiento.
+#   de progreso) y devuelven ajustes de nutrición/entrenamiento.
 #
-# CÃ³mo estÃ¡ configurado:
+# Cómo estÃ¡ configurado:
 # - Usa ReasoningAgent, que intentarÃ¡ llamar a OpenAI si `OPENAI_API_KEY`
 #   estÃ¡ presente. Si falla o no hay clave, hace fallback a un mock local
-#   determinÃ­stico (sin red), Ãºtil para pruebas.
+#   determinÃ­stico (sin red), Útil para pruebas.
 # - Modelo configurable con `OPENAI_MODEL` (por defecto: gpt-4o-mini). gpt-5-nano
 # ======================================================
 
@@ -685,13 +1102,13 @@ def ai_reason_sample():
 # ENDPOINTS DE DATOS
 # ======================================================
 
-# ðŸ”¹ Obtener Ãºltimo plan del usuario
+# 📅 Obtener Último plan del usuario
 @app.route("/get_user_plan/<user_id>", methods=["GET"])
 def get_user_plan(user_id):
     try:
         plan = db.plans.find_one({"user_id": user_id}, sort=[("created_at", -1)])
         if not plan:
-            return jsonify({"error": "No se encontrÃ³ un plan para este usuario"}), 404
+            return jsonify({"error": "No se encontró un plan para este usuario"}), 404
         plan["_id"] = str(plan["_id"])
         return jsonify(plan), 200
     except Exception as e:
@@ -699,7 +1116,7 @@ def get_user_plan(user_id):
         return jsonify({"error": "Error interno al obtener el plan"}), 500
 
 
-# ðŸ”¹ Obtener registros de progreso
+# 📅 Obtener registros de progreso
 @app.route("/get_progress/<user_id>", methods=["GET"])
 def get_progress(user_id):
     try:
@@ -714,7 +1131,7 @@ def get_progress(user_id):
         return jsonify({"error": "Error interno al obtener progreso"}), 500
 
 
-# ðŸ”¹ Generar plan de entrenamiento y nutriciÃ³n
+# 📅 Generar plan de entrenamiento y nutrición
 @app.route("/generate_plan", methods=["POST"])
 def generate_plan():
     try:
@@ -730,7 +1147,7 @@ def generate_plan():
         weight = float(user["weight_kg"])
         goal = user["goal"]
 
-        # === LÃ³gica base IA Fitness === #
+        # === Lógica base IA Fitness === #
         if goal == "gain_muscle":
             calories = weight * 36
             macros = {"protein": 2.2 * weight, "carbs": 5 * weight, "fat": 0.9 * weight}
@@ -854,12 +1271,12 @@ def auth_login_api():
             "username": u.get("username"),
             "email": u.get("email"),
         }
-        logger.info(f"Usuario accediÃ³: {u.get('email')} ({u.get('username')})")
-        return jsonify({"message": "Inicio de sesiÃ³n exitoso", "user": user}), 200
+        logger.info(f"Usuario accedió: {u.get('email')} ({u.get('username')})")
+        return jsonify({"message": "Inicio de sesión exitoso", "user": user}), 200
 
     except Exception as e:
         logger.error(f"Error en login: {e}", exc_info=True)
-        return jsonify({"error": "Error interno en inicio de sesiÃ³n"}), 500
+        return jsonify({"error": "Error interno en inicio de sesión"}), 500
 
 @app.errorhandler(400)
 def bad_request(e):
@@ -872,11 +1289,11 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     logger.error("Error 500: %s", traceback.format_exc())
-    return jsonify({"error": "Internal Server Error", "message": "OcurriÃ³ un error inesperado."}), 500
+    return jsonify({"error": "Internal Server Error", "message": "Ocurrió un error inesperado."}), 500
 
 
 # ======================================================
-# INDEXACIÃ“N AUTOMÃTICA (MongoDB)
+# INDEXACIÓN AUTOMÁTICA (MongoDB)
 # ======================================================
 try:
     db.plans.create_index([("user_id", 1), ("created_at", -1)])
@@ -893,7 +1310,7 @@ try:
                 logger.info(f"Ãndice obsoleto eliminado: {idx_name}")
     except Exception as drop_err:
         logger.warning(f"No se pudo limpiar Ã­ndices obsoletos: {drop_err}")
-    # Ãndice Ãºnico por email en colecciÃ³n de usuarios
+    # Ãndice Único por email en colección de usuarios
     try:
         db.users.create_index("email", unique=True)
     except Exception:
@@ -925,20 +1342,13 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     logger.error("Error 500: %s", traceback.format_exc())
-    return jsonify({"error": "Internal Server Error", "message": "OcurriÃ³ un error inesperado."}), 500
+    return jsonify({"error": "Internal Server Error", "message": "Ocurrió un error inesperado."}), 500
 
 
 # ======================================================
 
 # ======================================================
-# EJECUCIÃ“N LOCAL
+# EJECUCIÓN LOCAL
 # ======================================================
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
-
-
-
-
-
-
-

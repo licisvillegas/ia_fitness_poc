@@ -36,7 +36,7 @@
       justify-content: center;
       align-items: center;
       flex: 1; /* permite que la tarjeta llene la columna */
-      min-height: 160px; /* referencia mÃ­nima â€” ajusta si quieres un tamaÃ±o distinto */
+      min-height: 160px; /* referencia mÃ­nima â ajusta si quieres un tamaÃ±o distinto */
     }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(37,99,235,0.3); }
     .stat-icon { font-size: 2.5rem; color: #3b82f6; margin-bottom: 10px; }
@@ -125,6 +125,10 @@
             <h6 class="text-primary">Resumen</h6>
             <p id="ai-reason" class="mb-1"></p>
             <small id="ai-next" class="text-secondary"></small>
+            <div class="mt-2">
+              <button id="btnSaveAgentPlan" class="btn btn-success btn-sm" style="display:none;">Guardar y activar</button>
+              <span id="ai-save-msg" class="text-info ms-2"></span>
+            </div>
           </div>
         </div>
         <hr class="text-secondary"/>
@@ -187,7 +191,7 @@
 
     // Manejo de error o falta de datos: limpiar UI y mostrar overlays
     if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
-      message.textContent = data.error || "âŒ No se encontraron registros de progreso.";
+      message.textContent = data.error || "â No se encontraron registros de progreso.";
       clearDashboard();
       overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "visible");
       return;
@@ -245,11 +249,11 @@
 
   // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
   function clearDashboard() {
-    document.getElementById("stat-weight").innerText = "â€”";
-    document.getElementById("stat-fat").innerText = "â€”";
-    document.getElementById("stat-performance").innerText = "â€”";
+    document.getElementById("stat-weight").innerText = "â";
+    document.getElementById("stat-fat").innerText = "â";
+    document.getElementById("stat-performance").innerText = "â";
     document.getElementById("bar-performance").style.width = "0%";
-    document.getElementById("stat-nutrition").innerText = "â€”";
+    document.getElementById("stat-nutrition").innerText = "â";
     document.getElementById("bar-nutrition").style.width = "0%";
     charts.forEach(c => c.destroy());
     charts = [];
@@ -272,7 +276,7 @@
         }
       }
     } catch(e) { /* ignore */ }
-    if (!targetId) { message.textContent = "âš ï¸ Ingresa un ID de usuario."; return; }
+    if (!targetId) { message.textContent = "â ï¸ Ingresa un ID de usuario."; return; }
     loadProgress(targetId);
     loadActivePlanIndicator(targetId);
   });
@@ -330,11 +334,15 @@
     const trainEl = document.getElementById('ai-train');
     const reasonEl = document.getElementById('ai-reason');
     const nextEl = document.getElementById('ai-next');
+    const btnSave = document.getElementById('btnSaveAgentPlan');
+    const saveMsg = document.getElementById('ai-save-msg');
 
     if (section) section.style.display = 'block';
     if (loadEl) loadEl.style.display = 'block';
     if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
     if (content) content.style.display = 'none';
+    if (btnSave) { btnSave.style.display = 'none'; btnSave.dataset.userId = userId; }
+    if (saveMsg) { saveMsg.textContent = ''; }
     try {
       const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
       if (!resp.ok) {
@@ -350,17 +358,54 @@
 
       if (kcalEl) kcalEl.textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
       if (macrosEl) macrosEl.textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-      if (trainEl) trainEl.textContent = `Volumen Î”: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
+      if (trainEl) trainEl.textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
       if (reasonEl) reasonEl.textContent = out.razonamiento_resumido || '';
-      if (nextEl) nextEl.textContent = (out.proxima_revision_dias!=null) ? `PrÃ³xima revisiÃ³n: ${out.proxima_revision_dias} dÃ­as` : '';
+      if (nextEl) nextEl.textContent = (out.proxima_revision_dias!=null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
 
       if (content) content.style.display = 'block';
+      if (btnSave) btnSave.style.display = 'inline-block';
     } catch (e){
       if (errEl) { errEl.textContent = `No se pudieron obtener los ajustes: ${e.message}`; errEl.style.display = 'block'; }
     } finally {
       if (loadEl) loadEl.style.display = 'none';
     }
   }
+
+  // Guardar y activar plan desde el último ajuste AI
+  (function(){
+    const btn = document.getElementById('btnSaveAgentPlan');
+    const msg = document.getElementById('ai-save-msg');
+    if(!btn) return;
+    btn.addEventListener('click', async ()=>{
+      const input = document.getElementById('userIdInput');
+      let targetId = btn.dataset.userId || (input ? input.value.trim() : '');
+      try {
+        const raw = localStorage.getItem('ai_fitness_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          const loggedId = String(u.user_id || u._id || '').trim();
+          const uname = (u.username || '').trim();
+          const email = (u.email || '').trim().toLowerCase();
+          if (!targetId || targetId === uname || targetId.toLowerCase() === email) {
+            targetId = loggedId || targetId;
+          }
+        }
+      } catch(e) { /* ignore */ }
+      if(!targetId){ if(msg) msg.textContent = 'Ingresa un ID de usuario.'; return; }
+      if(msg) msg.textContent = 'Guardando y activando plan...';
+      try{
+        const resp = await fetch(`/ai/adjustments/${encodeURIComponent(targetId)}/apply_latest`, { method:'POST' });
+        if(!resp.ok){
+          const err = await resp.json().catch(()=>({error:'Error desconocido'}));
+          throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        if(msg) msg.textContent = 'Plan guardado y activado';
+        btn.style.display = 'none';
+        try{ loadActivePlanIndicator(targetId); }catch(_){ }
+      }catch(e){ if(msg) msg.textContent = `No se pudo guardar: ${e.message}`; }
+    });
+  })();
 
   async function loadAiHistory(userId){
     const section = document.getElementById('ai-section');
@@ -390,7 +435,7 @@
         const small = document.createElement('small');
         const aj = (r.output && r.output.ajustes) || {};
         const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
-        small.textContent = `kcal: ${food.kcal_obj ?? '-'} (Δ ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
+        small.textContent = `kcal: ${food.kcal_obj ?? '-'} (? ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
         title.appendChild(small);
         li.appendChild(title);
 
@@ -424,7 +469,7 @@
             const train2 = (r.output.ajustes && r.output.ajustes.plan_entrenamiento) || {};
             document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food2.kcal_obj ?? '-'} (delta: ${food2.kcal_delta ?? 0})`;
             document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-            document.getElementById('ai-train').textContent = `Volumen Δ: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
+            document.getElementById('ai-train').textContent = `Volumen ?: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
             document.getElementById('ai-reason').textContent = r.output.razonamiento_resumido || '';
             document.getElementById('ai-next').textContent = (r.output.proxima_revision_dias!=null) ? `Próxima revisión: ${r.output.proxima_revision_dias} días` : '';
             document.getElementById('ai-section').style.display = 'block';

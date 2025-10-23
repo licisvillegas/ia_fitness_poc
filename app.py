@@ -318,6 +318,13 @@ def ai_get_adjustments(user_id: str):
         return jsonify({"error": "Error interno listando historial"}), 500
 
 
+@app.get("/ai/body_assessment/tester")
+def body_assessment_tester():
+    """Renderiza una interfaz web para probar el agente de evaluación corporal."""
+
+    return render_template("body_assessment.html")
+
+
 @app.post("/ai/body_assessment")
 def ai_body_assessment():
     """Genera evaluación corporal a partir de medidas y fotos."""

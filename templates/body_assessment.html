@@ -338,6 +338,7 @@
       function createPhotoRow(initial = {}) {
         const wrapper = document.createElement("div");
         wrapper.className = "photo-row";
+        const uid = `photo_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
         wrapper.innerHTML = `
           <div class="row g-3 align-items-end">
             <div class="col-sm-4">
@@ -351,6 +352,11 @@
             <div class="col-sm-4">
               <label class="form-label">Notas</label>
               <input type="text" class="form-control photo-notes" placeholder="Luz natural" value="${initial.notes || ""}" />
+            </div>
+            <div class="col-sm-8">
+              <label class="form-label">Archivo de foto</label>
+              <input type="file" accept="image/*" class="form-control photo-file" data-file-key="${uid}" />
+              <div class="form-text text-secondary">Opcional: adjunta la imagen para análisis del agente.</div>
             </div>
             <div class="col-12 text-end">
               <button type="button" class="btn btn-link text-danger p-0 remove-photo">Eliminar</button>
@@ -444,12 +450,19 @@
           }
         });
 
-        photoList.querySelectorAll(".photo-row").forEach((row) => {
+        const formData = new FormData();
+        photoList.querySelectorAll(".photo-row").forEach((row, idx) => {
           const view = row.querySelector(".photo-view").value.trim();
           const quality = row.querySelector(".photo-quality").value.trim();
           const notes = row.querySelector(".photo-notes").value.trim();
-          if (view || quality || notes) {
-            payload.photos.push({ view, quality, notes });
+          const fileInput = row.querySelector(".photo-file");
+          const file = fileInput ? (fileInput.files && fileInput.files[0]) : null;
+          const fileKey = file && file.size > 0 ? (fileInput.getAttribute("data-file-key") || `photo_${idx}`) : null;
+          if (file && fileKey) {
+            formData.append(fileKey, file);
+          }
+          if (view || quality || notes || fileKey) {
+            payload.photos.push({ view, quality, notes, file_key: fileKey });
           }
         });
 
@@ -458,12 +471,10 @@
         resultOutput.textContent = "Enviando datos al agente…";
 
         try {
+          formData.append("payload", JSON.stringify(payload));
           const response = await fetch("/ai/body_assessment", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+            body: formData,
           });
 
           const data = await response.json();

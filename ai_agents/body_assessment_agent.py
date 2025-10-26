@@ -34,7 +34,7 @@ INSTRUCCIONES:
 - Evalúa proporciones (cintura-altura, cintura-cadera, simetría visual).
 - Resume hallazgos clave en tono profesional (≤120 palabras).
 - Genera recomendaciones concretas según objetivo (definición/volumen/mantenimiento).
-- Añade observaciones puntuales sobre las fotos recibidas.
+- Añade observaciones puntuales sobre las fotos recibidas (Análisis de proporciones y simetría visual).
 
 CONTEXTO_JSON:
 {context_json}
@@ -64,7 +64,10 @@ Formato de salida (SOLO JSON):
 
 
 class BodyAssessmentAgent:
-    """Agente que combina OpenAI con heurísticas offline."""
+    """Agente que combina OpenAI con heurísticas offline.
+
+    Soporta análisis de imágenes cuando hay `OPENAI_API_KEY` disponible.
+    """
 
     def __init__(self, model: Optional[str] = None) -> None:
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14")
@@ -84,11 +87,13 @@ class BodyAssessmentAgent:
     def backend(self) -> str:
         return f"openai:{self.model}" if self._use_openai else "mock"
 
-    def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, context: Dict[str, Any], images: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_body_assessment_prompt(context_str)
         if self._use_openai:
             try:
+                if images:
+                    return self._run_openai_vision(prompt, images)
                 return self._run_openai(prompt)
             except Exception:
                 return self._run_mock(context)
@@ -111,6 +116,37 @@ class BodyAssessmentAgent:
             return json.loads(content)
         except Exception:
             return self._run_mock({"_fallback_reason": "openai_error"})
+
+    def _run_openai_vision(self, prompt: str, images: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Llama a OpenAI con contenido multimodal (texto + imágenes base64).
+
+        Espera `images` como lista de dicts: {"data": base64_str, "mime": "image/jpeg", "view": "frontal"}
+        """
+        try:
+            content_blocks: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
+            for img in images[:8]:  # limitar a 8 imágenes por llamada
+                data = img.get("data")
+                mime = img.get("mime") or "image/jpeg"
+                if not data:
+                    continue
+                data_url = f"data:{mime};base64,{data}"
+                content_blocks.append({
+                    "type": "image_url",
+                    "image_url": {"url": data_url}
+                })
+
+            resp = self._client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Eres especialista en fitness. Devuelve SOLO JSON."},
+                    {"role": "user", "content": content_blocks},
+                ],
+                temperature=0.2,
+            )
+            content = resp.choices[0].message.content or "{}"
+            return json.loads(content)
+        except Exception:
+            return self._run_mock({"_fallback_reason": "openai_vision_error"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
         measurements = context.get("measurements") or {}

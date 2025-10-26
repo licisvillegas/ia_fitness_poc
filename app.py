@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
 import os
+import base64
 import logging
 from dotenv import load_dotenv
 import traceback
@@ -327,11 +328,64 @@ def body_assessment_tester():
 
 @app.post("/ai/body_assessment")
 def ai_body_assessment():
-    """Genera evaluación corporal a partir de medidas y fotos."""
+    """Genera evaluación corporal a partir de medidas y fotos.
+
+    Soporta dos formatos de entrada:
+      - JSON application/json (sin imágenes)
+      - multipart/form-data con campo 'payload' (JSON) y archivos de imagen.
+        En payload.photos se pueden incluir objetos con 'file_key' que referencian
+        el nombre del campo de archivo en el formulario.
+    """
 
     try:
-        payload = request.get_json(silent=True) or {}
-        measurements_raw = payload.get("measurements")
+        images_for_agent = None
+        payload = None
+
+        content_type = request.headers.get("Content-Type", "")
+        if "multipart/form-data" in content_type.lower():
+            payload_str = request.form.get("payload")
+            if not payload_str:
+                return jsonify({"error": "Falta el campo 'payload' con JSON"}), 400
+            try:
+                payload = request.get_json(silent=True) if False else None  # claridad: no usar get_json en multipart
+                if payload is None:
+                    import json as _json
+
+                    payload = _json.loads(payload_str)
+            except Exception:
+                return jsonify({"error": "'payload' no es JSON válido"}), 400
+
+            # Construir imágenes para el agente desde request.files y payload.photos[*].file_key
+            photos_meta = payload.get("photos") if isinstance(payload, dict) else None
+            img_list = []
+            if isinstance(photos_meta, list):
+                for ph in photos_meta:
+                    if not isinstance(ph, dict):
+                        continue
+                    file_key = ph.get("file_key")
+                    if not file_key:
+                        continue
+                    file_storage = request.files.get(file_key)
+                    if not file_storage:
+                        continue
+                    try:
+                        raw = file_storage.read()
+                        if not raw:
+                            continue
+                        b64 = base64.b64encode(raw).decode("utf-8")
+                        mime = file_storage.mimetype or "image/jpeg"
+                        img_list.append({"data": b64, "mime": mime, "view": ph.get("view")})
+                    finally:
+                        try:
+                            file_storage.close()
+                        except Exception:
+                            pass
+            if img_list:
+                images_for_agent = img_list
+        else:
+            payload = request.get_json(silent=True) or {}
+
+        measurements_raw = (payload or {}).get("measurements")
         if not isinstance(measurements_raw, dict):
             return jsonify({"error": "'measurements' debe ser un objeto con las medidas"}), 400
 
@@ -340,7 +394,11 @@ def ai_body_assessment():
         required = ["height_cm", "weight_kg"]
         if not (measurements.get("waist") or measurements.get("abdomen")):
             required.append("waist/abdomen")
-        missing = [key for key in required if measurements.get(key if key != "waist/abdomen" else "waist") is None and key != "waist/abdomen"]
+        missing = [
+            key
+            for key in required
+            if measurements.get(key if key != "waist/abdomen" else "waist") is None and key != "waist/abdomen"
+        ]
         if "waist/abdomen" in required and not (measurements.get("waist") or measurements.get("abdomen")):
             missing.append("waist o abdomen")
 
@@ -351,17 +409,17 @@ def ai_body_assessment():
             )
 
         context = {
-            "user_id": payload.get("user_id"),
-            "sex": (payload.get("sex") or "male").lower(),
-            "age": payload.get("age"),
-            "goal": payload.get("goal"),
+            "user_id": (payload or {}).get("user_id"),
+            "sex": ((payload or {}).get("sex") or "male").lower(),
+            "age": (payload or {}).get("age"),
+            "goal": (payload or {}).get("goal"),
             "measurements": measurements,
-            "photos": sanitize_photos(payload.get("photos")),
-            "notes": payload.get("notes"),
+            "photos": sanitize_photos((payload or {}).get("photos")),
+            "notes": (payload or {}).get("notes"),
         }
 
         agent = BodyAssessmentAgent()
-        result = agent.run(context)
+        result = agent.run(context, images=images_for_agent)
 
         try:
             if db is not None and context.get("user_id"):

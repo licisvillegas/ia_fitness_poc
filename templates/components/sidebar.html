@@ -1,0 +1,215 @@
+<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sidebar-fixed"
+    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; background-color: #111827 !important; border-right: 1px solid #374151; z-index: 1030;">
+    <div class="d-flex align-items-center justify-content-between mb-3 text-white sidebar-header">
+        <a href="/" class="text-white text-decoration-none brand-text">
+            <span class="fs-4 fw-bold" style="color: #3b82f6;">AI Fitness</span>
+        </a>
+        <button id="sidebar-toggle" class="btn btn-link text-white p-0 fs-5" title="Colapsar/Expandir">
+            <i class="fas fa-arrow-left transition-icon"></i>
+        </button>
+    </div>
+
+    <!-- User Identity -->
+    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle-user"
+        data-bs-toggle="collapse" data-bs-target="#user-collapse" aria-expanded="false" title="Usuario">
+        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
+            style="width: 32px; height: 32px; min-width: 32px;">
+            <i class="fas fa-user"></i>
+        </div>
+        <strong><span id="sidebar-username">Usuario</span></strong>
+        <i class="fas fa-chevron-down ms-2 small transition-icon"></i>
+    </a>
+
+    <!-- Collapsible Menu -->
+    <div class="collapse" id="user-collapse">
+        <ul class="list-unstyled fw-normal pb-1 small ms-5 mt-2">
+            <li>
+                <a href="/profile"
+                    class="d-flex align-items-center text-secondary text-decoration-none py-1 hover-white">
+                    <i class="fas fa-id-card me-2"></i> Perfil
+                </a>
+            </li>
+            <li>
+                <a href="#" id="sidebar-logout"
+                    class="d-flex align-items-center text-secondary text-decoration-none py-1 hover-white">
+                    <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <hr style="border-color: #374151; margin: 1rem 0;">
+
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="/" class="nav-link text-white {% if request.path == '/' %}active{% endif %}" aria-current="page"
+                title="Inicio">
+                <i class="fas fa-home me-2" style="width: 24px; text-align: center;"></i>
+                <span>Inicio</span>
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard" class="nav-link text-white {% if request.path == '/dashboard' %}active{% endif %}"
+                title="Dashboard">
+                <i class="fas fa-tachometer-alt me-2" style="width: 24px; text-align: center;"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="/plan" class="nav-link text-white {% if request.path == '/plan' %}active{% endif %}"
+                title="Mi Plan">
+                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
+                <span>Mi Plan</span>
+            </a>
+        </li>
+        <li>
+            <a href="/nutrition" class="nav-link text-white {% if request.path == '/nutrition' %}active{% endif %}"
+                title="Nutrición">
+                <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
+                <span>Nutrición</span>
+            </a>
+        </li>
+        <li>
+            <a href="/about" class="nav-link text-white {% if request.path == '/about' %}active{% endif %}"
+                title="Acerca de">
+                <i class="fas fa-info-circle me-2" style="width: 24px; text-align: center;"></i>
+                <span>Acerca de</span>
+            </a>
+        </li>
+    </ul>
+
+    <hr style="border-color: #374151; margin: 1rem 0;">
+
+    <div class="mb-4">
+        <small class="text-secondary text-uppercase fw-bold mb-2 d-block"
+            style="font-size: 0.75rem; letter-spacing: 0.05em;">Idioma</small>
+        <div class="btn-group w-100" role="group" aria-label="Language selector">
+            <button id="lang-es" class="btn btn-sm btn-outline-secondary text-white" title="Español (ES)">ES</button>
+            <button id="lang-en" class="btn btn-sm btn-outline-secondary text-white" title="English (EN)">EN</button>
+        </div>
+    </div>
+
+    <!-- Sidebar Settings (Only visible when expanded) -->
+    <div class="mb-3 px-1" id="sidebar-settings">
+        <label class="text-secondary small fw-bold mb-1 d-block"
+            style="font-size: 0.7rem; text-transform: uppercase;">Posición</label>
+        <div class="d-flex w-100" id="pos-toggle-group">
+            <button class="btn btn-sm pos-toggle-btn active" data-pos="left" title="Izquierda">
+                <i class="fas fa-align-left"></i> Left
+            </button>
+            <button class="btn btn-sm pos-toggle-btn" data-pos="right" title="Derecha">
+                Right <i class="fas fa-align-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const body = document.body;
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const toggleIcon = sidebarToggle.querySelector("i");
+        const posButtons = document.querySelectorAll(".pos-toggle-btn");
+
+        // 1. Cargar preferencias
+        const savedCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
+        const savedRight = localStorage.getItem("sidebar_right") === "true";
+
+        function updateToggleIcon() {
+            if (body.classList.contains("sb-collapsed")) {
+                toggleIcon.className = "fas fa-bars";
+            } else {
+                toggleIcon.className = "fas fa-arrow-left transition-icon";
+                if (body.classList.contains("sb-right")) {
+                    toggleIcon.className = "fas fa-arrow-right transition-icon";
+                }
+            }
+        }
+
+        function updatePosButtons(isRight) {
+            posButtons.forEach(btn => {
+                const isBtnRight = btn.dataset.pos === "right";
+                if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+        }
+
+        if (savedCollapsed) body.classList.add("sb-collapsed");
+
+        if (savedRight) {
+            body.classList.add("sb-right");
+            updatePosButtons(true);
+        } else {
+            updatePosButtons(false);
+        }
+        updateToggleIcon();
+
+
+        // 2. Toggle Sidebar
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener("click", () => {
+                body.classList.toggle("sb-collapsed");
+                const isCollapsed = body.classList.contains("sb-collapsed");
+                localStorage.setItem("sidebar_collapsed", isCollapsed);
+                updateToggleIcon();
+            });
+        }
+
+        // 3. Toggle Position via Buttons
+        posButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetPos = btn.dataset.pos; // 'left' or 'right'
+                if (targetPos === "right") {
+                    body.classList.add("sb-right");
+                    localStorage.setItem("sidebar_right", "true");
+                    updatePosButtons(true);
+                } else {
+                    body.classList.remove("sb-right");
+                    localStorage.setItem("sidebar_right", "false");
+                    updatePosButtons(false);
+                }
+                updateToggleIcon();
+            });
+        });
+
+        // 4. Mostrar nombre de usuario
+        const userJson = localStorage.getItem('ai_fitness_user');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                const displayName = user.name || user.username || 'Usuario';
+                const userEl = document.getElementById('sidebar-username');
+                if (userEl) userEl.textContent = displayName;
+            } catch (e) { console.error(e); }
+        }
+
+        // 5. Logout
+        const logoutBtn = document.getElementById('sidebar-logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                localStorage.removeItem('ai_fitness_user');
+                localStorage.removeItem('ai_fitness_uid');
+                window.location.href = '/';
+            });
+        }
+        // 6. Redirect Home/Brand logic if logged in
+        const redirectIfLogged = (e) => {
+            try {
+                if (localStorage.getItem('ai_fitness_user')) {
+                    e.preventDefault();
+                    window.location.href = '/dashboard';
+                }
+            } catch (ex) { }
+        };
+
+        const brandLink = document.querySelector('.brand-text')?.closest('a');
+        const homeLink = document.querySelector('a[href="/"][title="Inicio"]');
+
+        if (brandLink) brandLink.addEventListener('click', redirectIfLogged);
+        if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
+    });
+</script>

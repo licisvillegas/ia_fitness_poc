@@ -1,0 +1,224 @@
+/* Sidebar Layout */
+:root {
+    --sidebar-width: 250px;
+    --sidebar-width-collapsed: 80px;
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: margin 0.3s ease;
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    width: auto;
+    /* Allow auto width to fill remaining space */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s ease, margin-right 0.3s ease;
+}
+
+/* Sidebar States via Body Classes */
+body.sb-collapsed .sidebar-fixed {
+    width: var(--sidebar-width-collapsed) !important;
+}
+
+body.sb-collapsed .main-content {
+    margin-left: var(--sidebar-width-collapsed);
+}
+
+body.sb-right .sidebar-fixed {
+    left: auto !important;
+    right: 0 !important;
+    border-right: none !important;
+    border-left: 1px solid #374151;
+}
+
+body.sb-right .main-content {
+    margin-left: 0;
+    margin-right: var(--sidebar-width);
+}
+
+body.sb-right.sb-collapsed .main-content {
+    margin-right: var(--sidebar-width-collapsed);
+}
+
+/* Hide text elements when collapsed */
+/* Hide text elements when collapsed */
+body.sb-collapsed .sidebar-fixed .nav-link span,
+body.sb-collapsed .sidebar-fixed .dropdown strong,
+body.sb-collapsed .sidebar-fixed strong,
+body.sb-collapsed .sidebar-fixed .brand-text,
+body.sb-collapsed .sidebar-fixed small,
+body.sb-collapsed .sidebar-fixed .btn-group,
+body.sb-collapsed .sidebar-fixed .fa-chevron-down,
+body.sb-collapsed #sidebar-settings,
+body.sb-collapsed #sidebar-username {
+    display: none !important;
+}
+
+/* Center icons when collapsed */
+body.sb-collapsed .sidebar-fixed .nav-link,
+body.sb-collapsed .sidebar-fixed .dropdown-toggle-user {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 1rem 0 !important;
+    /* More breathing room */
+    width: 100%;
+}
+
+body.sb-collapsed .sidebar-fixed .nav-link i,
+body.sb-collapsed .sidebar-fixed .user-icon-container {
+    margin-right: 0 !important;
+    font-size: 1.5rem;
+    /* Larger, clearer icons */
+    width: auto !important;
+    /* Override inline widths */
+    height: auto !important;
+    text-align: center;
+    line-height: 1;
+}
+
+body.sb-collapsed .sidebar-fixed .user-icon-container {
+    /* User avatar specific adjustments */
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    /* Icon inside circle */
+}
+
+/* Toggle button adjustment when collapsed */
+body.sb-collapsed .sidebar-header {
+    display: flex;
+    justify-content: center !important;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+body.sb-collapsed .sidebar-header a {
+    display: none;
+}
+
+body.sb-collapsed #sidebar-toggle {
+    margin: 0 auto;
+}
+
+/* Dropdown/Collapse positioning for collapsed state */
+body.sb-collapsed .sidebar-fixed .collapse#user-collapse,
+body.sb-collapsed .sidebar-fixed .collapsing {
+    position: fixed !important;
+    left: var(--sidebar-width-collapsed) !important;
+    top: 70px;
+    /* Approximate height of user icon from top */
+    width: 200px;
+    background-color: #1f2937;
+    /* Dark background matching sidebar sub-menu */
+    border: 1px solid #374151;
+    border-radius: 0 8px 8px 0;
+    padding: 0.5rem;
+    z-index: 1040;
+    margin-left: 0;
+    /* Remove gap */
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.5);
+    /* Add depth */
+}
+
+/* Reset margins inside floating menu */
+body.sb-collapsed .sidebar-fixed #user-collapse ul {
+    margin-left: 0 !important;
+    padding-left: 0.5rem;
+}
+
+body.sb-right.sb-collapsed .sidebar-fixed .collapse#user-collapse,
+body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
+    left: auto !important;
+    right: var(--sidebar-width-collapsed) !important;
+    margin-right: 0;
+    margin-left: 0;
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+    border-left: 1px solid #374151;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Position Toggle Icons */
+.pos-toggle-btn {
+    background: transparent;
+    border: 1px solid #374151;
+    color: #9ca3af;
+    flex: 1;
+    font-size: 0.9rem;
+    padding: 0.25rem;
+    transition: all 0.2s;
+}
+
+.pos-toggle-btn.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.pos-toggle-btn:first-child {
+    border-radius: 6px 0 0 6px;
+}
+
+.pos-toggle-btn:last-child {
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .sidebar-fixed {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid #374151;
+        z-index: 1020;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* Nav Link Styling */
+.nav-pills .nav-link.active,
+.nav-pills .show>.nav-link {
+    background-color: #3b82f6;
+}
+
+.nav-link {
+    color: #e5e7eb;
+}
+
+.nav-link:hover {
+    color: #fff;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Collapsible hover effects */
+.hover-white:hover {
+    color: #fff !important;
+}
+
+.transition-icon {
+    transition: transform 0.2s;
+}
+
+[aria-expanded="true"] .transition-icon {
+    transform: rotate(180deg);
+}
+
+/* Mobile Toggler (Optional, if we want a hamburger menu on mobile instead of stacked) */

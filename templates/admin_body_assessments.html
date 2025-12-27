@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fitness | Admin · Evaluaciones Corporal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e7eb;
+        }
+
+        .card {
+            background: #111827;
+            border-radius: 12px;
+            border: 1px solid #374151;
+        }
+
+        .form-control,
+        .form-select,
+        textarea {
+            background: #0f172a;
+            color: #e5e7eb;
+            border-color: #1f2937;
+        }
+
+        .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .25);
+        }
+
+        .list-group-item {
+            background: #111827;
+            border-color: #374151;
+            cursor: pointer;
+            color: #e5e7eb;
+        }
+
+        .list-group-item:hover {
+            background-color: #1f2937;
+        }
+
+        .list-group-item.active {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+            color: white;
+        }
+
+        pre {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 8px;
+            color: #a5b4fc;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .metric-card {
+            background-color: #1f2937;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            height: 100%;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e5e7eb;
+            border-left: 3px solid #3b82f6;
+            padding-left: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .table-dark-custom {
+            background-color: #1f2937;
+            color: #e5e7eb;
+        }
+
+        .table-dark-custom th {
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        .badge-focus {
+            font-size: 0.9em;
+            padding: 0.5em 1em;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container py-4">
+            <h2 class="mb-3 text-white">Evaluaciones Corporales (Admin)</h2>
+            <p class="text-secondary mb-4">Busca historial de evaluaciones IA por ID de usuario.</p>
+
+            <div class="row g-4">
+                <!-- Sidebar Lista -->
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-body p-3">
+                            <label class="form-label small text-uppercase fw-bold text-secondary">Buscar Usuario</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="adminUserId" class="form-control" placeholder="User ID">
+                                <button class="btn btn-primary" id="btnSearch"><i class="fas fa-search"></i></button>
+                            </div>
+                            <div id="searchMsg" class="text-info small mb-2"></div>
+
+                            <hr class="border-secondary">
+
+                            <h6 class="text-white mb-3">Historial</h6>
+                            <div class="list-group list-group-flush" id="assessmentList"
+                                style="max-height: 600px; overflow-y: auto;">
+                                <div class="text-center text-secondary py-3 small">Sin resultados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalle Visual -->
+                <div class="col-lg-8">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div id="detailView" style="display:none;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title text-white mb-0">Informe de Evaluación</h5>
+                                    <div>
+                                        <span class="badge bg-secondary font-monospace me-2" id="detailId"></span>
+                                        <span class="badge bg-primary" id="detailFocusBadge"></span>
+                                    </div>
+                                </div>
+                                <div class="mb-3 text-secondary small">
+                                    <i class="far fa-clock me-1"></i> <span id="detailDate"></span>
+                                    <span class="mx-2">|</span>
+                                    <span id="detailBackend" class="text-muted fst-italic"></span>
+                                </div>
+
+                                <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
+                                    <li class="nav-item">
+                                        <button class="nav-link active text-white bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-visual">Reporte Visual</button>
+                                    </li>
+                                    <li class="nav-item">
+                                        <button class="nav-link text-white bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-json">JSON Raw</button>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content">
+                                    <!-- TAB VISUAL -->
+                                    <div class="tab-pane fade show active" id="tab-visual">
+
+                                        <!-- Row Metrics -->
+                                        <div class="row g-3 mb-4" id="metricsRow">
+                                            <!-- Injected by JS -->
+                                        </div>
+
+                                        <!-- Row Summary & Proportions -->
+                                        <div class="row g-4 mb-4">
+                                            <div class="col-md-12">
+                                                <h6 class="section-title">Resumen Ejecutivo</h6>
+                                                <p id="summaryText" class="text-secondary small"></p>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <h6 class="section-title">Análisis de Proporciones</h6>
+                                                <div class="p-3 rounded" style="background: rgba(31, 41, 55, 0.5);">
+                                                    <p id="symmetryNotes" class="mb-0 text-info small fst-italic"></p>
+                                                    <div class="d-flex gap-4 mt-2 small text-secondary">
+                                                        <span id="propWaistHeight"></span>
+                                                        <span id="propWaistHip"></span>
+                                                        <span id="propWaistChest"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Recommendations -->
+                                        <div class="mb-4">
+                                            <h6 class="section-title">Recomendaciones</h6>
+                                            <ul id="actionsList" class="list-group list-group-flush bg-transparent">
+                                            </ul>
+                                        </div>
+
+                                        <!-- Photo Feedback -->
+                                        <div class="mb-4">
+                                            <h6 class="section-title">Feedback Fotos</h6>
+                                            <ul id="photoFeedbackList"
+                                                class="list-group list-group-flush bg-transparent"></ul>
+                                        </div>
+
+                                        <!-- Input Data Table -->
+                                        <div class="mb-4">
+                                            <h6 class="section-title">Datos de Entrada</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-dark table-sm table-striped small">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Medida</th>
+                                                            <th>Valor</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="inputTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                            <div class="p-2 small text-secondary border border-secondary rounded mt-2">
+                                                <strong>Notas usuario:</strong> <span id="userNotes"></span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <!-- TAB JSON -->
+                                    <div class="tab-pane fade" id="tab-json">
+                                        <h6 class="text-secondary mb-2">Output</h6>
+                                        <pre id="jsonOutput" class="small"></pre>
+                                        <h6 class="text-secondary mb-2 mt-3">Input</h6>
+                                        <pre id="jsonInput" class="small"></pre>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="emptyView"
+                                class="d-flex align-items-center justify-content-center h-100 text-secondary"
+                                style="min-height: 400px;">
+                                <div class="text-center">
+                                    <i class="fas fa-chart-pie fa-3x mb-3 text-dark"></i>
+                                    <p>Selecciona una evaluación para ver el informe</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnSearch = document.getElementById('btnSearch');
+            const userInput = document.getElementById('adminUserId');
+            const listContainer = document.getElementById('assessmentList');
+            const msgObj = document.getElementById('searchMsg');
+
+            const detailView = document.getElementById('detailView');
+            const emptyView = document.getElementById('emptyView');
+
+            const savedUser = localStorage.getItem('ai_fitness_last_search_uid');
+            if (savedUser) userInput.value = savedUser;
+
+            const performSearch = async () => {
+                const uid = userInput.value.trim();
+                if (!uid) return;
+
+                localStorage.setItem('ai_fitness_last_search_uid', uid);
+                msgObj.textContent = "Buscando...";
+                listContainer.innerHTML = "";
+                emptyView.style.display = 'flex';
+                detailView.style.display = 'none';
+
+                try {
+                    const resp = await fetch(`/body_assessments/${encodeURIComponent(uid)}`);
+                    if (!resp.ok) throw new Error("Error API");
+                    const data = await resp.json();
+                    msgObj.textContent = `${data.length} registros.`;
+
+                    if (data.length === 0) {
+                        listContainer.innerHTML = '<div class="text-center text-secondary py-3 small">Sin registros</div>';
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const el = document.createElement('button');
+                        el.className = 'list-group-item list-group-item-action py-3';
+                        const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() + ' ' + new Date(item.created_at).toLocaleTimeString().slice(0, 5) : '-';
+                        const goal = (item.input && item.input.goal) ? item.input.goal : 'N/A';
+
+                        el.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <span class="fw-bold text-white">#${String(item._id).slice(-4)}</span>
+                                <small class="text-info">${dateStr}</small>
+                            </div>
+                            <small class="text-secondary d-block">Meta: ${goal}</small>
+                        `;
+                        el.addEventListener('click', () => showDetail(item, el));
+                        listContainer.appendChild(el);
+                    });
+                } catch (e) {
+                    msgObj.textContent = "Error: " + e.message;
+                }
+            };
+
+            btnSearch.addEventListener('click', performSearch);
+            userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+
+            function showDetail(item, activeEl) {
+                // Active state
+                document.querySelectorAll('.list-group-item').forEach(b => b.classList.remove('active'));
+                activeEl.classList.add('active');
+
+                emptyView.style.display = 'none';
+                detailView.style.display = 'block';
+
+                // Basic Info
+                document.getElementById('detailId').textContent = 'ID: ' + item._id;
+                document.getElementById('detailDate').textContent = item.created_at ? new Date(item.created_at).toLocaleString() : '-';
+                document.getElementById('detailBackend').textContent = 'Engine: ' + (item.backend || 'unknown');
+
+                const out = item.output || {};
+                const inp = item.input || {};
+
+                // JSON Tabs
+                document.getElementById('jsonOutput').textContent = JSON.stringify(out, null, 2);
+                document.getElementById('jsonInput').textContent = JSON.stringify(inp, null, 2);
+
+                // --- VISUAL REPORT ---
+
+                // 1. Metrics Cards
+                const comp = out.body_composition || {};
+                const metricsRow = document.getElementById('metricsRow');
+                metricsRow.innerHTML = '';
+
+                const metrics = [
+                    { label: '% Grasa', val: comp.body_fat_percent, unit: '%' },
+                    { label: 'Masa Magra', val: comp.lean_mass_kg, unit: 'kg' },
+                    { label: 'Masa Grasa', val: comp.fat_mass_kg, unit: 'kg' },
+                    { label: '% Musc. Esq.', val: comp.muscle_mass_percent, unit: '%' }
+                ];
+
+                metrics.forEach(m => {
+                    const col = document.createElement('div');
+                    col.className = 'col-sm-6 col-md-3';
+                    col.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-value">${m.val !== undefined ? m.val : '-'} <small style="font-size:0.5em">${m.unit}</small></div>
+                            <div class="metric-label">${m.label}</div>
+                        </div>
+                    `;
+                    metricsRow.appendChild(col);
+                });
+
+                // 2. Summary & Proportions
+                document.getElementById('summaryText').textContent = out.summary || 'Sin resumen disponible.';
+
+                const prop = out.proportions || {};
+                document.getElementById('symmetryNotes').textContent = prop.symmetry_notes || '';
+                document.getElementById('propWaistHeight').innerHTML = `Cintura/Altura: <strong class="text-white">${prop.waist_to_height || '-'}</strong>`;
+                document.getElementById('propWaistHip').innerHTML = `Cintura/Cadera: <strong class="text-white">${prop.waist_to_hip || '-'}</strong>`;
+                document.getElementById('propWaistChest').innerHTML = `Cintura/Pecho: <strong class="text-white">${prop.waist_to_chest || '-'}</strong>`;
+
+                // 3. Recomendaciones Badge & List
+                const rec = out.recommendations || {};
+                const focus = rec.focus || (inp.goal || 'General');
+                const badge = document.getElementById('detailFocusBadge');
+                badge.textContent = focus.toUpperCase();
+                badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
+
+                const actionsList = document.getElementById('actionsList');
+                actionsList.innerHTML = '';
+                if (rec.actions && rec.actions.length) {
+                    rec.actions.forEach(a => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item bg-transparent text-secondary ps-0';
+                        li.innerHTML = `<i class="fas fa-check-circle text-primary me-2"></i> ${a}`;
+                        actionsList.appendChild(li);
+                    });
+                } else {
+                    actionsList.innerHTML = '<li class="text-muted small">Sin recomendaciones</li>';
+                }
+
+                // 4. Photo Feedback
+                const photoList = document.getElementById('photoFeedbackList');
+                photoList.innerHTML = '';
+                if (out.photo_feedback && out.photo_feedback.length) {
+                    out.photo_feedback.forEach(f => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item bg-transparent text-secondary ps-0 small';
+                        li.innerHTML = `<i class="fas fa-camera text-secondary me-2"></i> ${f}`;
+                        photoList.appendChild(li);
+                    });
+                } else {
+                    photoList.innerHTML = '<li class="text-muted small">Sin feedback de fotos</li>';
+                }
+
+                // 5. Input Table
+                const tbody = document.getElementById('inputTableBody');
+                tbody.innerHTML = '';
+                const meas = inp.measurements || {};
+                for (const [k, v] of Object.entries(meas)) {
+                    if (v !== null && v !== undefined) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${k}</td><td class="text-white">${v}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                }
+                const metaFields = { "Edad": inp.age, "Sexo": inp.sex, "Objetivo": inp.goal };
+                for (const [k, v] of Object.entries(metaFields)) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="text-info">${k}</td><td class="text-white">${v || '-'}</td>`;
+                    tbody.prepend(tr); // Add to top
+                }
+
+                document.getElementById('userNotes').textContent = inp.notes || '-';
+            }
+        });
+    </script>
+</body>
+
+</html>

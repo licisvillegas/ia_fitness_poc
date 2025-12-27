@@ -46,23 +46,42 @@ Formato de salida (SOLO JSON):
 
 class MealPlanAgent:
     def __init__(self, model: Optional[str] = None) -> None:
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.init_error = None
+
+        import logging
+        logger = logging.getLogger("ai_fitness")
+
         self._use_openai = bool(self.api_key)
         if self._use_openai:
             try:
                 from openai import OpenAI  # type: ignore
                 self._client = OpenAI(api_key=self.api_key)
-            except Exception:
+                logger.info(f"MealPlanAgent initialized with OpenAI model: {self.model}")
+            except Exception as e:
+                self.init_error = str(e)
+                logger.error(f"Failed to initialize OpenAI client in MealPlanAgent: {e}")
                 self._use_openai = False
                 self._client = None
         else:
+            self.init_error = "OPENAI_API_KEY missing"
+            logger.warning("MealPlanAgent: OPENAI_API_KEY not found or empty. Using mock.")
             self._client = None
 
     def backend(self) -> str:
         return f"openai:{self.model}" if self._use_openai else "mock"
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] MealPlanAgent start | backend=%s model=%s key_present=%s init_error=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            getattr(self, "init_error", None),
+        )
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_meal_prompt(context_str)
         if self._use_openai:
@@ -74,6 +93,12 @@ class MealPlanAgent:
 
     def _run_openai(self, prompt: str) -> Dict[str, Any]:
         try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(
+                "[AgentRun] MealPlanAgent openai call | model=%s",
+                self.model,
+            )
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -81,13 +106,30 @@ class MealPlanAgent:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
+                response_format={"type": "json_object"},
             )
             content = resp.choices[0].message.content or "{}"
+            logger.info(
+                "[AgentRun] MealPlanAgent openai success | content_len=%s",
+                len(content),
+            )
             return json.loads(content)
-        except Exception:
-            return self._run_mock({"_fallback_reason": "openai_error"})
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"MealPlanAgent OpenAI call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"openai_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] MealPlanAgent mock fallback | backend=%s model=%s key_present=%s init_error=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            getattr(self, "init_error", None),
+        )
         total_kcal = int(float(context.get("total_kcal", 2200)))
         meals = int(context.get("meals", 4) or 4)
         meals = max(3, min(6, meals))

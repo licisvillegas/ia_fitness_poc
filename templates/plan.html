@@ -1,157 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Fitness | Plan de Alimentación y Entrenamiento</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Fitness | Plan de Alimentación y Entrenamiento</title>
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="/static/css/sidebar.css" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #0a0a0a;
-            color: #e5e7eb;
-        }
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+    }
 
-        /* Navbar */
-        .navbar {
-            background-color: #111827;
-        }
-        .navbar-brand {
-            color: #3b82f6 !important;
-            font-weight: 700;
-        }
+    /* Navbar */
+    .navbar {
+      background-color: #111827;
+    }
 
-        /* Hero */
-        .hero {
-            background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(37,99,235,0.4)), 
-                        url('/static/images/IMG_1558.JPG');
-            background-size: cover;
-            background-position: center;
-            height: 75vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-        }
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: 700;
-        }
+    .navbar-brand {
+      color: #3b82f6 !important;
+      font-weight: 700;
+    }
 
-        /* Sección Alimentación */
-        .nutrition {
-            padding: 4rem 0;
-            background-color: #111827;
-        }
-        .nutrition h2 {
-            color: #3b82f6;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        .nutrition img {
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(37,99,235,0.3);
-        }
+    /* Hero */
+    .hero {
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(37, 99, 235, 0.4)),
+        url('/static/images/IMG_1558.JPG');
+      background-size: cover;
+      background-position: center;
+      height: 75vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
 
-        /* Entrenamientos */
-        .workouts {
-            padding: 4rem 0;
-        }
-        .workouts h2 {
-            color: #3b82f6;
-            font-weight: 700;
-        }
-        .workout-card {
-            background-color: #111827;
-            border-radius: 15px;
-            padding: 1.5rem;
-            transition: 0.3s ease;
-        }
-        .workout-card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 20px rgba(37,99,235,0.4);
-        }
-        .workout-card img {
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+    }
 
-        /* Ajustes de contraste para textos grises */
-        .text-secondary {
-            color: #ffffff !important;
-        }
-        .text-muted {
-            color: #ffffff !important;
-        }
+    /* Sección Alimentación */
+    .nutrition {
+      padding: 4rem 0;
+      background-color: #111827;
+    }
 
-        /* Ocultar subsecciones "Histórico de planes" y "Detalle de plan" */
-        #my-plan .row.g-4 {
-            display: none !important;
-        }
+    .nutrition h2 {
+      color: #3b82f6;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
 
-        /* Ocultar sección de cargar planes (buscador y botón) */
-        #my-plan .mb-3.text-center {
-            display: none !important;
-        }
+    .nutrition img {
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+    }
 
-        /* Ocultar botones de acciones AI en Plan Activo */
-        #active-plan #btnUseLatestAI,
-        #active-plan #btnReloadActive {
-            display: none !important;
-        }
+    /* Entrenamientos */
+    .workouts {
+      padding: 4rem 0;
+    }
 
-        /* Título "Histórico de planes" en blanco */
-        #my-plan .col-md-5 h5.card-title {
-            color: #ffffff;
-        }
+    .workouts h2 {
+      color: #3b82f6;
+      font-weight: 700;
+    }
 
-        /* Forzar texto blanco solo en #active-plan */
-        #active-plan { color: #ffffff; }
-        #active-plan .text-secondary,
-        #active-plan .text-muted,
-        #active-plan small { color: #ffffff !important; }
+    .workout-card {
+      background-color: #111827;
+      border-radius: 15px;
+      padding: 1.5rem;
+      transition: 0.3s ease;
+    }
 
-        footer {
-            background-color: #111827;
-            color: #ffffff;
-            text-align: center;
-            padding: 1rem 0;
-            margin-top: 2rem;
-        }
-    </style>
+    .workout-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .workout-card img {
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+
+    /* Ajustes de contraste para textos grises */
+    .text-secondary {
+      color: #ffffff !important;
+    }
+
+    .text-muted {
+      color: #ffffff !important;
+    }
+
+    /* Ocultar subsecciones "Histórico de planes" y "Detalle de plan" */
+    #my-plan .row.g-4 {
+      display: none !important;
+    }
+
+    /* Ocultar sección de cargar planes (buscador y botón) */
+    #my-plan .mb-3.text-center {
+      display: none !important;
+    }
+
+    /* Ocultar botones de acciones AI en Plan Activo */
+    #active-plan #btnUseLatestAI,
+    #active-plan #btnReloadActive {
+      display: none !important;
+    }
+
+    /* Título "Histórico de planes" en blanco */
+    #my-plan .col-md-5 h5.card-title {
+      color: #ffffff;
+    }
+
+    /* Forzar texto blanco solo en #active-plan */
+    #active-plan {
+      color: #ffffff;
+    }
+
+    #active-plan .text-secondary,
+    #active-plan .text-muted,
+    #active-plan small {
+      color: #ffffff !important;
+    }
+
+    footer {
+      background-color: #111827;
+      color: #ffffff;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: 2rem;
+    }
+  </style>
 </head>
+
 <body>
 
-    <!-- Navbar (unificada con dashboard.html) -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="/">AI Fitness</a>
-            <div class="d-flex align-items-center">
-                <a id="nav-home" href="/" class="btn btn-outline-light btn-sm me-2">Inicio</a>
-                <a id="nav-dashboard" href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
-                <a id="nav-nutrition" href="/nutrition" class="btn btn-outline-light btn-sm me-2">Nutrición</a>
-                <a id="nav-plan" href="/plan" class="btn btn-primary btn-sm">Mi Plan</a>
-                <a id="nav-about" href="/about" class="btn btn-outline-light btn-sm me-2" data-i18n="nav_about">Acerca de</a>
-                <div class="btn-group ms-3" role="group" aria-label="Language selector">
-                  <button id="lang-es" class="btn btn-sm btn-outline-light">ES</button>
-                  <button id="lang-en" class="btn btn-sm btn-outline-light">EN</button>
-                </div>
-
-            </div>
-        </div>
-    </nav>
+  <!-- Navbar (unificada con dashboard.html) -->
+  <!-- Navbar (unificada con dashboard.html) -->
+  {% include 'components/sidebar.html' %}
+  <div class="main-content">
 
     <!-- Hero -->
     <section class="hero">
-        <div class="container">
-            <h1 id="plan-hero-title">Plan de Alimentación y Entrenamiento</h1>
-            <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus resultados físicos.</p>
-        </div>
+      <div class="container">
+        <h1 id="plan-hero-title">Plan de Alimentación y Entrenamiento</h1>
+        <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus
+          resultados físicos.</p>
+      </div>
     </section>
 
     <!-- Plan Activo -->
@@ -166,7 +171,7 @@
             </div>
           </div>
           <small id="active-meta" class="text-secondary"></small>
-          <hr/>
+          <hr />
           <div>
             <div class="mb-2"><span class="text-secondary">Objetivo:</span> <strong id="active-goal">-</strong></div>
             <h6 class="text-primary">Nutrición</h6>
@@ -190,7 +195,8 @@
     <section class="container mt-5" id="my-plan">
       <div class="mb-3 text-center">
         <div class="input-group justify-content-center" style="max-width:720px;margin:0 auto;gap:8px;">
-          <input type="text" id="planUserId" class="form-control text-center" placeholder="Ingresa tu user_id (o deja vacío para usar el de login)">
+          <input type="text" id="planUserId" class="form-control text-center"
+            placeholder="Ingresa tu user_id (o deja vacío para usar el de login)">
           <button id="btnLoadPlans" class="btn btn-primary">Cargar planes</button>
         </div>
         <div id="planMsg" class="mt-2 text-info"></div>
@@ -213,7 +219,7 @@
                 <button id="btnActivatePlan" class="btn btn-outline-light btn-sm" disabled>Activar este plan</button>
               </div>
               <small id="plan-meta" class="text-secondary"></small>
-              <hr/>
+              <hr />
               <div>
                 <div class="mb-2"><span class="text-secondary">Objetivo:</span> <strong id="plan-goal">-</strong></div>
                 <h6 class="text-primary">Nutrición</h6>
@@ -237,320 +243,329 @@
 
     <!-- Sección de Alimentación -->
     <section class="nutrition">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h2 id="nutrition-importance">La importancia de una buena alimentación</h2>
-                    <p class="text-light" data-i18n="nutrition_intro">
-                        Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación.
-                        En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.
-                    </p>
-                    <ul>
-                        <li data-i18n="balance_correcto_de_macronutrientes_proteínas_carbohidratos_">Balance correcto de macronutrientes (proteínas, carbohidratos y grasas).</li>
-                        <li data-i18n="planificación_personalizada_según_tus_objetivos_y_nivel_de_a">Planificación personalizada según tus objetivos y nivel de actividad.</li>
-                        <li data-i18n="recomendaciones_de_alimentos_naturales_y_saludables">Recomendaciones de alimentos naturales y saludables.</li>
-                    </ul>
-                </div>
-                <div class="col-md-6 text-center">
-                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80"
-                         alt="Comida Saludable" class="img-fluid">
-                </div>
-            </div>
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h2 id="nutrition-importance">La importancia de una buena alimentación</h2>
+            <p class="text-light" data-i18n="nutrition_intro">
+              Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar
+              mental y tu capacidad de recuperación.
+              En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia
+              artificial para adaptarse a ti.
+            </p>
+            <ul>
+              <li data-i18n="balance_correcto_de_macronutrientes_proteínas_carbohidratos_">Balance correcto de
+                macronutrientes (proteínas, carbohidratos y grasas).</li>
+              <li data-i18n="planificación_personalizada_según_tus_objetivos_y_nivel_de_a">Planificación personalizada
+                según tus objetivos y nivel de actividad.</li>
+              <li data-i18n="recomendaciones_de_alimentos_naturales_y_saludables">Recomendaciones de alimentos naturales
+                y saludables.</li>
+            </ul>
+          </div>
+          <div class="col-md-6 text-center">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80"
+              alt="Comida Saludable" class="img-fluid">
+          </div>
         </div>
+      </div>
     </section>
 
- <!-- Sección de Entrenamientos -->
-<section class="workouts">
-    <div class="container">
-    <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular</h2>
+    <!-- Sección de Entrenamientos -->
+    <section class="workouts">
+      <div class="container">
+        <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular
+        </h2>
 
-    <!-- Primera fila -->
-    <div class="row g-4">
-      <!-- Pecho y Tríceps -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/IMG_1612.JPG" 
-               class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
-             <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
-             <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr">Fortalece tu tren superior con ejercicios compuestos como press de banca, fondos y flexiones. 
-                 Desarrolla masa muscular y potencia en tus empujes.</p>
+        <!-- Primera fila -->
+        <div class="row g-4">
+          <!-- Pecho y Tríceps -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/IMG_1612.JPG" class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
+              <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
+              <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr">Fortalece tu tren superior con
+                ejercicios compuestos como press de banca, fondos y flexiones.
+                Desarrolla masa muscular y potencia en tus empujes.</p>
+            </div>
+          </div>
+
+          <!-- Espalda y Bíceps -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/IMG_1614.JPG" class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
+              <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
+              <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la">Rutinas centradas en
+                dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
+            </div>
+          </div>
+
+          <!-- Piernas y Glúteos -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/IMG_1615.JPG" class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
+              <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
+              <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas">Ejercicios de fuerza como
+                sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="row g-4 mt-4">
+          <!-- Hombros y Core -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/IMG_1616.JPG" class="img-fluid" alt="Entrenamiento de Hombros y Core">
+              <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
+              <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para">Desarrolla equilibrio y fuerza
+                funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
+            </div>
+          </div>
+
+          <!-- Cardio -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/TAFT2576.JPEG" class="img-fluid" alt="Entrenamiento de Cardio">
+              <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
+              <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion">Ejercicios de cardio como caminadora,
+                elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
+            </div>
+          </div>
+
+          <!-- Full Body -->
+          <div class="col-md-4">
+            <div class="workout-card text-center">
+              <img src="/static/images/IMG_1617.JPG" class="img-fluid" alt="Entrenamiento Full Body">
+              <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
+              <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p">Sesiones completas que activan
+                todos los grupos musculares.
+                Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Espalda y Bíceps -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/IMG_1614.JPG" 
-               class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
-          <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
-          <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la">Rutinas centradas en dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
-        </div>
-      </div>
-
-      <!-- Piernas y Glúteos -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/IMG_1615.JPG" 
-               class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
-          <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
-          <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas">Ejercicios de fuerza como sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Segunda fila -->
-    <div class="row g-4 mt-4">
-      <!-- Hombros y Core -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/IMG_1616.JPG" 
-               class="img-fluid" alt="Entrenamiento de Hombros y Core">
-          <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
-          <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para">Desarrolla equilibrio y fuerza funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
-        </div>
-      </div>
-
-      <!-- Cardio -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/TAFT2576.JPEG" 
-               class="img-fluid" alt="Entrenamiento de Cardio">
-          <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
-          <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion">Ejercicios de cardio como caminadora, elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
-        </div>
-      </div>      
-
-      <!-- Full Body -->
-      <div class="col-md-4">
-        <div class="workout-card text-center">
-          <img src="/static/images/IMG_1617.JPG" 
-               class="img-fluid" alt="Entrenamiento Full Body">
-             <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
-             <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p">Sesiones completas que activan todos los grupos musculares. 
-                 Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
     <footer>
-        <p id="footer-text">© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente</p>
+      <p id="footer-text">© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente</p>
     </footer>
 
-        <!-- centralized language script -->
-        <script src="/static/js/lang.js"></script>
-        <script>
-          (function(){
-            const listEl = document.getElementById('plan-list');
-            const msgEl = document.getElementById('planMsg');
-            const metaEl = document.getElementById('plan-meta');
-            const kcalEl = document.getElementById('plan-kcal');
-            const macrosEl = document.getElementById('plan-macros');
-            const trainEl = document.getElementById('plan-training');
-            const aiBox = document.getElementById('plan-ai');
-            const aiReason = document.getElementById('plan-ai-reason');
-            const aiNext = document.getElementById('plan-ai-next');
-            const activateBtn = document.getElementById('btnActivatePlan');
-            let currentPlanId = null;
+    <!-- centralized language script -->
+    <script src="/static/js/lang.js"></script>
+    <script>
+      (function () {
+        const listEl = document.getElementById('plan-list');
+        const msgEl = document.getElementById('planMsg');
+        const metaEl = document.getElementById('plan-meta');
+        const kcalEl = document.getElementById('plan-kcal');
+        const macrosEl = document.getElementById('plan-macros');
+        const trainEl = document.getElementById('plan-training');
+        const aiBox = document.getElementById('plan-ai');
+        const aiReason = document.getElementById('plan-ai-reason');
+        const aiNext = document.getElementById('plan-ai-next');
+        const activateBtn = document.getElementById('btnActivatePlan');
+        let currentPlanId = null;
 
-            // Active plan refs
-            const aMeta = document.getElementById('active-meta');
-            const aKcal = document.getElementById('active-kcal');
-            const aMacros = document.getElementById('active-macros');
-            const aTrain = document.getElementById('active-training');
-            const aBox = document.getElementById('active-ai');
-            const aReason = document.getElementById('active-ai-reason');
-            const aNext = document.getElementById('active-ai-next');
-            const btnUseLatest = document.getElementById('btnUseLatestAI');
-            const btnReloadActive = document.getElementById('btnReloadActive');
+        // Active plan refs
+        const aMeta = document.getElementById('active-meta');
+        const aKcal = document.getElementById('active-kcal');
+        const aMacros = document.getElementById('active-macros');
+        const aTrain = document.getElementById('active-training');
+        const aBox = document.getElementById('active-ai');
+        const aReason = document.getElementById('active-ai-reason');
+        const aNext = document.getElementById('active-ai-next');
+        const btnUseLatest = document.getElementById('btnUseLatestAI');
+        const btnReloadActive = document.getElementById('btnReloadActive');
 
-            function resolveUserId(inputVal){
-              const typed = (inputVal || '').trim();
-              try{
-                const raw = localStorage.getItem('ai_fitness_user');
-                if(raw){
-                  const u = JSON.parse(raw);
-                  const loggedId = String(u.user_id || u._id || '').trim();
-                  const uname = (u.username || '').trim();
-                  const email = (u.email || '').trim().toLowerCase();
-                  if(!typed || typed === uname || typed.toLowerCase() === email){
-                    return loggedId || typed;
-                  }
-                }
-              }catch(e){}
-              return typed;
+        function resolveUserId(inputVal) {
+          const typed = (inputVal || '').trim();
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const loggedId = String(u.user_id || u._id || '').trim();
+              const uname = (u.username || '').trim();
+              const email = (u.email || '').trim().toLowerCase();
+              if (!typed || typed === uname || typed.toLowerCase() === email) {
+                return loggedId || typed;
+              }
             }
+          } catch (e) { }
+          return typed;
+        }
 
-            async function loadPlans(){
-              const input = document.getElementById('planUserId');
-              const uid = resolveUserId(input.value);
-              if(!uid){ msgEl.textContent = 'Ingresa un user_id'; return; }
-              msgEl.textContent = 'Cargando planes...';
-              listEl.innerHTML='';
-              try{
-                const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=20`);
-                if(!resp.ok){
-                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
-                  throw new Error(err.error || `HTTP ${resp.status}`);
-                }
-                const rows = await resp.json();
-                if(!Array.isArray(rows)){ throw new Error('Formato invalido'); }
-                msgEl.textContent = rows.length ? '' : 'No hay planes para este usuario';
-                const frag = document.createDocumentFragment();
-                rows.forEach((p, idx)=>{
-                  const li = document.createElement('li');
-                  li.className = 'list-group-item d-flex justify-content-between align-items-start';
-                  li.style.background = '#111827'; li.style.color = '#ffffff';
-                  const left = document.createElement('div');
-                  const ts = (p.created_at || '').toString().replace('T',' ').replace('Z','');
-                  const label = p.source === 'ai_adjustment' ? '[AI]' : '[Manual]';
-                  left.innerHTML = `<div><strong>#${idx+1}</strong> · ${label} · ${ts || 'sin-fecha'}</div>`;
-                  const small = document.createElement('small');
-                  const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
-                  small.textContent = `kcal: ${np.calories_per_day ?? np.kcal_obj ?? '-'} · cardio: ${tr.cardio ?? '-'} · active: ${p.active ? 'sí' : 'no'}`;
-                  left.appendChild(small);
-                  li.appendChild(left);
-                  li.addEventListener('click', ()=> renderPlan(p));
-                  frag.appendChild(li);
-                });
-                listEl.appendChild(frag);
-                if(rows[0]) renderPlan(rows[0]);
-              }catch(e){
-                msgEl.textContent = `Error al cargar planes: ${e.message}`;
-              }
-              }
-
-            function renderPlan(p){
-              currentPlanId = p._id || null;
-              activateBtn.disabled = !currentPlanId;
-              const ts = (p.created_at || '').toString().replace('T',' ').replace('Z','');
-              metaEl.textContent = `id: ${p._id || '-'} · fecha: ${ts || '-'} · activo: ${p.active ? 'sí' : 'no'}`;
-              document.getElementById('plan-goal').textContent = p.goal || '-';
+        async function loadPlans() {
+          const input = document.getElementById('planUserId');
+          const uid = resolveUserId(input.value);
+          if (!uid) { msgEl.textContent = 'Ingresa un user_id'; return; }
+          msgEl.textContent = 'Cargando planes...';
+          listEl.innerHTML = '';
+          try {
+            const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=20`);
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            const rows = await resp.json();
+            if (!Array.isArray(rows)) { throw new Error('Formato invalido'); }
+            msgEl.textContent = rows.length ? '' : 'No hay planes para este usuario';
+            const frag = document.createDocumentFragment();
+            rows.forEach((p, idx) => {
+              const li = document.createElement('li');
+              li.className = 'list-group-item d-flex justify-content-between align-items-start';
+              li.style.background = '#111827'; li.style.color = '#ffffff';
+              const left = document.createElement('div');
+              const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+              const label = p.source === 'ai_adjustment' ? '[AI]' : '[Manual]';
+              left.innerHTML = `<div><strong>#${idx + 1}</strong> · ${label} · ${ts || 'sin-fecha'}</div>`;
+              const small = document.createElement('small');
               const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
-              const macros = np.macros || {}; const macros2 = (np && np.macros) || {};
-              const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
-              const pG = macros.protein ?? macros2.protein ?? macros2.p;
-              const cG = macros.carbs ?? macros2.carbs ?? macros2.c;
-              const fG = macros.fat ?? macros2.fat ?? macros2.g;
-              kcalEl.textContent = `Calorias/día: ${kcal} ${np.kcal_delta!=null ? `(delta: ${np.kcal_delta})` : ''}`;
-              macrosEl.textContent = `Macros (p/c/g): ${pG ?? '-'} / ${cG ?? '-'} / ${fG ?? '-'}`;
-              trainEl.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
-              const ai = p.ai_summary || {};
-              if(ai && (ai.razonamiento_resumido || ai.proxima_revision_dias!=null)){
-                aiBox.style.display = 'block';
-                aiReason.textContent = ai.razonamiento_resumido || '';
-                aiNext.textContent = ai.proxima_revision_dias!=null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
-              } else {
-                aiBox.style.display = 'none';
-                aiReason.textContent = '';
-                aiNext.textContent = '';
-              }
-            }
-
-            function formatDateDMY(value){
-              try{
-                const d = new Date(value);
-                if (isNaN(d)) return '';
-                const dd = String(d.getDate()).padStart(2,'0');
-                const mm = String(d.getMonth()+1).padStart(2,'0');
-                const yyyy = d.getFullYear();
-                return `${dd}/${mm}/${yyyy}`;
-              }catch(e){ return ''; }
-            }
-
-            async function loadActive(){
-              const input = document.getElementById('planUserId');
-              const uid = resolveUserId(input.value);
-              if(!uid){ aMeta.textContent=''; aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none'; return; }
-              aMeta.textContent = 'Cargando plan activo...';
-              try{
-                const resp = await fetch(`/plans/${encodeURIComponent(uid)}/active`);
-                if(!resp.ok){
-                  aMeta.textContent = 'Sin plan activo';
-                  aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none';
-                  return;
-                }
-                const p = await resp.json();
-                const ts = (p.activated_at || p.created_at || '').toString().replace('T',' ').replace('Z','');
-                aMeta.textContent = `id: ${p._id || '-'} · activado: ${ts || '-'}`;
-                document.getElementById('active-goal').textContent = p.goal || '-';
-                const __formattedActiveDate = formatDateDMY(p.activated_at || p.created_at || '');
-                aMeta.textContent = __formattedActiveDate ? `Activado: ${__formattedActiveDate}` : '';
-                const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
-                const macros = np.macros || {};
-                const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
-                aKcal.textContent = `Calorias/día: ${kcal} ${np.kcal_delta!=null ? `(delta: ${np.kcal_delta})` : ''}`;
-                aMacros.textContent = `Macros (p/c/g): ${macros.protein ?? '-'} / ${macros.carbs ?? '-'} / ${macros.fat ?? '-'}`;
-                aTrain.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
-                const ai = p.ai_summary || {};
-                if(ai && (ai.razonamiento_resumido || ai.proxima_revision_dias!=null)){
-                  aBox.style.display = 'block';
-                  aReason.textContent = ai.razonamiento_resumido || '';
-                  aNext.textContent = ai.proxima_revision_dias!=null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
-                } else {
-                  aBox.style.display = 'none';
-                  aReason.textContent = '';
-                  aNext.textContent = '';
-                }
-              }catch(e){
-                aMeta.textContent = `Error cargando plan activo: ${e.message}`;
-                aKcal.textContent=''; aMacros.textContent=''; aTrain.textContent=''; aBox.style.display='none';
-              }
-            }
-
-            activateBtn.addEventListener('click', async ()=>{
-              if(!currentPlanId){ return; }
-              try{
-                const resp = await fetch(`/plans/${encodeURIComponent(currentPlanId)}/activate`, { method: 'POST' });
-                if(!resp.ok){
-                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
-                  throw new Error(err.error || `HTTP ${resp.status}`);
-                }
-                msgEl.textContent = 'Plan activado';
-                loadPlans();
-                loadActive();
-              }catch(e){
-                msgEl.textContent = `No se pudo activar el plan: ${e.message}`;
-              }
+              small.textContent = `kcal: ${np.calories_per_day ?? np.kcal_obj ?? '-'} · cardio: ${tr.cardio ?? '-'} · active: ${p.active ? 'sí' : 'no'}`;
+              left.appendChild(small);
+              li.appendChild(left);
+              li.addEventListener('click', () => renderPlan(p));
+              frag.appendChild(li);
             });
+            listEl.appendChild(frag);
+            if (rows[0]) renderPlan(rows[0]);
+          } catch (e) {
+            msgEl.textContent = `Error al cargar planes: ${e.message}`;
+          }
+        }
 
-            btnUseLatest.addEventListener('click', async ()=>{
-              const input = document.getElementById('planUserId');
-              const uid = resolveUserId(input.value);
-              if(!uid){ msgEl.textContent = 'Ingresa un user_id'; return; }
-              try{
-                const resp = await fetch(`/ai/adjustments/${encodeURIComponent(uid)}/apply_latest`, { method: 'POST' });
-                if(!resp.ok){
-                  const err = await resp.json().catch(()=>({error:'Error desconocido'}));
-                  throw new Error(err.error || `HTTP ${resp.status}`);
-                }
-                msgEl.textContent = 'Plan creado y activado desde AI';
-                loadPlans();
-                loadActive();
-              }catch(e){
-                msgEl.textContent = `No se pudo aplicar el último ajuste: ${e.message}`;
-              }
-            });
+        function renderPlan(p) {
+          currentPlanId = p._id || null;
+          activateBtn.disabled = !currentPlanId;
+          const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+          metaEl.textContent = `id: ${p._id || '-'} · fecha: ${ts || '-'} · activo: ${p.active ? 'sí' : 'no'}`;
+          document.getElementById('plan-goal').textContent = p.goal || '-';
+          const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
+          const macros = np.macros || {}; const macros2 = (np && np.macros) || {};
+          const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
+          const pG = macros.protein ?? macros2.protein ?? macros2.p;
+          const cG = macros.carbs ?? macros2.carbs ?? macros2.c;
+          const fG = macros.fat ?? macros2.fat ?? macros2.g;
+          kcalEl.textContent = `Calorias/día: ${kcal} ${np.kcal_delta != null ? `(delta: ${np.kcal_delta})` : ''}`;
+          macrosEl.textContent = `Macros (p/c/g): ${pG ?? '-'} / ${cG ?? '-'} / ${fG ?? '-'}`;
+          trainEl.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
+          const ai = p.ai_summary || {};
+          if (ai && (ai.razonamiento_resumido || ai.proxima_revision_dias != null)) {
+            aiBox.style.display = 'block';
+            aiReason.textContent = ai.razonamiento_resumido || '';
+            aiNext.textContent = ai.proxima_revision_dias != null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
+          } else {
+            aiBox.style.display = 'none';
+            aiReason.textContent = '';
+            aiNext.textContent = '';
+          }
+        }
 
-            btnReloadActive.addEventListener('click', loadActive);
+        function formatDateDMY(value) {
+          try {
+            const d = new Date(value);
+            if (isNaN(d)) return '';
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+          } catch (e) { return ''; }
+        }
 
-            document.getElementById('btnLoadPlans').addEventListener('click', loadPlans);
-            // Auto-cargar para el usuario logueado
-            window.addEventListener('DOMContentLoaded', ()=>{
-              try{
-                const raw = localStorage.getItem('ai_fitness_user');
-                if(raw){
-                  const u = JSON.parse(raw);
-                  const display = (u.username || '').trim();
-                  if(display){ document.getElementById('planUserId').value = display; }
-                  loadPlans();
-                  loadActive();
-                }
-              }catch(e){}
-            });
-          })();
-        </script>
+        async function loadActive() {
+          const input = document.getElementById('planUserId');
+          const uid = resolveUserId(input.value);
+          if (!uid) { aMeta.textContent = ''; aKcal.textContent = ''; aMacros.textContent = ''; aTrain.textContent = ''; aBox.style.display = 'none'; return; }
+          aMeta.textContent = 'Cargando plan activo...';
+          try {
+            const resp = await fetch(`/plans/${encodeURIComponent(uid)}/active`);
+            if (!resp.ok) {
+              aMeta.textContent = 'Sin plan activo';
+              aKcal.textContent = ''; aMacros.textContent = ''; aTrain.textContent = ''; aBox.style.display = 'none';
+              return;
+            }
+            const p = await resp.json();
+            const ts = (p.activated_at || p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+            aMeta.textContent = `id: ${p._id || '-'} · activado: ${ts || '-'}`;
+            document.getElementById('active-goal').textContent = p.goal || '-';
+            const __formattedActiveDate = formatDateDMY(p.activated_at || p.created_at || '');
+            aMeta.textContent = __formattedActiveDate ? `Activado: ${__formattedActiveDate}` : '';
+            const np = p.nutrition_plan || {}; const tr = p.training_plan || {};
+            const macros = np.macros || {};
+            const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
+            aKcal.textContent = `Calorias/día: ${kcal} ${np.kcal_delta != null ? `(delta: ${np.kcal_delta})` : ''}`;
+            aMacros.textContent = `Macros (p/c/g): ${macros.protein ?? '-'} / ${macros.carbs ?? '-'} / ${macros.fat ?? '-'}`;
+            aTrain.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
+            const ai = p.ai_summary || {};
+            if (ai && (ai.razonamiento_resumido || ai.proxima_revision_dias != null)) {
+              aBox.style.display = 'block';
+              aReason.textContent = ai.razonamiento_resumido || '';
+              aNext.textContent = ai.proxima_revision_dias != null ? `Próxima revisión: ${ai.proxima_revision_dias} días` : '';
+            } else {
+              aBox.style.display = 'none';
+              aReason.textContent = '';
+              aNext.textContent = '';
+            }
+          } catch (e) {
+            aMeta.textContent = `Error cargando plan activo: ${e.message}`;
+            aKcal.textContent = ''; aMacros.textContent = ''; aTrain.textContent = ''; aBox.style.display = 'none';
+          }
+        }
 
+        activateBtn.addEventListener('click', async () => {
+          if (!currentPlanId) { return; }
+          try {
+            const resp = await fetch(`/plans/${encodeURIComponent(currentPlanId)}/activate`, { method: 'POST' });
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            msgEl.textContent = 'Plan activado';
+            loadPlans();
+            loadActive();
+          } catch (e) {
+            msgEl.textContent = `No se pudo activar el plan: ${e.message}`;
+          }
+        });
+
+        btnUseLatest.addEventListener('click', async () => {
+          const input = document.getElementById('planUserId');
+          const uid = resolveUserId(input.value);
+          if (!uid) { msgEl.textContent = 'Ingresa un user_id'; return; }
+          try {
+            const resp = await fetch(`/ai/adjustments/${encodeURIComponent(uid)}/apply_latest`, { method: 'POST' });
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            msgEl.textContent = 'Plan creado y activado desde AI';
+            loadPlans();
+            loadActive();
+          } catch (e) {
+            msgEl.textContent = `No se pudo aplicar el último ajuste: ${e.message}`;
+          }
+        });
+
+        btnReloadActive.addEventListener('click', loadActive);
+
+        document.getElementById('btnLoadPlans').addEventListener('click', loadPlans);
+        // Auto-cargar para el usuario logueado
+        window.addEventListener('DOMContentLoaded', () => {
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const display = (u.username || '').trim();
+              if (display) { document.getElementById('planUserId').value = display; }
+              loadPlans();
+              loadActive();
+            }
+          } catch (e) { }
+        });
+      })();
+    </script>
+
+  </div><!-- End main-content -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

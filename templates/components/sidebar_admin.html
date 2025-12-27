@@ -1,0 +1,162 @@
+<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sidebar-fixed"
+    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; background-color: #1f2937 !important; border-right: 1px solid #374151; z-index: 1030;">
+
+    <div class="d-flex align-items-center justify-content-between mb-3 text-white sidebar-header">
+        <a href="/admin" class="text-white text-decoration-none brand-text">
+            <span class="fs-4 fw-bold" style="color: #ef4444;">AI Admin</span>
+        </a>
+        <button id="sidebar-toggle" class="btn btn-link text-white p-0 fs-5" title="Colapsar/Expandir">
+            <i class="fas fa-arrow-left transition-icon"></i>
+        </button>
+    </div>
+
+    <!-- Admin Identity -->
+    <div class="d-flex align-items-center text-white text-decoration-none mb-3 px-2 py-2 rounded"
+        style="background-color: rgba(239, 68, 68, 0.1);">
+        <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
+            style="width: 32px; height: 32px; min-width: 32px;">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <strong><span id="sidebar-username">Administrador</span></strong>
+    </div>
+
+    <hr style="border-color: #374151; margin: 1rem 0;">
+
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="/admin" class="nav-link text-white {% if request.path == '/admin' %}active{% endif %}"
+                title="Inicio Admin">
+                <i class="fas fa-tachometer-alt me-2" style="width: 24px; text-align: center;"></i>
+                <span>Inicio Admin</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/plans" class="nav-link text-white {% if request.path == '/admin/plans' %}active{% endif %}"
+                title="Planes (Entrenamiento)">
+                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
+                <span>Planes (Gym)</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/meal_plans"
+                class="nav-link text-white {% if request.path == '/admin/meal_plans' %}active{% endif %}"
+                title="Meal Plans (Nutrición)">
+                <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
+                <span>Meal Plans</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/body_assessments"
+                class="nav-link text-white {% if request.path == '/admin/body_assessments' %}active{% endif %}"
+                title="Evaluaciones de usuarios">
+                <i class="fas fa-file-medical-alt me-2" style="width: 24px; text-align: center;"></i>
+                <span>Evaluaciones</span>
+            </a>
+        </li>
+        <li>
+            <a href="/ai/body_assessment/tester"
+                class="nav-link text-white {% if request.path == '/ai/body_assessment/tester' %}active{% endif %}"
+                title="Tester IA Corporal">
+                <i class="fas fa-camera me-2" style="width: 24px; text-align: center;"></i>
+                <span>Tester IA Corporal</span>
+            </a>
+        </li>
+    </ul>
+
+    <hr style="border-color: #374151; margin: 1rem 0;">
+
+    <ul class="nav nav-pills flex-column">
+        <li>
+            <a href="/" class="nav-link text-secondary hover-white" title="Volver al Sitio">
+                <i class="fas fa-sign-out-alt me-2" style="width: 24px; text-align: center;"></i>
+                <span>Salir de Admin</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- Sidebar Settings (Only visible when expanded) -->
+    <div class="mb-3 px-1 mt-4" id="sidebar-settings">
+        <label class="text-secondary small fw-bold mb-1 d-block"
+            style="font-size: 0.7rem; text-transform: uppercase;">Posición</label>
+        <div class="d-flex w-100" id="pos-toggle-group">
+            <button class="btn btn-sm pos-toggle-btn active" data-pos="left" title="Izquierda">
+                <i class="fas fa-align-left"></i> Left
+            </button>
+            <button class="btn btn-sm pos-toggle-btn" data-pos="right" title="Derecha">
+                Right <i class="fas fa-align-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const body = document.body;
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const toggleIcon = sidebarToggle.querySelector("i");
+        const posButtons = document.querySelectorAll(".pos-toggle-btn");
+
+        // 1. Cargar preferencias
+        const savedCollapsed = localStorage.getItem("sidebar_admin_collapsed") === "true";
+        const savedRight = localStorage.getItem("sidebar_admin_right") === "true";
+
+        function updateToggleIcon() {
+            if (body.classList.contains("sb-collapsed")) {
+                toggleIcon.className = "fas fa-bars";
+            } else {
+                toggleIcon.className = "fas fa-arrow-left transition-icon";
+                if (body.classList.contains("sb-right")) {
+                    toggleIcon.className = "fas fa-arrow-right transition-icon";
+                }
+            }
+        }
+
+        function updatePosButtons(isRight) {
+            posButtons.forEach(btn => {
+                const isBtnRight = btn.dataset.pos === "right";
+                if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+        }
+
+        if (savedCollapsed) body.classList.add("sb-collapsed");
+        if (savedRight) {
+            body.classList.add("sb-right");
+            updatePosButtons(true);
+        } else {
+            updatePosButtons(false);
+        }
+        updateToggleIcon();
+
+
+        // 2. Toggle Sidebar
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener("click", () => {
+                body.classList.toggle("sb-collapsed");
+                const isCollapsed = body.classList.contains("sb-collapsed");
+                localStorage.setItem("sidebar_admin_collapsed", isCollapsed);
+                updateToggleIcon();
+            });
+        }
+
+        // 3. Toggle Position via Buttons
+        posButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetPos = btn.dataset.pos; // 'left' or 'right'
+                if (targetPos === "right") {
+                    body.classList.add("sb-right");
+                    localStorage.setItem("sidebar_admin_right", "true");
+                    updatePosButtons(true);
+                } else {
+                    body.classList.remove("sb-right");
+                    localStorage.setItem("sidebar_admin_right", "false");
+                    updatePosButtons(false);
+                }
+                updateToggleIcon();
+            });
+        });
+    });
+</script>

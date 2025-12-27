@@ -9,7 +9,7 @@ Qué hace:
 
 Cómo está configurado:
 - Si existe la variable de entorno `OPENAI_API_KEY`, intenta usar OpenAI
-  (modelo configurable con `OPENAI_MODEL`, por defecto `gpt-4o-mini`). gpt-5-nano
+  (modelo configurable con `OPENAI_MODEL`, por defecto `gpt-4o`).
 - Si no hay clave o hay error al llamar a OpenAI, utiliza un backend "mock"
   determinístico (sin red) con heurísticas simples para pruebas locales.
 
@@ -62,9 +62,13 @@ class ReasoningAgent:
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.init_error = None
 
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        
         self._use_openai = bool(self.api_key)
         if self._use_openai:
             try:
@@ -72,16 +76,23 @@ class ReasoningAgent:
                 from openai import OpenAI  # type: ignore
 
                 self._client = OpenAI(api_key=self.api_key)
-            except Exception:
+                logger.info(f"ReasoningAgent initialized with OpenAI model: {self.model}")
+            except Exception as e:
                 # If OpenAI client cannot be initialized, fallback to mock
+                self.init_error = str(e)
+                logger.error(f"Failed to initialize OpenAI client: {e}")
                 self._use_openai = False
                 self._client = None
         else:
+            self.init_error = "OPENAI_API_KEY missing"
+            logger.warning("ReasoningAgent: OPENAI_API_KEY not found or empty. Using mock.")
             self._client = None
 
     def backend(self) -> str:
         """Indica el backend activo: 'openai:<modelo>' o 'mock'."""
-        return f"openai:{self.model}" if self._use_openai else "mock"
+        if self._use_openai:
+            return f"openai:{self.model}"
+        return f"mock ({self.init_error})" if self.init_error else "mock"
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent and return structured JSON as dict.
@@ -89,6 +100,15 @@ class ReasoningAgent:
         The context dict should be serializable to JSON. If OpenAI is unavailable,
         produce a deterministic mock using simple heuristics on progress metrics.
         """
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] ReasoningAgentLegacy start | backend=%s model=%s key_present=%s init_error=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            self.init_error,
+        )
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_reasoning_prompt(context_str)
 
@@ -105,6 +125,15 @@ class ReasoningAgent:
         try:
             # We default to text responses; user can switch to responses with JSON tool if desired.
             # Here we nudge with system+user content and parse JSON.
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(
+                "[AgentRun] ReasoningAgentLegacy openai call | model=%s",
+                self.model,
+            )
+            with open("agent_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"\n[ReasoningAgent] Requesting OpenAI: {self.model}\n")
+            
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -112,12 +141,28 @@ class ReasoningAgent:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
+                response_format={"type": "json_object"},
             )
             content = resp.choices[0].message.content or "{}"
+            
+            with open("agent_debug.log", "a", encoding="utf-8") as f:
+                  f.write(f"[ReasoningAgent] Success. Content len: {len(content)}\n")
+            
+            logger.info(
+                "[AgentRun] ReasoningAgentLegacy openai success | content_len=%s",
+                len(content),
+            )
             return json.loads(content)
-        except Exception:
+        except Exception as e:
             # If anything fails, fallback to mock to keep UX smooth
-            return self._run_mock({"_fallback_reason": "openai_error"})
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"ReasoningAgent OpenAI call failed: {e}", exc_info=True)
+            
+            with open("agent_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"[ReasoningAgent] FAIL: {str(e)}\n")
+
+            return self._run_mock({"_fallback_reason": f"openai_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Heuristic mock for offline/testing without API calls.
@@ -129,6 +174,15 @@ class ReasoningAgent:
         - Cardio: add 2x-LISS 25-35' if fat loss stalled; otherwise maintain.
         """
         # Extract last two datapoints if present
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] ReasoningAgentLegacy mock fallback | backend=%s model=%s key_present=%s init_error=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            self.init_error,
+        )
         items = []
         if isinstance(context, dict) and "progress" in context and isinstance(context["progress"], list):
             items = context["progress"][-2:]

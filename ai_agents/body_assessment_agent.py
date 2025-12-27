@@ -34,7 +34,12 @@ INSTRUCCIONES:
 - Evalúa proporciones (cintura-altura, cintura-cadera, simetría visual).
 - Resume hallazgos clave en tono profesional (≤120 palabras).
 - Genera recomendaciones concretas según objetivo (definición/volumen/mantenimiento).
-- Añade observaciones puntuales sobre las fotos recibidas (Análisis de proporciones y simetría visual).
+- Añade observaciones puntuales sobre las fotos recibidas (Análisis de proporciones y simetría visual)
+- Describe los ragos corporales en términos objetivos de las fotos recibidas.
+- En las fotos identifica postura, alineación y balance corporal.
+- En photo_feedback, describe la forma fisica con detalle: musculos, definicion, volumen, y partes del cuerpo (hombros, pecho, brazos, abdomen, espalda, gluteos, piernas).
+- Incluye referencia a la vista cuando exista (frontal/lateral/espalda) y menciona simetria y postura.
+- Usa 4-8 bullets concretos, sin consejos genericos ni instrucciones de toma de foto.
 
 CONTEXTO_JSON:
 {context_json}
@@ -70,24 +75,44 @@ class BodyAssessmentAgent:
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.init_error = None
+        
+        import logging
+        logger = logging.getLogger("ai_fitness")
+
         self._use_openai = bool(self.api_key)
         if self._use_openai:
             try:
                 from openai import OpenAI  # type: ignore
 
                 self._client = OpenAI(api_key=self.api_key)
-            except Exception:
+                logger.info(f"BodyAssessmentAgent initialized with OpenAI model: {self.model}")
+            except Exception as e:
+                self.init_error = str(e)
+                logger.error(f"Failed to initialize OpenAI client in BodyAssessmentAgent: {e}")
                 self._use_openai = False
                 self._client = None
         else:
+            self.init_error = "OPENAI_API_KEY missing"
+            logger.warning("BodyAssessmentAgent: OPENAI_API_KEY not found or empty. Using mock.")
             self._client = None
 
     def backend(self) -> str:
         return f"openai:{self.model}" if self._use_openai else "mock"
 
     def run(self, context: Dict[str, Any], images: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] BodyAssessmentAgent start | backend=%s model=%s key_present=%s init_error=%s images=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            self.init_error,
+            len(images) if images else 0,
+        )
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_body_assessment_prompt(context_str)
         if self._use_openai:
@@ -104,6 +129,12 @@ class BodyAssessmentAgent:
     # ------------------------------------------------------------------
     def _run_openai(self, prompt: str) -> Dict[str, Any]:
         try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(
+                "[AgentRun] BodyAssessmentAgent openai call | model=%s",
+                self.model,
+            )
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -111,11 +142,19 @@ class BodyAssessmentAgent:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
+                response_format={"type": "json_object"},
             )
             content = resp.choices[0].message.content or "{}"
-            return json.loads(content)
-        except Exception:
-            return self._run_mock({"_fallback_reason": "openai_error"})
+            logger.info(
+                "[AgentRun] BodyAssessmentAgent openai success | content_len=%s",
+                len(content),
+            )
+            return self._parse_json_content(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"BodyAssessmentAgent OpenAI call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"openai_error: {str(e)}"})
 
     def _run_openai_vision(self, prompt: str, images: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Llama a OpenAI con contenido multimodal (texto + imágenes base64).
@@ -123,6 +162,13 @@ class BodyAssessmentAgent:
         Espera `images` como lista de dicts: {"data": base64_str, "mime": "image/jpeg", "view": "frontal"}
         """
         try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(
+                "[AgentRun] BodyAssessmentAgent openai vision call | model=%s images=%s",
+                self.model,
+                len(images),
+            )
             content_blocks: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
             for img in images[:8]:  # limitar a 8 imágenes por llamada
                 data = img.get("data")
@@ -142,13 +188,30 @@ class BodyAssessmentAgent:
                     {"role": "user", "content": content_blocks},
                 ],
                 temperature=0.2,
+                response_format={"type": "json_object"},
             )
             content = resp.choices[0].message.content or "{}"
-            return json.loads(content)
-        except Exception:
-            return self._run_mock({"_fallback_reason": "openai_vision_error"})
+            logger.info(
+                "[AgentRun] BodyAssessmentAgent openai vision success | content_len=%s",
+                len(content),
+            )
+            return self._parse_json_content(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"BodyAssessmentAgent OpenAI VISION call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"openai_vision_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        import logging
+        logger = logging.getLogger("ai_fitness")
+        logger.info(
+            "[AgentRun] BodyAssessmentAgent mock fallback | backend=%s model=%s key_present=%s init_error=%s",
+            self.backend(),
+            self.model,
+            bool(self.api_key),
+            self.init_error,
+        )
         measurements = context.get("measurements") or {}
         sex = str(context.get("sex", "male")).lower()
         age = self._safe_float(context.get("age"), default=30.0)
@@ -472,6 +535,8 @@ class BodyAssessmentAgent:
                     feedback.append(f"{descriptor}: {notes}")
                 if quality:
                     feedback.append(f"{descriptor}: {quality}")
+                if not notes and not quality:
+                    feedback.append(f"{descriptor}: foto recibida (analisis visual no disponible en mock)")
 
         if not feedback:
             feedback.append(
@@ -479,4 +544,23 @@ class BodyAssessmentAgent:
             )
 
         return feedback
+
+    @staticmethod
+    def _parse_json_content(content: str) -> Dict[str, Any]:
+        """Parse JSON content from model responses, handling common wrappers."""
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            # Strip fenced code blocks if present.
+            cleaned = content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.strip("`")
+                if cleaned.lower().startswith("json"):
+                    cleaned = cleaned[4:].strip()
+            # Try to locate the first JSON object.
+            start = cleaned.find("{")
+            end = cleaned.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                return json.loads(cleaned[start : end + 1])
+            raise
 

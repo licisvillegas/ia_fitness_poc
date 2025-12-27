@@ -1,544 +1,536 @@
 <!DOCTYPE html>
 <html lang="es">
- <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
   <title>
-   AI Fitness | Nutrición Inteligente
+    AI Fitness | Nutrición Inteligente
   </title>
   <!-- Bootstrap + TipografÃ­a -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <link href="/static/css/sidebar.css" rel="stylesheet" />
   <style>
-body {
-  font-family: 'Poppins', sans-serif;
-  background-color: #0a0a0a;
-  color: #e5e7eb;
-  overflow-x: hidden;
-}
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+      overflow-x: hidden;
+    }
 
-/* Navbar */
-.navbar {
-  background-color: #111827;
-}
+    /* Navbar */
+    .navbar {
+      background-color: #111827;
+    }
 
-.navbar-brand {
-  color: #3b82f6 !important;
-  font-weight: 700;
-}
+    .navbar-brand {
+      color: #3b82f6 !important;
+      font-weight: 700;
+    }
 
-.navbar a {
-  color: #e5e7eb !important;
-}
+    .navbar a {
+      color: #e5e7eb !important;
+    }
 
-/* Hero Section */
-.hero {
-  position: relative;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(37, 99, 235, 0.25));
-  background-color: #0a0a0a; /* fallback */
-  height: 90vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
-  overflow: hidden;
-}
+    /* Hero Section */
+    .hero {
+      position: relative;
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(37, 99, 235, 0.25));
+      background-color: #0a0a0a;
+      /* fallback */
+      height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      overflow: hidden;
+    }
 
-/* Video background placed absolutely behind hero content */
-.hero-video {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-  object-fit: cover;
-  z-index: 0;
-  pointer-events: none; /* allow clicks through video */
-}
+    /* Video background placed absolutely behind hero content */
+    .hero-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      z-index: 0;
+      pointer-events: none;
+      /* allow clicks through video */
+    }
 
-/* Overlay so text remains readable */
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(37, 99, 235, 0.18));
-  z-index: 1;
-}
+    /* Overlay so text remains readable */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(37, 99, 235, 0.18));
+      z-index: 1;
+    }
 
-/* Ensure container content sits above video */
-.hero .container {
-  position: relative;
-  z-index: 2;
-}
+    /* Ensure container content sits above video */
+    .hero .container {
+      position: relative;
+      z-index: 2;
+    }
 
-/* Hide video on small screens to save bandwidth */
-@media (max-width: 767px) {
-  .hero-video {
-    display: none;
-  }
+    /* Hide video on small screens to save bandwidth */
+    @media (max-width: 767px) {
+      .hero-video {
+        display: none;
+      }
 
-  .hero {
-    background-image: url('/static/images/IMG_1571.jpg');
-    background-size: cover;
-    background-position: center;
-  }
-}
+      .hero {
+        background-image: url('/static/images/IMG_1571.jpg');
+        background-size: cover;
+        background-position: center;
+      }
+    }
 
-/* Respect user preference to reduce motion */
-@media (prefers-reduced-motion: reduce) {
-  .hero-video {
-    display: none;
-  }
+    /* Respect user preference to reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-video {
+        display: none;
+      }
 
-  .hero {
-    background-image: url('/static/images/IMG_1571.jpg');
-    background-size: cover;
-    background-position: center;
-  }
-}
+      .hero {
+        background-image: url('/static/images/IMG_1571.jpg');
+        background-size: cover;
+        background-position: center;
+      }
+    }
 
-.hero h1 {
-  font-size: 3rem;
-  font-weight: 700;
-}
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+    }
 
-/* Daily Plan */
-.daily-plan {
-  padding: 3rem 0 0 0;
-}
+    /* Daily Plan */
+    .daily-plan {
+      padding: 3rem 0 0 0;
+    }
 
-/* Meal Cards */
-.meal-card {
-  background-color: #111827;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  margin-bottom: 1rem;
-}
+    /* Meal Cards */
+    .meal-card {
+      background-color: #111827;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
 
-.meal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 1rem;
-  background-color: #0f172a;
-  cursor: pointer;
-}
+    .meal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      background-color: #0f172a;
+      cursor: pointer;
+    }
 
-.meal-title {
-  margin: 0;
-  font-size: 1.1rem;
-}
+    .meal-title {
+      margin: 0;
+      font-size: 1.1rem;
+    }
 
-.nutrition-list {
-  list-style: none;
-  margin: 0;
-  padding: 0.75rem 1rem;
-}
+    .nutrition-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.75rem 1rem;
+    }
 
-.meal-details p {
-  margin: 0 1rem 1rem;
-  color: #9ca3af;
-}
+    .meal-details p {
+      margin: 0 1rem 1rem;
+      color: #9ca3af;
+    }
 
-/* Recipes */
-.recipes {
-  padding: 4rem 0;
-}
+    /* Recipes */
+    .recipes {
+      padding: 4rem 0;
+    }
 
-.recipe-card {
-  background-color: #111827;
-  border-radius: 15px;
-  overflow: hidden;
-  transition: 0.3s;
-  height: 100%;
-}
+    .recipe-card {
+      background-color: #111827;
+      border-radius: 15px;
+      overflow: hidden;
+      transition: 0.3s;
+      height: 100%;
+    }
 
-.recipe-card img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-}
+    .recipe-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
 
-.recipe-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
-}
+    .recipe-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+    }
 
-.recipe-card h5 {
-  color: #3b82f6;
-}
+    .recipe-card h5 {
+      color: #3b82f6;
+    }
 
-/* Equivalences */
-.equivalences {
-  background-color: #111827;
-  padding: 4rem 0;
-}
+    /* Equivalences */
+    .equivalences {
+      background-color: #111827;
+      padding: 4rem 0;
+    }
 
-.equivalences h2 {
-  color: #3b82f6;
-  font-weight: 700;
-  margin-bottom: 2rem;
-}
+    .equivalences h2 {
+      color: #3b82f6;
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
 
-.table {
-  color: #e5e7eb;
-}
+    .table {
+      color: #e5e7eb;
+    }
 
-.table thead {
-  color: #3b82f6;
-}
+    .table thead {
+      color: #3b82f6;
+    }
 
-/* Footer */
-footer {
-  background-color: #111827;
-  color: #9ca3af;
-  text-align: center;
-  padding: 1rem 0;
-  margin-top: 3rem;
-}
-
+    /* Footer */
+    footer {
+      background-color: #111827;
+      color: #9ca3af;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: 3rem;
+    }
   </style>
 </head>
+
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg">
-   <div class="container">
-    <a class="navbar-brand" href="/">
-     AI Fitness
-    </a>
-    <div class="d-flex align-items-center">
-     <a class="btn btn-outline-light btn-sm me-2" href="/user-profile" id="nav-home">
-      Inicio
-     </a>
-     <a class="btn btn-outline-light btn-sm me-2" href="/plan" id="nav-plan">
-      Plan
-     </a>
-     <a class="btn btn-outline-light btn-sm me-2" href="/dashboard" id="nav-dashboard">
-      Dashboard
-     </a>
-    <a class="btn btn-primary btn-sm me-2" href="/nutrition" id="nav-nutrition">
-     Nutrici�n
-    </a>
-     <a class="btn btn-outline-light btn-sm me-2" data-i18n="nav_about" href="/about" id="nav-about">
-      Acerca de
-     </a>
-     <div aria-label="Language selector" class="btn-group ms-3" role="group">
-      <button class="btn btn-sm btn-outline-light" id="lang-es">
-       ES
-      </button>
-      <button class="btn btn-sm btn-outline-light" id="lang-en">
-       EN
-      </button>
-     </div>
-    </div>
-   </div>
-  </nav>
-  <!-- Hero -->
-  <section class="hero">
-   <!-- Video background (fallback to poster image if video missing) -->
-   <video autoplay="" class="hero-video" loop="" muted="" playsinline="" poster="/static/images/IMG_1571.jpg">
-    <source src="/static/videos/B6C7D05D-8000-462D-89CE-BE94145A4123.MP4" type="video/mp4"/>
-    <!-- If video not supported, the poster/background will be shown -->
-   </video>
-   <div aria-hidden="true" class="hero-overlay">
-   </div>
-   <div class="container">
-    <h1 id="nutrition-hero-title">
-     Nutrición Inteligente para un Rendimiento Óptimo
-    </h1>
-    <p class="lead mt-3" id="nutrition-hero-p">
-     Descubre recetas saludables y aprende a equilibrar tus alimentos con equivalencias precisas.
-    </p>
-   </div>
-  </section>
-
-  <!-- Generador de plan diario (AI) -->
-  <section class="daily-plan">
-    <div class="container mt-4">
-      <h3 class="text-center mb-4">Plan de Nutrición (AI)</h3>
-      <div class="text-center mb-3">
-        <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
-          <input id="nutriUserId" type="text" class="form-control text-center" placeholder="user_id o deja vacío para usar el del login" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <select id="nutriMeals" class="form-select" style="max-width:120px;">
-            <option value="3">3 comidas</option>
-            <option value="4">4 comidas</option>
-            <option value="5">5 comidas</option>
-            <option value="6" selected>6 comidas</option>
-          </select>
-          <input id="nutriPrefs" type="text" class="form-control" placeholder="preferencias (opcional)">
-          <input id="nutriExclude" type="text" class="form-control" placeholder="exclusiones (opcional)">
-          <button id="btnGenMeals" class="btn btn-primary">Generar plan</button>
-          <button id="btnSaveMealPlan" class="btn btn-success" style="display:none;">
-            Guardar y activar
-          </button>
-        </div>
-        <div class="mt-2">
-          <input id="nutriCuisine" type="text" class="form-control" style="max-width:820px;margin:0 auto;" placeholder="cocina preferida / notas (opcional)">
-        </div>
-        <div id="nutriMsg" class="mt-2 text-info"></div>
+  <!-- Navbar -->
+  {% include 'components/sidebar.html' %}
+  <div class="main-content">
+    <!-- Hero -->
+    <section class="hero">
+      <!-- Video background (fallback to poster image if video missing) -->
+      <video autoplay="" class="hero-video" loop="" muted="" playsinline="" poster="/static/images/IMG_1571.jpg">
+        <source src="/static/videos/B6C7D05D-8000-462D-89CE-BE94145A4123.MP4" type="video/mp4" />
+        <!-- If video not supported, the poster/background will be shown -->
+      </video>
+      <div aria-hidden="true" class="hero-overlay">
       </div>
-      <div id="mealsContainer"></div>
-    </div>
-  </section>
+      <div class="container">
+        <h1 id="nutrition-hero-title">
+          Nutrición Inteligente para un Rendimiento Óptimo
+        </h1>
+        <p class="lead mt-3" id="nutrition-hero-p">
+          Descubre recetas saludables y aprende a equilibrar tus alimentos con equivalencias precisas.
+        </p>
+      </div>
+    </section>
 
-   <!-- Recetas -->
-  <section class="recipes">
-    <div class="container text-center mb-5">
+    <!-- Generador de plan diario (AI) -->
+    <section class="daily-plan">
+      <div class="container mt-4">
+        <h3 class="text-center mb-4">Plan de Nutrición (AI)</h3>
+        <div class="text-center mb-3">
+          <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
+            <input id="nutriUserId" type="text" class="form-control text-center"
+              placeholder="user_id o deja vacío para usar el del login" autocomplete="off" autocorrect="off"
+              autocapitalize="off" spellcheck="false">
+            <select id="nutriMeals" class="form-select" style="max-width:120px;">
+              <option value="3">3 comidas</option>
+              <option value="4">4 comidas</option>
+              <option value="5">5 comidas</option>
+              <option value="6" selected>6 comidas</option>
+            </select>
+            <input id="nutriPrefs" type="text" class="form-control" placeholder="preferencias (opcional)">
+            <input id="nutriExclude" type="text" class="form-control" placeholder="exclusiones (opcional)">
+            <button id="btnGenMeals" class="btn btn-primary">Generar plan</button>
+            <button id="btnSaveMealPlan" class="btn btn-success" style="display:none;">
+              Guardar y activar
+            </button>
+          </div>
+          <div class="mt-2">
+            <input id="nutriCuisine" type="text" class="form-control" style="max-width:820px;margin:0 auto;"
+              placeholder="cocina preferida / notas (opcional)">
+          </div>
+          <div id="nutriMsg" class="mt-2 text-info"></div>
+        </div>
+        <div id="mealsContainer"></div>
+      </div>
+    </section>
+
+    <!-- Recetas -->
+    <section class="recipes">
+      <div class="container text-center mb-5">
         <h2 id="recipes-title" class="fw-bold text-light">Recetas Fitness</h2>
-        <p id="recipes-sub" class="text-secondary">Fáciles, nutritivas y llenas de energía para acompañar tus entrenamientos.</p>
+        <p id="recipes-sub" class="text-secondary">Fáciles, nutritivas y llenas de energía para acompañar tus
+          entrenamientos.</p>
       </div>
 
-    <div class="container">
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="recipe-card">
-            <img src="https://storage.googleapis.com/fitia_public_images/recipes%2FGR-R-V-00006049_k7e35yjcue169n3bjafdcxao_large.jpg" alt="Avena proteica">
-            <div class="p-3">
-              <h5 data-i18n="avena_proteica">Avena Proteica</h5>
-              <p class="text-secondary small" data-i18n="avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_">Avena, proteína en polvo, banana y canela. Ideal para comenzar el día lleno de energía.</p>
+      <div class="container">
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="recipe-card">
+              <img
+                src="https://storage.googleapis.com/fitia_public_images/recipes%2FGR-R-V-00006049_k7e35yjcue169n3bjafdcxao_large.jpg"
+                alt="Avena proteica">
+              <div class="p-3">
+                <h5 data-i18n="avena_proteica">Avena Proteica</h5>
+                <p class="text-secondary small"
+                  data-i18n="avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_">Avena, proteína en polvo,
+                  banana y canela. Ideal para comenzar el día lleno de energía.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="recipe-card">
+              <img src="https://storage.googleapis.com/avena-recipes-v2/2019/10/1571783768842.jpeg"
+                alt="Bowl de pollo y quinoa">
+              <div class="p-3">
+                <h5 data-i18n="bowl_de_pollo_y_quinoa">Bowl de Pollo y Quinoa</h5>
+                <p class="text-secondary small"
+                  data-i18n="combinación_equilibrada_de_proteínas_granos_y_vegetales_para">Combinación equilibrada de
+                  proteínas, granos y vegetales para recuperación muscular.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="recipe-card">
+              <img src="https://zenu.com.co/wp-content/uploads/2023/12/wrap-de-atun-zenu.jpeg" alt="Wrap de atún">
+              <div class="p-3">
+                <h5 data-i18n="wrap_de_atún">Wrap de Atún</h5>
+                <p class="text-secondary small"
+                  data-i18n="rico_en_proteínas_y_omega-3_ideal_como_almuerzo_rápido_y_sal">Rico en proteínas y omega-3,
+                  ideal como almuerzo rápido y saludable.</p>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="col-md-4">
-          <div class="recipe-card">
-            <img src="https://storage.googleapis.com/avena-recipes-v2/2019/10/1571783768842.jpeg" alt="Bowl de pollo y quinoa">
-            <div class="p-3">
-              <h5 data-i18n="bowl_de_pollo_y_quinoa">Bowl de Pollo y Quinoa</h5>
-              <p class="text-secondary small" data-i18n="combinación_equilibrada_de_proteínas_granos_y_vegetales_para">Combinación equilibrada de proteínas, granos y vegetales para recuperación muscular.</p>
-            </div>
-          </div>
-        </div>
+    <!-- Equivalencias -->
+    <section class="equivalences">
+      <div class="container text-center">
+        <h2 id="equivalences-title" data-i18n="equivalences_title">Equivalencias de Alimentos</h2>
+        <p id="equivalences-sub" class="text-secondary mb-4" data-i18n="equivalences_sub">Comprende cómo sustituir
+          alimentos sin perder el equilibrio nutricional.</p>
 
-        <div class="col-md-4">
-          <div class="recipe-card">
-            <img src="https://zenu.com.co/wp-content/uploads/2023/12/wrap-de-atun-zenu.jpeg" alt="Wrap de atún">
-            <div class="p-3">
-              <h5 data-i18n="wrap_de_atún">Wrap de Atún</h5>
-              <p class="text-secondary small" data-i18n="rico_en_proteínas_y_omega-3_ideal_como_almuerzo_rápido_y_sal">Rico en proteínas y omega-3, ideal como almuerzo rápido y saludable.</p>
-            </div>
-          </div>
+        <div class="table-responsive">
+          <table class="table table-dark table-striped align-middle">
+            <thead>
+              <tr>
+                <th data-i18n="alimento_base">Alimento Base</th>
+                <th data-i18n="equivalencia">Equivalencia</th>
+                <th data-i18n="valor_nutricional_aproximado">Valor Nutricional Aproximado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-i18n="1_taza_de_arroz_cocido">1 taza de arroz cocido</td>
+                <td data-i18n="1_taza_de_quinoa_cocida">1 taza de quinoa cocida</td>
+                <td data-i18n="similar_en_calorías_más_proteína_y_fibra">Similar en calorías, más proteína y fibra</td>
+              </tr>
+              <tr>
+                <td data-i18n="100g_de_carne_magra">100g de carne magra</td>
+                <td data-i18n="100g_de_pollo_o_tofu_firme">100g de pollo o tofu firme</td>
+                <td data-i18n="misma_proteína_menos_grasa_saturada">Misma proteína, menos grasa saturada</td>
+              </tr>
+              <tr>
+                <td data-i18n="1_yogurt_natural">1 yogurt natural</td>
+                <td data-i18n="1_yogurt_griego_sin_azúcar">1 yogurt griego sin azúcar</td>
+                <td data-i18n="mayor_proteína_menor_azúcar">Mayor proteína, menor azúcar</td>
+              </tr>
+              <tr>
+                <td data-i18n="1_cucharada_de_mantequilla">1 cucharada de mantequilla</td>
+                <td data-i18n="1_cucharada_de_aguacate_triturado">1 cucharada de aguacate triturado</td>
+                <td data-i18n="grasa_más_saludable_monoinsaturada">Grasa más saludable (monoinsaturada)</td>
+              </tr>
+              <tr>
+                <td data-i18n="1_pan_blanco">1 pan blanco</td>
+                <td data-i18n="1_pan_integral_o_de_centeno">1 pan integral o de centeno</td>
+                <td data-i18n="más_fibra_y_saciedad">Más fibra y saciedad</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Equivalencias -->
-  <section class="equivalences">
-    <div class="container text-center">
-  <h2 id="equivalences-title" data-i18n="equivalences_title">Equivalencias de Alimentos</h2>
-  <p id="equivalences-sub" class="text-secondary mb-4" data-i18n="equivalences_sub">Comprende cómo sustituir alimentos sin perder el equilibrio nutricional.</p>
+    <footer>
+      <p id="footer-text">© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria</p>
+    </footer>
+    <script src="/static/js/lang.js"></script>
 
-      <div class="table-responsive">
-        <table class="table table-dark table-striped align-middle">
-          <thead>
-            <tr>
-              <th data-i18n="alimento_base">Alimento Base</th>
-              <th data-i18n="equivalencia">Equivalencia</th>
-              <th data-i18n="valor_nutricional_aproximado">Valor Nutricional Aproximado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-i18n="1_taza_de_arroz_cocido">1 taza de arroz cocido</td>
-              <td data-i18n="1_taza_de_quinoa_cocida">1 taza de quinoa cocida</td>
-              <td data-i18n="similar_en_calorías_más_proteína_y_fibra">Similar en calorías, más proteína y fibra</td>
-            </tr>
-            <tr>
-              <td data-i18n="100g_de_carne_magra">100g de carne magra</td>
-              <td data-i18n="100g_de_pollo_o_tofu_firme">100g de pollo o tofu firme</td>
-              <td data-i18n="misma_proteína_menos_grasa_saturada">Misma proteína, menos grasa saturada</td>
-            </tr>
-            <tr>
-              <td data-i18n="1_yogurt_natural">1 yogurt natural</td>
-              <td data-i18n="1_yogurt_griego_sin_azúcar">1 yogurt griego sin azúcar</td>
-              <td data-i18n="mayor_proteína_menor_azúcar">Mayor proteína, menor azúcar</td>
-            </tr>
-            <tr>
-              <td data-i18n="1_cucharada_de_mantequilla">1 cucharada de mantequilla</td>
-              <td data-i18n="1_cucharada_de_aguacate_triturado">1 cucharada de aguacate triturado</td>
-              <td data-i18n="grasa_más_saludable_monoinsaturada">Grasa más saludable (monoinsaturada)</td>
-            </tr>
-            <tr>
-              <td data-i18n="1_pan_blanco">1 pan blanco</td>
-              <td data-i18n="1_pan_integral_o_de_centeno">1 pan integral o de centeno</td>
-              <td data-i18n="más_fibra_y_saciedad">Más fibra y saciedad</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+    <script>
+      function toggleMealDetails(element) { const details = element.nextElementSibling; const icon = element.querySelector('i'); const isHidden = details.style.display === 'none' || details.style.display === ''; details.style.display = isHidden ? 'block' : 'none'; if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); } } function addNewMeal() { alert('Funcionalidad para agregar comida próximamente'); }
+    </script>
+    <script src="/static/js/lang.js">
+    </script>
+    <script src="/static/js/session_nav.js">
+    </script>
+    <script src="/static/js/meal_planner.js">
+    </script>
+    <script>
+      (function () {
+        const msg = document.getElementById('nutriMsg');
+        const btn = document.getElementById('btnGenMeals');
+        const container = document.getElementById('mealsContainer');
+        const btnSave = document.getElementById('btnSaveMealPlan');
+        if (!btn) return;
 
-  <footer>
-    <p id="footer-text">© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria</p>
-  </footer>
-  <script src="/static/js/lang.js"></script>
-  
-  <script>
-   function toggleMealDetails(element) {      const details = element.nextElementSibling;      const icon = element.querySelector('i');      const isHidden = details.style.display === 'none' || details.style.display === '';      details.style.display = isHidden ? 'block' : 'none';      if (icon) {        icon.classList.toggle('fa-chevron-down', !isHidden);        icon.classList.toggle('fa-chevron-up', isHidden);      }    }    function addNewMeal() {      alert('Funcionalidad para agregar comida próximamente');    }
-  </script>
-  <script src="/static/js/lang.js">
-  </script>
-  <script src="/static/js/session_nav.js">
-  </script>
-  <script src="/static/js/meal_planner.js">
-  </script>
-  <script>
-    (function(){
-      const msg = document.getElementById('nutriMsg');
-      const btn = document.getElementById('btnGenMeals');
-      const container = document.getElementById('mealsContainer');
-      const btnSave = document.getElementById('btnSaveMealPlan');
-      if(!btn) return;
+        // Oculta ejemplos estáticos del template original para evitar confusión
+        function hideSampleCards() {
+          try {
+            const cards = document.querySelectorAll('.daily-plan .meal-card');
+            cards.forEach(card => {
+              if (!container.contains(card)) {
+                card.style.display = 'none';
+              }
+            });
+          } catch (e) { /* ignore */ }
+        }
 
-      // Oculta ejemplos estáticos del template original para evitar confusión
-      function hideSampleCards(){
-        try{
-          const cards = document.querySelectorAll('.daily-plan .meal-card');
-          cards.forEach(card => {
-            if(!container.contains(card)){
-              card.style.display = 'none';
+        function resolveUserId(inputVal) {
+          const typed = (inputVal || '').trim();
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const loggedId = String(u.user_id || u._id || '').trim();
+              const uname = (u.username || '').trim();
+              const email = (u.email || '').trim().toLowerCase();
+              if (!typed || typed === uname || typed.toLowerCase() === email) {
+                return loggedId || typed;
+              }
             }
-          });
-        }catch(e){ /* ignore */ }
-      }
+          } catch (e) { }
+          return typed;
+        }
 
-      function resolveUserId(inputVal){
-        const typed = (inputVal || '').trim();
-        try{
-          const raw = localStorage.getItem('ai_fitness_user');
-          if(raw){
-            const u = JSON.parse(raw);
-            const loggedId = String(u.user_id || u._id || '').trim();
-            const uname = (u.username || '').trim();
-            const email = (u.email || '').trim().toLowerCase();
-            if(!typed || typed === uname || typed.toLowerCase() === email){
-              return loggedId || typed;
-            }
+        function renderMeals(data, showSave = true) {
+          hideSampleCards();
+          container.innerHTML = '';
+          const out = data.output || {};
+          const meals = out.meals || [];
+          const total = out.total_kcal;
+          if (total) {
+            const totalEl = document.createElement('div');
+            totalEl.className = 'mb-3 text-secondary';
+            totalEl.textContent = `Total del día: ${total} kcal`;
+            container.appendChild(totalEl);
           }
-        }catch(e){}
-        return typed;
-      }
-
-      function renderMeals(data, showSave = true){
-        hideSampleCards();
-        container.innerHTML = '';
-        const out = data.output || {};
-        const meals = out.meals || [];
-        const total = out.total_kcal;
-        if(total){
-          const totalEl = document.createElement('div');
-          totalEl.className = 'mb-3 text-secondary';
-          totalEl.textContent = `Total del día: ${total} kcal`;
-          container.appendChild(totalEl);
-        }
-        meals.forEach(m => {
-          const card = document.createElement('div');
-          card.className = 'meal-card';
-          const header = document.createElement('div');
-          header.className = 'meal-header';
-          header.onclick = function(){ toggleMealDetails(this); };
-          const h = document.createElement('h4'); h.className = 'meal-title'; h.textContent = m.name || 'Comida';
-          const span = document.createElement('span'); span.textContent = `Calorías totales: ${m.kcal ?? '-'}`;
-          const ico = document.createElement('i'); ico.className = 'fas fa-chevron-down';
-          header.appendChild(h); header.appendChild(span); header.appendChild(ico);
-          const details = document.createElement('div'); details.className = 'meal-details'; details.style.display = 'none';
-          const ul = document.createElement('ul'); ul.className='nutrition-list';
-          (m.items || []).forEach(it => {
-            const li = document.createElement('li');
-            const kcal = (it.kcal!=null) ? ` - ${it.kcal} kcal` : '';
-            li.textContent = `${it.food || ''}${kcal}`;
-            ul.appendChild(li);
+          meals.forEach(m => {
+            const card = document.createElement('div');
+            card.className = 'meal-card';
+            const header = document.createElement('div');
+            header.className = 'meal-header';
+            header.onclick = function () { toggleMealDetails(this); };
+            const h = document.createElement('h4'); h.className = 'meal-title'; h.textContent = m.name || 'Comida';
+            const span = document.createElement('span'); span.textContent = `Calorías totales: ${m.kcal ?? '-'}`;
+            const ico = document.createElement('i'); ico.className = 'fas fa-chevron-down';
+            header.appendChild(h); header.appendChild(span); header.appendChild(ico);
+            const details = document.createElement('div'); details.className = 'meal-details'; details.style.display = 'none';
+            const ul = document.createElement('ul'); ul.className = 'nutrition-list';
+            (m.items || []).forEach(it => {
+              const li = document.createElement('li');
+              const kcal = (it.kcal != null) ? ` - ${it.kcal} kcal` : '';
+              li.textContent = `${it.food || ''}${kcal}`;
+              ul.appendChild(li);
+            });
+            const p = document.createElement('p');
+            const mac = m.macros || {}; p.textContent = `Macronutrientes: Carbohidratos ${mac.carbs ?? '-'}g, Proteína ${mac.protein ?? '-'}g, Grasa ${mac.fat ?? '-'}g`;
+            details.appendChild(ul); details.appendChild(p);
+            card.appendChild(header); card.appendChild(details);
+            container.appendChild(card);
           });
-          const p = document.createElement('p');
-          const mac = m.macros || {}; p.textContent = `Macronutrientes: Carbohidratos ${mac.carbs ?? '-'}g, Proteína ${mac.protein ?? '-'}g, Grasa ${mac.fat ?? '-'}g`;
-          details.appendChild(ul); details.appendChild(p);
-          card.appendChild(header); card.appendChild(details);
-          container.appendChild(card);
-        });
-        const tips = out.tips || [];
-        if(tips.length){
-          const tipsBox = document.createElement('div');
-          tipsBox.className = 'mt-3 text-secondary';
-          tipsBox.innerHTML = `<strong>Consejos:</strong> ${tips.join(' · ')}`;
-          container.appendChild(tipsBox);
-        }
-        if(meals.length && showSave){ btnSave.style.display = 'inline-block'; btnSave.dataset.payload = JSON.stringify(data); }
-      }
-
-      async function generate(){
-        const userInput = document.getElementById('nutriUserId');
-        const mealsSel = document.getElementById('nutriMeals');
-        const prefs = document.getElementById('nutriPrefs').value.trim();
-        const exclude = document.getElementById('nutriExclude').value.trim();
-        const cuisine = document.getElementById('nutriCuisine').value.trim();
-        const uid = resolveUserId(userInput.value);
-        if(!uid){ msg.textContent='Ingresa un user_id'; return; }
-        msg.textContent = 'Generando plan de comidas...';
-        btnSave.style.display = 'none';
-        try{
-          const params = new URLSearchParams();
-          params.set('meals', mealsSel.value);
-          if(prefs) params.set('prefs', prefs);
-          if(exclude) params.set('exclude', exclude);
-          if(cuisine) params.set('cuisine', cuisine);
-          const resp = await fetch(`/ai/nutrition/plan/${encodeURIComponent(uid)}?${params.toString()}`);
-          if(!resp.ok){
-            const err = await resp.json().catch(()=>({error:'Error desconocido'}));
-            throw new Error(err.error || `HTTP ${resp.status}`);
+          const tips = out.tips || [];
+          if (tips.length) {
+            const tipsBox = document.createElement('div');
+            tipsBox.className = 'mt-3 text-secondary';
+            tipsBox.innerHTML = `<strong>Consejos:</strong> ${tips.join(' · ')}`;
+            container.appendChild(tipsBox);
           }
-          const data = await resp.json();
-          renderMeals(data, true);
-          msg.textContent = '';
-        }catch(e){
-          msg.textContent = `No se pudo generar el plan: ${e.message}`;
+          if (meals.length && showSave) { btnSave.style.display = 'inline-block'; btnSave.dataset.payload = JSON.stringify(data); }
         }
-      }
 
-      btn.addEventListener('click', generate);
-      btnSave.addEventListener('click', async ()=>{
-        const payloadStr = btnSave.dataset.payload || '';
-        if(!payloadStr){ return; }
-        try{
-          const data = JSON.parse(payloadStr);
-          const saveBody = { user_id: data.input?.user_id, backend: data.backend, input: data.input, output: data.output };
-          const resp = await fetch('/meal_plans/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(saveBody) });
-          if(!resp.ok){ const err = await resp.json().catch(()=>({error:'Error desconocido'})); throw new Error(err.error || `HTTP ${resp.status}`); }
-          const resj = await resp.json();
-          msg.textContent = 'Plan de nutricion guardado y activado';
+        async function generate() {
+          const userInput = document.getElementById('nutriUserId');
+          const mealsSel = document.getElementById('nutriMeals');
+          const prefs = document.getElementById('nutriPrefs').value.trim();
+          const exclude = document.getElementById('nutriExclude').value.trim();
+          const cuisine = document.getElementById('nutriCuisine').value.trim();
+          const uid = resolveUserId(userInput.value);
+          if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+          msg.textContent = 'Generando plan de comidas...';
           btnSave.style.display = 'none';
-        }catch(e){ msg.textContent = `No se pudo guardar el plan: ${e.message}`; }
-      });
-
-      async function loadActive(){
-        try{
-          const uid = resolveUserId(document.getElementById('nutriUserId').value);
-          if(!uid){ msg.textContent = 'Ingresa un user_id'; return; }
-          const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}/active`);
-          if(!resp.ok){ msg.textContent = 'No cuenta con plan de nutrición activo'; container.innerHTML=''; btnSave.style.display='none'; return; }
-          const doc = await resp.json();
-          renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
-          msg.textContent = 'Plan de nutrición activo cargado';
-        }catch(e){ msg.textContent = `Error al cargar plan activo: ${e.message}`; }
-      }
-
-      window.addEventListener('DOMContentLoaded', ()=>{
-        hideSampleCards();
-        try{
-          const raw = localStorage.getItem('ai_fitness_user');
-          if(raw){
-            const u = JSON.parse(raw);
-            const display = (u.username || '').trim();
-            if(display){ document.getElementById('nutriUserId').value = display; }
+          try {
+            const params = new URLSearchParams();
+            params.set('meals', mealsSel.value);
+            if (prefs) params.set('prefs', prefs);
+            if (exclude) params.set('exclude', exclude);
+            if (cuisine) params.set('cuisine', cuisine);
+            const resp = await fetch(`/ai/nutrition/plan/${encodeURIComponent(uid)}?${params.toString()}`);
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            const data = await resp.json();
+            renderMeals(data, true);
+            msg.textContent = '';
+          } catch (e) {
+            msg.textContent = `No se pudo generar el plan: ${e.message}`;
           }
-        }catch(e){}
-        loadActive();
-      });
-    })();
-  </script>
+        }
+
+        btn.addEventListener('click', generate);
+        btnSave.addEventListener('click', async () => {
+          const payloadStr = btnSave.dataset.payload || '';
+          if (!payloadStr) { return; }
+          try {
+            const data = JSON.parse(payloadStr);
+            const saveBody = { user_id: data.input?.user_id, backend: data.backend, input: data.input, output: data.output };
+            const resp = await fetch('/meal_plans/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(saveBody) });
+            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+            const resj = await resp.json();
+            msg.textContent = 'Plan de nutricion guardado y activado';
+            btnSave.style.display = 'none';
+          } catch (e) { msg.textContent = `No se pudo guardar el plan: ${e.message}`; }
+        });
+
+        async function loadActive() {
+          try {
+            const uid = resolveUserId(document.getElementById('nutriUserId').value);
+            if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}/active`);
+            if (!resp.ok) { msg.textContent = 'No cuenta con plan de nutrición activo'; container.innerHTML = ''; btnSave.style.display = 'none'; return; }
+            const doc = await resp.json();
+            renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
+            msg.textContent = 'Plan de nutrición activo cargado';
+          } catch (e) { msg.textContent = `Error al cargar plan activo: ${e.message}`; }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+          hideSampleCards();
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const display = (u.username || '').trim();
+              if (display) { document.getElementById('nutriUserId').value = display; }
+            }
+          } catch (e) { }
+          loadActive();
+        });
+      })();
+    </script>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

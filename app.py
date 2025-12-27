@@ -18,6 +18,7 @@ from ai_agents.reasoning_agent import ReasoningAgent
 from typing import Any, Dict, Optional
 from ai_agents.meal_plan_agent import MealPlanAgent
 from ai_agents.body_assessment_agent import BodyAssessmentAgent
+from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
 
 # ======================================================
 # CONFIGURACIÓN INICIAL
@@ -36,6 +37,38 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ai_fitness")
 logger.info("✔ Aplicación AI Fitness iniciada correctamente")
+
+# Check OpenAI Key Status
+openai_key = os.getenv("OPENAI_API_KEY")
+if openai_key:
+    masked_key = f"{openai_key[:8]}...{openai_key[-4:]}" if len(openai_key) > 12 else "***"
+    logger.info(f"✔ OPENAI_API_KEY detectada: {masked_key}")
+else:
+    logger.warning("⚠ OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
+
+openai_model = os.getenv("OPENAI_MODEL", "gpt-4o (default)")
+logger.info(f"✔ Modelo OpenAI configurado: {openai_model}")
+
+
+def log_agent_execution(
+    stage: str,
+    name: str,
+    agent: Any,
+    payload: Optional[Dict[str, Any]] = None,
+    extra: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Log agent execution details without leaking sensitive data."""
+    backend = agent.backend() if hasattr(agent, "backend") else "unknown"
+    model = getattr(agent, "model", None)
+    init_error = getattr(agent, "init_error", None)
+    key_present = bool(os.getenv("OPENAI_API_KEY"))
+    payload_keys = list(payload.keys()) if isinstance(payload, dict) else None
+    meta = {"backend": backend, "model": model, "key_present": key_present, "init_error": init_error}
+    if payload_keys is not None:
+        meta["payload_keys"] = payload_keys
+    if extra:
+        meta.update(extra)
+    logger.info(f"[AgentRun:{stage}] {name} | {meta}")
 
 # ======================================================
 # CONEXIÓN MONGODB
@@ -246,7 +279,25 @@ def ai_reason_for_user(user_id: str):
             return jsonify({"error": "No hay registros de progreso para este usuario"}), 404
 
         agent = ReasoningAgent()
+        log_agent_execution(
+            "start",
+            "ReasoningAgent",
+            agent,
+            context,
+            {"endpoint": "/ai/reason/<user_id>", "user_id": user_id},
+        )
         result = agent.run(context)
+        log_agent_execution(
+            "end",
+            "ReasoningAgent",
+            agent,
+            context,
+            {
+                "endpoint": "/ai/reason/<user_id>",
+                "user_id": user_id,
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None,
+            },
+        )
 
         # Persistir ajuste en historial
         try:
@@ -419,7 +470,25 @@ def ai_body_assessment():
         }
 
         agent = BodyAssessmentAgent()
+        log_agent_execution(
+            "start",
+            "BodyAssessmentAgent",
+            agent,
+            context,
+            {"endpoint": "/ai/body_assessment", "user_id": context.get("user_id")},
+        )
         result = agent.run(context, images=images_for_agent)
+        log_agent_execution(
+            "end",
+            "BodyAssessmentAgent",
+            agent,
+            context,
+            {
+                "endpoint": "/ai/body_assessment",
+                "user_id": context.get("user_id"),
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None,
+            },
+        )
 
         try:
             if db is not None and context.get("user_id"):
@@ -500,7 +569,25 @@ def ai_nutrition_plan(user_id: str):
         }
 
         agent = MealPlanAgent()
+        log_agent_execution(
+            "start",
+            "MealPlanAgent",
+            agent,
+            context,
+            {"endpoint": "/ai/nutrition/plan/<user_id>", "user_id": user_id},
+        )
         result = agent.run(context)
+        log_agent_execution(
+            "end",
+            "MealPlanAgent",
+            agent,
+            context,
+            {
+                "endpoint": "/ai/nutrition/plan/<user_id>",
+                "user_id": user_id,
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None,
+            },
+        )
         # No persistir automáticamente; el frontend decidirá guardar/activar
         return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
     except Exception as e:
@@ -727,6 +814,46 @@ def admin_meal_plans_page():
     if request.args.get("token"):
         resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
     return resp
+
+@app.get("/admin/body_assessments")
+def admin_body_assessments_page():
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if not admin_token:
+        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+
+    provided = request.args.get("token") or request.cookies.get("admin_token") or request.headers.get("X-Admin-Token")
+    # Nota: Si se quisiera relajar para usar el token del form JS, se podría servir el template siempre.
+    # Pero mantenemos consistencia con admin_plans.
+    if provided != admin_token:
+        # Permitir carga si no hay token en GET pero el user tiene el token en mano para el input JS? 
+        # Las otras paginas retornan 403. Mantenemos el patron.
+        return "No autorizado. Vaya a /admin para login.", 403
+
+    resp = make_response(render_template("admin_body_assessments.html"))
+    if request.args.get("token"):
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
+
+@app.get("/body_assessments/<user_id>")
+def list_body_assessments(user_id: str):
+    """Lista evaluaciones de un usuario."""
+    # Check simple de DB
+    if db is None:
+        return jsonify({"error": "DB no inicializada"}), 503
+
+    try:
+        limit = int(request.args.get("limit", 20))
+        cursor = db.body_assessments.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        docs = []
+        for d in cursor:
+            d["_id"] = str(d["_id"])
+            if d.get("created_at"):
+                d["created_at"] = d["created_at"].isoformat() + "Z"
+            docs.append(d)
+        return jsonify(docs), 200
+    except Exception as e:
+        logger.error(f"Error list_body_assessments: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.post("/plans/<plan_id>/edit")
@@ -1229,6 +1356,10 @@ def nutrition_page():
 def about_page():
     return render_template("about.html")
 
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html")
+
 
 # ======================================================
 # AGENTIC AI: RAZONAMIENTO Y AJUSTES
@@ -1251,7 +1382,15 @@ def ai_reason():
             return jsonify({"error": "El cuerpo debe ser JSON"}), 415
         payload = request.get_json() or {}
         agent = ReasoningAgent()
+        log_agent_execution("start", "ReasoningAgent", agent, payload, {"endpoint": "/ai/reason"})
         result = agent.run(payload)
+        log_agent_execution(
+            "end",
+            "ReasoningAgent",
+            agent,
+            payload,
+            {"endpoint": "/ai/reason", "output_keys": list(result.keys()) if isinstance(result, dict) else None},
+        )
         return jsonify(result), 200
     except Exception as e:
         logger.error(f"Error en ai_reason: {e}", exc_info=True)
@@ -1274,11 +1413,173 @@ def ai_reason_sample():
             progress = json.load(f)
         payload = {"progress": progress}
         agent = ReasoningAgent()
+        log_agent_execution("start", "ReasoningAgent", agent, payload, {"endpoint": "/ai/reason/sample"})
         result = agent.run(payload)
+        log_agent_execution(
+            "end",
+            "ReasoningAgent",
+            agent,
+            payload,
+            {
+                "endpoint": "/ai/reason/sample",
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None,
+            },
+        )
         return jsonify({"backend": agent.backend(), "input": payload, "output": result}), 200
     except Exception as e:
         logger.error(f"Error en ai_reason_sample: {e}", exc_info=True)
         return jsonify({"error": "Error interno al ejecutar el agente (sample)"}), 500
+
+
+@app.get("/ai/diagnostics/agents")
+def ai_agents_diagnostics():
+    """Run a lightweight diagnostic for agent backends and outputs."""
+    try:
+        reasoning_payload = {
+            "progress": [
+                {"body_fat": 22.0, "performance": 70, "nutrition_adherence": 85},
+                {"body_fat": 21.8, "performance": 72, "nutrition_adherence": 88},
+            ]
+        }
+        body_payload = {
+            "sex": "male",
+            "age": 30,
+            "goal": "definicion",
+            "measurements": {
+                "weight_kg": 78,
+                "height_cm": 178,
+                "waist": 86,
+                "neck": 40,
+                "hip": 98,
+            },
+        }
+        meal_payload = {
+            "total_kcal": 2200,
+            "meals": 4,
+            "macros": {"protein": 160, "carbs": 250, "fat": 70},
+        }
+
+        agents = [
+            ("ReasoningAgent", ReasoningAgent(), reasoning_payload),
+            ("ReasoningAgentLegacy", LegacyReasoningAgent(), reasoning_payload),
+            ("BodyAssessmentAgent", BodyAssessmentAgent(), body_payload),
+            ("MealPlanAgent", MealPlanAgent(), meal_payload),
+        ]
+
+        results = []
+        for name, agent, payload in agents:
+            log_agent_execution(
+                "start",
+                name,
+                agent,
+                payload,
+                {"endpoint": "/ai/diagnostics/agents"},
+            )
+            output = agent.run(payload)
+            log_agent_execution(
+                "end",
+                name,
+                agent,
+                payload,
+                {
+                    "endpoint": "/ai/diagnostics/agents",
+                    "output_keys": list(output.keys()) if isinstance(output, dict) else None,
+                },
+            )
+            results.append(
+                {
+                    "agent": name,
+                    "backend": agent.backend(),
+                    "input": payload,
+                    "output": output,
+                }
+            )
+
+        return jsonify({"results": results}), 200
+    except Exception as e:
+        logger.error(f"Error en ai_agents_diagnostics: {e}", exc_info=True)
+        return jsonify({"error": "Error interno en diagnostico de agentes"}), 500
+
+
+@app.get("/ai/reason/<user_id>")
+def ai_reason_user(user_id):
+    """Genera nuevos ajustes AI para un usuario basándose en su progreso."""
+    try:
+        user = db.users.find_one({"user_id": user_id})
+        progress_recs = list(db.progress.find({"user_id": user_id}).sort("date", 1))
+        
+        # Limpieza de datos
+        clean_progress = []
+        for p in progress_recs:
+            p["_id"] = str(p["_id"])
+            if isinstance(p.get("date"), datetime):
+                p["date"] = p["date"].isoformat()
+            clean_progress.append(p)
+            
+        context = {
+            "user": {"user_id": user_id},
+            "progress": clean_progress
+        }
+        
+        # Intentar obtener objetivo del plan activo
+        active_plan = db.plans.find_one({"user_id": user_id, "active": True})
+        if active_plan:
+            context["user"]["goal"] = active_plan.get("goal")
+        elif user:
+            context["user"]["goal"] = user.get("goal")
+            
+        agent = ReasoningAgent()
+        log_agent_execution(
+            "start",
+            "ReasoningAgent",
+            agent,
+            context,
+            {"endpoint": "/ai/reason/<user_id>", "user_id": user_id},
+        )
+        result = agent.run(context)
+        log_agent_execution(
+            "end",
+            "ReasoningAgent",
+            agent,
+            context,
+            {
+                "endpoint": "/ai/reason/<user_id>",
+                "user_id": user_id,
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None,
+            },
+        )
+        
+        # Guardar resultado
+        record = {
+            "user_id": user_id,
+            "created_at": datetime.utcnow(),
+            "output": result,
+            "backend": agent.backend()
+        }
+        res = db.ai_adjustments.insert_one(record)
+        record["_id"] = str(res.inserted_id)
+        
+        return jsonify({"output": result, "record": record}), 200
+    except Exception as e:
+        logger.error(f"Error en ai_reason_user: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al generar razonamiento"}), 500
+
+
+@app.get("/ai/adjustments/<user_id>")
+def get_ai_adjustments_history(user_id):
+    """Obtiene el historial de ajustes AI de un usuario."""
+    try:
+        limit = int(request.args.get("limit", 10))
+        docs = list(db.ai_adjustments.find({"user_id": user_id}).sort("created_at", -1).limit(limit))
+        for d in docs:
+            d["_id"] = str(d["_id"])
+            if isinstance(d.get("created_at"), datetime):
+                # ISO simplificado o string
+                d["created_at"] = d["created_at"].isoformat() + "Z"
+        return jsonify(docs), 200
+    except Exception as e:
+        logger.error(f"Error al obtener historial de ajustes: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al obtener historial"}), 500
 
 
 # ======================================================
@@ -1534,4 +1835,4 @@ def server_error(e):
 # EJECUCIÓN LOCAL
 # ======================================================
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)

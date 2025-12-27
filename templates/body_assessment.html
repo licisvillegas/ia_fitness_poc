@@ -1,149 +1,172 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>AI Fitness | Evaluación Corporal Inteligente</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        font-family: "Poppins", sans-serif;
-        background-color: #0a0a0a;
-        color: #e5e7eb;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
 
-      .navbar {
-        background-color: #111827;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>AI Fitness | Evaluación Corporal Inteligente</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="/static/css/sidebar.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+      min-height: 100vh;
+      /* display: flex; flex-direction: column; handled by sidebar.css somewhat but strict flex might conflict */
+    }
 
-      .navbar-brand {
-        color: #3b82f6 !important;
-        font-weight: 700;
-      }
+    .navbar {
+      background-color: #111827;
+    }
 
-      .navbar a {
-        color: #e5e7eb !important;
-      }
+    .navbar-brand {
+      color: #3b82f6 !important;
+      font-weight: 700;
+    }
 
-      main {
-        flex: 1;
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-      }
+    .navbar a {
+      color: #e5e7eb !important;
+    }
 
-      .card {
-        background-color: #111827;
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.65);
-      }
+    main {
+      flex: 1;
+      padding-top: 2rem;
+      padding-bottom: 3rem;
+    }
 
-      .section-title {
-        font-weight: 600;
-        color: #3b82f6;
-      }
+    .card {
+      background-color: #111827;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.65);
+    }
 
-      .form-label {
-        font-weight: 500;
-      }
+    .section-title {
+      font-weight: 600;
+      color: #3b82f6;
+    }
 
-      .btn-primary {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        border: none;
-        font-weight: 600;
-      }
+    .form-label {
+      font-weight: 500;
+    }
 
-      .btn-outline-light {
-        border-color: rgba(148, 163, 184, 0.4);
-        color: #e5e7eb;
-      }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      font-weight: 600;
+    }
 
-      .btn-outline-light:hover {
-        background-color: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-      }
+    .btn-outline-light {
+      border-color: rgba(148, 163, 184, 0.4);
+      color: #e5e7eb;
+    }
 
-      .badge-category {
-        background-color: rgba(59, 130, 246, 0.25);
-        color: #bfdbfe;
-        font-weight: 500;
-        padding: 0.4rem 0.75rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-      }
+    .btn-outline-light:hover {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
 
-      .result-pre {
-        background-color: rgba(15, 23, 42, 0.75);
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        color: #f8fafc;
-        max-height: 400px;
-        overflow: auto;
-        font-size: 0.9rem;
-      }
+    .badge-category {
+      background-color: rgba(59, 130, 246, 0.25);
+      color: #bfdbfe;
+      font-weight: 500;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+    }
 
-      footer {
-        background-color: #111827;
-        color: #9ca3af;
-        text-align: center;
-        padding: 1rem 0;
-        margin-top: auto;
-      }
+    .result-pre {
+      background-color: rgba(15, 23, 42, 0.75);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #f8fafc;
+      max-height: 400px;
+      overflow: auto;
+      font-size: 0.9rem;
+    }
 
-      .photo-row {
-        background-color: rgba(17, 24, 39, 0.6);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 0.75rem;
-        padding: 1rem;
-      }
+    footer {
+      background-color: #111827;
+      color: #9ca3af;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+    }
 
-      .spinner-border {
-        width: 1.75rem;
-        height: 1.75rem;
-        border-width: 0.2rem;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg shadow-sm">
-      <div class="container">
-        <a class="navbar-brand" href="#">AI Fitness</a>
-        <button
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-          class="navbar-toggler text-light"
-          data-bs-target="#navbarNav"
-          data-bs-toggle="collapse"
-          type="button"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="/">Inicio</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/ai/body_assessment/tester">Evaluación corporal</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/nutrition">Nutrición AI</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+    .photo-row {
+      background-color: rgba(17, 24, 39, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+
+    .spinner-border {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-width: 0.2rem;
+    }
+
+    .img-thumbnail-preview {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: zoom-in;
+      border: 2px solid #3b82f6;
+      display: none;
+      /* Hidden by default until image is loaded */
+      transition: transform 0.2s;
+    }
+
+    .img-thumbnail-preview:hover {
+      transform: scale(1.1);
+    }
+
+    /* Report Styles */
+    .metric-card {
+      background-color: #1f2937;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      height: 100%;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e5e7eb;
+      border-left: 3px solid #3b82f6;
+      padding-left: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .badge-focus {
+      font-size: 0.9em;
+      padding: 0.5em 1em;
+    }
+  </style>
+</head>
+
+<body>
+  {% include 'components/sidebar_admin.html' %}
+  <div class="main-content">
 
     <main class="container">
       <div class="row g-4">
@@ -190,13 +213,8 @@
                     </div>
                     <div class="col-12">
                       <label class="form-label" for="notes">Notas para el coach</label>
-                      <textarea
-                        class="form-control"
-                        id="notes"
-                        name="notes"
-                        placeholder="Ejemplo: Busco definir sin perder demasiada masa magra"
-                        rows="2"
-                      ></textarea>
+                      <textarea class="form-control" id="notes" name="notes"
+                        placeholder="Ejemplo: Busco definir sin perder demasiada masa magra" rows="2"></textarea>
                     </div>
                   </div>
                 </section>
@@ -206,75 +224,58 @@
                   <div class="row g-3">
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="height_cm">Altura (cm)</label>
-                      <input
-                        class="form-control"
-                        data-measure="height_cm"
-                        id="height_cm"
-                        placeholder="175"
-                        type="number"
-                        step="0.1"
-                      />
+                      <input class="form-control" data-measure="height_cm" id="height_cm" placeholder="175"
+                        type="number" step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="weight_kg">Peso (kg)</label>
-                      <input
-                        class="form-control"
-                        data-measure="weight_kg"
-                        id="weight_kg"
-                        placeholder="78"
-                        type="number"
-                        step="0.1"
-                      />
+                      <input class="form-control" data-measure="weight_kg" id="weight_kg" placeholder="78" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="waist">Cintura (cm)</label>
-                      <input class="form-control" data-measure="waist" id="waist" placeholder="82" type="number" step="0.1" />
+                      <input class="form-control" data-measure="waist" id="waist" placeholder="82" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="abdomen">Abdomen (cm)</label>
-                      <input class="form-control" data-measure="abdomen" id="abdomen" placeholder="85" type="number" step="0.1" />
+                      <input class="form-control" data-measure="abdomen" id="abdomen" placeholder="85" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="chest">Pecho (cm)</label>
-                      <input class="form-control" data-measure="chest" id="chest" placeholder="104" type="number" step="0.1" />
+                      <input class="form-control" data-measure="chest" id="chest" placeholder="104" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="hip">Cadera (cm)</label>
-                      <input class="form-control" data-measure="hip" id="hip" placeholder="98" type="number" step="0.1" />
+                      <input class="form-control" data-measure="hip" id="hip" placeholder="98" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="neck">Cuello (cm)</label>
-                      <input class="form-control" data-measure="neck" id="neck" placeholder="39" type="number" step="0.1" />
+                      <input class="form-control" data-measure="neck" id="neck" placeholder="39" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="arm_relaxed">Brazo relajado (cm)</label>
-                      <input
-                        class="form-control"
-                        data-measure="arm_relaxed"
-                        id="arm_relaxed"
-                        placeholder="33"
-                        type="number"
-                        step="0.1"
-                      />
+                      <input class="form-control" data-measure="arm_relaxed" id="arm_relaxed" placeholder="33"
+                        type="number" step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="arm_flexed">Brazo contraído (cm)</label>
-                      <input
-                        class="form-control"
-                        data-measure="arm_flexed"
-                        id="arm_flexed"
-                        placeholder="36"
-                        type="number"
-                        step="0.1"
-                      />
+                      <input class="form-control" data-measure="arm_flexed" id="arm_flexed" placeholder="36"
+                        type="number" step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="thigh">Muslo (cm)</label>
-                      <input class="form-control" data-measure="thigh" id="thigh" placeholder="58" type="number" step="0.1" />
+                      <input class="form-control" data-measure="thigh" id="thigh" placeholder="58" type="number"
+                        step="0.1" />
                     </div>
                     <div class="col-sm-6 col-lg-4">
                       <label class="form-label" for="calf">Pantorrilla (cm)</label>
-                      <input class="form-control" data-measure="calf" id="calf" placeholder="38" type="number" step="0.1" />
+                      <input class="form-control" data-measure="calf" id="calf" placeholder="38" type="number"
+                        step="0.1" />
                     </div>
                   </div>
                 </section>
@@ -313,10 +314,75 @@
           <div class="card h-100">
             <div class="card-body d-flex flex-column">
               <h2 class="section-title h5 mb-3">Resultado del agente</h2>
-              <p class="text-secondary small">
-                El agente devuelve un JSON estructurado con composición corporal, proporciones, resumen, recomendaciones y feedback sobre las fotos.
-              </p>
-              <div class="result-pre flex-grow-1" id="result-output">Aún no se ha generado ninguna evaluación.</div>
+
+              <!-- Placeholder State -->
+              <div id="result-placeholder"
+                class="d-flex align-items-center justify-content-center text-secondary border border-secondary rounded p-4"
+                style="min-height: 400px; background-color: rgba(15, 23, 42, 0.5);">
+                <div class="text-center">
+                  <i class="fas fa-robot fa-3x mb-3 text-dark"></i>
+                  <p>Completa el formulario para iniciar.</p>
+                </div>
+              </div>
+
+              <!-- Visual Report Container -->
+              <div id="result-container" style="display:none;">
+                <ul class="nav nav-tabs border-secondary mb-3" role="tablist">
+                  <li class="nav-item"><button class="nav-link active text-white bg-transparent" data-bs-toggle="tab"
+                      data-bs-target="#tab-visual">Reporte Visual</button></li>
+                  <li class="nav-item"><button class="nav-link text-white bg-transparent" data-bs-toggle="tab"
+                      data-bs-target="#tab-json">JSON</button></li>
+                </ul>
+
+                <div class="tab-content h-100" style="overflow-y:auto; max-height:800px; padding-right:5px;">
+                  <!-- Visual Tab -->
+                  <div class="tab-pane fade show active" id="tab-visual">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <span class="badge bg-secondary font-monospace" id="res-backend"></span>
+                      <span class="badge bg-primary badge-focus" id="res-focus"></span>
+                    </div>
+
+                    <!-- Metrics -->
+                    <div class="row g-2 mb-4" id="res-metrics"></div>
+
+                    <!-- Summary -->
+                    <div class="mb-4">
+                      <h6 class="section-title">Resumen</h6>
+                      <p id="res-summary" class="text-white small"></p>
+                    </div>
+
+                    <!-- Proportions -->
+                    <div class="mb-4">
+                      <h6 class="section-title">Análisis de Proporciones</h6>
+                      <div class="p-3 rounded" style="background: rgba(31, 41, 55, 0.5);">
+                        <p id="res-symmetry" class="mb-2 text-info small fst-italic"></p>
+                        <div class="d-flex flex-wrap gap-3 small text-secondary">
+                          <span id="res-prop-wh"></span>
+                          <span id="res-prop-whip"></span>
+                          <span id="res-prop-wc"></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="mb-4">
+                      <h6 class="section-title">Recomendaciones</h6>
+                      <ul id="res-actions" class="list-group list-group-flush bg-transparent"></ul>
+                    </div>
+
+                    <!-- Photo Feedback -->
+                    <div class="mb-4">
+                      <h6 class="section-title">Feedback Fotos</h6>
+                      <ul id="res-photos" class="list-group list-group-flush bg-transparent"></ul>
+                    </div>
+                  </div>
+
+                  <!-- JSON Tab -->
+                  <div class="tab-pane fade" id="tab-json">
+                    <pre id="result-output" class="result-pre text-small"></pre>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -329,16 +395,36 @@
       </div>
     </footer>
 
+    <!-- Image Zoom Modal -->
+    <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-secondary">
+          <div class="modal-body p-0 position-relative text-center">
+            <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3"
+              data-bs-dismiss="modal" aria-label="Close"
+              style="z-index: 10; background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 0.5rem;"></button>
+            <img id="zoomedImage" src="" class="img-fluid" style="max-height: 90vh;" alt="Vista completa">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       const photoList = document.getElementById("photo-list");
       const loadingIndicator = document.getElementById("loading-indicator");
       const resultOutput = document.getElementById("result-output");
       const submitBtn = document.getElementById("submit-btn");
 
+      let zoomModal;
+      document.addEventListener('DOMContentLoaded', () => {
+        const modalEl = document.getElementById('imageZoomModal');
+        if (modalEl) zoomModal = new bootstrap.Modal(modalEl);
+      });
+
       function createPhotoRow(initial = {}) {
         const wrapper = document.createElement("div");
         wrapper.className = "photo-row";
-        const uid = `photo_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
+        const uid = `photo_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
         wrapper.innerHTML = `
           <div class="row g-3 align-items-end">
             <div class="col-sm-4">
@@ -355,14 +441,44 @@
             </div>
             <div class="col-sm-8">
               <label class="form-label">Archivo de foto</label>
-              <input type="file" accept="image/*" class="form-control photo-file" data-file-key="${uid}" />
-              <div class="form-text text-secondary">Opcional: adjunta la imagen para análisis del agente.</div>
+              <div class="d-flex align-items-center gap-3">
+                 <div style="flex-grow: 1;">
+                    <input type="file" accept="image/*" class="form-control photo-file" data-file-key="${uid}" />
+                    <div class="form-text text-secondary">Opcional: adjunta la imagen para análisis del agente.</div>
+                 </div>
+                 <img src="" class="img-thumbnail-preview" alt="Preview"/>
+              </div>
             </div>
             <div class="col-12 text-end">
               <button type="button" class="btn btn-link text-danger p-0 remove-photo">Eliminar</button>
             </div>
           </div>
         `;
+
+        const fileInput = wrapper.querySelector(".photo-file");
+        const imgPreview = wrapper.querySelector(".img-thumbnail-preview");
+
+        fileInput.addEventListener('change', function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              imgPreview.src = e.target.result;
+              imgPreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+          } else {
+            imgPreview.src = '';
+            imgPreview.style.display = 'none';
+          }
+        });
+
+        imgPreview.addEventListener('click', function () {
+          if (imgPreview.src && zoomModal) {
+            document.getElementById('zoomedImage').src = imgPreview.src;
+            zoomModal.show();
+          }
+        });
 
         wrapper.querySelector(".remove-photo").addEventListener("click", () => {
           wrapper.remove();
@@ -468,7 +584,10 @@
 
         loadingIndicator.classList.remove("d-none");
         submitBtn.disabled = true;
-        resultOutput.textContent = "Enviando datos al agente…";
+
+        // Reset UI
+        document.getElementById('result-placeholder').style.display = 'block';
+        document.getElementById('result-container').style.display = 'none';
 
         try {
           formData.append("payload", JSON.stringify(payload));
@@ -483,9 +602,97 @@
             throw new Error(data.error || "Error al generar la evaluación");
           }
 
+          // --- SUCCES: Render Visual Report ---
+          document.getElementById('result-placeholder').style.display = 'none';
+          document.getElementById('result-container').style.display = 'block';
+
+          // 1. JSON Raw (para debug)
           resultOutput.textContent = JSON.stringify(data, null, 2);
+
+          // 2. Populate Visual Elements
+          const out = data.output || {};
+          const inp = data.input || {};
+
+          document.getElementById('res-backend').textContent = 'Backend: ' + (data.backend || 'unknown');
+
+          // Focus Badge
+          const rec = out.recommendations || {};
+          const focus = rec.focus || (inp.goal || 'General');
+          const badge = document.getElementById('res-focus');
+          badge.textContent = focus.toUpperCase();
+          badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
+
+          // Metrics
+          const comp = out.body_composition || {};
+          const metricsRow = document.getElementById('res-metrics');
+          metricsRow.innerHTML = '';
+          const metrics = [
+            { label: '% GRASA', val: comp.body_fat_percent, unit: '%' },
+            { label: 'MASA MAGRA', val: comp.lean_mass_kg, unit: 'kg' },
+            { label: 'MASA GRASA', val: comp.fat_mass_kg, unit: 'kg' },
+            { label: '% MÚSCULO', val: comp.muscle_mass_percent, unit: '%' }
+          ];
+          metrics.forEach(m => {
+            const col = document.createElement('div');
+            col.className = 'col-6 col-md-3';
+            col.innerHTML = `
+                  <div class="metric-card p-2">
+                      <div class="metric-value" style="font-size:1.4rem">${m.val !== undefined ? m.val : '-'} <small style="font-size:0.5em">${m.unit}</small></div>
+                      <div class="metric-label" style="font-size:0.7rem">${m.label}</div>
+                  </div>
+              `;
+            metricsRow.appendChild(col);
+          });
+
+          // Summary
+          document.getElementById('res-summary').textContent = out.summary || 'Sin resumen disponible.';
+
+          // Proportions
+          const prop = out.proportions || {};
+          document.getElementById('res-symmetry').textContent = prop.symmetry_notes || '';
+          document.getElementById('res-prop-wh').innerHTML = `Cin/Alt: <strong class="text-white">${prop.waist_to_height || '-'}</strong>`;
+          document.getElementById('res-prop-whip').innerHTML = `Cin/Cad: <strong class="text-white">${prop.waist_to_hip || '-'}</strong>`;
+          document.getElementById('res-prop-wc').innerHTML = `Cin/Pecho: <strong class="text-white">${prop.waist_to_chest || '-'}</strong>`;
+
+          // Actions
+          const actionsList = document.getElementById('res-actions');
+          actionsList.innerHTML = '';
+          if (rec.actions && rec.actions.length) {
+            rec.actions.forEach(a => {
+              const li = document.createElement('li');
+              li.className = 'list-group-item bg-transparent text-secondary ps-0 small py-1';
+              li.innerHTML = `<i class="fas fa-check-circle text-primary me-2"></i> ${a}`;
+              actionsList.appendChild(li);
+            });
+          } else {
+            actionsList.innerHTML = '<li class="text-muted small">Sin recomendaciones</li>';
+          }
+
+          // Photos
+          const photoListEl = document.getElementById('res-photos');
+          photoListEl.innerHTML = '';
+          if (out.photo_feedback && out.photo_feedback.length) {
+            out.photo_feedback.forEach(f => {
+              const li = document.createElement('li');
+              li.className = 'list-group-item bg-transparent text-secondary ps-0 small py-1';
+              li.innerHTML = `<i class="fas fa-camera text-secondary me-2"></i> ${f}`;
+              photoListEl.appendChild(li);
+            });
+          } else {
+            photoListEl.innerHTML = '<li class="text-muted small">Sin feedback de fotos</li>';
+          }
+
+          // Activate Visual Tab
+          const visualTabBtn = document.querySelector('#result-container button[data-bs-target="#tab-visual"]');
+          if (visualTabBtn) { const t = new bootstrap.Tab(visualTabBtn); t.show(); }
+
         } catch (error) {
           resultOutput.textContent = `⚠️ ${error.message}`;
+          document.getElementById('result-placeholder').style.display = 'none';
+          document.getElementById('result-container').style.display = 'block';
+          // Switch to JSON tab to see error
+          const jsonTabBtn = document.querySelector('#result-container button[data-bs-target="#tab-json"]');
+          if (jsonTabBtn) { const t = new bootstrap.Tab(jsonTabBtn); t.show(); }
         } finally {
           loadingIndicator.classList.add("d-none");
           submitBtn.disabled = false;
@@ -493,5 +700,7 @@
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+  </div>
+</body>
+
 </html>

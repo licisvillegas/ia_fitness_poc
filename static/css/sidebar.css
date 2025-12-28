@@ -176,22 +176,63 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 }
 
 /* Responsive adjustments */
+/* Responsive adjustments */
 @media (max-width: 991.98px) {
+
+    /* Mobile Sidebar: Hidden off-canvas by default */
     .sidebar-fixed {
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        border-right: none !important;
-        border-bottom: 1px solid #374151;
-        z-index: 1020;
+        position: fixed !important;
+        top: 0;
+        left: -250px !important;
+        /* Fully hidden to the left */
+        width: 250px !important;
+        height: 100vh !important;
+        border-right: 1px solid #374151 !important;
+        border-bottom: none !important;
+        z-index: 1045 !important;
+        transition: left 0.3s ease-in-out;
+        box-shadow: none;
     }
 
+    /* Class to show sidebar on mobile */
+    .sidebar-fixed.show-mobile {
+        left: 0 !important;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Overlay backdrop */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        /* Just below sidebar */
+        opacity: 0;
+        pointer-events: none;
+        /* Let clicks pass through when hidden */
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .sidebar-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+        /* Catch clicks when visible */
+    }
+
+    /* Main content should take full width on mobile */
     .main-content {
         margin-left: 0 !important;
         margin-right: 0 !important;
         width: 100% !important;
+        padding-top: 60px;
+        /* Space for mobile header/toggler if needed */
     }
 }
+
+
 
 /* Nav Link Styling */
 .nav-pills .nav-link.active,

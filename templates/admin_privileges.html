@@ -352,6 +352,9 @@
                 searchInput.value = `${u.name || u.username} (${u.email})`;
                 resultsConfig.style.display = 'none';
 
+                // Save Context
+                try { localStorage.setItem('admin_working_user', JSON.stringify(u)); } catch (e) { }
+
                 // Filter table to show ONLY this user
                 const local = allUsers.find(existing => existing.user_id === u.user_id);
                 renderUsers(local ? [local] : [u]);
@@ -373,7 +376,19 @@
 
             btnRefresh.addEventListener("click", loadUsers);
 
-            loadUsers();
+            loadUsers().then(() => {
+                // Context Recovery
+                try {
+                    const ctx = localStorage.getItem('admin_working_user');
+                    if (ctx) {
+                        const u = JSON.parse(ctx);
+                        // If we are on this page, we might want to filter by this user automatically
+                        if (u && u.user_id) {
+                            selectUser(u);
+                        }
+                    }
+                } catch (e) { }
+            });
         });
     </script>
 </body>

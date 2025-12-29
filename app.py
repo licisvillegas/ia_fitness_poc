@@ -1604,10 +1604,10 @@ def edit_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+        
+        ok, err = check_admin_access()
+        if not ok: return err
+
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1712,6 +1712,10 @@ def activate_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
+        
+        ok, err = check_admin_access()
+        if not ok: return err
+
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1741,10 +1745,10 @@ def deactivate_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+            
+        ok, err = check_admin_access()
+        if not ok: return err
+
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1764,10 +1768,10 @@ def delete_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+            
+        ok, err = check_admin_access()
+        if not ok: return err
+
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1901,10 +1905,9 @@ def activate_meal_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+        
+        ok, err = check_admin_access()
+        if not ok: return err
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1934,10 +1937,9 @@ def deactivate_meal_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+        
+        ok, err = check_admin_access()
+        if not ok: return err
         try:
             oid = ObjectId(plan_id)
         except Exception:
@@ -1957,10 +1959,9 @@ def delete_meal_plan(plan_id: str):
     try:
         if db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
-        admin_token = os.getenv("ADMIN_TOKEN")
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "No autorizado"}), 403
+        
+        ok, err = check_admin_access()
+        if not ok: return err
         try:
             oid = ObjectId(plan_id)
         except Exception:

@@ -97,6 +97,37 @@
               <small id="adminPlanMeta" class="muted"></small>
               <hr />
 
+              <!-- AI Generator (Collapsible) -->
+              <div class="mb-3 border border-primary rounded p-2 bg-light">
+                <div class="d-flex justify-content-between align-items-center cursor-pointer"
+                  onclick="document.getElementById('aiGenBody').style.display = document.getElementById('aiGenBody').style.display==='none'?'block':'none'">
+                  <strong class="text-primary"><i class="fas fa-robot me-1"></i> Generador AI (Sobreescribir)</strong>
+                  <i class="fas fa-chevron-down text-secondary"></i>
+                </div>
+                <div id="aiGenBody" style="display:none; margin-top:10px;">
+                  <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                      <select id="aiMeals" class="form-select form-select-sm">
+                        <option value="3">3 Comidas</option>
+                        <option value="4">4 Comidas</option>
+                        <option value="5">5 Comidas</option>
+                        <option value="6" selected>6 Comidas</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-md-9">
+                      <input id="aiPrefs" type="text" class="form-control form-control-sm"
+                        placeholder="Prefs (ej. 'alta proteina, sin lacteos')">
+                    </div>
+                    <div class="col-12">
+                      <button id="btnAiGenerate" class="btn btn-sm btn-primary w-100">
+                        Generar Propuesta (Previsualizar)
+                      </button>
+                      <small id="aiMsg" class="text-info d-block mt-1"></small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Backend</label>
@@ -232,6 +263,7 @@
           hiddenId.value = u.user_id;
           searchInput.value = `${u.name || u.username} (${u.email})`;
           resultsConfig.style.display = 'none';
+          try { localStorage.setItem('admin_working_user', JSON.stringify(u)); } catch (e) { }
           // Auto-trigger load
           loadPlans();
         }
@@ -461,9 +493,79 @@
           } catch (e) { msg.textContent = `Error: ${e.message}`; }
         });
 
-        // Autorellenar usuario con el del login si existe
+        // --- Nutrition Generator Logic ---
+        const btnAi = document.getElementById('btnAiGenerate');
+        if (btnAi) {
+          btnAi.addEventListener('click', async () => {
+            // adminUserId holds the raw ID (set by selectUser)
+            const uid = document.getElementById('adminUserId').value.trim();
+            const meals = document.getElementById('aiMeals').value;
+            const prefs = document.getElementById('aiPrefs').value;
+            const msg = document.getElementById('aiMsg');
+
+            if (!uid) { msg.textContent = "Selecciona usuario primero"; return; }
+
+            msg.textContent = "Generando plan con AI... (puede tardar 10-20s)";
+            msg.className = "text-info d-block mt-1";
+
+            try {
+              const qs = new URLSearchParams({ meals, prefs, exclude: "", cuisine: "" }).toString();
+              // Call the AI endpoint (GET)
+              const resp = await fetch(`/ai/nutrition/plan/${uid}?${qs}`);
+              if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.error || "Error al llamar AI");
+              }
+              const data = await resp.json();
+
+              // If successful, populate the Editor
+              // data = { backend, input, output: {...} }
+              // We want output in fOutput
+
+              const output = data.output || {};
+              document.getElementById('fOutput').value = JSON.stringify(output, null, 2);
+              document.getElementById('fBackend').value = data.backend || "AI-Gen";
+              document.getElementById('fNotes').value = `Generado por Admin AI el ${new Date().toLocaleString()}`;
+
+              // Clear Plan ID if it's new
+              document.getElementById('fPlanId').value = "";
+              currentPlan = null; // Unselect any current plan
+              document.getElementById('adminPlanActiveBadge').style.display = 'none';
+              document.getElementById('adminPlanMeta').textContent = "Borrador Generado (No guardado)";
+
+              // Update Preview
+              try { window.updateVisualPreview(); } catch (e) { }
+
+              msg.textContent = "Plan generado y cargado en el editor. Revisa y Guarda.";
+              msg.className = "text-success d-block mt-1 fw-bold";
+
+              // Switch to preview tab if possible
+              try {
+                const tabEl = document.querySelector('#visual-tab');
+                if (tabEl) { const tab = new bootstrap.Tab(tabEl); tab.show(); }
+              } catch (e) { }
+
+            } catch (e) {
+              msg.textContent = "Error: " + e.message;
+              msg.className = "text-danger d-block mt-1 fw-bold";
+            }
+          });
+        }
+
+        // Autorellenar usuario con el contexto admin o el del login
         window.addEventListener('DOMContentLoaded', () => {
           try {
+            // Priority 1: Contexto de trabajo Admin (si existe)
+            const ctx = localStorage.getItem('admin_working_user');
+            if (ctx) {
+              const u = JSON.parse(ctx);
+              if (u && u.user_id) {
+                selectUser(u);
+                return;
+              }
+            }
+
+            // Priority 2: Session User
             const raw = localStorage.getItem('ai_fitness_user');
             if (raw) {
               const u = JSON.parse(raw);

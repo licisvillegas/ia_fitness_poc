@@ -1,0 +1,487 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fitness | Admin Â· Gestor de Usuarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <style>
+        /* Theme overrides are handled by theme.css */
+
+        .user-avatar-sm {
+            width: 32px;
+            height: 32px;
+            background-color: var(--bg-card-hover);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-right: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* Ensure inputs match high contrast requirements */
+        .form-label {
+            color: var(--text-secondary);
+        }
+
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+            /* Keeps it white on dark, inverted on light */
+        }
+
+        [data-theme="light"] .btn-close-white {
+            filter: none;
+        }
+
+        /* Modal specific */
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1 text-theme">Gestor de Usuarios</h2>
+                    <p class="text-secondary mb-0">Crea, edita o elimina usuarios del sistema.</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal"
+                    onclick="openCreateModal()">
+                    <i class="fas fa-plus me-2"></i> Nuevo Usuario
+                </button>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex gap-3">
+                        <div class="position-relative flex-grow-1">
+                            <div class="position-relative flex-grow-1">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="userSearchTerm"
+                                        placeholder="Buscar: nombre, email o ID...">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <!-- Hidden field for compatibility -->
+                                <input id="adminUserId" type="hidden">
+                                <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
+                                    style="z-index: 1000; display: none; width: 90%;"></div>
+                            </div>
+                            <button id="btnRefresh" class="btn btn-dark border-secondary"><i
+                                    class="fas fa-sync-alt"></i></button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Usuario</th>
+                                        <th>Email</th>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th class="text-end pe-4">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-secondary">
+                                            <div class="spinner-border text-primary mb-3" role="status"></div>
+                                            <div>Cargando usuarios...</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Nuevo Usuario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="userId">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="userName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="userUsername" required
+                                pattern="[A-Za-z0-9_.-]{3,20}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="userEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="userStatus">
+                                <option value="active">Activo</option>
+                                <option value="pending">Pendiente</option>
+                                <option value="suspended">Suspendido</option>
+                                <option value="inactive">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" id="lblPassword">Contraseña</label>
+                            <input type="password" class="form-control" id="userPassword" minlength="8">
+                            <div class="form-text text-secondary" id="helpPassword">MÃ­nimo 8 caracteres.</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveUser">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Eliminar Usuario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Â¿EstÃ¡s seguro de que deseas eliminar permanentemente a <strong id="deleteUserName"
+                            class="text-theme"></strong>?</p>
+                    <p class="small text-danger mb-0">âš  Esta acciÃ³n borrarÃ¡ todos sus planes, progresos y datos
+                        asociados. No se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDelete">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+            aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const tableBody = document.getElementById("usersTableBody");
+            // const searchInput = document.getElementById("searchInput"); // Removed/Moved down or replaced
+            const btnRefresh = document.getElementById("btnRefresh");
+
+            // Modal Elements
+            const userModalEl = document.getElementById('userModal');
+            const userModal = new bootstrap.Modal(userModalEl);
+            const modalTitle = document.getElementById('modalTitle');
+            const userIdInput = document.getElementById('userId');
+            const nameInput = document.getElementById('userName');
+            const usernameInput = document.getElementById('userUsername');
+            const emailInput = document.getElementById('userEmail');
+            const statusSelect = document.getElementById('userStatus');
+            const passwordInput = document.getElementById('userPassword');
+            const helpPassword = document.getElementById('helpPassword');
+            const btnSaveUser = document.getElementById('btnSaveUser');
+
+            // Delete Modal
+            const deleteModalEl = document.getElementById('deleteModal');
+            const deleteModal = new bootstrap.Modal(deleteModalEl);
+            const deleteUserName = document.getElementById('deleteUserName');
+            const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+
+            let allUsers = [];
+            let deletingUserId = null;
+
+            function showToast(msg, type = 'primary') {
+                const toastEl = document.getElementById('toast');
+                const toastBody = document.getElementById('toastMessage');
+                toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+                toastBody.textContent = msg;
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+
+            async function loadUsers() {
+                try {
+                    const resp = await fetch('/admin/api/users_roles'); // Reuse existing list endpoint
+                    if (!resp.ok) throw new Error("Error cargando usuarios");
+                    allUsers = await resp.json();
+                    renderUsers(allUsers);
+                } catch (e) {
+                    console.error(e);
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
+                }
+            }
+
+            function renderUsers(users) {
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-secondary py-5">No se encontraron usuarios</td></tr>';
+                    return;
+                }
+                tableBody.innerHTML = "";
+                users.forEach(u => {
+                    const tr = document.createElement("tr");
+                    const avatarInitials = (u.username || u.email || "?").substring(0, 2).toUpperCase();
+
+                    // Escape strings for safety
+                    const safeName = (u.name || "").replace(/'/g, "\\'");
+                    const safeUser = (u.username || "").replace(/'/g, "\\'");
+                    const safeEmail = (u.email || "").replace(/'/g, "\\'");
+                    const safeId = u.user_id;
+
+                    const status = (u.status || "active").toLowerCase();
+                    let statusClass = "bg-success";
+                    let statusLabel = "Activo";
+                    if (status === "pending") { statusClass = "bg-warning"; statusLabel = "Pendiente"; }
+                    if (status === "suspended") { statusClass = "bg-danger"; statusLabel = "Suspendido"; }
+                    if (status === "inactive") { statusClass = "bg-secondary"; statusLabel = "Inactivo"; }
+
+                    tr.innerHTML = `
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar-sm">${avatarInitials}</div>
+                                <div class="fw-bold">${u.username || 'Sin usuario'}</div>
+                            </div>
+                        </td>
+                        <td>${u.email || ''}</td>
+                        <td>${u.name || '-'}</td>
+                        <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-info me-2" 
+                                onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${status}')"
+                                title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                onclick="openDeleteModal('${safeId}', '${safeUser || safeEmail}')"
+                                title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            // --- CREATE / EDIT LOGIC ---
+            window.openCreateModal = function () {
+                modalTitle.textContent = "Nuevo Usuario";
+                userIdInput.value = "";
+                nameInput.value = "";
+                usernameInput.value = "";
+                emailInput.value = "";
+                statusSelect.value = "active";
+                passwordInput.value = "";
+                passwordInput.required = true;
+                helpPassword.textContent = "MÃ­nimo 8 caracteres.";
+                userModal.show();
+            };
+
+            window.openEditModal = function (id, name, username, email, status) {
+                modalTitle.textContent = "Editar Usuario";
+                userIdInput.value = id;
+                nameInput.value = name;
+                usernameInput.value = username;
+                emailInput.value = email;
+                statusSelect.value = status || "active";
+                passwordInput.value = "";
+                passwordInput.required = false;
+                helpPassword.textContent = "Dejar en blanco para mantener la actual.";
+                userModal.show();
+            };
+
+            btnSaveUser.addEventListener('click', async () => {
+                const isEdit = !!userIdInput.value;
+                const endpoint = isEdit ? '/admin/api/users/edit' : '/admin/api/users/create';
+
+                const payload = {
+                    user_id: userIdInput.value || undefined,
+                    name: nameInput.value,
+                    username: usernameInput.value,
+                    email: emailInput.value,
+                    password: passwordInput.value || undefined,
+                    status: statusSelect.value
+                };
+
+                // Basic validation
+                if (!payload.name || !payload.username || !payload.email) {
+                    showToast("Por favor completa los campos requeridos.", "warning");
+                    return;
+                }
+                if (!isEdit && !payload.password) {
+                    showToast("La Contraseña es obligatoria para nuevos usuarios.", "warning");
+                    return;
+                }
+
+                btnSaveUser.disabled = true;
+                btnSaveUser.textContent = "Guardando...";
+
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const resJson = await resp.json();
+
+                    if (!resp.ok) throw new Error(resJson.error || "Error al guardar");
+
+                    showToast("Usuario guardado correctamente", "success");
+                    userModal.hide();
+                    loadUsers();
+                } catch (e) {
+                    showToast(e.message, "danger");
+                } finally {
+                    btnSaveUser.disabled = false;
+                    btnSaveUser.textContent = "Guardar";
+                }
+            });
+
+            // --- DELETE LOGIC ---
+            window.openDeleteModal = function (id, name) {
+                deletingUserId = id;
+                deleteUserName.textContent = name;
+                deleteModal.show();
+            };
+
+            btnConfirmDelete.addEventListener('click', async () => {
+                if (!deletingUserId) return;
+
+                btnConfirmDelete.disabled = true;
+                btnConfirmDelete.textContent = "Eliminando...";
+
+                try {
+                    const resp = await fetch(`/admin/api/users/${deletingUserId}`, {
+                        method: 'DELETE'
+                    });
+                    if (!resp.ok) throw new Error("Error al eliminar usuario");
+
+                    showToast("Usuario eliminado correctamente", "success");
+                    deleteModal.hide();
+                    loadUsers();
+                } catch (e) {
+                    showToast(e.message, "danger");
+                } finally {
+                    btnConfirmDelete.disabled = false;
+                    btnConfirmDelete.textContent = "Eliminar";
+                    deletingUserId = null;
+                }
+            });
+
+            // --- SEARCH ---
+            // --- Standard User Search Logic (Adapted for Table) ---
+            // searchInput used from new declaration below or needs to be top level? 
+            // Better: define it here if I removed it from top. 
+            // Wait, I commented it out at top. So here I can declare it.
+            const searchInput = document.getElementById('userSearchTerm');
+            const hiddenId = document.getElementById('adminUserId');
+            const resultsConfig = document.getElementById('userSearchResults');
+
+            async function performUserLookup() {
+                const term = searchInput.value.trim();
+                if (!term) {
+                    renderUsers(allUsers); // Restore full list if empty
+                    return;
+                }
+                try {
+                    resultsConfig.innerHTML = '<div class="list-group-item">Buscando...</div>';
+                    resultsConfig.style.display = 'block';
+
+                    const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
+                    const data = await resp.json();
+                    resultsConfig.innerHTML = '';
+
+                    let users = [];
+                    if (Array.isArray(data)) users = data;
+                    else if (data.users) users = data.users;
+                    else if (data.user_id) users = [data];
+
+                    if (users.length === 0) {
+                        resultsConfig.innerHTML = '<div class="list-group-item text-muted">Sin resultados</div>';
+                    } else {
+                        users.forEach(u => {
+                            const el = document.createElement('a');
+                            el.href = '#';
+                            el.className = 'list-group-item list-group-item-action';
+                            el.innerHTML = `<div><strong>${u.name || u.username || 'Usuario'}</strong> <small class="text-muted">(${u.email || ''})</small></div><small class="text-xs text-secondary">ID: ${u.user_id}</small>`;
+                            el.onclick = (e) => {
+                                e.preventDefault();
+                                selectUser(u);
+                            };
+                            resultsConfig.appendChild(el);
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                    resultsConfig.innerHTML = `<div class="list-group-item text-danger">Error: ${e.message}</div>`;
+                }
+            }
+
+            function selectUser(u) {
+                hiddenId.value = u.user_id;
+                searchInput.value = `${u.name || u.username} (${u.email})`;
+                resultsConfig.style.display = 'none';
+
+                // Filter table to show ONLY this user
+                // Try to find in allUsers to get full status/details
+                const local = allUsers.find(existing => existing.user_id === u.user_id);
+                renderUsers(local ? [local] : [u]);
+            }
+
+            document.getElementById('btnLookupUser').addEventListener('click', performUserLookup);
+            searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
+
+            // Also trigger on input clear
+            searchInput.addEventListener('input', (e) => {
+                if (!e.target.value.trim()) renderUsers(allUsers);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
+                    resultsConfig.style.display = 'none';
+                }
+            });
+            // ----------------------------------
+
+            btnRefresh.addEventListener("click", loadUsers);
+
+            loadUsers();
+        });
+    </script>
+</body>
+
+</html>

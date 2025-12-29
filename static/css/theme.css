@@ -1,0 +1,534 @@
+:root {
+    /* Dark Mode (Default) */
+    --bg-body: #0b0f14;
+    --bg-panel: #111827;
+    /* Gray-900 */
+    --bg-card: #1b2230;
+    /* Gray-800 */
+    --bg-card-hover: #2a3446;
+    /* Gray-700 */
+    --bg-input: #1b2230;
+    --border-color: #2f3a4e;
+    --border-light: #415067;
+
+    --text-main: #f8fafc;
+    /* Gray-50 (White-ish) */
+    --text-secondary: #cbd5e1;
+    /* Gray-200 (Very Light Gray) - WAS #d1d5db */
+    --text-muted: #94a3b8;
+    /* Gray-300 (Light Gray) - WAS #9ca3af */
+    --text-placeholder: #9aa7b8;
+
+    --primary: #4f8df7;
+    /* Blue-500 */
+    --primary-hover: #2f6de6;
+
+    --table-text: #e2e8f0;
+    /* Blue-400 (Lighter blue for dark mode) */
+    --table-header-bg: #1b2230;
+
+    /* State colors */
+    --success: #22c55e;
+    --success-hover: #16a34a;
+    --success-bg: #0f2e1c;
+    --success-text: #86efac;
+
+    --info: #38bdf8;
+    --info-hover: #0ea5e9;
+    --info-bg: #0b2230;
+    --info-text: #7dd3fc;
+
+    --warning: #f59e0b;
+    --warning-hover: #d97706;
+    --warning-bg: #2b1f0a;
+    --warning-text: #fcd34d;
+
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --danger-bg: #2b1111;
+    --danger-text: #fca5a5;
+
+    --secondary: #94a3b8;
+    --secondary-hover: #64748b;
+    --secondary-bg: #1c2432;
+    --secondary-text: #cbd5e1;
+}
+
+[data-theme="light"] {
+    /* Light Mode - Pastel Blue/Slate Theme */
+    --bg-body: #f5f7fb;
+    /* Soft Pastel Blue background */
+    --bg-panel: #ffffff;
+    /* Clean White */
+    --bg-card: #ffffff;
+    --bg-card-hover: #edf2f7;
+    /* Very light slate hover */
+    --bg-input: #ffffff;
+
+    --border-color: #c7d2e0;
+    /* Blue-tinted gray border */
+    --border-light: #e7edf4;
+    /* Lighter border */
+
+    --text-main: #1a2433;
+    /* Slate-800 (Deep Blue-Gray) - Softer than pure black */
+    --text-secondary: #2c3a4f;
+    /* Slate-700 */
+    --text-muted: #52627a;
+    /* Slate-500 */
+    --text-placeholder: #6b7a92;
+
+    --primary: #2563eb;
+    /* Blue-500 - Standard Bright Blue */
+    --primary-hover: #1d4ed8;
+    /* Blue-600 */
+
+    --table-text: #1a2b4c;
+    /* Dark Blue-Gray for table text */
+    --table-header-bg: #eef2f7;
+    /* Matching hover/light bg */
+
+    /* State colors */
+    --success: #16a34a;
+    --success-hover: #15803d;
+    --success-bg: #ecfdf5;
+    --success-text: #166534;
+
+    --info: #0ea5e9;
+    --info-hover: #0284c7;
+    --info-bg: #ecfeff;
+    --info-text: #0e7490;
+
+    --warning: #d97706;
+    --warning-hover: #b45309;
+    --warning-bg: #fffbeb;
+    --warning-text: #92400e;
+
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --danger-bg: #fef2f2;
+    --danger-text: #991b1b;
+
+    --secondary: #64748b;
+    --secondary-hover: #475569;
+    --secondary-bg: #f1f5f9;
+    --secondary-text: #334155;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.muted {
+    color: var(--text-muted) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-main) !important;
+    /* Force visibility in both modes */
+}
+
+/* Utility classes for theme usage */
+.bg-panel {
+    background-color: var(--bg-panel) !important;
+}
+
+.bg-card {
+    background-color: var(--bg-card) !important;
+}
+
+.border-theme {
+    border-color: var(--border-color) !important;
+}
+
+.text-theme {
+    color: var(--text-main) !important;
+}
+
+/* Form Controls */
+.form-control,
+.form-select,
+textarea {
+    background-color: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-light) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+    background-color: var(--bg-input) !important;
+    border-color: var(--primary) !important;
+    color: var(--text-main) !important;
+}
+
+.form-control::placeholder,
+textarea::placeholder {
+    color: var(--text-placeholder) !important;
+    opacity: 1;
+}
+
+.form-control::-ms-input-placeholder,
+textarea::-ms-input-placeholder {
+    color: var(--text-placeholder) !important;
+}
+
+.form-select {
+    color: var(--text-main) !important;
+}
+
+.form-select option[value=""] {
+    color: var(--text-placeholder);
+}
+
+/* Tables */
+.table {
+    color: var(--table-text) !important;
+}
+
+.table thead th {
+    background-color: var(--table-header-bg) !important;
+    color: var(--table-text) !important;
+    border-color: var(--border-color) !important;
+}
+
+.table td {
+    color: var(--table-text) !important;
+    border-color: var(--border-color) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--bg-card-hover) !important;
+    color: var(--table-text) !important;
+}
+
+.table-hover tbody tr:hover td {
+    color: var(--table-text) !important;
+}
+
+/* Cards */
+.card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color);
+}
+
+.list-group-item {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+.list-group-item:hover {
+    background-color: var(--bg-card-hover) !important;
+}
+
+/* Modals */
+.modal-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border-color) !important;
+}
+
+/* Navbar/Sidebar specific overrides */
+.sidebar-fixed {
+    background-color: var(--bg-panel) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+.navbar {
+    background-color: var(--bg-panel) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+    color: #ffffff !important;
+}
+
+.btn-success {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
+    color: #ffffff !important;
+}
+
+.btn-success:hover,
+.btn-success:focus {
+    background-color: var(--success-hover) !important;
+    border-color: var(--success-hover) !important;
+}
+
+.btn-info {
+    background-color: var(--info) !important;
+    border-color: var(--info) !important;
+    color: #0b1220 !important;
+}
+
+.btn-info:hover,
+.btn-info:focus {
+    background-color: var(--info-hover) !important;
+    border-color: var(--info-hover) !important;
+    color: #0b1220 !important;
+}
+
+.btn-warning {
+    background-color: var(--warning) !important;
+    border-color: var(--warning) !important;
+    color: #0b1220 !important;
+}
+
+.btn-warning:hover,
+.btn-warning:focus {
+    background-color: var(--warning-hover) !important;
+    border-color: var(--warning-hover) !important;
+    color: #0b1220 !important;
+}
+
+.btn-danger {
+    background-color: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #ffffff !important;
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+    background-color: var(--danger-hover) !important;
+    border-color: var(--danger-hover) !important;
+}
+
+.btn-secondary {
+    background-color: var(--secondary) !important;
+    border-color: var(--secondary) !important;
+    color: #0b1220 !important;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+    background-color: var(--secondary-hover) !important;
+    border-color: var(--secondary-hover) !important;
+    color: #0b1220 !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-success {
+    color: var(--success) !important;
+    border-color: var(--success) !important;
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-info {
+    color: var(--info) !important;
+    border-color: var(--info) !important;
+}
+
+.btn-outline-info:hover,
+.btn-outline-info:focus {
+    background-color: var(--info) !important;
+    border-color: var(--info) !important;
+    color: #0b1220 !important;
+}
+
+.btn-outline-warning {
+    color: var(--warning) !important;
+    border-color: var(--warning) !important;
+}
+
+.btn-outline-warning:hover,
+.btn-outline-warning:focus {
+    background-color: var(--warning) !important;
+    border-color: var(--warning) !important;
+    color: #0b1220 !important;
+}
+
+.btn-outline-danger {
+    color: var(--danger) !important;
+    border-color: var(--danger) !important;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    background-color: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-secondary {
+    color: var(--secondary) !important;
+    border-color: var(--secondary) !important;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background-color: var(--secondary) !important;
+    border-color: var(--secondary) !important;
+    color: #0b1220 !important;
+}
+
+/* Alerts */
+.alert-success {
+    background-color: var(--success-bg) !important;
+    border-color: var(--success) !important;
+    color: var(--success-text) !important;
+}
+
+.alert-info {
+    background-color: var(--info-bg) !important;
+    border-color: var(--info) !important;
+    color: var(--info-text) !important;
+}
+
+.alert-warning {
+    background-color: var(--warning-bg) !important;
+    border-color: var(--warning) !important;
+    color: var(--warning-text) !important;
+}
+
+.alert-danger {
+    background-color: var(--danger-bg) !important;
+    border-color: var(--danger) !important;
+    color: var(--danger-text) !important;
+}
+
+.alert-secondary {
+    background-color: var(--secondary-bg) !important;
+    border-color: var(--secondary) !important;
+    color: var(--secondary-text) !important;
+}
+
+/* Badges */
+.badge.bg-success,
+.badge.bg-info,
+.badge.bg-warning,
+.badge.bg-danger,
+.badge.bg-secondary {
+    color: #0b1220 !important;
+}
+
+.badge.bg-success {
+    background-color: var(--success) !important;
+}
+
+.badge.bg-info {
+    background-color: var(--info) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-secondary {
+    background-color: var(--secondary) !important;
+}
+
+/* Text utility overrides */
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-info {
+    color: var(--info) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+/* Background utility overrides */
+.bg-success {
+    background-color: var(--success) !important;
+}
+
+.bg-info {
+    background-color: var(--info) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger) !important;
+}
+
+.bg-secondary {
+    background-color: var(--secondary) !important;
+}
+
+/* Border utility overrides */
+.border-success {
+    border-color: var(--success) !important;
+}
+
+.border-info {
+    border-color: var(--info) !important;
+}
+
+.border-warning {
+    border-color: var(--warning) !important;
+}
+
+.border-danger {
+    border-color: var(--danger) !important;
+}
+
+.border-secondary {
+    border-color: var(--secondary) !important;
+}

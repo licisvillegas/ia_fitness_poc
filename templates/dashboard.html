@@ -13,20 +13,22 @@
 
   <!-- Estilos base del dashboard (tema oscuro) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background-color: #0a0a0a;
-      color: #e5e7eb;
+      background-color: var(--bg-body);
+      color: var(--text-main);
     }
 
     .navbar {
-      background-color: #111827;
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
     }
 
     .navbar-brand {
-      color: #3b82f6 !important;
+      color: var(--primary) !important;
       font-weight: 700;
     }
 
@@ -41,10 +43,10 @@
       justify-content: center;
       text-align: center;
       color: white;
+      /* Keep hero text white as it has dark overlay */
     }
 
-    /* EstadÃ­sticas: mantener tarjetas del mismo tamaÃ±o (referencia: Peso Actual) */
-    /* Hacemos que las columnas se estiren y que la tarjeta ocupe toda la altura disponible */
+    /* Stats Cards */
     #stats .row {
       align-items: stretch;
     }
@@ -54,7 +56,8 @@
     }
 
     .stat-card {
-      background-color: #111827;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 15px;
       padding: 1.25rem;
       text-align: center;
@@ -64,32 +67,40 @@
       justify-content: center;
       align-items: center;
       flex: 1;
-      /* permite que la tarjeta llene la columna */
       min-height: 160px;
-      /* referencia mÃ­nima â ajusta si quieres un tamaÃ±o distinto */
     }
 
     .stat-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+      background-color: var(--bg-card-hover);
     }
 
     .stat-icon {
       font-size: 2.5rem;
-      color: #3b82f6;
+      color: var(--primary);
       margin-bottom: 10px;
     }
 
+    .stat-card h5 {
+      color: var(--text-main);
+    }
+
+    .stat-card h3 {
+      color: var(--text-main);
+    }
+
     .progress-bar {
-      background-color: #3b82f6;
+      background-color: var(--primary);
     }
 
     canvas {
-      background-color: #111827;
+      background-color: var(--bg-card);
       border-radius: 10px;
       padding: 10px;
       min-height: 280px;
       width: 100%;
+      border: 1px solid var(--border-color);
     }
 
     .chart-overlay {
@@ -98,25 +109,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #9ca3af;
+      color: var(--text-muted);
       font-size: 1rem;
       background: rgba(17, 24, 39, 0.75);
+      /* Keep dark overlay for now or adjust */
       border-radius: 10px;
       visibility: hidden;
     }
 
     footer {
-      background-color: #111827;
-      color: #9ca3af;
+      background-color: var(--bg-panel);
+      color: var(--text-muted);
       text-align: center;
       padding: 1rem 0;
       margin-top: 3rem;
+      border-top: 1px solid var(--border-color);
     }
 
     #loading {
       display: none;
       text-align: center;
-      color: #3b82f6;
+      color: var(--primary);
       margin-top: 1rem;
     }
 
@@ -124,6 +137,26 @@
       text-align: center;
       margin-top: 1rem;
       font-weight: 500;
+      color: var(--text-main) !important;
+    }
+
+    /* AI Section Overrides */
+    .ai-card-theme {
+      background-color: var(--bg-card) !important;
+      color: var(--text-main) !important;
+      border: 1px solid var(--border-color);
+    }
+
+    .ai-subcard-theme {
+      background: var(--bg-card-hover) !important;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .list-group-item-theme {
+      background: var(--bg-card) !important;
+      color: var(--text-main) !important;
+      border-color: var(--border-color) !important;
     }
   </style>
 </head>
@@ -137,7 +170,7 @@
     <section class="hero">
       <div class="container">
         <!-- TÃ­tulo principal y subtÃ­tulo del dashboard -->
-        <h1 id="dashboard-hero-title">Monitorea tu evoluciÃ³n</h1>
+        <h1 id="dashboard-hero-title">Monitorea tu evolución</h1>
         <p id="dashboard-hero-p" class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en
           tiempo real.</p>
       </div>
@@ -164,7 +197,7 @@
     <!-- EstadÃ­sticas -->
     <!-- Ajustes del Agente -->
     <section id="ai-section" class="container mt-5" style="display:none;">
-      <div class="card" style="background-color:#111827; color:#e5e7eb; border-radius:12px;">
+      <div class="card ai-card-theme" style="border-radius:12px;">
         <div class="card-body">
           <h4 class="card-title mb-3">Ajustes recomendados por el Agente</h4>
           <div id="ai-loading" class="text-info mb-2" style="display:none;">Calculando ajustes...</div>
@@ -172,14 +205,14 @@
           <div id="ai-content" style="display:none;">
             <div class="row g-3">
               <div class="col-md-6">
-                <div class="p-3" style="background:#0f172a; border-radius:10px;">
-                  <h6 class="text-primary">Plan de alimentaciÃ³n</h6>
+                <div class="p-3 ai-subcard-theme" style="border-radius:10px;">
+                  <h6 class="text-primary">Plan de alimentación</h6>
                   <div id="ai-kcal"></div>
                   <div id="ai-macros"></div>
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="p-3" style="background:#0f172a; border-radius:10px;">
+                <div class="p-3 ai-subcard-theme" style="border-radius:10px;">
                   <h6 class="text-primary">Plan de entrenamiento</h6>
                   <div id="ai-train"></div>
                 </div>
@@ -201,7 +234,7 @@
             <h5 class="mb-2">Histórico de ajustes</h5>
             <div id="ai-history-loading" class="text-info mb-2" style="display:none;">Cargando histórico...</div>
             <div id="ai-history-error" class="text-danger mb-2" style="display:none;"></div>
-            <ul id="ai-history-list" class="list-group list-group-flush" style="background:#111827;"></ul>
+            <ul id="ai-history-list" class="list-group list-group-flush" style="background:transparent;"></ul>
           </div>
         </div>
       </div>
@@ -214,23 +247,23 @@
           <div class="stat-card">
             <div class="stat-icon">🔥</div>
             <h5 id="stat-weight-title">Peso Actual</h5>
-            <h3 id="stat-weight">â€”</h3>
-            <p id="stat-last-0" class="text-secondary">Ãšltimo registro</p>
+            <h3 id="stat-weight" class="text-theme">â€”</h3>
+            <p id="stat-last-0" class="text-secondary">Último registro</p>
           </div>
         </div>
         <div class="col-md-3">
           <div class="stat-card">
             <div class="stat-icon">💪</div>
             <h5 id="stat-fat-title">Grasa Corporal</h5>
-            <h3 id="stat-fat">â€”</h3>
-            <p id="stat-last-1" class="text-secondary">Ãšltimo registro</p>
+            <h3 id="stat-fat" class="text-theme">â€”</h3>
+            <p id="stat-last-1" class="text-secondary">Último registro</p>
           </div>
         </div>
         <div class="col-md-3">
           <div class="stat-card">
             <div class="stat-icon">⚡</div>
             <h5 id="stat-performance-title">Rendimiento</h5>
-            <h3 id="stat-performance">â€”</h3>
+            <h3 id="stat-performance" class="text-theme">â€”</h3>
             <div class="progress mt-2">
               <div class="progress-bar" id="bar-performance" style="width:0%"></div>
             </div>
@@ -240,7 +273,7 @@
           <div class="stat-card">
             <div class="stat-icon">🥗</div>
             <h5 id="stat-nutrition-title">Adherencia Nutricional</h5>
-            <h3 id="stat-nutrition">â€”</h3>
+            <h3 id="stat-nutrition" class="text-theme">â€”</h3>
             <div class="progress mt-2">
               <div class="progress-bar" id="bar-nutrition" style="width:0%"></div>
             </div>
@@ -269,7 +302,7 @@
     </section>
 
     <footer>
-      <p id="footer-text">Â© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
+      <p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
     </footer>
 
     <script>
@@ -327,17 +360,27 @@
         const performance = data.map(d => d.performance);
         const nutrition = data.map(d => d.nutrition_adherence);
 
-        // Paleta y opciones de tema oscuro para Chart.js
-        const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
-        const opts = { plugins: { legend: { labels: { color: "#e5e7eb" } } }, scales: { x: { ticks: { color: "#9ca3af" } }, y: { ticks: { color: "#9ca3af" } } } };
+        // Paleta y opciones de tema para Chart.js
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const textColor = isLight ? '#374151' : '#e5e7eb';
+        const gridColor = isLight ? '#e5e7eb' : '#374151';
 
-        // GrÃ¡fico de peso (lÃ­nea)
+        const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
+        const opts = {
+          plugins: { legend: { labels: { color: textColor } } },
+          scales: {
+            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        };
+
+        // Gráfico de peso (línea)
         charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        // GrÃ¡fico de grasa corporal (lÃ­nea)
+        // Gráfico de grasa corporal (línea)
         charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        // GrÃ¡fico de rendimiento (barras)
+        // Gráfico de rendimiento (barras)
         charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
-        // GrÃ¡fico de adherencia nutricional (barras)
+        // Gráfico de adherencia nutricional (barras)
         charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
 
         // Expose a helper to update chart labels when language changes
@@ -356,11 +399,11 @@
 
       // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
       function clearDashboard() {
-        document.getElementById("stat-weight").innerText = "â";
-        document.getElementById("stat-fat").innerText = "â";
-        document.getElementById("stat-performance").innerText = "â";
+        document.getElementById("stat-weight").innerText = "?";
+        document.getElementById("stat-fat").innerText = "?";
+        document.getElementById("stat-performance").innerText = "?";
         document.getElementById("bar-performance").style.width = "0%";
-        document.getElementById("stat-nutrition").innerText = "â";
+        document.getElementById("stat-nutrition").innerText = "?";
         document.getElementById("bar-nutrition").style.width = "0%";
         charts.forEach(c => c.destroy());
         charts = [];
@@ -534,8 +577,8 @@
           const frag = document.createDocumentFragment();
           rows.forEach((r, idx) => {
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-start';
-            li.style.background = '#111827'; li.style.color = '#e5e7eb';
+            li.className = 'list-group-item list-group-item-theme d-flex justify-content-between align-items-start';
+            // li.style.background = '#111827'; li.style.color = '#e5e7eb'; // REMOVED hardcoded styles
             const title = document.createElement('div');
             const ts = (r.created_at || '').replace('T', ' ').replace('Z', '');
             title.innerHTML = `<div><strong>#${idx + 1}</strong> · ${ts || 'sin-fecha'}</div>`;

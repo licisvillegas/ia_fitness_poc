@@ -1,22 +1,29 @@
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sidebar-fixed"
-    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; background-color: #111827 !important; border-right: 1px solid #374151; z-index: 1030;">
-    <div class="d-flex align-items-center justify-content-between mb-3 text-white sidebar-header">
-        <a href="/" class="text-white text-decoration-none brand-text">
-            <span class="fs-4 fw-bold" style="color: #3b82f6;">AI Fitness</span>
+<link href="/static/css/theme.css" rel="stylesheet">
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
+    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
+    <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
+        <a href="/" class="text-decoration-none brand-text">
+            <span class="fs-4 fw-bold" style="color: var(--primary);">AI Fitness</span>
         </a>
-        <button id="sidebar-toggle" class="btn btn-link text-white p-0 fs-5" title="Colapsar/Expandir">
-            <i class="fas fa-arrow-left transition-icon"></i>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
+                <i class="fas fa-moon transition-icon"></i>
+            </button>
+            <button id="sidebar-toggle" class="btn btn-link text-theme p-0 fs-5" title="Colapsar/Expandir">
+                <i class="fas fa-arrow-left transition-icon"></i>
+            </button>
+        </div>
     </div>
 
     <!-- User Identity -->
-    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle-user"
+    <a href="#" class="d-flex align-items-center text-theme text-decoration-none dropdown-toggle-user"
         data-bs-toggle="collapse" data-bs-target="#user-collapse" aria-expanded="false" title="Usuario">
         <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
             style="width: 32px; height: 32px; min-width: 32px;">
             <i class="fas fa-user"></i>
         </div>
-        <strong><span id="sidebar-username">Usuario</span></strong>
+        <strong><span id="sidebar-username">{{ user_data.name if user_data and user_data.name else (user_data.username
+                if user_data and user_data.username else 'Usuario') }}</span></strong>
         <i class="fas fa-chevron-down ms-2 small transition-icon"></i>
     </a>
 
@@ -38,44 +45,50 @@
         </ul>
     </div>
 
-    <hr style="border-color: #374151; margin: 1rem 0;">
+    <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item">
-            <a href="/" class="nav-link text-white {% if request.path == '/' %}active{% endif %}" aria-current="page"
+            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" aria-current="page"
                 title="Inicio">
                 <i class="fas fa-home me-2" style="width: 24px; text-align: center;"></i>
                 <span>Inicio</span>
             </a>
         </li>
         <li>
-            <a href="/dashboard" class="nav-link text-white {% if request.path == '/dashboard' %}active{% endif %}"
+            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"
                 title="Dashboard">
                 <i class="fas fa-tachometer-alt me-2" style="width: 24px; text-align: center;"></i>
                 <span>Dashboard</span>
             </a>
         </li>
         <li>
-            <a href="/plan" class="nav-link text-white {% if request.path == '/plan' %}active{% endif %}"
-                title="Mi Plan">
+            <a href="/plan" class="nav-link {% if request.path == '/plan' %}active{% endif %}" title="Mi Plan">
                 <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
                 <span>Mi Plan</span>
             </a>
         </li>
         <li>
-            <a href="/nutrition" class="nav-link text-white {% if request.path == '/nutrition' %}active{% endif %}"
+            <a href="/nutrition" class="nav-link {% if request.path == '/nutrition' %}active{% endif %}"
                 title="Nutrición">
                 <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
                 <span>Nutrición</span>
             </a>
         </li>
         <li>
-            <a href="/about" class="nav-link text-white {% if request.path == '/about' %}active{% endif %}"
-                title="Acerca de">
+            <a href="/about" class="nav-link {% if request.path == '/about' %}active{% endif %}" title="Acerca de">
                 <i class="fas fa-info-circle me-2" style="width: 24px; text-align: center;"></i>
                 <span>Acerca de</span>
             </a>
         </li>
+        {% if current_user_role == 'admin' %}
+        <li class="mt-3 border-top border-secondary pt-3">
+            <a href="/admin" class="nav-link text-warning" title="Panel Admin">
+                <i class="fas fa-user-shield me-2" style="width: 24px; text-align: center;"></i>
+                <span>Panel Admin</span>
+            </a>
+        </li>
+        {% endif %}
     </ul>
 
     <hr style="border-color: #374151; margin: 1rem 0;">
@@ -83,9 +96,10 @@
     <div class="mb-4">
         <small class="text-secondary text-uppercase fw-bold mb-2 d-block"
             style="font-size: 0.75rem; letter-spacing: 0.05em;">Idioma</small>
-        <div class="btn-group w-100" role="group" aria-label="Language selector">
-            <button id="lang-es" class="btn btn-sm btn-outline-secondary text-white" title="Español (ES)">ES</button>
-            <button id="lang-en" class="btn btn-sm btn-outline-secondary text-white" title="English (EN)">EN</button>
+        <div class="d-flex w-100" id="lang-toggle-group">
+            <button id="lang-es" class="btn btn-sm pos-toggle-btn active" data-lang="es"
+                title="Español (ES)">ES</button>
+            <button id="lang-en" class="btn btn-sm pos-toggle-btn" data-lang="en" title="English (EN)">EN</button>
         </div>
     </div>
 
@@ -123,7 +137,7 @@
         const body = document.body;
         const sidebarToggle = document.getElementById("sidebar-toggle");
         const toggleIcon = sidebarToggle.querySelector("i");
-        const posButtons = document.querySelectorAll(".pos-toggle-btn");
+        const posButtons = document.querySelectorAll("#pos-toggle-group .pos-toggle-btn");
 
         // 1. Cargar preferencias
         const savedCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
@@ -258,5 +272,42 @@
 
         if (brandLink) brandLink.addEventListener('click', redirectIfLogged);
         if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
+
+        // 7. Theme Toggle Logic (Added Fix)
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            const html = document.documentElement;
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                // Ensure default is dark if cleared
+                html.removeAttribute('data-theme');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = html.getAttribute('data-theme');
+                if (currentTheme === 'light') {
+                    // Switch to Dark
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'dark');
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                } else {
+                    // Switch to Light
+                    html.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+            });
+        }
     });
 </script>

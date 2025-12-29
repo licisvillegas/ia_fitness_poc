@@ -2,7 +2,7 @@
 # AI FITNESS - BACKEND FLASK FINAL
 # ======================================================
 
-from flask import Flask, request, jsonify, render_template, make_response
+from flask import Flask, request, jsonify, render_template, make_response, redirect
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
@@ -36,18 +36,18 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger("ai_fitness")
-logger.info("✔ Aplicación AI Fitness iniciada correctamente")
+logger.info("? Aplicación AI Fitness iniciada correctamente")
 
 # Check OpenAI Key Status
 openai_key = os.getenv("OPENAI_API_KEY")
 if openai_key:
     masked_key = f"{openai_key[:8]}...{openai_key[-4:]}" if len(openai_key) > 12 else "***"
-    logger.info(f"✔ OPENAI_API_KEY detectada: {masked_key}")
+    logger.info(f"? OPENAI_API_KEY detectada: {masked_key}")
 else:
-    logger.warning("⚠ OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
+    logger.warning("? OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
 
 openai_model = os.getenv("OPENAI_MODEL", "gpt-4o (default)")
-logger.info(f"✔ Modelo OpenAI configurado: {openai_model}")
+logger.info(f"? Modelo OpenAI configurado: {openai_model}")
 
 
 def log_agent_execution(
@@ -77,9 +77,9 @@ def log_agent_execution(
 #    import certifi
 #    client = MongoClient(os.getenv("MONGO_URI"))
 #    db = client[os.getenv("MONGO_DB")]
-#    logger.info("✔ Conexión exitosa con MongoDB Atlas")
+#    logger.info("? Conexión exitosa con MongoDB Atlas")
 #except Exception as e:
-#    logger.error(f"❌ Error al conectar a MongoDB: {str(e)}", exc_info=True)
+#    logger.error(f"? Error al conectar a MongoDB: {str(e)}", exc_info=True)
 #    db = None
 
 
@@ -90,7 +90,7 @@ try:
 
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
-        raise ValueError("❌ No se encontró la variable MONGO_URI en el entorno")
+        raise ValueError("? No se encontró la variable MONGO_URI en el entorno")
 
     # Configurar conexión segura con certificados vÃ¡lidos
     client = MongoClient(
@@ -103,11 +103,72 @@ try:
     )
 
     db = client[os.getenv("MONGO_DB")]
-    logger.info("✔ Conexión segura con MongoDB Atlas establecida correctamente")
+    logger.info("? Conexión segura con MongoDB Atlas establecida correctamente")
 
 except Exception as e:
-    logger.error(f"❌ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
+    logger.error(f"? Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
     db = None
+
+
+# ======================================================
+# CONTEXT PROCESSORS
+# ======================================================
+@app.context_processor
+def inject_user_role():
+    """Inyecta 'current_user_role' en todos los templates."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return {"current_user_role": None}
+        
+        # Check db logic for role
+        if db is not None:
+            # Optimizacion: podriamos cachear esto excepcionalmente si fuera muy lento
+            role_doc = db.user_roles.find_one({"user_id": user_id})
+            if role_doc:
+                return {"current_user_role": role_doc.get("role")}
+    except Exception:
+        pass
+    return {"current_user_role": None}
+
+
+@app.before_request
+def check_user_profile():
+    """
+    Middleware to ensure logged-in users have a profile.
+    If not, redirects them to /profile to complete it.
+    Excludes static files, auth routes, and admin routes.
+    """
+    if request.endpoint and "static" in request.endpoint:
+        return
+    
+    # Exclude auth and API routes from redirection loop
+    if request.path.startswith("/api/") or \
+       request.path.startswith("/login") or \
+       request.path.startswith("/logout") or \
+       request.path.startswith("/register") or \
+       request.path.startswith("/admin") or \
+       request.path == "/":
+        return
+
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return
+
+    # If already on profile page, allow access
+    if request.path == "/profile":
+        return
+
+    # Check if user has profile
+    if db is not None:
+        try:
+            profile = db.user_profiles.find_one({"user_id": user_id})
+            if not profile:
+                # User logged in but no profile -> Force redirect
+                return redirect("/profile")
+        except Exception as e:
+            logger.error(f"Error checking profile middleware: {e}")
+            pass
 
 
 # ======================================================
@@ -125,6 +186,80 @@ def validate_user_input(user):
     if user["goal"] not in ["gain_muscle", "lose_fat", "maintain"]:
         return False, "El campo 'goal' debe ser uno de: gain_muscle, lose_fat, maintain."
     return True, None
+
+
+USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending"}
+USER_STATUS_DEFAULT = "active"
+
+
+def normalize_user_status(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    status = str(value).strip().lower()
+    if status in USER_STATUS_VALUES:
+        return status
+    return None
+
+
+def ensure_user_status(user_id: str, default_status: str = USER_STATUS_DEFAULT) -> str:
+    """Ensure user_status record exists and return status."""
+    if db is None:
+        return default_status
+    try:
+        status_doc = db.user_status.find_one({"user_id": user_id})
+        if status_doc and status_doc.get("status"):
+            return status_doc.get("status")
+        db.user_status.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "status": default_status,
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+            upsert=True,
+        )
+        return default_status
+    except Exception as e:
+        logger.warning(f"ensure_user_status failed for {user_id}: {e}")
+        return default_status
+
+
+def is_user_active(user_id: str) -> bool:
+    status = ensure_user_status(user_id, default_status=USER_STATUS_DEFAULT)
+    return status == "active"
+
+
+def parse_birth_date(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return datetime(value.year, value.month, value.day)
+    try:
+        parsed = datetime.strptime(str(value).strip(), "%Y-%m-%d")
+        return datetime(parsed.year, parsed.month, parsed.day)
+    except Exception:
+        return None
+
+
+def format_birth_date(value: Optional[datetime]) -> Optional[str]:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d")
+    return None
+
+
+def compute_age(birth_date: Optional[datetime]) -> Optional[int]:
+    if not birth_date:
+        return None
+    try:
+        today = datetime.utcnow().date()
+        b = birth_date.date()
+        age = today.year - b.year - ((today.month, today.day) < (b.month, b.day))
+        return max(age, 0)
+    except Exception:
+        return None
 
 
 def fetch_user_progress_for_agent(user_id: str, limit: Optional[int] = None):
@@ -252,7 +387,97 @@ def sanitize_photos(raw: Any) -> list:
             )
     return sanitized
 
+
+@app.post("/api/user/change_password")
+def api_user_change_password():
+    """
+    Permite al usuario cambiar su contraseÃ±a.
+    Requiere: current_password, new_password
+    """
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autenticado"}), 401
+            
+        data = request.get_json()
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        
+        if not current_password or not new_password:
+            return jsonify({"error": "Faltan datos (actual y nueva contraseÃ±a)"}), 400
+            
+        if len(new_password) < 6:
+            return jsonify({"error": "La nueva contraseÃ±a debe tener al menos 6 caracteres"}), 400
+
+        if db is None:
+             return jsonify({"error": "DB no disponible"}), 503
+
+        # Verify old password
+        user = db.users.find_one({"user_id": user_id})
+        if not user:
+             return jsonify({"error": "Usuario no encontrado"}), 404
+             
+        if not check_password_hash(user["password"], current_password):
+            return jsonify({"error": "La contraseÃ±a actual es incorrecta"}), 403
+            
+        # Update with new password
+        new_hash = generate_password_hash(new_password)
+        db.users.update_one({"user_id": user_id}, {"$set": {"password": new_hash}})
+        
+        logger.info(f"Usuario {user_id} cambiÃ³ su contraseÃ±a exitosamente")
+        return jsonify({"message": "ContraseÃ±a actualizada correctamente"}), 200
+
+    except Exception as e:
+        logger.error(f"Error cambiando password: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+
+@app.post("/api/user/profile/save")
+def api_user_profile_save():
+    """Actualiza perfil del usuario autenticado."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autenticado"}), 401
+        
+        data = request.get_json() or {}
+        name = data.get("name")
+        sex = (data.get("sex") or "").strip().lower() or None
+        birth_date_raw = data.get("birth_date")
+        phone = (data.get("phone") or "").strip() or None
+
+        if sex and sex not in ["male", "female", "other"]:
+            return jsonify({"error": "Sexo invalido"}), 400
+
+        birth_dt = parse_birth_date(birth_date_raw)
+        if birth_date_raw and birth_dt is None:
+            return jsonify({"error": "Fecha de nacimiento invalida. Usa YYYY-MM-DD"}), 400
+
+        updates = {
+            "sex": sex,
+            "birth_date": birth_dt,
+            "phone": phone,
+            "updated_at": datetime.utcnow(),
+        }
+
+        if db is not None:
+             db.user_profiles.update_one(
+                {"user_id": user_id},
+                {"$set": updates, "$setOnInsert": {"created_at": datetime.utcnow(), "user_id": user_id}},
+                upsert=True,
+            )
+             if name is not None:
+                db.users.update_one({"user_id": user_id}, {"$set": {"name": name}})
+        
+        return jsonify({"message": "Perfil actualizado", "user_id": user_id}), 200
+
+    except Exception as e:
+        logger.error(f"Error guardando perfil usuario: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+
 @app.get("/ai/reason/<user_id>")
+
 def ai_reason_for_user(user_id: str):
     """Ejecuta el agente AI usando el progreso del usuario desde MongoDB.
 
@@ -719,22 +944,61 @@ def save_meal_plan():
 # ======================================================
 # ADMIN: VISTA Y EDICION LIGERA DE PLANES
 # ======================================================
-@app.get("/admin/plans")
-def admin_plans_page():
+
+def check_admin_access():
+    """Valida token Y rol de administrador en DB.
+    Retorna: (is_valid, response_tuple_if_error)
+    """
     admin_token = os.getenv("ADMIN_TOKEN")
     if not admin_token:
-        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
+        logger.error("check_admin_access: ADMIN_TOKEN env var not set")
+        return False, (jsonify({"error": "ADMIN_TOKEN no configurado"}), 503)
 
-    provided = request.args.get("token") or request.cookies.get("admin_token") or request.headers.get("X-Admin-Token")
+    # 1. Validar Token (Cookie, Header o Query)
+    provided = (
+        request.args.get("token")
+        or request.cookies.get("admin_token")
+        or request.headers.get("X-Admin-Token")
+    )
     if provided != admin_token:
-        return (
-            "No autorizado. Proporcione ?token=ADMIN_TOKEN o header X-Admin-Token.",
-            403,
-        )
+        logger.warning(f"check_admin_access: Token mismatch or missing. Provided: {provided and provided[:5]}...")
+        # Si es navegador (Accept html), podría redirigir a login, pero por ahora 403
+        return False, (jsonify({"error": "Token de admin inválido o ausente"}), 403)
+
+    # 2. Validar Rol de Usuario (Cookie de sesión)
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        logger.warning("check_admin_access: Missing user_session cookie")
+        return False, (jsonify({"error": "Sesión de usuario requerida. Por favor inicia sesión nuevamente en la home."}), 403)
+    
+    if not is_user_active(user_id):
+        return False, (jsonify({"error": "Usuario inactivo o pendiente. Acceso admin denegado."}), 403)
+
+    # Check db
+    role_doc = db.user_roles.find_one({"user_id": user_id})
+    if not role_doc:
+        logger.warning(f"check_admin_access: User {user_id} has no role entry in user_roles")
+        return False, (jsonify({"error": "No tienes roles asignados. Pide a otro admin que te asigne el rol."}), 403)
+    
+    if role_doc.get("role") != "admin":
+        logger.warning(f"check_admin_access: User {user_id} has role '{role_doc.get('role')}', expected 'admin'")
+        return False, (jsonify({"error": "No tiene privilegios de administrador (Rol insuficiente)"}), 403)
+
+    return True, None
+
+
+@app.get("/admin/plans")
+def admin_plans_page():
+    ok, err_resp = check_admin_access()
+    if not ok:
+        # Si pide HTML y falla, mostramos login o error legible
+        if "text/html" in request.headers.get("Accept", ""):
+             # Podríamos redirigir a /admin, pero mostremos mensaje
+             return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
 
     resp = make_response(render_template("admin_plans.html"))
     if request.args.get("token"):
-        # Guarda cookie de sesión simple para navegar sin repetir el token
         resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
     return resp
 
@@ -795,39 +1059,511 @@ def admin_login():
 @app.get("/admin/meal_plans")
 def admin_meal_plans_page():
     """Vista admin para gestionar meal_plans (nutrición)."""
-    admin_token = os.getenv("ADMIN_TOKEN")
-    if not admin_token:
-        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
-
-    provided = (
-        request.args.get("token")
-        or request.cookies.get("admin_token")
-        or request.headers.get("X-Admin-Token")
-    )
-    if provided != admin_token:
-        return (
-            "No autorizado. Proporcione ?token=ADMIN_TOKEN o header X-Admin-Token.",
-            403,
-        )
+    ok, err_resp = check_admin_access()
+    if not ok:
+        if "text/html" in request.headers.get("Accept", ""):
+            return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
 
     resp = make_response(render_template("admin_meal_plans.html"))
     if request.args.get("token"):
         resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
     return resp
 
+
+@app.get("/admin/privileges")
+def admin_privileges_page():
+    """Vista admin para gestionar privilegios de usuarios."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        if "text/html" in request.headers.get("Accept", ""):
+            return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
+
+    resp = make_response(render_template("admin_privileges.html"))
+    if request.args.get("token"):
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
+
+
+@app.get("/admin/api/users_roles")
+def admin_api_list_users_roles():
+    """API para listar usuarios y sus roles combinado."""
+    try:
+        admin_token = os.getenv("ADMIN_TOKEN")
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+        # 1. Obtener estados de usuarios
+        status_map = {}
+        try:
+            for s in db.user_status.find({}):
+                uid = s.get("user_id")
+                if uid:
+                    status_map[uid] = s.get("status") or USER_STATUS_DEFAULT
+        except Exception:
+            pass
+
+        # 1. Obtener todos los usuarios de la colección 'users'
+        users_cursor = db.users.find({}, {"_id": 1, "user_id": 1, "email": 1, "username": 1, "name": 1})
+        users_map = {}
+        for u in users_cursor:
+            uid = str(u.get("user_id") or u.get("_id"))
+            users_map[uid] = {
+                "user_id": uid,
+                "email": u.get("email"),
+                "username": u.get("username"),
+                "name": u.get("name"),
+                "role": "user", # Default
+                "status": status_map.get(uid, USER_STATUS_DEFAULT),
+            }
+
+        # 2. Obtener roles explícitos de 'user_roles'
+        roles_cursor = db.user_roles.find({})
+        for r in roles_cursor:
+            uid = r.get("user_id")
+            if uid in users_map:
+                users_map[uid]["role"] = r.get("role", "user")
+            else:
+                users_map[uid] = {
+                    "user_id": uid,
+                    "email": "(desconocido)",
+                    "username": "n/a",
+                    "name": "n/a",
+                    "role": r.get("role", "user"),
+                    "status": status_map.get(uid, USER_STATUS_DEFAULT),
+                }
+
+        return jsonify(list(users_map.values())), 200
+    except Exception as e:
+        logger.error(f"Error listando roles: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.post("/admin/api/update_role")
+def admin_api_update_role():
+    """API para actualizar el rol de un usuario."""
+    try:
+        admin_token = os.getenv("ADMIN_TOKEN")
+        token = request.headers.get("X-Admin-Token") or request.cookies.get("admin_token")
+        if not admin_token or token != admin_token:
+            return jsonify({"error": "No autorizado"}), 403
+
+        data = request.get_json() or {}
+        user_id = data.get("user_id")
+        new_role = data.get("role")
+
+        if not user_id or new_role not in ["admin", "user"]:
+            return jsonify({"error": "Datos inválidos"}), 400
+
+        # Upsert en coleccion user_roles
+        db.user_roles.update_one(
+            {"user_id": user_id},
+            {"$set": {"role": new_role, "updated_at": datetime.utcnow()}},
+            upsert=True
+        )
+
+        return jsonify({"message": f"Rol actualizado a {new_role}", "user_id": user_id}), 200
+    except Exception as e:
+        logger.error(f"Error actualizando rol: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.get("/admin/users")
+def admin_users_page():
+    """Vista admin para gestionar usuarios (CRUD)."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        if "text/html" in request.headers.get("Accept", ""):
+             return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
+
+    resp = make_response(render_template("admin_users.html"))
+    if request.args.get("token"):
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
+
+
+@app.get("/admin/profiles")
+def admin_profiles_page():
+    """Vista admin para gestionar perfiles de usuario."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        if "text/html" in request.headers.get("Accept", ""):
+             return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
+
+    resp = make_response(render_template("admin_profiles.html"))
+    if request.args.get("token"):
+        resp.set_cookie("admin_token", request.args.get("token"), httponly=True, samesite="Lax")
+    return resp
+
+
+@app.get("/admin/api/user_profiles")
+def admin_api_list_user_profiles():
+    """Lista usuarios con datos de perfil."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        return err_resp
+    try:
+        status_map = {}
+        try:
+            for s in db.user_status.find({}):
+                uid = s.get("user_id")
+                if uid:
+                    status_map[uid] = s.get("status") or USER_STATUS_DEFAULT
+        except Exception:
+            pass
+
+        profiles_map = {}
+        for p in db.user_profiles.find({}):
+            uid = p.get("user_id")
+            if not uid:
+                continue
+            profiles_map[uid] = p
+
+        users_cursor = db.users.find({}, {"_id": 1, "user_id": 1, "email": 1, "username": 1, "name": 1})
+        output = []
+        for u in users_cursor:
+            uid = str(u.get("user_id") or u.get("_id"))
+            prof = profiles_map.get(uid, {})
+            birth_dt = prof.get("birth_date")
+            if isinstance(birth_dt, str):
+                birth_dt = parse_birth_date(birth_dt)
+            has_profile = bool(prof)
+            output.append({
+                "user_id": uid,
+                "email": u.get("email"),
+                "username": u.get("username"),
+                "name": u.get("name"),
+                "sex": prof.get("sex"),
+                "birth_date": format_birth_date(birth_dt),
+                "age": compute_age(birth_dt),
+                "phone": prof.get("phone"),
+                "status": status_map.get(uid, USER_STATUS_DEFAULT),
+                "has_profile": has_profile,
+            })
+        return jsonify(output), 200
+    except Exception as e:
+        logger.error(f"Error listando perfiles: {e}", exc_info=True)
+        return jsonify({"error": "Error interno listando perfiles"}), 500
+
+
+@app.get("/admin/api/user_profiles/lookup")
+def admin_api_lookup_user_profile():
+    """Busca usuario por termino y valida estado/perfil."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        return err_resp
+    try:
+        term = (request.args.get("term") or "").strip()
+        exact = request.args.get("exact") == "1"
+        if not term:
+            return jsonify({"error": "Termino requerido"}), 400
+
+        users = []
+        if exact:
+            identifier = term.strip()
+            lookup = (
+                db.users.find_one({"user_id": identifier})
+                or db.users.find_one({"email": identifier.lower()})
+                or db.users.find_one({"username_lower": identifier.lower()})
+                or db.users.find_one({"name": identifier})
+            )
+            if lookup:
+                users = [lookup]
+        else:
+            regex = {"$regex": re.escape(term), "$options": "i"}
+            users = list(db.users.find({
+                "$or": [
+                    {"user_id": regex},
+                    {"username": regex},
+                    {"email": regex},
+                    {"name": regex},
+                ]
+            }, {"_id": 1, "user_id": 1, "email": 1, "username": 1, "name": 1}).limit(5))
+
+        if not users:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        if len(users) > 1:
+            return jsonify({
+                "error": "Multiples coincidencias. Refina la busqueda.",
+                "matches": [
+                    {
+                        "user_id": str(u.get("user_id") or u.get("_id")),
+                        "username": u.get("username"),
+                        "email": u.get("email"),
+                        "name": u.get("name"),
+                    } for u in users
+                ]
+            }), 409
+
+        u = users[0]
+        user_id = str(u.get("user_id") or u.get("_id"))
+        status = ensure_user_status(user_id, default_status=USER_STATUS_DEFAULT)
+        if status != "active":
+            return jsonify({"error": "Usuario no activo", "status": status}), 403
+
+        prof = db.user_profiles.find_one({"user_id": user_id}) or {}
+        birth_dt = prof.get("birth_date")
+        if isinstance(birth_dt, str):
+            birth_dt = parse_birth_date(birth_dt)
+
+        return jsonify({
+            "user_id": user_id,
+            "email": u.get("email"),
+            "username": u.get("username"),
+            "name": u.get("name"),
+            "sex": prof.get("sex"),
+            "birth_date": format_birth_date(birth_dt),
+            "age": compute_age(birth_dt),
+            "phone": prof.get("phone"),
+            "status": status,
+            "has_profile": bool(prof),
+        }), 200
+    except Exception as e:
+        logger.error(f"Error lookup perfil: {e}", exc_info=True)
+        return jsonify({"error": "Error interno en lookup de perfiles"}), 500
+
+
+@app.post("/admin/api/user_profiles/save")
+def admin_api_save_user_profile():
+    """Crea o actualiza el perfil de un usuario."""
+    ok, err_resp = check_admin_access()
+    if not ok:
+        return err_resp
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get("user_id") or "").strip()
+        if not user_id:
+            return jsonify({"error": "User ID requerido"}), 400
+
+        name = data.get("name")
+        sex = (data.get("sex") or "").strip().lower() or None
+        birth_date_raw = data.get("birth_date")
+        phone = (data.get("phone") or "").strip() or None
+
+        if sex and sex not in ["male", "female", "other"]:
+            return jsonify({"error": "Sexo invalido"}), 400
+
+        birth_dt = parse_birth_date(birth_date_raw)
+        if birth_date_raw and birth_dt is None:
+            return jsonify({"error": "Fecha de nacimiento invalida. Usa YYYY-MM-DD"}), 400
+
+        updates = {
+            "sex": sex,
+            "birth_date": birth_dt,
+            "phone": phone,
+            "updated_at": datetime.utcnow(),
+        }
+
+        db.user_profiles.update_one(
+            {"user_id": user_id},
+            {"$set": updates, "$setOnInsert": {"created_at": datetime.utcnow(), "user_id": user_id}},
+            upsert=True,
+        )
+
+        if name is not None:
+            db.users.update_one({"user_id": user_id}, {"$set": {"name": name}})
+
+        return jsonify({"message": "Perfil actualizado", "user_id": user_id}), 200
+    except Exception as e:
+        logger.error(f"Error guardando perfil: {e}", exc_info=True)
+        return jsonify({"error": "Error interno guardando perfil"}), 500
+
+
+@app.post("/admin/api/users/create")
+def admin_api_create_user():
+    """Crear usuario desde admin panel."""
+    ok, err_resp = check_admin_access()
+    if not ok: return err_resp
+
+    try:
+        data = request.get_json() or {}
+        name = (data.get("name") or "").strip()
+        username = (data.get("username") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password") or ""
+
+        if not name or not username or not email or not password:
+            return jsonify({"error": "Todos los campos son obligatorios"}), 400
+        
+        # Validaciones basicas
+        if db.users.find_one({"username_lower": username.lower()}):
+            return jsonify({"error": "El usuario ya existe"}), 409
+        if db.users.find_one({"email": email}):
+            return jsonify({"error": "El email ya existe"}), 409
+
+        pwd_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+        doc = {
+            "name": name,
+            "username": username,
+            "username_lower": username.lower(),
+            "email": email,
+            "password_hash": pwd_hash,
+            "created_at": datetime.utcnow(),
+        }
+        res = db.users.insert_one(doc)
+        uid = str(res.inserted_id)
+        db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": uid}})
+        
+        # Asignar rol por defecto (user)
+        db.user_roles.insert_one({"user_id": uid, "role": "user", "updated_at": datetime.utcnow()})
+
+        status = normalize_user_status(data.get("status")) or "active"
+        try:
+            db.user_status.update_one(
+                {"user_id": uid},
+                {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+                upsert=True,
+            )
+        except Exception:
+            pass
+
+        return jsonify({"message": "Usuario creado exitosamente", "user_id": uid}), 201
+
+    except Exception as e:
+        logger.error(f"Error creando usuario admin: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al crear usuario"}), 500
+
+
+@app.post("/admin/api/users/edit")
+def admin_api_edit_user():
+    """Editar usuario desde admin panel."""
+    ok, err_resp = check_admin_access()
+    if not ok: return err_resp
+
+    try:
+        data = request.get_json() or {}
+        user_id = data.get("user_id")
+        if not user_id:
+            return jsonify({"error": "User ID requerido"}), 400
+
+        updates = {}
+        if "name" in data: updates["name"] = data["name"].strip()
+        if "username" in data: 
+            updates["username"] = data["username"].strip()
+            updates["username_lower"] = data["username"].strip().lower()
+        if "email" in data: updates["email"] = data["email"].strip().lower()
+        
+        if "password" in data and data["password"]:
+             updates["password_hash"] = generate_password_hash(data["password"], method="pbkdf2:sha256", salt_length=16)
+
+        status = normalize_user_status(data.get("status"))
+        if data.get("status") is not None and status is None:
+            return jsonify({"error": "Estado de usuario invalido"}), 400
+
+        if not updates:
+            return jsonify({"message": "Sin cambios"}), 200
+
+        # Check dupes if changing distinctive fields
+        if "email" in updates:
+            exist = db.users.find_one({"email": updates["email"]})
+            if exist and str(exist.get("user_id") or exist.get("_id")) != user_id:
+                return jsonify({"error": "Email ya en uso por otro usuario"}), 409
+        
+        if "username_lower" in updates:
+            exist = db.users.find_one({"username_lower": updates["username_lower"]})
+            if exist and str(exist.get("user_id") or exist.get("_id")) != user_id:
+                return jsonify({"error": "Usuario ya en uso por otro usuario"}), 409
+
+        db.users.update_one({"user_id": user_id}, {"$set": updates})
+        if status:
+            db.user_status.update_one(
+                {"user_id": user_id},
+                {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+                upsert=True,
+            )
+        return jsonify({"message": "Usuario actualizado"}), 200
+
+    except Exception as e:
+        logger.error(f"Error editando usuario admin: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al editar usuario"}), 500
+
+
+@app.get("/admin/api/users/<user_id>/full_profile")
+def admin_api_get_full_profile(user_id: str):
+    """Obtiene perfil completo y ultimas medidas para pre-llenado."""
+    ok, err_resp = check_admin_access()
+    if not ok: return err_resp
+
+    try:
+        # 1. Identity
+        user = db.users.find_one({"user_id": user_id})
+        if not user:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # 2. Profile (Sex, Age)
+        profile = db.user_profiles.find_one({"user_id": user_id}) or {}
+        
+        # Calculate age if birth_date exists
+        age = None
+        if profile.get("birth_date"):
+            try:
+                today = datetime.utcnow()
+                born = profile.get("birth_date")
+                age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+            except Exception:
+                pass
+
+        # 3. Latest Assessment (Measurements, Goal, Notes)
+        last_assess = db.body_assessments.find_one(
+            {"user_id": user_id},
+            sort=[("created_at", -1)]
+        ) or {}
+        
+        last_input = last_assess.get("input") or {}
+        last_measures = last_input.get("measurements") or {}
+
+        # Consolidate
+        data = {
+            "user_id": user_id,
+            "name": user.get("name"),
+            "email": user.get("email"),
+            "sex": profile.get("sex") or last_input.get("sex"),
+            "age": age or last_input.get("age"),
+            "goal": last_input.get("goal"),
+            "notes": last_input.get("notes"),
+            "measurements": last_measures
+        }
+        
+        return jsonify(data), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching full profile: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+
+@app.delete("/admin/api/users/<user_id>")
+def admin_api_delete_user(user_id):
+    """Borrar usuario por completo."""
+    ok, err_resp = check_admin_access()
+    if not ok: return err_resp
+
+    try:
+        # Cascading delete (simple approach)
+        db.users.delete_one({"user_id": user_id})
+        db.user_roles.delete_many({"user_id": user_id})
+        db.user_status.delete_many({"user_id": user_id})
+        db.user_profiles.delete_many({"user_id": user_id})
+        db.plans.delete_many({"user_id": user_id})
+        db.meal_plans.delete_many({"user_id": user_id})
+        db.body_assessments.delete_many({"user_id": user_id})
+        db.progress.delete_many({"user_id": user_id})
+        db.ai_adjustments.delete_many({"user_id": user_id})
+
+        return jsonify({"message": f"Usuario {user_id} eliminado y limpiado."}), 200
+    except Exception as e:
+        logger.error(f"Error borrando usuario: {e}", exc_info=True)
+        return jsonify({"error": "Error interno borrando usuario"}), 500
+
 @app.get("/admin/body_assessments")
 def admin_body_assessments_page():
-    admin_token = os.getenv("ADMIN_TOKEN")
-    if not admin_token:
-        return jsonify({"error": "ADMIN_TOKEN no configurado"}), 503
-
-    provided = request.args.get("token") or request.cookies.get("admin_token") or request.headers.get("X-Admin-Token")
-    # Nota: Si se quisiera relajar para usar el token del form JS, se podría servir el template siempre.
-    # Pero mantenemos consistencia con admin_plans.
-    if provided != admin_token:
-        # Permitir carga si no hay token en GET pero el user tiene el token en mano para el input JS? 
-        # Las otras paginas retornan 403. Mantenemos el patron.
-        return "No autorizado. Vaya a /admin para login.", 403
+    ok, err_resp = check_admin_access()
+    if not ok:
+        if "text/html" in request.headers.get("Accept", ""):
+            return render_template("admin_auth.html", error=err_resp[0].json.get("error"))
+        return err_resp
 
     resp = make_response(render_template("admin_body_assessments.html"))
     if request.args.get("token"):
@@ -1358,7 +2094,41 @@ def about_page():
 
 @app.route("/profile")
 def profile_page():
-    return render_template("profile.html")
+    user_id = request.cookies.get("user_session")
+    user_context = {}
+    if user_id and db is not None:
+        try:
+            u = db.users.find_one({"user_id": user_id})
+            if u:
+                user_context = {
+                   "user_id": user_id,
+                   "name": u.get("name"),
+                   "email": u.get("email"),
+                   "username": u.get("username"),
+                   "role": "user"
+                }
+                role_doc = db.user_roles.find_one({"user_id": user_id})
+                if role_doc:
+                    user_context["role"] = role_doc.get("role")
+                
+                p = db.user_profiles.find_one({"user_id": user_id})
+                if p:
+                    bdate = p.get("birth_date")
+                    if isinstance(bdate, datetime):
+                        bdate = bdate.strftime("%Y-%m-%d")
+                    user_context.update({
+                        "sex": p.get("sex"),
+                        "birth_date": bdate,
+                        "phone": p.get("phone"),
+                        "has_profile": True
+                    })
+                else:
+                    user_context["has_profile"] = False
+        except Exception as e:
+            logger.error(f"Error loading profile context: {e}")
+            pass
+
+    return render_template("profile.html", user_data=user_context)
 
 
 # ======================================================
@@ -1586,7 +2356,7 @@ def get_ai_adjustments_history(user_id):
 # ENDPOINTS DE DATOS
 # ======================================================
 
-# 📅 Obtener Último plan del usuario
+# ?? Obtener Último plan del usuario
 @app.route("/get_user_plan/<user_id>", methods=["GET"])
 def get_user_plan(user_id):
     try:
@@ -1600,7 +2370,7 @@ def get_user_plan(user_id):
         return jsonify({"error": "Error interno al obtener el plan"}), 500
 
 
-# 📅 Obtener registros de progreso
+# ?? Obtener registros de progreso
 @app.route("/get_progress/<user_id>", methods=["GET"])
 def get_progress(user_id):
     try:
@@ -1615,7 +2385,7 @@ def get_progress(user_id):
         return jsonify({"error": "Error interno al obtener progreso"}), 500
 
 
-# 📅 Generar plan de entrenamiento y nutrición
+# ?? Generar plan de entrenamiento y nutrición
 @app.route("/generate_plan", methods=["POST"])
 def generate_plan():
     try:
@@ -1688,13 +2458,13 @@ def auth_register():
         password = data.get("password") or ""
 
         if not name or not username or not email or not password:
-            return jsonify({"error": "Nombre, usuario, email y contraseÃ±a son obligatorios."}), 400
+            return jsonify({"error": "Nombre, usuario, email y Contraseña son obligatorios."}), 400
         if not re.fullmatch(r"[A-Za-z0-9_.-]{3,20}", username):
             return jsonify({"error": "El usuario debe tener de 3 a 20 caracteres alfanumÃ©ricos (._- permitidos)."}), 400
         if "@" not in email:
             return jsonify({"error": "El email no es vÃ¡lido."}), 400
         if len(password) < 8:
-            return jsonify({"error": "La contraseÃ±a debe tener al menos 8 caracteres."}), 400
+            return jsonify({"error": "La Contraseña debe tener al menos 8 caracteres."}), 400
 
         username_lower = username.lower()
         if db.users.find_one({"username_lower": username_lower}):
@@ -1714,7 +2484,16 @@ def auth_register():
             db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": str(res.inserted_id)}})
         except Exception:
             pass
-        user = {"user_id": str(res.inserted_id), "name": name, "username": username, "email": email}
+        user_id = str(res.inserted_id)
+        try:
+            db.user_status.update_one(
+                {"user_id": user_id},
+                {"$set": {"status": "pending", "updated_at": datetime.utcnow()}},
+                upsert=True,
+            )
+        except Exception:
+            pass
+        user = {"user_id": user_id, "name": name, "username": username, "email": email, "status": "pending"}
         logger.info(f"Usuario registrado: {email} ({username})")
         return jsonify({"message": "Registro exitoso", "user": user}), 201
 
@@ -1741,7 +2520,7 @@ def auth_login_api():
         identifier = (data.get("identifier") or data.get("email") or data.get("username") or "").strip()
         password = data.get("password") or ""
         if not identifier or not password:
-            return jsonify({"error": "Email o usuario y contraseÃ±a son obligatorios."}), 400
+            return jsonify({"error": "Email o usuario y Contraseña son obligatorios."}), 400
 
         identifier_lower = identifier.lower()
         lookup_field = "email" if "@" in identifier else "username_lower"
@@ -1749,14 +2528,29 @@ def auth_login_api():
         if not u or not check_password_hash(u.get("password_hash", ""), password):
             return jsonify({"error": "Credenciales invÃ¡lidas."}), 401
 
+        user_id = str(u.get("user_id") or u["_id"])
+        status = ensure_user_status(user_id, default_status=USER_STATUS_DEFAULT)
+        if status != "active":
+            if status == "pending":
+                return jsonify({"error": "Cuenta pendiente de activacion por admin.", "status": status}), 403
+            if status == "suspended":
+                return jsonify({"error": "Cuenta suspendida. Contacta a soporte.", "status": status}), 403
+            if status == "inactive":
+                return jsonify({"error": "Cuenta inactiva. Contacta a soporte.", "status": status}), 403
+            return jsonify({"error": "Cuenta no activa.", "status": status}), 403
+
         user = {
-            "user_id": str(u.get("user_id") or u["_id"]),
+            "user_id": user_id,
             "name": u.get("name"),
             "username": u.get("username"),
             "email": u.get("email"),
+            "status": status,
         }
         logger.info(f"Usuario accedió: {u.get('email')} ({u.get('username')})")
-        return jsonify({"message": "Inicio de sesión exitoso", "user": user}), 200
+        
+        resp = jsonify({"message": "Inicio de sesión exitoso", "user": user})
+        resp.set_cookie("user_session", user["user_id"], httponly=True, samesite="Lax", max_age=86400*30)
+        return resp, 200
 
     except Exception as e:
         logger.error(f"Error en login: {e}", exc_info=True)
@@ -1777,11 +2571,33 @@ def server_error(e):
 
 
 # ======================================================
-# INDEXACIÓN AUTOMÁTICA (MongoDB)
+# INDEXACION AUTOMATICA (MongoDB)
 # ======================================================
+def seed_user_statuses():
+    """Backfill user_status collection for existing users as active."""
+    if db is None:
+        return
+    try:
+        cursor = db.users.find({}, {"user_id": 1})
+        for u in cursor:
+            uid = str(u.get("user_id") or u.get("_id") or "").strip()
+            if not uid:
+                continue
+            db.user_status.update_one(
+                {"user_id": uid},
+                {
+                    "$setOnInsert": {
+                        "status": USER_STATUS_DEFAULT,
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+                upsert=True,
+            )
+    except Exception as e:
+        logger.warning(f"No se pudo backfill user_status: {e}")
+
 try:
     db.plans.create_index([("user_id", 1), ("created_at", -1)])
-    # index for ai adjustments
     try:
         db.ai_adjustments.create_index([("user_id", 1), ("created_at", -1)])
     except Exception:
@@ -1791,10 +2607,9 @@ try:
         for idx_name in ("user_id_1", "user_name_lower_1"):
             if idx_name in existing_indexes:
                 db.users.drop_index(idx_name)
-                logger.info(f"Ãndice obsoleto eliminado: {idx_name}")
+                logger.info(f"Indice obsoleto eliminado: {idx_name}")
     except Exception as drop_err:
-        logger.warning(f"No se pudo limpiar Ã­ndices obsoletos: {drop_err}")
-    # Ãndice Único por email en colección de usuarios
+        logger.warning(f"No se pudo limpiar indices obsoletos: {drop_err}")
     try:
         db.users.create_index("email", unique=True)
     except Exception:
@@ -1803,13 +2618,18 @@ try:
         db.users.create_index("username_lower", unique=True, sparse=True)
     except Exception:
         pass
-    logger.info("Ok. Índices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
+    try:
+        db.user_status.create_index("user_id", unique=True)
+    except Exception:
+        pass
+    try:
+        db.user_profiles.create_index("user_id", unique=True)
+    except Exception:
+        pass
+    seed_user_statuses()
+    logger.info("Ok. Indices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
 except Exception as e:
-    logger.warning(f"No se pudieron crear índices: {e}")
-
-
-
-
+    logger.warning(f"No se pudieron crear indices: {e}")
 
 # ======================================================
 # MANEJADORES DE ERRORES GLOBALES
@@ -1836,3 +2656,12 @@ def server_error(e):
 # ======================================================
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
+
+
+
+
+
+
+
+
+

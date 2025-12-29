@@ -1,17 +1,23 @@
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sidebar-fixed"
-    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; background-color: #1f2937 !important; border-right: 1px solid #374151; z-index: 1030;">
+<link href="/static/css/theme.css" rel="stylesheet">
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
+    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
 
-    <div class="d-flex align-items-center justify-content-between mb-3 text-white sidebar-header">
-        <a href="/admin" class="text-white text-decoration-none brand-text">
-            <span class="fs-4 fw-bold" style="color: #ef4444;">AI Admin</span>
+    <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
+        <a href="/admin" class="text-decoration-none brand-text">
+            <span class="fs-4 fw-bold text-danger">AI Admin</span>
         </a>
-        <button id="sidebar-toggle" class="btn btn-link text-white p-0 fs-5" title="Colapsar/Expandir">
-            <i class="fas fa-arrow-left transition-icon"></i>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
+                <i class="fas fa-moon transition-icon"></i>
+            </button>
+            <button id="sidebar-toggle" class="btn btn-link text-theme p-0 fs-5" title="Colapsar/Expandir">
+                <i class="fas fa-arrow-left transition-icon"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Admin Identity -->
-    <div class="d-flex align-items-center text-white text-decoration-none mb-3 px-2 py-2 rounded"
+    <div class="d-flex align-items-center text-theme text-decoration-none mb-3 px-2 py-2 rounded"
         style="background-color: rgba(239, 68, 68, 0.1);">
         <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
             style="width: 32px; height: 32px; min-width: 32px;">
@@ -20,54 +26,72 @@
         <strong><span id="sidebar-username">Administrador</span></strong>
     </div>
 
-    <hr style="border-color: #374151; margin: 1rem 0;">
+    <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item">
-            <a href="/admin" class="nav-link text-white {% if request.path == '/admin' %}active{% endif %}"
-                title="Inicio Admin">
-                <i class="fas fa-tachometer-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Inicio Admin</span>
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-1 mb-2 px-2 sidebar-section">
+            Plataforma
+        </li>
+        <li>
+            <a href="/admin/users" class="nav-link {% if request.path == '/admin/users' %}active{% endif %}"
+                title="Gestor Usuarios">
+                <i class="fas fa-users me-2" style="width: 24px; text-align: center;"></i>
+                <span>Gestor Usuarios</span>
             </a>
         </li>
         <li>
-            <a href="/admin/plans" class="nav-link text-white {% if request.path == '/admin/plans' %}active{% endif %}"
-                title="Planes (Entrenamiento)">
+            <a href="/admin/profiles" class="nav-link {% if request.path == '/admin/profiles' %}active{% endif %}"
+                title="Gestor Perfiles">
+                <i class="fas fa-id-card me-2" style="width: 24px; text-align: center;"></i>
+                <span>Gestor Perfiles</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/privileges" class="nav-link {% if request.path == '/admin/privileges' %}active{% endif %}"
+                title="Gestor Roles">
+                <i class="fas fa-user-tag me-2" style="width: 24px; text-align: center;"></i>
+                <span>Gestor Roles</span>
+            </a>
+        </li>
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-2 sidebar-section">
+            Modulos
+        </li>
+        <li>
+            <a href="/ai/body_assessment/tester"
+                class="nav-link {% if request.path == '/ai/body_assessment/tester' %}active{% endif %}"
+                title="Evaluaciones">
+                <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
+                <span>Evaluaciones</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/plans" class="nav-link {% if request.path == '/admin/plans' %}active{% endif %}"
+                title="Planes (Gym)">
                 <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
                 <span>Planes (Gym)</span>
             </a>
         </li>
         <li>
-            <a href="/admin/meal_plans"
-                class="nav-link text-white {% if request.path == '/admin/meal_plans' %}active{% endif %}"
-                title="Meal Plans (Nutrición)">
+            <a href="/admin/meal_plans" class="nav-link {% if request.path == '/admin/meal_plans' %}active{% endif %}"
+                title="Meal Plans">
                 <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
                 <span>Meal Plans</span>
             </a>
         </li>
         <li>
             <a href="/admin/body_assessments"
-                class="nav-link text-white {% if request.path == '/admin/body_assessments' %}active{% endif %}"
-                title="Evaluaciones de usuarios">
-                <i class="fas fa-file-medical-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Evaluaciones</span>
-            </a>
-        </li>
-        <li>
-            <a href="/ai/body_assessment/tester"
-                class="nav-link text-white {% if request.path == '/ai/body_assessment/tester' %}active{% endif %}"
-                title="Tester IA Corporal">
-                <i class="fas fa-camera me-2" style="width: 24px; text-align: center;"></i>
-                <span>Tester IA Corporal</span>
+                class="nav-link {% if request.path == '/admin/body_assessments' %}active{% endif %}" title="Informes">
+                <i class="fas fa-file-invoice me-2" style="width: 24px; text-align: center;"></i>
+                <span>Informes</span>
             </a>
         </li>
     </ul>
 
-    <hr style="border-color: #374151; margin: 1rem 0;">
+    <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column">
         <li>
-            <a href="/" class="nav-link text-secondary hover-white" title="Volver al Sitio">
+            <a href="/" class="nav-link" title="Volver al Sitio">
                 <i class="fas fa-sign-out-alt me-2" style="width: 24px; text-align: center;"></i>
                 <span>Salir de Admin</span>
             </a>
@@ -96,7 +120,7 @@
         <button id="mobile-sidebar-toggle" class="btn text-white border-0" type="button">
             <i class="fas fa-bars fs-3"></i>
         </button>
-        <span class="navbar-brand me-auto ms-2 fw-bold" style="color: #ef4444;">AI Admin</span>
+        <span class="navbar-brand me-auto ms-2 fw-bold text-danger">AI Admin</span>
     </div>
 </nav>
 
@@ -203,5 +227,35 @@
                 }
             });
         });
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            const html = document.documentElement;
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = html.getAttribute('data-theme');
+                if (currentTheme === 'light') {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'dark');
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                } else {
+                    html.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+            });
+        }
     });
 </script>

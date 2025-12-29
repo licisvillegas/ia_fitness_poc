@@ -7,66 +7,33 @@
   <title>AI Fitness | Admin – Nutrición</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="/static/css/theme.css" rel="stylesheet">
+  <link href="/static/css/sidebar.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #0a0a0a;
-      color: #e5e7eb;
-    }
-
-    .navbar {
-      background-color: #111827;
-    }
-
-    .navbar-brand {
-      color: #3b82f6 !important;
-      font-weight: 700;
-    }
-
-    .card {
-      background: #111827;
-      border-radius: 12px;
-    }
+    /* Theme overrides are handled by theme.css */
 
     .form-label {
-      color: #9ca3af;
+      font-weight: 500;
     }
 
-    .form-control,
-    .form-select,
-    textarea {
-      background: #0f172a;
-      color: #e5e7eb;
-      border-color: #1f2937;
-    }
-
-    .form-control:focus,
-    .form-select:focus,
-    textarea:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .25);
-    }
-
-    .muted {
-      color: #9ca3af;
-    }
-
-    .list-group-item {
-      background: #111827;
-      color: #e5e7eb;
-      cursor: pointer;
+    .muted,
+    .form-text {
+      color: var(--text-muted);
     }
 
     .badge-active {
       background: #10b981;
+      color: #ffffff;
     }
 
     pre {
-      background: #0f172a;
-      color: #e5e7eb;
+      background: var(--bg-card);
+      color: var(--text-main);
       padding: 10px;
       border-radius: 8px;
       overflow: auto;
+      border: 1px solid var(--border-color);
     }
   </style>
   <meta name="robots" content="noindex,nofollow" />
@@ -77,336 +44,437 @@
 </head>
 
 <body>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-  <link href="/static/css/sidebar.css" rel="stylesheet">
-  </head>
+  {% include 'components/sidebar_admin.html' %}
 
-  <body>
-    {% include 'components/sidebar_admin.html' %}
+  <div class="main-content">
+    <!-- Navbar Removed -->
 
-    <div class="main-content">
-      <!-- Navbar Removed -->
+    <main class="container py-4">
+      <h2 class="mb-3">Planes de nutrición (Admin)</h2>
+      <p class="muted mb-4">Busca y gestiona meal_plans por usuario. Requiere token de administrador.</p>
 
-      <main class="container py-4">
-        <h2 class="mb-3">Planes de nutrición (Admin)</h2>
-        <p class="muted mb-4">Busca y gestiona meal_plans por usuario. Requiere token de administrador.</p>
-
-        <div class="row g-4">
-          <div class="col-lg-4">
-            <div class="card">
-              <div class="card-body">
-                <div class="mb-3">
-                  <label class="form-label">Admin Token</label>
-                  <input id="adminToken" type="password" class="form-control" placeholder="Token admin">
-                  <div class="form-text">Se envía en cabecera X-Admin-Token.</div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Usuario</label>
-                  <input id="adminUserId" type="text" class="form-control"
-                    placeholder="user_id o username/email (si está logueado)">
-                </div>
-                <div class="d-grid">
-                  <button id="btnSearchPlans" class="btn btn-primary">Buscar planes</button>
-                </div>
-                <div id="adminMsg" class="mt-3 text-info"></div>
-                <hr />
-                <h6 class="mb-2">Meal plans</h6>
-                <ul id="adminPlanList" class="list-group list-group-flush"></ul>
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Admin Token</label>
+                <input id="adminToken" type="password" class="form-control" placeholder="Token admin">
+                <div class="form-text">Se envía en cabecera X-Admin-Token.</div>
               </div>
-            </div>
-          </div>
-
-          <div class="col-lg-8">
-            <div class="card">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Editar meal_plan</h5>
-                  <span id="adminPlanActiveBadge" class="badge" style="display:none;">Activo</span>
+              <div class="mb-3">
+                <label class="form-label">Usuario</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="userSearchTerm"
+                    placeholder="Buscar: nombre, email o ID...">
+                  <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                    <i class="fas fa-search"></i>
+                  </button>
                 </div>
-                <small id="adminPlanMeta" class="muted"></small>
-                <hr />
-
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Backend</label>
-                    <input id="fBackend" type="text" class="form-control" placeholder="backend" readonly>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Plan ID (vinculado)</label>
-                    <input id="fPlanId" type="text" class="form-control" placeholder="plan_id">
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label">Notas</label>
-                    <input id="fNotes" type="text" class="form-control" placeholder="Notas opcionales">
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label">Output JSON</label>
-                    <textarea id="fOutput" class="form-control" rows="14" placeholder="JSON del output"></textarea>
-                    <div class="d-flex justify-content-between align-items-center mt-1">
-                      <div class="form-text">Puedes editar el JSON completo del output. Debe ser válido.</div>
-                      <button id="btnPreviewPlan" class="btn btn-sm btn-outline-info"><i class="fas fa-eye me-1"></i>
-                        Previsualizar</button>
-                    </div>
-                  </div>
-
-                  <div class="col-12" id="previewRow" style="display:none;">
-                    <div class="p-3 border border-secondary rounded" style="background: #1f2937;">
-                      <h6 class="text-white mb-3">Vista Previa del Plan</h6>
-                      <div id="previewContainer"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2 mt-3">
-                  <button id="btnSavePlan" class="btn btn-success">Guardar cambios</button>
-                  <button id="btnReloadPlan" class="btn btn-outline-light">Recargar</button>
-                  <button id="btnActivatePlan" class="btn btn-outline-info">Activar</button>
-                  <button id="btnDeactivatePlan" class="btn btn-outline-warning">Desactivar</button>
-                  <button id="btnDeletePlan" class="btn btn-outline-danger">Borrar</button>
-                </div>
-                <div id="adminSaveMsg" class="mt-2 text-info"></div>
+                <!-- Hidden field for compatibility -->
+                <input id="adminUserId" type="hidden">
+                <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
+                  style="z-index: 1000; display: none; width: 90%;"></div>
               </div>
+              <div class="d-grid">
+                <button id="btnSearchPlans" class="btn btn-primary">Buscar planes</button>
+              </div>
+              <div id="adminMsg" class="mt-3 text-info"></div>
+              <hr />
+              <h6 class="mb-2">Meal plans</h6>
+              <ul id="adminPlanList" class="list-group list-group-flush"></ul>
             </div>
           </div>
         </div>
-      </main>
 
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-      <script>
-        (function () {
-          let currentPlan = null;
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Editar meal_plan</h5>
+                <span id="adminPlanActiveBadge" class="badge" style="display:none;">Activo</span>
+              </div>
+              <small id="adminPlanMeta" class="muted"></small>
+              <hr />
 
-          function resolveUserId(input) {
-            const typed = (input || '').trim();
-            try {
-              const raw = localStorage.getItem('ai_fitness_user');
-              if (raw) {
-                const u = JSON.parse(raw);
-                const loggedId = String(u.user_id || u._id || '').trim();
-                const uname = (u.username || '').trim();
-                const email = (u.email || '').trim().toLowerCase();
-                if (!typed || typed === uname || typed.toLowerCase() === email) {
-                  return loggedId || typed;
-                }
-              }
-            } catch (e) { }
-            return typed;
-          }
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Backend</label>
+                  <input id="fBackend" type="text" class="form-control" placeholder="backend" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Plan ID (vinculado)</label>
+                  <input id="fPlanId" type="text" class="form-control" placeholder="plan_id">
+                </div>
 
-          async function loadPlans() {
-            const msg = document.getElementById('adminMsg');
-            const list = document.getElementById('adminPlanList');
-            const uid = resolveUserId(document.getElementById('adminUserId').value);
-            if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
-            msg.textContent = 'Buscando meal_plans...'; list.innerHTML = '';
-            try {
-              const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}?limit=50`);
-              if (!resp.ok) {
-                const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-                throw new Error(err.error || `HTTP ${resp.status}`);
-              }
-              const rows = await resp.json();
-              msg.textContent = rows.length ? '' : 'Sin meal_plans';
-              const frag = document.createDocumentFragment();
-              rows.forEach(p => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-start';
-                const left = document.createElement('div');
-                const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
-                left.innerHTML = `<div><strong>${p._id}</strong></div><small class="muted">${ts}</small>`;
-                const right = document.createElement('div');
-                if (p.active) { const b = document.createElement('span'); b.className = 'badge badge-active'; b.textContent = 'Activo'; right.appendChild(b); }
-                li.appendChild(left); li.appendChild(right);
-                li.addEventListener('click', () => renderPlan(p));
-                frag.appendChild(li);
+                <div class="col-12">
+                  <label class="form-label">Notas</label>
+                  <input id="fNotes" type="text" class="form-control" placeholder="Notas opcionales">
+                </div>
+
+                <div class="col-12 mt-4">
+                  <!-- TABS -->
+                  <ul class="nav nav-tabs border-secondary mb-3" id="planTabs" role="tablist">
+                    <li class="nav-item">
+                      <button class="nav-link active text-theme bg-transparent" id="tab-visual-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-visual" type="button">Vista Previa</button>
+                    </li>
+                    <li class="nav-item">
+                      <button class="nav-link text-theme bg-transparent" id="tab-json-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-json" type="button">JSON Raw (Editable)</button>
+                    </li>
+                  </ul>
+
+                  <div class="tab-content" id="planTabsContent">
+                    <!-- Visual Tab -->
+                    <div class="tab-pane fade show active" id="tab-visual" role="tabpanel">
+                      <div class="p-3 border border-secondary rounded" style="background: #1f2937; min-height: 300px;">
+                        <div id="previewContainer">
+                          <p class="text-secondary small text-center mt-5">Selecciona un plan para visualizar.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- JSON Tab -->
+                    <div class="tab-pane fade" id="tab-json" role="tabpanel">
+                      <label class="form-label small text-secondary">Output JSON</label>
+                      <textarea id="fOutput" class="form-control font-monospace small" rows="16"
+                        placeholder="JSON del output"></textarea>
+                      <div class="form-text mt-1">Edita el JSON raw aquí. Los cambios se reflejarán al guardar.</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="d-flex gap-2 mt-4 pt-3 border-top border-secondary">
+                <button id="btnSavePlan" class="btn btn-success"><i class="fas fa-save me-1"></i> Guardar</button>
+                <button id="btnReloadPlan" class="btn btn-outline-light"><i class="fas fa-sync me-1"></i>
+                  Recargar</button>
+                <div class="vr bg-secondary mx-1"></div>
+                <button id="btnActivatePlan" class="btn btn-outline-info"><i class="fas fa-check me-1"></i>
+                  Activar</button>
+                <button id="btnDeactivatePlan" class="btn btn-outline-warning"><i class="fas fa-ban me-1"></i>
+                  Desactivar</button>
+                <div class="ms-auto">
+                  <button id="btnDeletePlan" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>
+                    Borrar</button>
+                </div>
+              </div>
+              <div id="adminSaveMsg" class="mt-2 text-info small fw-bold"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (function () {
+        let currentPlan = null;
+
+        // Tab element refs
+        const tabVisualBtn = document.getElementById('tab-visual-btn');
+        const fOutput = document.getElementById('fOutput');
+
+        // --- Standard User Search Logic ---
+        const searchInput = document.getElementById('userSearchTerm');
+        const hiddenId = document.getElementById('adminUserId');
+        const resultsConfig = document.getElementById('userSearchResults');
+
+        async function performUserLookup() {
+          const term = searchInput.value.trim();
+          if (!term) return;
+          try {
+            resultsConfig.innerHTML = '<div class="list-group-item">Buscando...</div>';
+            resultsConfig.style.display = 'block';
+
+            const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
+            // Provide token if available? Generally lookup is public-ish or requires token?
+            // Implementation detail: admin endpoint might need token if enforced.
+            // Assuming cookie auth is enough or token if passed. 
+            // The original lookup endpoint (lines 1269 in app.py) is public? No, checked earlier it might be.
+            // Re-reading app.py: @app.get("/admin/api/user_profiles/lookup") -> admin_api_lookup_user_profile
+            // It calls check_admin_access(). It needs the token passed via Header OR cookie session check?
+            // The backend check_admin_access checks X-Admin-Token OR session 'admin_role'.
+            // We will try standard fetch.
+
+            const data = await resp.json();
+            resultsConfig.innerHTML = '';
+
+            let users = [];
+            if (Array.isArray(data)) users = data;
+            else if (data.users) users = data.users;
+            else if (data.user_id) users = [data]; // Exact match
+
+            if (users.length === 0) {
+              resultsConfig.innerHTML = '<div class="list-group-item text-muted">Sin resultados</div>';
+            } else {
+              users.forEach(u => {
+                const el = document.createElement('a');
+                el.href = '#';
+                el.className = 'list-group-item list-group-item-action';
+                el.innerHTML = `<div><strong>${u.name || u.username || 'Usuario'}</strong> <small class="text-muted">(${u.email || ''})</small></div><small class="text-xs text-secondary">ID: ${u.user_id}</small>`;
+                el.onclick = (e) => {
+                  e.preventDefault();
+                  selectUser(u);
+                };
+                resultsConfig.appendChild(el);
               });
-              list.appendChild(frag);
-              if (rows[0]) renderPlan(rows[0]);
-            } catch (e) { msg.textContent = `Error: ${e.message}`; }
-          }
-
-          function renderPlan(p) {
-            currentPlan = p;
-            document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
-            const badge = document.getElementById('adminPlanActiveBadge');
-            badge.style.display = p.active ? 'inline-block' : 'none';
-            document.getElementById('fBackend').value = (p.backend ?? '') || '';
-            document.getElementById('fPlanId').value = (p.plan_id ?? '') || '';
-            document.getElementById('fNotes').value = (p.notes ?? '') || '';
-            try {
-              document.getElementById('fOutput').value = JSON.stringify(p.output ?? {}, null, 2);
-            } catch (e) {
-              document.getElementById('fOutput').value = '';
             }
-            document.getElementById('adminSaveMsg').textContent = '';
+          } catch (e) {
+            console.error(e);
+            resultsConfig.innerHTML = `<div class="list-group-item text-danger">Error: ${e.message}</div>`;
           }
+        }
 
-          function collectChanges() {
-            const body = {};
-            const notes = document.getElementById('fNotes').value.trim();
-            const planId = document.getElementById('fPlanId').value.trim();
-            const out = document.getElementById('fOutput').value;
-            if (notes !== '') body.notes = notes; else body.notes = null;
-            if (planId !== '') body.plan_id = planId; else body.plan_id = null;
-            if (out.trim() !== '') {
-              try {
-                body.output = JSON.parse(out);
-              } catch (e) {
-                throw new Error('Output JSON inválido');
+        function selectUser(u) {
+          hiddenId.value = u.user_id;
+          searchInput.value = `${u.name || u.username} (${u.email})`;
+          resultsConfig.style.display = 'none';
+          // Auto-trigger load
+          loadPlans();
+        }
+
+        document.getElementById('btnLookupUser').addEventListener('click', performUserLookup);
+        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
+
+        // Close dropdown on click outside
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
+            resultsConfig.style.display = 'none';
+          }
+        });
+        // ----------------------------------
+
+        function resolveUserId(input) {
+          const typed = (input || '').trim();
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const loggedId = String(u.user_id || u._id || '').trim();
+              const uname = (u.username || '').trim();
+              const email = (u.email || '').trim().toLowerCase();
+              if (!typed || typed === uname || typed.toLowerCase() === email) {
+                return loggedId || typed;
               }
             }
-            return body;
-          }
+          } catch (e) { }
+          return typed;
+        }
 
-          async function savePlan() {
-            const msg = document.getElementById('adminSaveMsg');
-            if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-            const token = document.getElementById('adminToken').value.trim();
-            if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-            let body;
-            try { body = collectChanges(); } catch (e) { msg.textContent = `Error: ${e.message}`; return; }
-            msg.textContent = 'Guardando...';
-            try {
-              const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-                body: JSON.stringify(body)
-              });
-              if (!resp.ok) {
-                const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-                throw new Error(err.error || `HTTP ${resp.status}`);
-              }
-              const updated = await resp.json();
-              msg.textContent = 'Cambios guardados';
-              if (updated && updated.meal_plan) { renderPlan(updated.meal_plan); }
-            } catch (e) { msg.textContent = `Error: ${e.message}`; }
-          }
+        async function loadPlans() {
+          const msg = document.getElementById('adminMsg');
+          const list = document.getElementById('adminPlanList');
+          const uid = resolveUserId(document.getElementById('adminUserId').value);
+          if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+          msg.textContent = 'Buscando meal_plans...'; list.innerHTML = '';
+          try {
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}?limit=50`);
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            const rows = await resp.json();
+            msg.textContent = rows.length ? '' : 'Sin meal_plans';
+            const frag = document.createDocumentFragment();
+            rows.forEach(p => {
+              const li = document.createElement('li');
+              li.className = 'list-group-item d-flex justify-content-between align-items-start';
+              const left = document.createElement('div');
+              const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+              left.innerHTML = `<div><strong>${p._id}</strong></div><small class="muted">${ts}</small>`;
+              const right = document.createElement('div');
+              if (p.active) { const b = document.createElement('span'); b.className = 'badge badge-active'; b.textContent = 'Activo'; right.appendChild(b); }
+              li.appendChild(left); li.appendChild(right);
+              li.addEventListener('click', () => renderPlan(p));
+              frag.appendChild(li);
+            });
+            list.appendChild(frag);
+            if (rows[0]) renderPlan(rows[0]);
+          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+        }
 
-          document.getElementById('btnPreviewPlan').addEventListener('click', () => {
-            const row = document.getElementById('previewRow');
-            const container = document.getElementById('previewContainer');
+        function renderPlan(p) {
+          currentPlan = p;
+          document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
+          const badge = document.getElementById('adminPlanActiveBadge');
+          badge.style.display = p.active ? 'inline-block' : 'none';
+          document.getElementById('fBackend').value = (p.backend ?? '') || '';
+          document.getElementById('fPlanId').value = (p.plan_id ?? '') || '';
+          document.getElementById('fNotes').value = (p.notes ?? '') || '';
 
-            if (row.style.display !== 'none') {
-              row.style.display = 'none';
+          let jsonStr = '';
+          try {
+            jsonStr = JSON.stringify(p.output ?? {}, null, 2);
+          } catch (e) { jsonStr = '{}'; }
+
+          fOutput.value = jsonStr;
+          updateVisualPreview(jsonStr); // Render visual immediately
+
+          document.getElementById('adminSaveMsg').textContent = '';
+        }
+
+        function updateVisualPreview(jsonRaw) {
+          const container = document.getElementById('previewContainer');
+          try {
+            if (!jsonRaw.trim()) {
+              container.innerHTML = '<p class="text-secondary small">JSON vacío</p>';
+              return;
+            }
+            const data = JSON.parse(jsonRaw);
+            container.innerHTML = '';
+
+            // Support full object or direct output object
+            const output = data.output || data || {};
+            const meals = output.meals || (Array.isArray(output) ? output : []);
+
+            if (!meals || meals.length === 0) {
+              container.innerHTML = '<p class="text-warning small text-center mt-4">No se detectó lista de "meals" en el JSON.</p>';
               return;
             }
 
-            try {
-              const jsonRaw = document.getElementById('fOutput').value;
-              if (!jsonRaw.trim()) return;
+            meals.forEach(m => {
+              const el = document.createElement('div');
+              el.className = 'mb-2 p-2 rounded bg-card border-theme';
 
-              const data = JSON.parse(jsonRaw);
-              row.style.display = 'block';
-              container.innerHTML = '';
+              let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
+              (m.items || []).forEach(it => {
+                itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-info ms-1">(${it.kcal || '-'} kcal)</span></li>`;
+              });
+              itemsHtml += '</ul>';
 
-              // Support full object or direct output object
-              const output = data.output || data || {};
-              const meals = output.meals || (Array.isArray(output) ? output : []);
-
-              if (!meals || meals.length === 0) {
-                container.innerHTML = '<p class="text-warning small">No se detectó lista de "meals".</p>';
-                // Try to see if it's just text
-                return;
-              }
-
-              meals.forEach(m => {
-                const el = document.createElement('div');
-                el.className = 'mb-2 p-2 rounded';
-                el.style.background = '#111827';
-                el.style.border = '1px solid #374151';
-
-                let itemsHtml = '<ul class="mb-0 ps-3 small text-secondary" style="list-style-type:disc;">';
-                (m.items || []).forEach(it => {
-                  itemsHtml += `<li><span class="text-light">${it.food || ''}</span> <span class="text-muted ms-1">(${it.kcal || '-'} kcal)</span></li>`;
-                });
-                itemsHtml += '</ul>';
-
-                el.innerHTML = `
+              el.innerHTML = `
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <strong class="text-info small">${m.name || 'Comida'}</strong>
-                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size:0.7em">${m.kcal || 0} kcal</span>
+                            <strong class="text-primary small">${m.name || 'Comida'}</strong>
+                            <span class="badge bg-dark border border-secondary text-white" style="font-size:0.7em">${m.kcal || 0} kcal</span>
                         </div>
                         ${itemsHtml}
                     `;
-                container.appendChild(el);
-              });
+              container.appendChild(el);
+            });
 
-              if (output.total_kcal) {
-                const tot = document.createElement('div');
-                tot.className = 'mt-2 text-end text-success fw-bold small';
-                tot.innerHTML = `TOTAL: ${output.total_kcal} kcal`;
-                container.appendChild(tot);
-              }
-
-            } catch (e) {
-              alert('JSON inválido: ' + e.message);
+            if (output.total_kcal) {
+              const tot = document.createElement('div');
+              tot.className = 'mt-3 pt-2 border-top border-secondary text-end text-success fw-bold small';
+              tot.innerHTML = `TOTAL: ${output.total_kcal} kcal`;
+              container.appendChild(tot);
             }
-          });
 
-          document.getElementById('btnSearchPlans').addEventListener('click', loadPlans);
-          document.getElementById('btnSavePlan').addEventListener('click', savePlan);
-          document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
+          } catch (e) {
+            container.innerHTML = `<p class="text-danger small">Error visualizando JSON: ${e.message}</p>`;
+          }
+        }
 
-          document.getElementById('btnActivatePlan').addEventListener('click', async () => {
-            const msg = document.getElementById('adminSaveMsg');
-            if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-            const token = document.getElementById('adminToken').value.trim();
-            if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-            msg.textContent = 'Activando...';
+        // Update visual when tab clicked (in case JSON was edited)
+        tabVisualBtn.addEventListener('click', () => {
+          updateVisualPreview(fOutput.value);
+        });
+
+        function collectChanges() {
+          const body = {};
+          const notes = document.getElementById('fNotes').value.trim();
+          const planId = document.getElementById('fPlanId').value.trim();
+          const out = fOutput.value;
+          if (notes !== '') body.notes = notes; else body.notes = null;
+          if (planId !== '') body.plan_id = planId; else body.plan_id = null;
+          if (out.trim() !== '') {
             try {
-              const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/activate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
-              if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-              msg.textContent = 'Meal plan activado';
-              loadPlans();
-            } catch (e) { msg.textContent = `Error: ${e.message}`; }
-          });
+              body.output = JSON.parse(out);
+            } catch (e) {
+              throw new Error('Output JSON inválido');
+            }
+          }
+          return body;
+        }
 
-          document.getElementById('btnDeactivatePlan').addEventListener('click', async () => {
-            const msg = document.getElementById('adminSaveMsg');
-            if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-            const token = document.getElementById('adminToken').value.trim();
-            if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-            msg.textContent = 'Desactivando...';
-            try {
-              const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
-              if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-              msg.textContent = 'Meal plan desactivado';
-              loadPlans();
-            } catch (e) { msg.textContent = `Error: ${e.message}`; }
-          });
+        async function savePlan() {
+          const msg = document.getElementById('adminSaveMsg');
+          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
+          const token = document.getElementById('adminToken').value.trim();
+          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+          let body;
+          try { body = collectChanges(); } catch (e) { msg.textContent = `Error: ${e.message}`; return; }
+          msg.textContent = 'Guardando...';
+          try {
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+              body: JSON.stringify(body)
+            });
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+              throw new Error(err.error || `HTTP ${resp.status}`);
+            }
+            const updated = await resp.json();
+            msg.textContent = 'Cambios guardados';
+            if (updated && updated.meal_plan) { renderPlan(updated.meal_plan); }
+          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+        }
 
-          document.getElementById('btnDeletePlan').addEventListener('click', async () => {
-            const msg = document.getElementById('adminSaveMsg');
-            if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-            const token = document.getElementById('adminToken').value.trim();
-            if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-            if (!confirm('¿Seguro que deseas borrar este meal_plan?')) return;
-            msg.textContent = 'Borrando...';
-            try {
-              const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });
-              if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-              msg.textContent = 'Meal plan borrado';
-              currentPlan = null;
-              loadPlans();
-            } catch (e) { msg.textContent = `Error: ${e.message}`; }
-          });
+        document.getElementById('btnSearchPlans').addEventListener('click', loadPlans);
+        document.getElementById('btnSavePlan').addEventListener('click', savePlan);
+        document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
 
-          // Autorellenar usuario con el del login si existe
-          window.addEventListener('DOMContentLoaded', () => {
-            try {
-              const raw = localStorage.getItem('ai_fitness_user');
-              if (raw) {
-                const u = JSON.parse(raw);
-                const display = (u.username || '').trim();
-                if (display) { document.getElementById('adminUserId').value = display; }
-              }
-            } catch (e) { }
-          });
-        })();
-      </script>
-    </div> <!-- End main-content -->
-  </body>
+        document.getElementById('btnActivatePlan').addEventListener('click', async () => {
+          const msg = document.getElementById('adminSaveMsg');
+          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
+          const token = document.getElementById('adminToken').value.trim();
+          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+          msg.textContent = 'Activando...';
+          try {
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/activate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
+            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+            msg.textContent = 'Meal plan activado';
+            loadPlans();
+          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+        });
+
+        document.getElementById('btnDeactivatePlan').addEventListener('click', async () => {
+          const msg = document.getElementById('adminSaveMsg');
+          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
+          const token = document.getElementById('adminToken').value.trim();
+          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+          msg.textContent = 'Desactivando...';
+          try {
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
+            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+            msg.textContent = 'Meal plan desactivado';
+            loadPlans();
+          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+        });
+
+        document.getElementById('btnDeletePlan').addEventListener('click', async () => {
+          const msg = document.getElementById('adminSaveMsg');
+          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
+          const token = document.getElementById('adminToken').value.trim();
+          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+          if (!confirm('¿Seguro que deseas borrar este meal_plan?')) return;
+          msg.textContent = 'Borrando...';
+          try {
+            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });
+            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+            msg.textContent = 'Meal plan borrado';
+            currentPlan = null;
+            loadPlans();
+          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+        });
+
+        // Autorellenar usuario con el del login si existe
+        window.addEventListener('DOMContentLoaded', () => {
+          try {
+            const raw = localStorage.getItem('ai_fitness_user');
+            if (raw) {
+              const u = JSON.parse(raw);
+              const display = (u.username || '').trim();
+              if (display) { document.getElementById('adminUserId').value = display; }
+            }
+          } catch (e) { }
+        });
+      })();
+    </script>
+  </div> <!-- End main-content -->
+</body>
 
 </html>

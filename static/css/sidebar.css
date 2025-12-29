@@ -52,6 +52,7 @@ body.sb-collapsed .sidebar-fixed .dropdown strong,
 body.sb-collapsed .sidebar-fixed strong,
 body.sb-collapsed .sidebar-fixed .brand-text,
 body.sb-collapsed .sidebar-fixed small,
+body.sb-collapsed .sidebar-fixed .sidebar-section,
 body.sb-collapsed .sidebar-fixed .btn-group,
 body.sb-collapsed .sidebar-fixed .fa-chevron-down,
 body.sb-collapsed #sidebar-settings,
@@ -152,8 +153,8 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 /* Position Toggle Icons */
 .pos-toggle-btn {
     background: transparent;
-    border: 1px solid #374151;
-    color: #9ca3af;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
     flex: 1;
     font-size: 0.9rem;
     padding: 0.25rem;
@@ -161,9 +162,10 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 }
 
 .pos-toggle-btn.active {
-    background: #2563eb;
+    background: var(--primary);
     color: white;
-    border-color: #2563eb;
+    /* Keep white for contrast on primary bg */
+    border-color: var(--primary);
 }
 
 .pos-toggle-btn:first-child {
@@ -237,21 +239,27 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 /* Nav Link Styling */
 .nav-pills .nav-link.active,
 .nav-pills .show>.nav-link {
-    background-color: #3b82f6;
+    background-color: var(--primary) !important;
+    color: #fff !important;
+    /* Ensure white text on active blue background */
 }
 
 .nav-link {
-    color: #e5e7eb;
+    color: var(--text-secondary);
+    /* Default to secondary theme text */
 }
 
 .nav-link:hover {
-    color: #fff;
-    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    /* Highlight with primary color on hover */
+    background-color: var(--bg-card-hover);
+    /* Theme-aware hover bg */
 }
 
 /* Collapsible hover effects */
 .hover-white:hover {
-    color: #fff !important;
+    color: var(--primary) !important;
+    /* Use primary instead of forced white */
 }
 
 .transition-icon {

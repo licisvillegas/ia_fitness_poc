@@ -1,4 +1,4 @@
-(function(){
+(function () {
   // Diccionario global mínimo. Añade más claves según se necesite.
   const dict = {
     'chat_hi': { es: '¡Hola! 👋 Soy tu Coach AI Fitness. ¿En qué puedo ayudarte hoy?', en: 'Hi! 👋 I\'m your AI Fitness Coach. How can I help you today?' },
@@ -29,7 +29,7 @@
     'plan_error': { es: '❌ Ocurrió un error al generar el plan.', en: '❌ An error occurred while generating the plan.' },
     'footer': { es: '© 2025 AI Fitness | Desarrollado por Ismael Villegas', en: '© 2025 AI Fitness | Developed by Ismael Villegas' }
   };
-    
+
   dict['ai_fitness_dashboard_de_progreso'] = { es: 'AI Fitness | Dashboard de Progreso', en: 'AI Fitness | Dashboard de Progreso' };
   dict['es'] = { es: 'ES', en: 'ES' };
   dict['en'] = { es: 'EN', en: 'EN' };
@@ -217,42 +217,51 @@
   dict['auth_privacy'] = { es: 'Privacidad', en: 'Privacy' };
   dict['auth_user_not_registered'] = { es: 'Usuario no registrado.', en: 'User not registered.' };
 
-  function t(key){
+
+  function t(key) {
     const lang = document.documentElement.lang || localStorage.getItem('ai_fitness_lang') || 'es';
     return (dict[key] && dict[key][lang]) || '';
   }
 
-  function updateButtons(lang){
-    const esBtn = document.getElementById('lang-es');
-    const enBtn = document.getElementById('lang-en');
-    if (!esBtn || !enBtn) return;
-    esBtn.classList.remove('btn-primary'); esBtn.classList.add('btn-outline-light');
-    enBtn.classList.remove('btn-primary'); enBtn.classList.add('btn-outline-light');
-    if (lang === 'es') { esBtn.classList.remove('btn-outline-light'); esBtn.classList.add('btn-primary'); }
-    if (lang === 'en') { enBtn.classList.remove('btn-outline-light'); enBtn.classList.add('btn-primary'); }
+  function updateButtons(lang) {
+    // Debug log
+    // console.log('[lang.js] updateButtons:', lang);
+
+    // Select all buttons with these IDs (handles potential duplicates)
+    const esBtns = document.querySelectorAll('[id="lang-es"]');
+    const enBtns = document.querySelectorAll('[id="lang-en"]');
+
+    esBtns.forEach(btn => {
+      btn.classList.remove('active');
+      if (lang === 'es') btn.classList.add('active');
+    });
+
+    enBtns.forEach(btn => {
+      btn.classList.remove('active');
+      if (lang === 'en') btn.classList.add('active');
+    });
   }
 
-  function translatePage(lang){
-    // Nav
+  function translatePage(lang) {
     const navDashboard = document.getElementById('nav-dashboard');
     const navPlan = document.getElementById('nav-plan');
     const navNutrition = document.getElementById('nav-nutrition');
     const navHome = document.getElementById('nav-home');
     const navAbout = document.getElementById('nav-about');
-    if (navDashboard){ navDashboard.textContent = t('nav_dashboard'); navDashboard.setAttribute('data-i18n','nav_dashboard'); }
-    if (navPlan){ navPlan.textContent = t('nav_plan'); navPlan.setAttribute('data-i18n','nav_plan'); }
-    if (navNutrition){ navNutrition.textContent = t('nav_nutrition'); navNutrition.setAttribute('data-i18n','nav_nutrition'); }
-    if (navHome){ navHome.textContent = t('nav_home'); navHome.setAttribute('data-i18n','nav_home'); }
-    if (navAbout){ navAbout.textContent = t('nav_about'); navAbout.setAttribute('data-i18n','nav_about'); }
+    if (navDashboard) { navDashboard.textContent = t('nav_dashboard'); navDashboard.setAttribute('data-i18n', 'nav_dashboard'); }
+    if (navPlan) { navPlan.textContent = t('nav_plan'); navPlan.setAttribute('data-i18n', 'nav_plan'); }
+    if (navNutrition) { navNutrition.textContent = t('nav_nutrition'); navNutrition.setAttribute('data-i18n', 'nav_nutrition'); }
+    if (navHome) { navHome.textContent = t('nav_home'); navHome.setAttribute('data-i18n', 'nav_home'); }
+    if (navAbout) { navAbout.textContent = t('nav_about'); navAbout.setAttribute('data-i18n', 'nav_about'); }
     // Smart redirect for Home and brand: if logged in -> /dashboard; else -> /
     try {
       const brand = document.querySelector('.navbar .navbar-brand');
       const homeLink = document.getElementById('nav-home');
       const bind = (el) => {
         if (!el || el.getAttribute('data-smart-nav') === '1') return;
-        el.setAttribute('data-smart-nav','1');
+        el.setAttribute('data-smart-nav', '1');
         el.addEventListener('click', (e) => {
-          try { e.preventDefault(); } catch(_) {}
+          try { e.preventDefault(); } catch (_) { }
           const hasUser = !!getCurrentUser();
           window.location.href = hasUser ? '/dashboard' : '/';
         });
@@ -333,7 +342,7 @@
       statHeadings[3].textContent = t('stat_nutrition_title');
     }
     // overlays
-    const overlays = ['weight','fat','performance','nutrition'];
+    const overlays = ['weight', 'fat', 'performance', 'nutrition'];
     overlays.forEach(id => {
       const el = document.getElementById(`msg-${id}`);
       if (el) el.textContent = t('no_data');
@@ -348,9 +357,9 @@
     if (selectUserLabel) selectUserLabel.textContent = t('select_user_label');
 
     // Index / Generate section
-  let genTitle = document.querySelector('#form-section h2');
-  if (!genTitle) genTitle = document.getElementById('generate-section-title');
-  if (genTitle) genTitle.textContent = t('generate_section_title');
+    let genTitle = document.querySelector('#form-section h2');
+    if (!genTitle) genTitle = document.getElementById('generate-section-title');
+    if (genTitle) genTitle.textContent = t('generate_section_title');
 
     // Nutrition page
     const nutritionHeroTitle = document.querySelector('.hero h1');
@@ -470,7 +479,7 @@
     }
   }
 
-  function getCurrentUser(){
+  function getCurrentUser() {
     try {
       const raw = localStorage.getItem('ai_fitness_user');
       if (!raw) return null;
@@ -478,23 +487,23 @@
     } catch (e) { return null; }
   }
 
-  function ensureAuthControlsContainer(navContainer){
+  function ensureAuthControlsContainer(navContainer) {
     const btnGroup = navContainer.querySelector('.btn-group.ms-3');
     let container = document.getElementById('auth-controls');
-    if (!container){
+    if (!container) {
       container = document.createElement('span');
       container.id = 'auth-controls';
       container.className = 'd-inline-flex align-items-center ms-2 me-1';
       if (btnGroup) navContainer.insertBefore(container, btnGroup);
       else navContainer.appendChild(container);
-    } else if (btnGroup && container.nextSibling !== btnGroup){
+    } else if (btnGroup && container.nextSibling !== btnGroup) {
       // Keep container anchored immediately before language selector
       navContainer.insertBefore(container, btnGroup);
     }
     return container;
   }
 
-  function renderAuthChip(navContainer){
+  function renderAuthChip(navContainer) {
     try {
       const user = getCurrentUser();
       // Use dedicated container for stable placement
@@ -503,7 +512,7 @@
       let userChip = document.getElementById('user-chip');
       let logoutBtn = document.getElementById('logout-btn');
 
-      if (!user || (!user.username && !user.name && !user.email)){
+      if (!user || (!user.username && !user.name && !user.email)) {
         // Remove if exists
         if (userChip && userChip.parentElement) userChip.parentElement.removeChild(userChip);
         if (logoutBtn && logoutBtn.parentElement) logoutBtn.parentElement.removeChild(logoutBtn);
@@ -513,7 +522,7 @@
       // Build display name
       const display = user.username ? `@${user.username}` : (user.name || user.email || '');
 
-      if (!userChip){
+      if (!userChip) {
         userChip = document.createElement('span');
         userChip.id = 'user-chip';
         userChip.className = 'text-light small ms-3 me-2';
@@ -522,7 +531,7 @@
       }
       userChip.textContent = display;
 
-      if (!logoutBtn){
+      if (!logoutBtn) {
         logoutBtn = document.createElement('button');
         logoutBtn.id = 'logout-btn';
         logoutBtn.type = 'button';
@@ -533,11 +542,11 @@
         logoutBtn.setAttribute('aria-label', t('logout'));
         controls.appendChild(logoutBtn);
         logoutBtn.addEventListener('click', () => {
-          try { localStorage.removeItem('ai_fitness_user'); } catch(_){}
+          try { localStorage.removeItem('ai_fitness_user'); } catch (_) { }
           // Re-render UI
           renderAuthChip(navContainer);
           // Redirect to home or auth
-          try { window.location.href = '/'; } catch(_){}
+          try { window.location.href = '/'; } catch (_) { }
         });
       } else {
         logoutBtn.title = t('logout');
@@ -546,7 +555,7 @@
     } catch (e) { /* ignore */ }
   }
 
-  function setLang(lang){
+  function setLang(lang) {
     document.documentElement.lang = lang;
     localStorage.setItem('ai_fitness_lang', lang);
     updateButtons(lang);
@@ -561,7 +570,7 @@
   window.translatePage = translatePage;
 
   // Traducción para placeholder del chat flotante
-  try { dict['placeholder_chat'] = { es: 'Escribe tu pregunta...', en: 'Type your question...' }; } catch (e) {}
+  try { dict['placeholder_chat'] = { es: 'Escribe tu pregunta...', en: 'Type your question...' }; } catch (e) { }
 
   // About page translations
   try {
@@ -581,7 +590,7 @@
     dict['about_feat_2_p'] = { es: 'Dashboard con métricas clave y progreso.', en: 'Dashboard with key metrics and progress.' };
     dict['about_feat_3_t'] = { es: 'Recomendaciones', en: 'Recommendations' };
     dict['about_feat_3_p'] = { es: 'Tips de alimentación y rutinas basadas en datos.', en: 'Food and routine tips based on data.' };
-  } catch (e) {}
+  } catch (e) { }
 
   document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -597,10 +606,23 @@
     const stored = localStorage.getItem('ai_fitness_lang') || 'es';
     // apply
     setLang(stored);
-    const esBtn = document.getElementById('lang-es');
-    const enBtn = document.getElementById('lang-en');
-    if (esBtn) esBtn.addEventListener('click', () => setLang('es'));
-    if (enBtn) enBtn.addEventListener('click', () => setLang('en'));
+
+    const esBtns = document.querySelectorAll('[id="lang-es"]');
+    const enBtns = document.querySelectorAll('[id="lang-en"]');
+
+    esBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setLang('es');
+      });
+    });
+
+    enBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setLang('en');
+      });
+    });
   });
 
 })();

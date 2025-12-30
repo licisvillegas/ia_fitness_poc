@@ -1,4 +1,39 @@
 <link href="/static/css/theme.css" rel="stylesheet">
+<style>
+    body.sb-collapsed .sidebar-fixed {
+        width: 80px !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    body.sb-collapsed .sidebar-header .brand-text,
+    body.sb-collapsed .sidebar-section,
+    body.sb-collapsed .sidebar-heading,
+    body.sb-collapsed #sidebar-settings,
+    body.sb-collapsed #sidebar-username,
+    body.sb-collapsed .nav-link span,
+    body.sb-collapsed .collapse-inner,
+    body.sb-collapsed .sidebar-divider,
+    body.sb-collapsed hr.border-theme {
+        display: none !important;
+    }
+
+    body.sb-collapsed .sidebar-fixed .nav-link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    body.sb-collapsed .sidebar-fixed .nav-link i {
+        margin-right: 0 !important;
+        width: auto !important;
+        text-align: center !important;
+    }
+
+    body.sb-collapsed .user-icon-container {
+        margin-right: 0 !important;
+    }
+</style>
 <div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
     style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
 
@@ -65,18 +100,67 @@
             </a>
         </li>
         <li>
+            <a href="/ai/routine/generator"
+                class="nav-link {% if request.path == '/ai/routine/generator' %}active{% endif %}" title="Rutinas AI">
+                <i class="fas fa-running me-2" style="width: 24px; text-align: center;"></i>
+                <span>Rutinas AI</span>
+            </a>
+        </li>
+        <li>
+            <!-- SECCIÓN ENTRENAMIENTO (Módulo Nuevo) -->
+            <hr class="sidebar-divider my-2">
+            <div class="sidebar-heading">
+                Entrenamiento
+            </div>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseWorkout"
+                aria-expanded="true" aria-controls="collapseWorkout">
+                <i class="fas fa-dumbbell"></i>
+                <span>Smart Workout</span>
+            </a>
+            <div id="collapseWorkout" class="collapse" aria-labelledby="headingWorkout" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Gestión:</h6>
+                    <a class="collapse-item" href="/admin/routines/builder">
+                        <i class="fas fa-layer-group me-2"></i>Constructor Rutinas
+                    </a>
+                    <a class="collapse-item" href="/admin/exercises">
+                        <i class="fas fa-book-medical me-2"></i>Catálogo Ejercicios
+                    </a>
+                    <div class="collapse-divider"></div>
+                    <h6 class="collapse-header">Ejecución:</h6>
+                    <a class="collapse-item" href="/workout/dashboard">
+                        <i class="fas fa-running me-2"></i>Runner / Historial
+                    </a>
+                </div>
+            </div>
+        </li>
+
+        <li>
             <a href="/admin/plans" class="nav-link {% if request.path == '/admin/plans' %}active{% endif %}"
                 title="Planes (Gym)">
                 <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
                 <span>Planes (Gym)</span>
             </a>
         </li>
+
+        <!-- SECCIÓN NUTRICIÓN -->
+        <hr class="sidebar-divider my-2">
+        <div class="sidebar-heading">
+            Nutrición
+        </div>
+
         <li>
             <a href="/admin/meal_plans" class="nav-link {% if request.path == '/admin/meal_plans' %}active{% endif %}"
                 title="Meal Plans">
                 <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
                 <span>Meal Plans</span>
             </a>
+        </li>
+
+        <hr class="sidebar-divider my-2">
+
         </li>
         <li>
             <a href="/admin/body_assessments"
@@ -111,7 +195,6 @@
             </button>
         </div>
     </div>
-</div>
 </div>
 
 <!-- Mobile Fixed Navbar (Visible only on mobile) -->

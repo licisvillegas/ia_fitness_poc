@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+
+{% block title %}Generador de Rutinas AI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-theme fw-bold">Generador de Rutinas AI</h2>
+        <p class="text-secondary">Crea rutinas de entrenamiento personalizadas basadas en evidencia científica.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Formulario de Entrada -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm border-0 bg-panel h-100">
+            <div class="card-body">
+                <h5 class="card-title text-theme mb-3">Configuración</h5>
+                <form id="routineForm">
+                    <div class="mb-3">
+                        <label for="level" class="form-label text-secondary">Nivel</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="level">
+                            <option value="Principiante">Principiante</option>
+                            <option value="Intermedio" selected>Intermedio</option>
+                            <option value="Avanzado">Avanzado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="goal" class="form-label text-secondary">Objetivo</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="goal">
+                            <option value="Hipertrofia" selected>Hipertrofia</option>
+                            <option value="Fuerza">Fuerza</option>
+                            <option value="Pérdida de Grasa">Pérdida de Grasa</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="frequency" class="form-label text-secondary">Días Disponibles</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="frequency">
+                            <option value="2 días">2 días</option>
+                            <option value="3 días">3 días</option>
+                            <option value="4 días" selected>4 días</option>
+                            <option value="5 días">5 días</option>
+                            <option value="6 días">6 días</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="equipment" class="form-label text-secondary">Equipo Disponible</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="equipment">
+                            <option value="Gimnasio completo" selected>Gimnasio completo</option>
+                            <option value="Mancuernas y banco">Mancuernas y banco</option>
+                            <option value="Peso corporal y barra">Peso corporal y barra</option>
+                            <option value="En casa (sin equipo)">En casa (sin equipo)</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger text-white">
+                            <i class="fas fa-magic me-2"></i> Generar Rutina
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 bg-panel" style="min-height: 400px;">
+            <div class="card-body">
+                <div id="loadingState" class="d-none text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Generando...</span>
+                    </div>
+                    <p class="mt-3 text-secondary">Diseñando tu programa de entrenamiento...</p>
+                </div>
+
+                <div id="resultState" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 id="routineName" class="text-theme fw-bold mb-0">Nombre Rutina</h4>
+                        <span id="microcyclePhase" class="badge bg-warning text-dark">Fase</span>
+                    </div>
+
+                    <div id="sessionsContainer" class="accordion accordion-flush">
+                        <!-- Sessions will be injected here -->
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard()">
+                            <i class="fas fa-copy me-1"></i> Copiar JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div id="emptyState" class="text-center py-5">
+                    <i class="fas fa-dumbbell text-secondary opacity-25" style="font-size: 4rem;"></i>
+                    <p class="mt-3 text-secondary">Configura los parametros y genera tu rutina.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('routineForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // UI Loading
+        document.getElementById('emptyState').classList.add('d-none');
+        document.getElementById('resultState').classList.add('d-none');
+        document.getElementById('loadingState').classList.remove('d-none');
+
+        const data = {
+            level: document.getElementById('level').value,
+            goal: document.getElementById('goal').value,
+            frequency: document.getElementById('frequency').value,
+            equipment: document.getElementById('equipment').value
+        };
+
+        try {
+            const response = await fetch('/api/generate_routine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                renderRoutine(result);
+            } else {
+                alert('Error: ' + (result.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error conectando con el servidor');
+        } finally {
+            document.getElementById('loadingState').classList.add('d-none');
+        }
+    });
+
+    function renderRoutine(data) {
+        document.getElementById('resultState').classList.remove('d-none');
+        document.getElementById('routineName').innerText = data.routineName || 'Rutina Generada';
+        document.getElementById('microcyclePhase').innerText = data.microcyclePhase || 'General';
+
+        const container = document.getElementById('sessionsContainer');
+        container.innerHTML = '';
+
+        if (!data.sessions || !Array.isArray(data.sessions)) return;
+
+        data.sessions.forEach((session, index) => {
+            const sessionHtml = `
+            <div class="accordion-item bg-transparent mb-3 border border-secondary rounded overflow-hidden">
+                <h2 class="accordion-header" id="heading${index}">
+                    <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="true" aria-controls="collapse${index}">
+                        <strong>${session.day}</strong>
+                    </button>
+                </h2>
+                <div id="collapse${index}" class="accordion-collapse collapse show" aria-labelledby="heading${index}">
+                    <div class="accordion-body bg-panel p-0">
+                        <table class="table table-dark table-hover mb-0 small">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Ejercicio</th>
+                                    <th scope="col">Sets</th>
+                                    <th scope="col">Reps</th>
+                                    <th scope="col">RPE</th>
+                                    <th scope="col">Rest</th>
+                                    <th scope="col">Técnica</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${session.exercises.map(ex => `
+                                    <tr>
+                                        <td>${ex.order}</td>
+                                        <td>
+                                            <div class="fw-bold text-white">${ex.name}</div>
+                                            <div class="text-secondary x-small">${ex.notes || ''}</div>
+                                        </td>
+                                        <td>${ex.sets}</td>
+                                        <td>${ex.reps}</td>
+                                        <td>${ex.rpe || '-'}</td>
+                                        <td>${ex.restSeconds}s</td>
+                                        <td><span class="badge bg-secondary text-dark">${ex.technique}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+            container.innerHTML += sessionHtml;
+        });
+    }
+
+    function copyToClipboard() {
+        // Logic to copy JSON if needed, or just text summary
+        alert('Función de copiar JSON pendiente de implementación completa.');
+    }
+</script>
+
+<style>
+    .x-small {
+        font-size: 0.75rem;
+    }
+
+    .accordion-button::after {
+        filter: invert(1);
+    }
+</style>
+{% endblock %}

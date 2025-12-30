@@ -1,0 +1,628 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Catálogo Ejercicios{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <h2 class="fw-bold text-cyber-green mb-0"><i class="fas fa-book-medical me-2"></i>Catálogo de Ejercicios</h2>
+
+        <div class="d-flex gap-2 align-items-center flex-grow-1 justify-content-end">
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                        class="fas fa-search"></i></span>
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
+                    placeholder="Buscar ejercicio...">
+            </div>
+            <select class="form-select bg-dark text-white border-secondary" id="filterBodyPart" style="max-width: 180px;">
+                <option value="">Grupo muscular</option>
+                <option value="Chest">Pecho</option>
+                <option value="Back">Espalda</option>
+                <option value="Legs">Piernas</option>
+                <option value="Shoulders">Hombros</option>
+                <option value="Arms">Brazos</option>
+                <option value="Core">Abdomen</option>
+                <option value="Full Body">Cuerpo Completo</option>
+            </select>
+            <select class="form-select bg-dark text-white border-secondary" id="filterEquipment" style="max-width: 160px;">
+                <option value="">Equipo</option>
+                <option value="barbell">Barra</option>
+                <option value="dumbbell">Mancuernas</option>
+                <option value="machine">M&#225;quina</option>
+                <option value="cable">Polea / Cable</option>
+                <option value="bodyweight">Peso Corporal</option>
+                <option value="other">Otro</option>
+            </select>
+            <select class="form-select bg-dark text-white border-secondary" id="filterType" style="max-width: 170px;">
+                <option value="">Tipo</option>
+                <option value="weight">Peso</option>
+                <option value="time">Tiempo</option>
+                <option value="cardio">Cardio</option>
+            </select>
+            <button class="btn btn-outline-secondary text-nowrap" onclick="resetFilters()">
+                <i class="fas fa-undo me-1"></i> Restablecer
+            </button>
+            <button class="btn btn-cyber-primary text-nowrap" onclick="openExerciseModal()">
+                <i class="fas fa-plus me-1"></i> Nuevo Ejercicio
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-panel border-0 shadow-lg">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle" id="exercisesTable">
+                <thead>
+                    <tr class="text-cyber-blue">
+                        <th>Nombre</th>
+                        <th>Grupo Muscular</th>
+                        <th>Equipo</th>
+                        <th>Tipo</th>
+                        <th>Video</th>
+                        <th>Origen</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="exercisesList">
+                    <!-- Completado por JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Ejercicio -->
+<div class="modal fade" id="exerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Ejercicio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exerciseForm">
+                    <input type="hidden" id="exId">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Nombre *</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="exName"
+                                required placeholder="Ej. Press Banca">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Parte del Cuerpo</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exBodyPart">
+                                <option value="Chest">Pecho</option>
+                                <option value="Back">Espalda</option>
+                                <option value="Legs">Piernas</option>
+                                <option value="Shoulders">Hombros</option>
+                                <option value="Arms">Brazos</option>
+                                <option value="Core">Abdomen</option>
+                                <option value="Full Body">Cuerpo Completo</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Tipo de Registro</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exType">
+                                <option value="weight">Peso (Series x Reps)</option>
+                                <option value="time">Tiempo (Duración)</option>
+                                <option value="cardio">Cardio (Distancia/Tiempo)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Equipo Requerido</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exEquipment">
+                                <option value="barbell">Barra</option>
+                                <option value="dumbbell">Mancuernas</option>
+                                <option value="machine">Máquina</option>
+                                <option value="cable">Polea / Cable</option>
+                                <option value="bodyweight">Peso Corporal</option>
+                                <option value="other">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Video Demostrativo (URL)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                                        class="fab fa-youtube"></i></span>
+                                <input type="url" class="form-control bg-dark text-white border-secondary" id="exVideo"
+                                    placeholder="https://youtube.com/...">
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="exDescription"
+                                rows="3" placeholder="Ej. Mantener codos pegados al cuerpo..."></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Sustitutos / Equivalentes</label>
+                            <div class="mb-2">
+                                <input type="text"
+                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                    id="subSearch" placeholder="Buscar por nombre, equipo o tipo...">
+                            </div>
+                            <div class="bg-dark border border-secondary rounded p-2"
+                                style="max-height: 200px; overflow-y: auto;" id="substitutesContainer">
+                                <!-- Llenado dinámicamente con checkboxes -->
+                            </div>
+                            <small class="text-muted">Selecciona los ejercicios que pueden reemplazar a este.</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveExercise()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mensajes -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Mensaje</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="messageCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageConfirm">Confirmar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageOk" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green {
+        color: #00ff9d;
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .btn-cyber-primary {
+        background: linear-gradient(45deg, #00d2ff, #007bff);
+        color: white;
+        border: none;
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    }
+
+    .btn-cyber-primary:hover {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+        color: white;
+    }
+
+    .border-cyber {
+        border: 1px solid rgba(0, 210, 255, 0.3);
+    }
+
+    .sub-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+</style>
+
+<script>
+    let allExercises = [];
+    let currentExerciseId = null;
+    let currentSubstitutes = [];
+    let currentBodyPart = null;
+    let messageModalInstance = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadExercises();
+        const bodyPartSelect = document.getElementById("exBodyPart");
+        if (bodyPartSelect) {
+            bodyPartSelect.addEventListener("change", () => {
+                const previousBodyPart = currentBodyPart;
+                const nextBodyPart = bodyPartSelect.value;
+                const selectedBeforeChange = getSelectedSubstitutes();
+                if (selectedBeforeChange.length > 0 && previousBodyPart && previousBodyPart !== nextBodyPart) {
+                    showConfirmModal(
+                        "Cambiar Parte del Cuerpo",
+                        "Cambiar la Parte del Cuerpo desmarcara los sustitutos actuales. Deseas continuar?"
+                    ).then(confirmChange => {
+                        if (!confirmChange) {
+                            bodyPartSelect.value = previousBodyPart;
+                            return;
+                        }
+                        currentSubstitutes = [];
+                        currentBodyPart = nextBodyPart;
+                        populateSubstitutes(allExercises, currentExerciseId, currentSubstitutes, nextBodyPart);
+                    });
+                    return;
+                } else {
+                    currentSubstitutes = selectedBeforeChange;
+                }
+                currentBodyPart = nextBodyPart;
+                populateSubstitutes(allExercises, currentExerciseId, currentSubstitutes, nextBodyPart);
+            });
+        }
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+        const subSearch = document.getElementById("subSearch");
+
+        if (mainSearch) {
+            mainSearch.addEventListener("input", filterExercises);
+        }
+        if (filterBodyPart) {
+            filterBodyPart.addEventListener("change", filterExercises);
+        }
+        if (filterEquipment) {
+            filterEquipment.addEventListener("change", filterExercises);
+        }
+        if (filterType) {
+            filterType.addEventListener("change", filterExercises);
+        }
+        if (subSearch) {
+            subSearch.addEventListener("input", () => {
+                const bodyPart = document.getElementById("exBodyPart").value;
+                populateSubstitutes(allExercises, currentExerciseId, getSelectedSubstitutes(), bodyPart);
+            });
+        }
+    });
+
+    async function loadExercises() {
+        try {
+            const res = await fetch("/api/exercises");
+            allExercises = await res.json();
+            filterExercises();
+            // populateSubstitutes called when opening modal now
+        } catch (e) { console.error(e); }
+    }
+
+    function renderTable(exercises) {
+        const tbody = document.getElementById("exercisesList");
+        tbody.innerHTML = "";
+
+        const equipmentMap = {
+            'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
+            'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
+            'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
+            'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
+            'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
+            'other': 'Otro'
+        };
+
+        exercises.forEach(ex => {
+            const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>
+                <div class="fw-bold">${ex.name}</div>
+                <small class="text-secondary text-truncate d-block" style="max-width: 200px;">${ex.description || ''}</small>
+            </td>
+            <td><span class="badge bg-secondary">${translateBodyPart(ex.body_part)}</span></td>
+            <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
+            <td>${ex.type}</td>
+            <td>
+                ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
+            </td>
+            <td>${ex.is_custom ? '<span class="text-info">Custom</span>' : '<span class="text-secondary">Global</span>'}</td>
+            <td>
+                ${ex.is_custom ? `
+                    <button class="btn btn-sm btn-outline-info" onclick="openExerciseModal('${ex._id}')" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExercise('${ex._id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+                ` : ''}
+            </td>
+        `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function translateBodyPart(bp) {
+        const map = {
+            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
+            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
+        };
+        return map[bp] || bp;
+    }
+
+    function getSelectedSubstitutes() {
+        const checkboxes = document.querySelectorAll("#substitutesContainer input[type='checkbox']:checked");
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function toEmbedUrl(url) {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        return trimmed;
+    }
+
+    function openVideoModal(url) {
+        const modalEl = document.getElementById("videoModal");
+        const iframe = document.getElementById("videoFrame");
+        const embedUrl = toEmbedUrl(url);
+        iframe.src = embedUrl;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            iframe.src = "";
+        }, { once: true });
+    }
+
+    function getSubSearchTerm() {
+        const subSearch = document.getElementById("subSearch");
+        return subSearch ? subSearch.value.trim().toLowerCase() : "";
+    }
+
+    function ensureMessageModalInstance() {
+        if (!messageModalInstance) {
+            const modalEl = document.getElementById("messageModal");
+            messageModalInstance = new bootstrap.Modal(modalEl);
+        }
+        return messageModalInstance;
+    }
+
+    function showConfirmModal(title, message) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("messageModal");
+            const modalTitle = modalEl.querySelector(".modal-title");
+            const modalBody = modalEl.querySelector(".modal-body");
+            const confirmBtn = modalEl.querySelector("#messageConfirm");
+            const cancelBtn = modalEl.querySelector("#messageCancel");
+            const okBtn = modalEl.querySelector("#messageOk");
+
+            modalTitle.textContent = title;
+            modalBody.textContent = message;
+            confirmBtn.classList.remove("d-none");
+            cancelBtn.classList.remove("d-none");
+            okBtn.classList.add("d-none");
+
+            let resolved = false;
+            const onConfirm = () => {
+                resolved = true;
+                ensureMessageModalInstance().hide();
+                resolve(true);
+            };
+            const onCancel = () => {
+                resolved = true;
+                resolve(false);
+            };
+            const onHidden = () => {
+                if (!resolved) resolve(false);
+            };
+
+            confirmBtn.addEventListener("click", onConfirm, { once: true });
+            cancelBtn.addEventListener("click", onCancel, { once: true });
+            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
+
+            ensureMessageModalInstance().show();
+        });
+    }
+
+    function showAlertModal(title, message) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("messageModal");
+            const modalTitle = modalEl.querySelector(".modal-title");
+            const modalBody = modalEl.querySelector(".modal-body");
+            const confirmBtn = modalEl.querySelector("#messageConfirm");
+            const cancelBtn = modalEl.querySelector("#messageCancel");
+            const okBtn = modalEl.querySelector("#messageOk");
+
+            modalTitle.textContent = title;
+            modalBody.textContent = message;
+            confirmBtn.classList.add("d-none");
+            cancelBtn.classList.add("d-none");
+            okBtn.classList.remove("d-none");
+
+            const onOk = () => resolve(true);
+            okBtn.addEventListener("click", onOk, { once: true });
+            ensureMessageModalInstance().show();
+        });
+    }
+
+    function filterExercises() {
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        const term = (mainSearch ? mainSearch.value : "").trim().toLowerCase();
+        const bodyPart = filterBodyPart ? filterBodyPart.value : "";
+        const equipment = filterEquipment ? filterEquipment.value : "";
+        const type = filterType ? filterType.value : "";
+
+        const filtered = allExercises.filter(ex => {
+            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term);
+            const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
+            const equipmentMatch = !equipment || ex.equipment === equipment;
+            const typeMatch = !type || ex.type === type;
+            return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
+        });
+
+        renderTable(filtered);
+    }
+
+    function resetFilters() {
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        if (mainSearch) mainSearch.value = "";
+        if (filterBodyPart) filterBodyPart.value = "";
+        if (filterEquipment) filterEquipment.value = "";
+        if (filterType) filterType.value = "";
+
+        renderTable(allExercises);
+    }
+
+    function populateSubstitutes(exercises, currentId, selectedIds = [], bodyPart = null) {
+        const container = document.getElementById("substitutesContainer");
+        container.innerHTML = "";
+
+        const filtered = bodyPart ? exercises.filter(ex => ex.body_part === bodyPart) : exercises;
+        const searchTerm = getSubSearchTerm();
+        const searchFiltered = searchTerm
+            ? filtered.filter(ex => {
+                const name = (ex.name || "").toLowerCase();
+                const equipment = (ex.equipment || "").toLowerCase();
+                const type = (ex.type || "").toLowerCase();
+                return name.includes(searchTerm) || equipment.includes(searchTerm) || type.includes(searchTerm);
+            })
+            : filtered;
+        const allowedIds = new Set(filtered.map(ex => ex._id));
+        const filteredSelected = selectedIds.filter(id => allowedIds.has(id));
+
+        searchFiltered.forEach(ex => {
+            // Self-exclusion
+            if (ex._id === currentId) return;
+
+            const isChecked = filteredSelected.includes(ex._id) ? "checked" : "";
+            const hasVideo = ex.video_url ? '<i class="fab fa-youtube text-danger ms-1"></i>' : '';
+
+            const item = document.createElement("div");
+            item.className = "form-check sub-item border-bottom border-secondary py-2";
+            item.innerHTML = `
+                <input class="form-check-input bg-dark border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}" ${isChecked}>
+                <label class="form-check-label w-100 cursor-pointer" for="sub_${ex._id}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white fw-bold">${ex.name} ${hasVideo}</span>
+                        <span class="badge bg-secondary ms-2">${translateBodyPart(ex.body_part)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-secondary">
+                        <span>${ex.equipment}</span>
+                        <span>${ex.type}</span>
+                    </div>
+                </label>
+            `;
+            container.appendChild(item);
+        });
+
+        if (container.children.length === 0) {
+            container.innerHTML = searchTerm
+                ? '<p class="text-muted text-center my-2">No hay resultados para este filtro.</p>'
+                : '<p class="text-muted text-center my-2">No hay otros ejercicios del mismo grupo muscular.</p>';
+        }
+    }
+
+    function openExerciseModal(id = null) {
+        const form = document.getElementById("exerciseForm");
+        form.reset();
+        document.getElementById("exId").value = "";
+
+        // Reset/init local Vars
+        currentSubstitutes = [];
+        currentExerciseId = id;
+        currentBodyPart = null;
+
+        if (id) {
+            const ex = allExercises.find(e => e._id === id);
+            if (ex) {
+                document.getElementById("exId").value = ex._id;
+                document.getElementById("exName").value = ex.name;
+                document.getElementById("exBodyPart").value = ex.body_part;
+                document.getElementById("exType").value = ex.type;
+
+                document.getElementById("exEquipment").value = ex.equipment || 'other';
+                document.getElementById("exDescription").value = ex.description || '';
+                document.getElementById("exVideo").value = ex.video_url || '';
+
+                currentSubstitutes = ex.substitutes || [];
+            }
+        }
+
+        const bodyPart = document.getElementById("exBodyPart").value;
+        currentBodyPart = bodyPart;
+        // Populate rich list excluding self
+        populateSubstitutes(allExercises, id, currentSubstitutes, bodyPart);
+
+        new bootstrap.Modal(document.getElementById("exerciseModal")).show();
+    }
+
+    async function saveExercise() {
+        const id = document.getElementById("exId").value;
+        const name = document.getElementById("exName").value;
+        const bodyPart = document.getElementById("exBodyPart").value;
+        const type = document.getElementById("exType").value;
+
+        const equipment = document.getElementById("exEquipment").value;
+        const description = document.getElementById("exDescription").value;
+        const videoUrl = document.getElementById("exVideo").value;
+
+        // Get Substitutes from Checkboxes
+        const substitutes = getSelectedSubstitutes();
+
+        if (!name) {
+            showAlertModal("Campo requerido", "El nombre es obligatorio");
+            return;
+        }
+
+        const payload = {
+            id, name, body_part: bodyPart, type,
+            equipment, description, video_url: videoUrl, substitutes
+        };
+
+        try {
+            await fetch("/api/exercises/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            bootstrap.Modal.getInstance(document.getElementById("exerciseModal")).hide();
+            loadExercises();
+        } catch (e) {
+            showAlertModal("Error al guardar", "Ocurrio un error al guardar el ejercicio.");
+        }
+    }
+
+    async function deleteExercise(id) {
+        if (!confirm("¿Estás seguro de que deseas eliminar este ejercicio?")) return;
+
+        try {
+            const res = await fetch(`/api/exercises/delete/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                loadExercises();
+            } else {
+                const err = await res.json();
+                alert("Error: " + (err.error || "No se pudo eliminar"));
+            }
+        } catch (e) {
+            alert("Error de conexión: " + e);
+        }
+    }
+</script>
+{% endblock %}

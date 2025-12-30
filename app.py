@@ -18,6 +18,7 @@ from ai_agents.reasoning_agent import ReasoningAgent
 from typing import Any, Dict, Optional
 from ai_agents.meal_plan_agent import MealPlanAgent
 from ai_agents.body_assessment_agent import BodyAssessmentAgent
+from ai_agents.routine_agent import RoutineAgent
 from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
 
 # ======================================================
@@ -818,6 +819,56 @@ def ai_nutrition_plan(user_id: str):
     except Exception as e:
         logger.error(f"Error generando plan de nutrición: {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
+
+
+@app.post("/api/generate_routine")
+def api_generate_routine():
+    """Genera una rutina de entrenamiento usando RoutineAgent."""
+    try:
+        data = request.get_json() or {}
+        
+        level = data.get("level", "Intermedio")
+        goal = data.get("goal", "Hipertrofia")
+        frequency = data.get("frequency", "4 días")
+        equipment = data.get("equipment", "Gimnasio completo")
+
+        agent = RoutineAgent()
+        
+        log_agent_execution(
+            "start", 
+            "RoutineAgent", 
+            agent, 
+            data, 
+            {"endpoint": "/api/generate_routine"}
+        )
+
+        result = agent.run(level, goal, frequency, equipment)
+
+        log_agent_execution(
+            "end",
+            "RoutineAgent",
+            agent,
+            data,
+            {
+                "endpoint": "/api/generate_routine",
+                "output_keys": list(result.keys()) if isinstance(result, dict) else None
+            }
+        )
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        logger.error(f"Error generando rutina: {e}", exc_info=True)
+        return jsonify({"error": "Error interno generando rutina"}), 500
+
+
+
+
+
+@app.get("/ai/routine/generator")
+def ai_routine_generator_page():
+    """Renderiza la página del generador de rutinas."""
+    return render_template("routine_generator.html")
 
 
 @app.post("/ai/adjustments/<adjustment_id>/save_plan")
@@ -2401,6 +2452,7 @@ def generate_plan():
 
         weight = float(user["weight_kg"])
         goal = user["goal"]
+        now = datetime.utcnow()
 
         # === Lógica base IA Fitness === #
         if goal == "gain_muscle":
@@ -2416,25 +2468,37 @@ def generate_plan():
             macros = {"protein": 2 * weight, "carbs": 3.5 * weight, "fat": 0.85 * weight}
             routines = ["Upper Body", "Lower Body", "Core"]
 
-        plan = {
+        plan_doc = {
             "user_id": user["user_id"],
             "goal": goal,
+            "source": "base_generator",
             "nutrition_plan": {
                 "calories_per_day": calories,
-                "macros": macros
+                "kcal_delta": 0,
+                "macros": macros,
             },
             "training_plan": {
                 "days_per_week": len(routines),
-                "routines": routines
+                "routines": routines,
+                "cardio": "",
+                "ai_volumen_delta_ratio": None,
             },
-            "created_at": datetime.utcnow()
+            "active": True,
+            "created_at": now,
+            "activated_at": now,
         }
 
-        result = db.plans.insert_one(plan)
-        plan["plan_id"] = str(result.inserted_id)
+        try:
+            db.plans.update_many({"user_id": user["user_id"]}, {"$set": {"active": False}})
+        except Exception:
+            pass
 
-        logger.info(f"ðŸŽ¯ Plan generado correctamente para {user['_id']}")
-        return jsonify(plan), 201
+        result = db.plans.insert_one(plan_doc)
+        plan_doc["_id"] = str(result.inserted_id)
+        plan_doc["plan_id"] = plan_doc["_id"]
+
+        logger.info(f"???? Plan generado correctamente para {user['user_id']}")
+        return jsonify(plan_doc), 201
 
     except Exception as e:
         logger.error(f"âŒ Error al generar plan: {str(e)}", exc_info=True)
@@ -2651,6 +2715,295 @@ def server_error(e):
 
 
 # ======================================================
+
+
+# ======================================================
+# FITNESS MODULE (Smart Workout)
+# ======================================================
+
+# --- EXERCISES CATALOG ---
+@app.route("/admin/exercises", methods=["GET"])
+def view_exercises_catalog():
+    """Renderiza la pagina del catalogo de ejercicios."""
+    return render_template("exercises_catalog.html")
+
+@app.route("/api/exercises", methods=["GET"])
+def api_get_exercises():
+    """API para obtener todos los ejercicios."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify({"error": "Unauthorized"}), 401
+        
+        # Filtra ejercicios globales (is_custom=False) o del usuario
+        # is_custom puede no existir en global, asi que lo manejamos
+        filter_q = {
+            "$or": [
+                {"is_custom": {"$ne": True}}, 
+                {"user_id": user_id}
+            ]
+        }
+        exercises = list(db.exercises.find(filter_q))
+        
+        for ex in exercises:
+            ex["_id"] = str(ex["_id"])
+            
+        return jsonify(exercises), 200
+    except Exception as e:
+        logger.error(f"Error getting exercises: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/exercises/save", methods=["POST"])
+def api_save_exercise():
+    """Crea o actualiza un ejercicio personalizado."""
+    try:
+        user_id = request.cookies.get("user_session")
+        data = request.get_json()
+        logger.info(f"Saving exercise data: {data}")
+        
+        ex_id = data.get("id")
+        body_part = data.get("body_part")
+        substitutes_raw = data.get("substitutes", []) or []
+        valid_substitutes = []
+        if substitutes_raw and body_part:
+            sub_object_ids = []
+            for sub_id in substitutes_raw:
+                try:
+                    sub_object_ids.append(ObjectId(sub_id))
+                except Exception:
+                    continue
+            if sub_object_ids:
+                allowed_ids = {
+                    str(doc["_id"])
+                    for doc in db.exercises.find(
+                        {"_id": {"$in": sub_object_ids}, "body_part": body_part},
+                        {"_id": 1}
+                    )
+                }
+                valid_substitutes = [sub_id for sub_id in substitutes_raw if sub_id in allowed_ids]
+
+        doc = {
+            "name": data.get("name"),
+            "body_part": body_part,
+            "type": data.get("type", "weight"), # weight, time, cardio
+            "description": data.get("description", ""),
+            "video_url": data.get("video_url", ""),
+            "equipment": data.get("equipment", "other"), # machine, barbell, dumbbell, bodyweight, cable, other
+            "substitutes": valid_substitutes, # List of IDs
+            "is_custom": True,
+            "user_id": user_id,
+            "updated_at": datetime.utcnow()
+        }
+        
+        if ex_id:
+            db.exercises.update_one({"_id": ObjectId(ex_id), "user_id": user_id}, {"$set": doc})
+        else:
+            doc["created_at"] = datetime.utcnow()
+            db.exercises.insert_one(doc)
+            
+        return jsonify({"message": "Ejercicio guardado correctamente"}), 200
+    except Exception as e:
+        logger.error(f"Error saving exercise: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/exercises/delete/<ex_id>", methods=["DELETE"])
+def api_delete_exercise(ex_id):
+    """Elimina un ejercicio personalizado."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autorizado"}), 401
+            
+        result = db.exercises.delete_one({
+            "_id": ObjectId(ex_id),
+            "user_id": user_id,
+            "is_custom": True
+        })
+        
+        if result.deleted_count == 0:
+            return jsonify({"error": "No encontrado o no se puede eliminar"}), 404
+            
+        return jsonify({"message": "Ejercicio eliminado"}), 200
+    except Exception as e:
+        logger.error(f"Error deleting exercise: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# --- ROUTINES BUILDER ---
+@app.route("/admin/routines/builder", methods=["GET"])
+def view_routine_builder():
+    """Renderiza el constructor de rutinas."""
+    return render_template("routine_builder.html")
+
+@app.route("/api/routines", methods=["GET"])
+def api_get_routines():
+    """Obtiene las rutinas del usuario."""
+    user_id = request.cookies.get("user_session")
+    if not user_id: return jsonify([])
+    
+    routines = list(db.routines.find({"user_id": user_id}))
+    for r in routines:
+        r["_id"] = str(r["_id"])
+    return jsonify(routines)
+
+@app.route("/api/routines/<routine_id>", methods=["GET"])
+def api_get_routine_detail(routine_id):
+    """Obtiene detalle de una rutina."""
+    try:
+        doc = db.routines.find_one({"_id": ObjectId(routine_id)})
+        if not doc: return jsonify({"error": "Not found"}), 404
+        doc["_id"] = str(doc["_id"])
+        return jsonify(doc)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/api/routines/save", methods=["POST"])
+def api_save_routine():
+    """Guarda una rutina completa."""
+    try:
+        user_id = request.cookies.get("user_session")
+        data = request.get_json()
+        
+        routine_doc = {
+            "user_id": user_id,
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "items": data.get("items", []), # List of {exercise_id, sets, reps, rest, order_index...}
+            "routine_body_parts": data.get("routine_body_parts", []),
+            "updated_at": datetime.utcnow()
+        }
+        
+        r_id = data.get("id")
+        if r_id:
+            db.routines.update_one({"_id": ObjectId(r_id)}, {"$set": routine_doc})
+        else:
+            routine_doc["created_at"] = datetime.utcnow()
+            res = db.routines.insert_one(routine_doc)
+            r_id = str(res.inserted_id)
+            
+        return jsonify({"message": "Rutina guardada", "id": r_id}), 200
+    except Exception as e:
+        logger.error(f"Error saving routine: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# --- WORKOUT RUNNER ---
+@app.route("/workout/dashboard")
+def view_workout_dashboard():
+    """Dashboard principal del modulo de Smart Workout."""
+    return render_template("workout_dashboard.html")
+
+@app.route("/workout/run/<routine_id>")
+def view_workout_run(routine_id):
+    """Interfaz 'Runner' para ejecutar la rutina."""
+    return render_template("workout_runner.html", routine_id=routine_id)
+
+@app.route("/api/workout/session/save", methods=["POST"])
+def api_save_session():
+    """Guarda un workout completado."""
+    try:
+        user_id = request.cookies.get("user_session")
+        data = request.get_json()
+        
+        # Data validation minimal
+        session_doc = {
+            "user_id": user_id,
+            "routine_id": data.get("routine_id"), 
+            "start_time": data.get("start_time"), # ISO Date expected
+            "end_time": data.get("end_time"),
+            "body_weight": data.get("body_weight"),
+            "total_volume": data.get("total_volume", 0),
+            "sets": data.get("sets", []), # Array of workout_sets
+            "created_at": datetime.utcnow()
+        }
+        db.workout_sessions.insert_one(session_doc)
+        return jsonify({"message": "Sesion guardada"}), 200
+    except Exception as e:
+        logger.error(f"Error saving session: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/history/exercise/<exercise_id>")
+def api_get_exercise_history(exercise_id):
+    """Obtiene el ultimo historial (pesos/reps) de este ejercicio para auto-fill."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify([])
+
+        # Pipeline: Filter by user -> Unwind sets -> Filter by exercise -> Sort date desc -> Limit
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$unwind": "$sets"},
+            {"$match": {"sets.exercise_id": exercise_id}},
+            {"$sort": {"created_at": -1}},
+            {"$limit": 5},
+            {"$project": {
+                "weight": "$sets.weight", 
+                "reps": "$sets.reps", 
+                "rpe": "$sets.rpe", 
+                "date": "$created_at"
+            }}
+        ]
+        history = list(db.workout_sessions.aggregate(pipeline))
+        # Serialize date
+        for h in history:
+            if "_id" in h: del h["_id"]
+            if "date" in h and isinstance(h["date"], datetime):
+                h["date"] = h["date"].isoformat()
+
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/stats/heatmap", methods=["GET"])
+def api_get_heatmap():
+    """Devuelve la frecuencia de entrenamientos del ultimo anio (Heatmap data)."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify({})
+
+        # Aggregation: Group by Date (YYYY-MM-DD) -> Count sessions/volume
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$project": {
+                "dateStr": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}
+            }},
+            {"$group": {"_id": "$dateStr", "count": {"$sum": 1}}}
+        ]
+        data = list(db.workout_sessions.aggregate(pipeline))
+        # Format: {"2025-01-01": 1, "2025-01-03": 2}
+        result = {item["_id"]: item["count"] for item in data}
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error heatmap: {e}")
+        return jsonify({}), 500
+
+@app.route("/api/stats/volume", methods=["GET"])
+def api_get_volume_stats():
+    """Devuelve historial de volumen total y peso corporal."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify([])
+
+        # Get sessions sorted by date
+        cursor = db.workout_sessions.find(
+            {"user_id": user_id},
+            {"created_at": 1, "total_volume": 1, "body_weight": 1}
+        ).sort("created_at", 1).limit(50)
+        
+        data = []
+        for doc in cursor:
+            date_iso = doc["created_at"].strftime("%Y-%m-%d") if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at"))
+            data.append({
+                "date": date_iso,
+                "volume": doc.get("total_volume", 0),
+                "weight": doc.get("body_weight", 0)
+            })
+        return jsonify(data), 200
+    except Exception as e:
+        logger.error(f"Error volume stats: {e}")
+        return jsonify([]), 500
+
 
 # ======================================================
 # EJECUCIÓN LOCAL

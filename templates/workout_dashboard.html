@@ -1,0 +1,242 @@
+{% extends 'layout.html' %}
+
+{% block title %}Smart Workout - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold text-cyber-green">Smart Workout Hub</h2>
+        <p class="text-secondary">Tu centro de comando para hipertrofia y fuerza.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Action Cards -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card bg-panel border-0 shadow h-100 hover-card" onclick="location.href='/admin/routines/builder'">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-plus-circle fa-4x text-cyber-blue mb-3"></i>
+                <h4 class="text-white">Crear Rutina</h4>
+                <p class="text-muted">Diseña un nuevo plan de entrenamiento.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card bg-panel border-0 shadow h-100 hover-card" onclick="location.href='/admin/exercises'">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-dumbbell fa-4x text-cyber-orange mb-3"></i>
+                <h4 class="text-white">Catálogo Ejercicios</h4>
+                <p class="p-muted">Gestiona tu librería de movimientos.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row g-4 mb-4">
+    <!-- STATS ROW -->
+    <div class="col-lg-8">
+        <div class="card bg-panel border-0 shadow h-100">
+            <div class="card-header border-secondary text-white fw-bold">
+                <i class="fas fa-chart-line text-cyber-blue me-2"></i>Progreso (Volumen vs Peso)
+            </div>
+            <div class="card-body">
+                <canvas id="volumeChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card bg-panel border-0 shadow h-100">
+            <div class="card-header border-secondary text-white fw-bold">
+                <i class="fas fa-th text-cyber-green me-2"></i>Consistencia (Heatmap)
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <div id="heatmapGrid" class="heatmap-grid mb-3"></div>
+                <small class="text-muted">Últimos 3 meses</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="text-white mb-3">Mis Rutinas</h4>
+<div class="row g-3" id="routinesList">
+    <!-- Loaded via JS -->
+    <div class="col-12 text-center py-5">
+        <div class="spinner-border text-secondary" role="status"></div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    .text-cyber-green {
+        color: #00ff9d;
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .text-cyber-orange {
+        color: #ff9d00;
+    }
+
+    .hover-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Heatmap Grid */
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        /* aprox weeks/days grid */
+        gap: 4px;
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .heatmap-cell {
+        aspect-ratio: 1;
+        background-color: #2c3035;
+        /* inactive */
+        border-radius: 2px;
+    }
+
+    .heatmap-cell.level-1 {
+        background-color: #0e4429;
+    }
+
+    .heatmap-cell.level-2 {
+        background-color: #006d32;
+    }
+
+    .heatmap-cell.level-3 {
+        background-color: #26a641;
+    }
+
+    .heatmap-cell.level-4 {
+        background-color: #39d353;
+        box-shadow: 0 0 5px #39d353;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        loadRoutines();
+        loadStats();
+    });
+
+    async function loadRoutines() {
+        const res = await fetch("/api/routines");
+        const data = await res.json();
+        const container = document.getElementById("routinesList");
+
+        if (data.length === 0) {
+            container.innerHTML = `<p class="text-muted col-12 text-center">No tienes rutinas creadas aún.</p>`;
+            return;
+        }
+
+        container.innerHTML = data.map(r => `
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark border border-secondary text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-cyber-green fw-bold">${r.name}</h5>
+                    <p class="card-text small text-secondary">${r.description || 'Sin descripción'}</p>
+                    <span class="badge bg-secondary mb-3">${r.items ? r.items.length : 0} Ejercicios</span>
+                    
+                    <div class="d-grid">
+                        <a href="/workout/run/${r._id}" class="btn btn-cyber-primary">
+                            <i class="fas fa-play me-2"></i> INICIAR
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join("");
+    }
+
+    async function loadStats() {
+        // 1. Volume Chart
+        try {
+            const vRes = await fetch("/api/stats/volume");
+            const vData = await vRes.json();
+
+            const ctx = document.getElementById('volumeChart').getContext('2d');
+            if (vData.length > 0) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: vData.map(d => d.date.substring(5)), // MM-DD
+                        datasets: [{
+                            label: 'Volumen Total (kg)',
+                            data: vData.map(d => d.volume),
+                            borderColor: '#00d2ff',
+                            backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.3,
+                            fill: true
+                        }, {
+                            label: 'Peso Corporal (kg)',
+                            data: vData.map(d => d.weight),
+                            borderColor: '#ff9d00',
+                            borderDash: [5, 5],
+                            yAxisID: 'y1',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { labels: { color: '#ccc' } } },
+                        scales: {
+                            x: { ticks: { color: '#888' }, grid: { color: '#333' } },
+                            y: { type: 'linear', display: true, position: 'left', ticks: { color: '#00d2ff' }, grid: { color: '#333' } },
+                            y1: { type: 'linear', display: true, position: 'right', ticks: { color: '#ff9d00' }, grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            } else {
+                ctx.font = "14px Arial";
+                ctx.fillStyle = "#888";
+                ctx.fillText("Sin datos suficientes", 10, 50);
+            }
+        } catch (e) { console.error("Chart error", e); }
+
+        // 2. Heatmap (Mini grid simulation)
+        try {
+            const hRes = await fetch("/api/stats/heatmap"); // { "2025-01-01": 1 }
+            const hMap = await hRes.json();
+            const grid = document.getElementById("heatmapGrid");
+
+            // Generate last 60 days
+            grid.innerHTML = "";
+            grid.style.gridTemplateColumns = `repeat(10, 1fr)`; // 6x10 grid?
+
+            const today = new Date();
+            for (let i = 59; i >= 0; i--) { // 60 days
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                const count = hMap[key] || 0;
+
+                const cell = document.createElement("div");
+                cell.className = `heatmap-cell level-${Math.min(count * 2, 4)}`; // 0, 2, 4
+                if (count === 0) cell.className = "heatmap-cell";
+                else if (count >= 2) cell.className = "heatmap-cell level-4";
+                else cell.className = "heatmap-cell level-2";
+
+                cell.title = `${key}: ${count} workouts`;
+                grid.appendChild(cell);
+            }
+        } catch (e) { console.error("Heatmap error", e); }
+    }
+</script>
+{% endblock %}

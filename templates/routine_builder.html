@@ -1,0 +1,1052 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Constructor Rutinas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Left: Builder Form -->
+    <div class="col-lg-8">
+        <div class="card bg-panel border-0 shadow text-white mb-4">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
+                <button class="btn btn-sm btn-success" onclick="saveRoutine()">
+                    <i class="fas fa-save me-1"></i> Guardar Rutina
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-secondary small">Nombre de la Rutina</label>
+                    <input type="text" id="routineName"
+                        class="form-control bg-dark text-white border-secondary fs-4 fw-bold"
+                        placeholder="E.g. Pierna Hipertrofia">
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Descripción (Tags)</label>
+                    <input type="text" id="routineDesc" class="form-control bg-dark text-white border-secondary"
+                        placeholder="E.g. Enfoque cuádriceps, RPE 8-9">
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Grupos Musculares de la Rutina</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Chest">Pecho
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Back">Espalda
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Legs">Piernas
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Shoulders">Hombros
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Arms">Brazos
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Core">Abdomen
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Full Body">Cuerpo Completo
+                        </label>
+                    </div>
+                </div>
+
+                <hr class="border-secondary">
+
+                <h6 class="text-cyber-green mb-3">Ejercicios Seleccionados</h6>
+                <div id="routineItemsList" class="d-flex flex-column gap-3">
+                    <div id="routineItemsContainer" class="d-flex flex-column gap-3"></div>
+                    <div class="text-center text-muted py-5" id="emptyState">
+                        <i class="fas fa-dumbbell fa-3x mb-3 opacity-25"></i>
+                        <p>Selecciona ejercicios del panel derecho para agregarlos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Exercise Picker -->
+    <div class="col-lg-4">
+        <div class="card bg-panel border-0 shadow text-white sticky-top" style="top: 80px; max-height: 85vh;">
+            <div class="card-header border-secondary">
+                <h6 class="mb-0">Ejercicios Disponibles</h6>
+                <input type="text" id="searchEx"
+                    class="form-control form-control-sm bg-dark text-white border-secondary mt-2"
+                    placeholder="Buscar por nombre, grupo, equipo o tipo...">
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterBodyPart">
+                        <option value="">Grupo muscular</option>
+                        <option value="Chest">Pecho</option>
+                        <option value="Back">Espalda</option>
+                        <option value="Legs">Piernas</option>
+                        <option value="Shoulders">Hombros</option>
+                        <option value="Arms">Brazos</option>
+                        <option value="Core">Abdomen</option>
+                        <option value="Full Body">Cuerpo Completo</option>
+                    </select>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterEquipment">
+                        <option value="">Equipo</option>
+                        <option value="barbell">Barra</option>
+                        <option value="dumbbell">Mancuernas</option>
+                        <option value="machine">M&#225;quina</option>
+                        <option value="cable">Polea / Cable</option>
+                        <option value="bodyweight">Peso Corporal</option>
+                        <option value="other">Otro</option>
+                    </select>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterType">
+                        <option value="">Tipo</option>
+                        <option value="weight">Peso</option>
+                        <option value="time">Tiempo</option>
+                        <option value="cardio">Cardio</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+                        <i class="fas fa-undo me-1"></i> Restablecer
+                    </button>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-info" onclick="addGroupBlock()">
+                        <i class="fas fa-layer-group me-1"></i> Agregar Grupo
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="addRestBlock()">
+                        <i class="fas fa-pause me-1"></i> Agregar Descanso
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0 overflow-auto" id="exercisePicker" style="height: 60vh;">
+                <!-- Loaded via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nombre Grupo -->
+<div class="modal fade" id="groupNameModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Nombre de Grupo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="small text-secondary">Tipo</label>
+                <select id="groupTypeSelect" class="form-select bg-dark text-white border-secondary">
+                    <option value="biserie">Biserie</option>
+                    <option value="superset">Superset</option>
+                    <option value="circuito">Circuito</option>
+                </select>
+                <label class="small text-secondary mt-3">Nombre</label>
+                <input type="text" id="groupNameInput" class="form-control bg-dark text-white border-secondary"
+                    placeholder="Ej. Biserie">
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="groupNameCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="groupNameSave">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Descanso -->
+<div class="modal fade" id="restModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Agregar Descanso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="small text-secondary">Grupo</label>
+                    <select id="restGroupSelect" class="form-select bg-dark text-white border-secondary"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-secondary">Tiempo de Descanso</label>
+                    <select id="restSecondsSelect" class="form-select bg-dark text-white border-secondary"></select>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="restCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="restSave">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Alerta -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Aviso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alertModalBody"></div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green {
+        color: #00ff9d;
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .bg-dark-elem {
+        background-color: #1a1d21;
+    }
+
+    .routine-item {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.2s;
+        border-left: 3px solid #00d2ff;
+    }
+
+    .routine-item.group-item {
+        border-left-color: #0dcaf0;
+    }
+
+    .routine-item.rest-item {
+        border-left-color: #ffc107;
+    }
+
+    .routine-item:hover {
+        transform: translateX(5px);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+</style>
+
+<script>
+    let availableExercises = [];
+    let currentRoutineItems = [];
+    const collapsedGroupIds = new Set();
+    let activeGroupId = "";
+    const collapsedBodyParts = new Set();
+    const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
+    const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP"];
+    const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180];
+    const TIME_OPTIONS = [300, 600, 900, 1200, 1800];
+    const EQUIPMENT_MAP = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
+        machine: { label: "Maquina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadExercises();
+        const searchInput = document.getElementById("searchEx");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+        const picker = document.getElementById("exercisePicker");
+        const routineBodyPartInputs = document.querySelectorAll(".routine-bodypart");
+        const routineItemsContainer = document.getElementById("routineItemsContainer");
+
+        if (searchInput) searchInput.addEventListener("input", filterExercises);
+        if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
+        if (filterEquipment) filterEquipment.addEventListener("change", filterExercises);
+        if (filterType) filterType.addEventListener("change", filterExercises);
+        routineBodyPartInputs.forEach(input => {
+            input.addEventListener("change", filterExercises);
+        });
+        if (picker) {
+            picker.addEventListener("click", event => {
+                const target = event.target.closest("[data-ex-id]");
+                if (!target) return;
+                addExerciseToRoutine(target.dataset.exId);
+            });
+            picker.addEventListener("click", event => {
+                const header = event.target.closest("[data-bodypart-toggle]");
+                if (!header) return;
+                const bp = header.dataset.bodypartToggle;
+                if (collapsedBodyParts.has(bp)) {
+                    collapsedBodyParts.delete(bp);
+                } else {
+                    collapsedBodyParts.add(bp);
+                }
+                renderExercisePicker(window.__lastFilteredExercises || availableExercises);
+            });
+        }
+        if (routineItemsContainer) {
+            routineItemsContainer.addEventListener("click", event => {
+                const insideGroup = event.target.closest(".group-item");
+                if (!insideGroup && activeGroupId) {
+                    setActiveGroup("");
+                }
+            });
+        }
+    });
+
+    async function loadExercises() {
+        const res = await fetch("/api/exercises");
+        availableExercises = await res.json();
+        filterExercises();
+    }
+
+    function renderExercisePicker(list) {
+        const container = document.getElementById("exercisePicker");
+        window.__lastFilteredExercises = list;
+        const strength = list.filter(ex => ex.type !== "cardio");
+        const cardio = list.filter(ex => ex.type === "cardio");
+
+        const strengthHtml = renderByBodyPart(strength);
+        const cardioHtml = renderByBodyPart(cardio);
+
+        container.innerHTML = `
+        <div class="px-3 py-2 border-bottom border-secondary">
+            <span class="text-cyber-green fw-bold">Fuerza</span>
+        </div>
+        ${strengthHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
+        <div class="px-3 py-2 border-bottom border-secondary mt-2">
+            <span class="text-danger fw-bold">Cardio</span>
+        </div>
+        ${cardioHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
+        `;
+    }
+
+    function renderByBodyPart(items) {
+        if (!items.length) return "";
+        const grouped = items.reduce((acc, ex) => {
+            const key = ex.body_part || "Other";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(ex);
+            return acc;
+        }, {});
+
+        return Object.keys(grouped).map(bodyPart => {
+            const list = grouped[bodyPart];
+            const isCollapsed = collapsedBodyParts.has(bodyPart);
+            const rows = list.map(ex => `
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg" data-ex-id="${ex._id}">
+            <div>
+                <div class="fw-bold text-white">${ex.name}</div>
+                <small class="text-secondary">${translateBodyPart(ex.body_part)} | ${ex.equipment || 'N/A'} | ${ex.type || 'N/A'}</small>
+            </div>
+            <button class="btn btn-sm btn-outline-success" type="button" data-ex-id="${ex._id}">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `).join("");
+            return `
+        <div class="px-3 py-2 border-bottom border-secondary d-flex align-items-center justify-content-between cursor-pointer" data-bodypart-toggle="${bodyPart}">
+            <span class="text-secondary fw-bold">${translateBodyPart(bodyPart)}</span>
+            <i class="fas ${isCollapsed ? "fa-chevron-down" : "fa-chevron-up"} text-secondary"></i>
+        </div>
+        <div class="${isCollapsed ? "d-none" : ""}">
+            ${rows}
+        </div>
+    `;
+        }).join("");
+    }
+
+    function translateBodyPart(bp) {
+        const map = {
+            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
+            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
+        };
+        return map[bp] || bp;
+    }
+
+    function getRoutineBodyParts() {
+        return Array.from(document.querySelectorAll(".routine-bodypart:checked")).map(input => input.value);
+    }
+
+    function ensureRoutineBodyPart(bodyPart) {
+        const selected = getRoutineBodyParts();
+        if (selected.length > 0) return;
+        const checkbox = document.querySelector(`.routine-bodypart[value="${bodyPart}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            filterExercises();
+        }
+    }
+
+    function filterExercises() {
+        const term = document.getElementById("searchEx").value.trim().toLowerCase();
+        const bodyPart = document.getElementById("filterBodyPart").value;
+        const equipment = document.getElementById("filterEquipment").value;
+        const type = document.getElementById("filterType").value;
+        const routineBodyParts = getRoutineBodyParts();
+
+        const filtered = availableExercises.filter(ex => {
+            const name = (ex.name || "").toLowerCase();
+            const body = (ex.body_part || "").toLowerCase();
+            const equip = (ex.equipment || "").toLowerCase();
+            const exType = (ex.type || "").toLowerCase();
+            const termMatch = !term || name.includes(term) || body.includes(term) || equip.includes(term) || exType.includes(term);
+            const bodyMatch = !bodyPart || ex.body_part === bodyPart;
+            const equipMatch = !equipment || ex.equipment === equipment;
+            const typeMatch = !type || ex.type === type;
+            const routineMatch = routineBodyParts.length === 0 || routineBodyParts.includes(ex.body_part);
+            return termMatch && bodyMatch && equipMatch && typeMatch && routineMatch;
+        });
+        renderExercisePicker(filtered);
+    }
+
+    function resetFilters() {
+        const searchInput = document.getElementById("searchEx");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        if (searchInput) searchInput.value = "";
+        if (filterBodyPart) filterBodyPart.value = "";
+        if (filterEquipment) filterEquipment.value = "";
+        if (filterType) filterType.value = "";
+
+        renderExercisePicker(availableExercises);
+    }
+
+    function addExerciseToRoutine(exId) {
+        const ex = availableExercises.find(e => e._id === exId);
+        if (!ex) return;
+        const targetGroup = activeGroupId;
+        const defaultRest = targetGroup ? 30 : 60;
+        ensureRoutineBodyPart(ex.body_part);
+
+        currentRoutineItems.push({
+            item_type: "exercise",
+            _id: 'temp_' + Date.now(),
+            exercise_id: exId,
+            exercise_name: ex.name,
+            exercise_type: ex.type || "weight",
+            equipment: ex.equipment || "",
+            video_url: ex.video_url || "",
+            body_part: ex.body_part || "",
+            substitutes: ex.substitutes || [],
+            target_sets: 3,
+            target_reps: "8-12",
+            rest_seconds: defaultRest,
+            target_time_seconds: 600,
+            group_id: targetGroup || "",
+            comment: ""
+        });
+        renderRoutineItems();
+    }
+
+    function addGroupBlock() {
+        showGroupModal("Nuevo Grupo", { name: "Biserie", type: "biserie" }).then(result => {
+            if (!result) return;
+            const uniqueName = getUniqueGroupName(result.name);
+            const groupId = `group_${Date.now()}`;
+            currentRoutineItems.push({
+                item_type: "group",
+                _id: groupId,
+                group_name: uniqueName,
+                group_type: result.type || "biserie",
+                note: ""
+            });
+            activeGroupId = groupId;
+            renderRoutineItems();
+        });
+    }
+
+    function addRestBlock() {
+        const targetGroup = activeGroupId || getLastGroupId();
+        const defaultGroup = targetGroup || "";
+        const defaultRest = targetGroup ? 30 : 60;
+        showRestModal(defaultGroup, defaultRest).then(result => {
+            if (!result) return;
+            currentRoutineItems.push({
+                item_type: "rest",
+                _id: 'rest_' + Date.now(),
+                rest_seconds: Number(result.restSeconds),
+                note: "Descanso",
+                group_id: result.groupId || ""
+            });
+            renderRoutineItems();
+        });
+    }
+
+    function removeRoutineItem(index) {
+        currentRoutineItems.splice(index, 1);
+        renderRoutineItems();
+    }
+
+    function moveRoutineItem(index, direction) {
+        const target = index + direction;
+        if (target < 0 || target >= currentRoutineItems.length) return;
+        const item = currentRoutineItems.splice(index, 1)[0];
+        currentRoutineItems.splice(target, 0, item);
+        renderRoutineItems();
+    }
+
+    function updateItem(index, field, value) {
+        const numericFields = ["target_sets", "rest_seconds", "target_time_seconds"];
+        currentRoutineItems[index][field] = numericFields.includes(field) ? Number(value) : value;
+        if (currentRoutineItems[index].item_type === "group" && (field === "group_name" || field === "group_type")) {
+            if (field === "group_name") {
+                currentRoutineItems[index].group_name = getUniqueGroupName(value, currentRoutineItems[index]._id);
+            }
+            renderRoutineItems();
+        }
+    }
+
+    function renderSelectOptions(currentValue, options, formatter) {
+        return options.map(optionValue => {
+            const label = formatter ? formatter(optionValue) : optionValue;
+            const selected = String(optionValue) === String(currentValue) ? "selected" : "";
+            return `<option value="${optionValue}" ${selected}>${label}</option>`;
+        }).join("");
+    }
+
+    function formatSeconds(value) {
+        return `${value}s`;
+    }
+
+    function formatMinutes(value) {
+        return `${Math.floor(value / 60)} min`;
+    }
+
+    function getGroupOptionsHtml(selectedId) {
+        const groups = currentRoutineItems.filter(item => item.item_type === "group");
+        return ['<option value="">Sin grupo</option>']
+            .concat(groups.map(group => {
+                const selected = group._id === selectedId ? "selected" : "";
+                return `<option value="${group._id}" ${selected}>${group.group_name}</option>`;
+            }))
+            .join("");
+    }
+
+    function getLastGroupId() {
+        for (let i = currentRoutineItems.length - 1; i >= 0; i -= 1) {
+            if (currentRoutineItems[i].item_type === "group") return currentRoutineItems[i]._id;
+        }
+        return "";
+    }
+
+    function getGroupName(groupId) {
+        const group = currentRoutineItems.find(item => item.item_type === "group" && item._id === groupId);
+        return group ? group.group_name : "";
+    }
+
+    function getExerciseById(exId) {
+        return availableExercises.find(ex => ex._id === exId);
+    }
+
+    function getSubstituteDetails(substituteIds) {
+        if (!substituteIds || substituteIds.length === 0) return [];
+        return substituteIds
+            .map(id => getExerciseById(id))
+            .filter(Boolean);
+    }
+
+    function renderEquipment(equipmentKey) {
+        const data = EQUIPMENT_MAP[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+        return `<i class="${data.icon} me-1"></i>${data.label}`;
+    }
+
+    function toEmbedUrl(url) {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        return trimmed;
+    }
+
+    function openVideoModal(url) {
+        const modalEl = document.getElementById("videoModal");
+        const iframe = document.getElementById("videoFrame");
+        const embedUrl = toEmbedUrl(url);
+        iframe.src = embedUrl;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            iframe.src = "";
+        }, { once: true });
+    }
+
+    function setActiveGroup(groupId) {
+        activeGroupId = groupId || "";
+        renderRoutineItems();
+    }
+
+    function getUniqueGroupName(baseName, excludeId = "") {
+        const trimmed = (baseName || "").trim() || "Grupo";
+        const existing = currentRoutineItems
+            .filter(item => item.item_type === "group" && item._id !== excludeId)
+            .map(item => item.group_name);
+        if (!existing.includes(trimmed)) return trimmed;
+        let counter = 2;
+        let candidate = `${trimmed} ${counter}`;
+        while (existing.includes(candidate)) {
+            counter += 1;
+            candidate = `${trimmed} ${counter}`;
+        }
+        return candidate;
+    }
+
+    function showGroupModal(title, initialValues) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("groupNameModal");
+            const modalTitle = modalEl.querySelector(".modal-title");
+            const input = modalEl.querySelector("#groupNameInput");
+            const typeSelect = modalEl.querySelector("#groupTypeSelect");
+            const saveBtn = modalEl.querySelector("#groupNameSave");
+            const cancelBtn = modalEl.querySelector("#groupNameCancel");
+            const typeLabelMap = {
+                biserie: "Biserie",
+                superset: "Superset",
+                circuito: "Circuito"
+            };
+
+            modalTitle.textContent = title;
+            typeSelect.value = (initialValues && initialValues.type) || "biserie";
+            input.value = (initialValues && initialValues.name) || typeLabelMap[typeSelect.value] || "";
+            input.focus();
+
+            let resolved = false;
+            let nameEdited = false;
+            const onTypeChange = () => {
+                if (nameEdited) return;
+                input.value = typeLabelMap[typeSelect.value] || input.value;
+            };
+            const onNameInput = () => {
+                nameEdited = true;
+            };
+            const onSave = () => {
+                resolved = true;
+                bootstrap.Modal.getInstance(modalEl).hide();
+                resolve({
+                    name: input.value.trim(),
+                    type: typeSelect.value
+                });
+            };
+            const onCancel = () => {
+                resolved = true;
+                resolve(null);
+            };
+            const onHidden = () => {
+                typeSelect.removeEventListener("change", onTypeChange);
+                input.removeEventListener("input", onNameInput);
+                if (!resolved) resolve(null);
+            };
+
+            typeSelect.addEventListener("change", onTypeChange);
+            input.addEventListener("input", onNameInput);
+            saveBtn.addEventListener("click", onSave, { once: true });
+            cancelBtn.addEventListener("click", onCancel, { once: true });
+            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+
+    function showRestModal(defaultGroupId, defaultRest) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("restModal");
+            const groupSelect = modalEl.querySelector("#restGroupSelect");
+            const restSelect = modalEl.querySelector("#restSecondsSelect");
+            const saveBtn = modalEl.querySelector("#restSave");
+            const cancelBtn = modalEl.querySelector("#restCancel");
+
+            groupSelect.innerHTML = getGroupOptionsHtml(defaultGroupId);
+            restSelect.innerHTML = renderSelectOptions(defaultRest, REST_OPTIONS, formatSeconds);
+
+            let resolved = false;
+            const onSave = () => {
+                resolved = true;
+                bootstrap.Modal.getInstance(modalEl).hide();
+                resolve({
+                    groupId: groupSelect.value,
+                    restSeconds: restSelect.value
+                });
+            };
+            const onCancel = () => {
+                resolved = true;
+                resolve(null);
+            };
+            const onHidden = () => {
+                if (!resolved) resolve(null);
+            };
+
+            saveBtn.addEventListener("click", onSave, { once: true });
+            cancelBtn.addEventListener("click", onCancel, { once: true });
+            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+
+    function showAlertModal(message) {
+        const modalEl = document.getElementById("alertModal");
+        const bodyEl = document.getElementById("alertModalBody");
+        if (!modalEl || !bodyEl) {
+            alert(message);
+            return;
+        }
+        bodyEl.textContent = message;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function getGroupsWithoutExercises() {
+        const groups = currentRoutineItems.filter(item => item.item_type === "group");
+        if (groups.length === 0) return [];
+        const exercisesByGroup = new Set(
+            currentRoutineItems
+                .filter(item => item.item_type === "exercise" && item.group_id)
+                .map(item => item.group_id)
+        );
+        return groups.filter(group => !exercisesByGroup.has(group._id));
+    }
+
+    function getGroupItemCount(groupId) {
+        return currentRoutineItems.filter(item => item.group_id === groupId).length;
+    }
+
+    function toggleGroupCollapse(groupId) {
+        if (collapsedGroupIds.has(groupId)) {
+            collapsedGroupIds.delete(groupId);
+        } else {
+            collapsedGroupIds.add(groupId);
+        }
+        renderRoutineItems();
+    }
+
+    function renderRoutineItems() {
+        const container = document.getElementById("routineItemsContainer");
+        const empty = document.getElementById("emptyState");
+
+        if (currentRoutineItems.length === 0) {
+            if (container) container.innerHTML = "";
+            if (empty) empty.style.display = "block";
+            return;
+        }
+        if (empty) empty.style.display = "none";
+
+        if (!container) return;
+
+        const groupItemsMap = new Map();
+        currentRoutineItems.forEach((item, idx) => {
+            if (item.item_type === "group") return;
+            if (!item.group_id) return;
+            if (!groupItemsMap.has(item.group_id)) groupItemsMap.set(item.group_id, []);
+            groupItemsMap.get(item.group_id).push({ item, idx });
+        });
+
+        let groupCount = 0;
+        let ungroupedExerciseCount = 0;
+
+        const renderExerciseCard = (entry, numberLabel, groupName) => {
+            const { item, idx } = entry;
+            const isTimeBased = item.exercise_type === "time" || item.exercise_type === "cardio";
+            const substitutes = getSubstituteDetails(item.substitutes || []);
+            const subsId = `subs_${item._id}`;
+            return `
+        <div class="routine-item p-3 bg-dark-elem rounded position-relative">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="text-white mb-0 fw-bold">${numberLabel} ${item.exercise_name} ${groupName ? `- ${groupName}` : ""}</h6>
+                <div class="d-flex gap-1">
+                    ${item.video_url ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : ""}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="small text-secondary mb-2">${translateBodyPart(item.body_part)} | ${renderEquipment(item.equipment)}</div>
+            ${substitutes.length ? `
+            <button class="btn btn-sm btn-outline-info mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
+                Sustitutos (${substitutes.length})
+            </button>
+            <div class="collapse" id="${subsId}">
+                <div class="d-flex flex-column gap-2">
+                    ${substitutes.map(sub => `
+                        <div class="d-flex align-items-center justify-content-between border border-secondary rounded px-2 py-2">
+                            <div>
+                                <div class="fw-bold text-white">${sub.name}</div>
+                                <div class="small text-secondary">${renderEquipment(sub.equipment || "other")}</div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                ${sub.video_url ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : ""}
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+            ` : ""}
+            <div class="row g-2">
+                <div class="col-4">
+                    <label class="small text-secondary">Series</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'target_sets', this.value)">
+                        ${renderSelectOptions(item.target_sets, SETS_OPTIONS)}
+                    </select>
+                </div>
+                ${isTimeBased ? `
+                <div class="col-4">
+                    <label class="small text-secondary">Tiempo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'target_time_seconds', this.value)">
+                        ${renderSelectOptions(item.target_time_seconds, TIME_OPTIONS, formatMinutes)}
+                    </select>
+                </div>
+                ` : `
+                <div class="col-4">
+                    <label class="small text-secondary">Reps Objetivo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'target_reps', this.value)">
+                        ${renderSelectOptions(item.target_reps, REPS_OPTIONS)}
+                    </select>
+                </div>
+                `}
+                <div class="col-4">
+                    <label class="small text-secondary">Descanso</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'rest_seconds', this.value)">
+                        ${renderSelectOptions(item.rest_seconds, REST_OPTIONS, formatSeconds)}
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="small text-secondary">Grupo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_id', this.value)">
+                        ${getGroupOptionsHtml(item.group_id)}
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="small text-secondary">Comentario</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'comment', this.value)">${item.comment || ''}</textarea>
+                </div>
+            </div>
+        </div>
+    `;
+        };
+
+        const renderRestCard = (entry, groupName) => {
+            const { item, idx } = entry;
+            return `
+        <div class="routine-item rest-item p-3 bg-dark-elem rounded position-relative border-warning">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="text-warning mb-0 fw-bold">Descanso ${groupName ? `- ${groupName}` : ""}</h6>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-4">
+                    <label class="small text-secondary">Descanso</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'rest_seconds', this.value)">
+                        ${renderSelectOptions(item.rest_seconds, REST_OPTIONS, formatSeconds)}
+                    </select>
+                </div>
+                <div class="col-4">
+                    <label class="small text-secondary">Grupo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_id', this.value)">
+                        ${getGroupOptionsHtml(item.group_id)}
+                    </select>
+                </div>
+                <div class="col-4">
+                    <label class="small text-secondary">Nota</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'note', this.value)">${item.note || ''}</textarea>
+                </div>
+            </div>
+        </div>
+    `;
+        };
+
+        const renderGroupBlock = (groupEntry, groupIndex, groupItems) => {
+            const { item, idx } = groupEntry;
+            const groupName = item.group_name || "Grupo";
+            const isCollapsed = collapsedGroupIds.has(item._id);
+            const count = groupItems.length;
+            const isActive = activeGroupId === item._id;
+            let groupExerciseCount = 0;
+            const groupItemsHtml = groupItems.map(entry => {
+                if (entry.item.item_type === "rest") {
+                    return renderRestCard(entry, groupName);
+                }
+                if (entry.item.item_type === "exercise") {
+                    groupExerciseCount += 1;
+                    return renderExerciseCard(entry, `${groupIndex}.${groupExerciseCount}`, groupName);
+                }
+                return "";
+            }).join("");
+
+            return `
+        <div class="routine-item group-item p-3 bg-dark-elem rounded position-relative ${isActive ? "border-info" : ""}">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="event.stopPropagation(); removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="text-info mb-0 fw-bold">Grupo ${groupIndex}: ${groupName}</h6>
+                    <span class="badge bg-dark border border-secondary">${count} items</span>
+                    ${isActive ? '<span class="badge bg-info text-dark">Activo</span>' : ''}
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-info" onclick="setActiveGroup('${item._id}')" title="Activar Grupo">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); showGroupModal('Editar Grupo', { name: '${groupName}', type: '${item.group_type || "biserie"}' }).then(result => { if (!result) return; updateItem(${idx}, 'group_name', result.name); updateItem(${idx}, 'group_type', result.type); })" title="Editar Grupo">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); toggleGroupCollapse('${item._id}')" title="${isCollapsed ? "Expandir" : "Colapsar"}">
+                        <i class="fas ${isCollapsed ? "fa-chevron-down" : "fa-chevron-up"}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-4">
+                    <label class="small text-secondary">Tipo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_type', this.value)">
+                        <option value="biserie" ${item.group_type === "biserie" ? "selected" : ""}>Biserie</option>
+                        <option value="superset" ${item.group_type === "superset" ? "selected" : ""}>Superset</option>
+                        <option value="circuito" ${item.group_type === "circuito" ? "selected" : ""}>Circuito</option>
+                    </select>
+                </div>
+                <div class="col-4">
+                    <label class="small text-secondary">Nombre</label>
+                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" 
+                        value="${groupName}" onchange="updateItem(${idx}, 'group_name', this.value)">
+                </div>
+                <div class="col-4">
+                    <label class="small text-secondary">Comentario</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'note', this.value)">${item.note || ''}</textarea>
+                </div>
+            </div>
+            <div class="${isCollapsed ? "d-none" : ""}">
+                ${groupItemsHtml || '<div class="text-muted">No hay ejercicios en este grupo.</div>'}
+            </div>
+        </div>
+    `;
+        };
+
+        const renderedGroupIds = new Set();
+        let html = "";
+        if (activeGroupId) {
+            html += `
+            <div class="px-2 py-2">
+                <span class="badge bg-info text-dark">Grupo activo: ${getGroupName(activeGroupId)}</span>
+            </div>
+            `;
+        }
+
+        currentRoutineItems.forEach((item, idx) => {
+            if (item.item_type === "group") {
+                groupCount += 1;
+                renderedGroupIds.add(item._id);
+                html += renderGroupBlock({ item, idx }, groupCount, groupItemsMap.get(item._id) || []);
+                return;
+            }
+            if (item.group_id) {
+                if (!renderedGroupIds.has(item.group_id)) {
+                    return;
+                }
+                return;
+            }
+            if (item.item_type === "rest") {
+                html += renderRestCard({ item, idx }, "");
+                return;
+            }
+            if (item.item_type === "exercise") {
+                ungroupedExerciseCount += 1;
+                html += renderExerciseCard({ item, idx }, `${ungroupedExerciseCount}`, "");
+            }
+        });
+
+        container.innerHTML = html;
+    }
+
+    async function saveRoutine() {
+        const name = document.getElementById("routineName").value;
+        const desc = document.getElementById("routineDesc").value;
+
+        if (!name) return alert("Ponle un nombre a tu rutina");
+        if (currentRoutineItems.length === 0) return alert("Agrega al menos un ejercicio");
+        const emptyGroups = getGroupsWithoutExercises();
+        if (emptyGroups.length > 0) {
+            const names = emptyGroups.map(group => group.group_name || "Grupo").join(", ");
+            showAlertModal(`Hay grupos sin ejercicios asignados: ${names}. Agrega ejercicios o elimina el grupo.`);
+            return;
+        }
+
+        const payload = {
+            name,
+            description: desc,
+            items: currentRoutineItems,
+            routine_body_parts: getRoutineBodyParts()
+        };
+
+        try {
+            const res = await fetch("/api/routines/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert("Rutina guardada!");
+                window.location.href = "/workout/dashboard";
+            } else {
+                alert("Error guardando rutina");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de red");
+        }
+    }
+</script>
+{% endblock %}

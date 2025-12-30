@@ -68,23 +68,25 @@
 
             <div class="card mb-4">
                 <div class="card-body p-0">
-                    <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex gap-3">
-                        <div class="position-relative flex-grow-1">
-                            <div class="position-relative flex-grow-1">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="userSearchTerm"
-                                        placeholder="Buscar: nombre, email o ID...">
-                                    <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
-                                        <i class="fas fa-search"></i>
-                                    </button>
+                    <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex flex-column gap-3">
+                        <div class="position-relative w-100">
+                            <div class="d-flex gap-2">
+                                <div class="position-relative flex-grow-1">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="userSearchTerm"
+                                            placeholder="Buscar: nombre, email o ID...">
+                                        <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <!-- Hidden field for compatibility -->
+                                    <input id="adminUserId" type="hidden">
+                                    <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
+                                        style="z-index: 1000; display: none; width: 100%;"></div>
                                 </div>
-                                <!-- Hidden field for compatibility -->
-                                <input id="adminUserId" type="hidden">
-                                <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
-                                    style="z-index: 1000; display: none; width: 90%;"></div>
+                                <button id="btnRefresh" class="btn btn-dark border-secondary"><i
+                                        class="fas fa-sync-alt"></i></button>
                             </div>
-                            <button id="btnRefresh" class="btn btn-dark border-secondary"><i
-                                    class="fas fa-sync-alt"></i></button>
                         </div>
 
                         <div class="table-responsive">
@@ -156,7 +158,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnSaveUser">Guardar</button>
+                    <button type="button" class="btn btn-success" id="btnSaveUser">Guardar</button>
                 </div>
             </div>
         </div>

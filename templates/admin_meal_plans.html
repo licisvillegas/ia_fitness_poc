@@ -203,6 +203,8 @@
     <script>
       (function () {
         let currentPlan = null;
+        let lastGeneratedInput = null;
+        let lastGeneratedBackend = null;
 
         // Tab element refs
         const tabVisualBtn = document.getElementById('tab-visual-btn');
@@ -330,6 +332,8 @@
 
         function renderPlan(p) {
           currentPlan = p;
+          lastGeneratedInput = null;
+          lastGeneratedBackend = null;
           document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
           const badge = document.getElementById('adminPlanActiveBadge');
           badge.style.display = p.active ? 'inline-block' : 'none';
@@ -423,18 +427,37 @@
 
         async function savePlan() {
           const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
           const token = document.getElementById('adminToken').value.trim();
           if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
           let body;
           try { body = collectChanges(); } catch (e) { msg.textContent = `Error: ${e.message}`; return; }
           msg.textContent = 'Guardando...';
           try {
-            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-              body: JSON.stringify(body)
-            });
+            let resp;
+            if (!currentPlan) {
+              const uid = resolveUserId(document.getElementById('adminUserId').value);
+              if (!uid) { msg.textContent = 'Selecciona usuario'; return; }
+              const inputPayload = lastGeneratedInput ? { ...lastGeneratedInput } : {};
+              if (body.plan_id) { inputPayload.plan_id = body.plan_id; }
+              const payload = {
+                user_id: uid,
+                backend: lastGeneratedBackend || document.getElementById('fBackend').value.trim() || "manual",
+                input: inputPayload,
+                output: body.output || {},
+                notes: body.notes,
+              };
+              resp = await fetch('/meal_plans/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+                body: JSON.stringify(payload)
+              });
+            } else {
+              resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+                body: JSON.stringify(body)
+              });
+            }
             if (!resp.ok) {
               const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
               throw new Error(err.error || `HTTP ${resp.status}`);
@@ -442,6 +465,7 @@
             const updated = await resp.json();
             msg.textContent = 'Cambios guardados';
             if (updated && updated.meal_plan) { renderPlan(updated.meal_plan); }
+            loadPlans();
           } catch (e) { msg.textContent = `Error: ${e.message}`; }
         }
 
@@ -526,6 +550,8 @@
               document.getElementById('fOutput').value = JSON.stringify(output, null, 2);
               document.getElementById('fBackend').value = data.backend || "AI-Gen";
               document.getElementById('fNotes').value = `Generado por Admin AI el ${new Date().toLocaleString()}`;
+              lastGeneratedInput = data.input || {};
+              lastGeneratedBackend = data.backend || "AI-Gen";
 
               // Clear Plan ID if it's new
               document.getElementById('fPlanId').value = "";

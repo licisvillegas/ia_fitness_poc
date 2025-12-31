@@ -192,7 +192,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         border-right: 1px solid #374151 !important;
         border-bottom: none !important;
         z-index: 1045 !important;
-        transition: left 0.3s ease-in-out;
+        transition: left 0.3s ease-in-out, right 0.3s ease-in-out;
         box-shadow: none;
     }
 
@@ -201,6 +201,21 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         left: 0 !important;
         box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
     }
+
+    /* --- RIGHT SIDEBAR MOBILE OVERRIDES --- */
+    body.sb-right .sidebar-fixed {
+        left: auto !important;
+        right: -250px !important;
+        border-right: none !important;
+        border-left: 1px solid #374151 !important;
+    }
+
+    body.sb-right .sidebar-fixed.show-mobile {
+        left: auto !important;
+        right: 0 !important;
+        box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+    }
+
 
     /* Overlay backdrop */
     .sidebar-overlay {

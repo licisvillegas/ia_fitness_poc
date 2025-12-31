@@ -1171,8 +1171,9 @@
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
+        const weightInputRef = useRef(null);
 
-        // Pre-fill from history for the same exercise
+        // Pre-fill from history and AUTO-FOCUS
         useEffect(() => {
             const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
             let nextWeight = step.target.weight || '';
@@ -1187,6 +1188,15 @@
             setWeight(nextWeight);
             setReps(nextReps);
             setRpe(8);
+
+            // Auto-focus logic
+            if (weightInputRef.current) {
+                // Small timeout to ensure DOM is ready and transition is done
+                setTimeout(() => {
+                    weightInputRef.current.focus();
+                    weightInputRef.current.select();
+                }, 100);
+            }
         }, [step, sessionLog]);
 
         const adjustReps = (delta) => {
@@ -1218,6 +1228,7 @@
                     <div className="col-4">
                         <label className="text-secondary small fw-bold mb-2 d-block">PESO (KG)</label>
                         <input type="number"
+                            ref={weightInputRef}
                             className="form-control input-hud"
                             value={weight}
                             onChange={e => setWeight(e.target.value)}
@@ -1226,7 +1237,9 @@
                         />
                     </div>
                     <div className="col-8">
-                        <label className="text-secondary small fw-bold mb-2 d-block">REPS</label>
+                        <label className="text-secondary small fw-bold mb-2 d-block">
+                            REPS {step.target.reps && <span className="text-cyber-green ms-2">(Meta: {step.target.reps})</span>}
+                        </label>
                         <div className="d-flex align-items-center gap-2">
                             <button
                                 className="btn btn-outline-secondary"

@@ -192,8 +192,9 @@
                                 <i class="fas fa-eraser me-1"></i> Nueva
                             </button>
                         </div>
-                        <div class="mt-2" id="routineList"></div>
                     </div>
+                    <!-- Moved routineList outside the header padding div -->
+                    <div id="routineList" class="card-body p-0 overflow-auto"></div>
                 </div>
             </div>
         </div>
@@ -326,15 +327,39 @@
     }
 
     .builder-sidebar-card {
+        display: flex;
+        flex-direction: column;
+        /* Remove overflow from parent so header stays put */
+        overflow: hidden;
+    }
+
+    .builder-sidebar-card .tab-content {
+        flex: 1;
+        overflow: hidden;
+        /* Prevent parent scroll */
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        /* Flexbox scrolling fix */
+    }
+
+    .builder-sidebar-card .tab-pane.active {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #exercisePicker,
+    #routinePicker,
+    #routineList {
+        /* Added routineList */
+        flex: 1;
         overflow-y: auto;
-        scrollbar-width: thin;
+        height: auto !important;
+        /* Override inline styles */
     }
 
-    /* Smooth rotation for collapse icons */
-    .transition-icon {
-        transition: transform 0.3s ease;
-    }
-
+    /* Keep transition icon logic */
     .collapsed .transition-icon,
     [aria-expanded="false"] .transition-icon {
         transform: rotate(180deg);
@@ -342,15 +367,21 @@
 
     @media (max-width: 992px) {
         .builder-sidebar-card {
-            position: static !important;
-            max-height: none !important;
+            position: relative !important;
+            /* Allow normal flow but constrain height */
+            height: 80vh !important;
+            /* Fixed height for mobile */
+            max-height: 80vh !important;
             margin-top: 1rem;
+            /* Flex layout from desktop rules will handle the rest */
         }
 
         .card-header .nav-tabs {
             flex-wrap: nowrap;
             overflow-x: auto;
             white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            /* Smooth scroll */
         }
     }
 </style>

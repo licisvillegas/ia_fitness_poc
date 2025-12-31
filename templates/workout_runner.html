@@ -90,6 +90,7 @@
 
     .btn-cyber-large {
         background: #00ff9d;
+        /* Green default */
         color: black;
         font-weight: 900;
         letter-spacing: 2px;
@@ -102,7 +103,16 @@
         border-radius: 12px;
     }
 
+    .btn-cyber-large:hover {
+        background: #00d2ff;
+        /* Blue on hover */
+        box-shadow: 0 0 30px rgba(0, 210, 255, 0.6);
+        transform: translateY(-2px);
+    }
+
     .btn-cyber-large:active {
+        background: #00b8e6;
+        /* Darker blue active */
         transform: scale(0.96);
     }
 
@@ -1081,6 +1091,11 @@
                                 <i className={`${equipmentMeta.icon} me-1`}></i>{equipmentMeta.label}
                             </span>
                         </div>
+                        {(ex.comment || ex.note) && (
+                            <div className="mt-2 text-warning small fst-italic">
+                                <i className="fas fa-sticky-note me-1"></i> {ex.comment || ex.note}
+                            </div>
+                        )}
                         {substitutes.length > 0 && (
                             <div className="mt-2">
                                 <button

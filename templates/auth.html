@@ -141,6 +141,7 @@
     h5 {
       color: var(--text-main);
     }
+
     .btn-primary {
       background-color: var(--primary);
       border: none;
@@ -205,7 +206,7 @@
         </div>
       </div>
       <!-- Lado formularios -->
-      <div class="col-lg-7 p-4 p-md-5">
+      <div class="col-lg-7 p-3 p-md-5">
         <div class="alert d-none" id="authAlert" role="alert">
         </div>
         <ul class="nav nav-pills mb-4" id="authTabs" role="tablist">
@@ -345,198 +346,198 @@
       &copy; 2025 AI Fitness | Desarrollado por Ismael Villegas
     </p>
   </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-    </script>
-    <script>
-      (() => {
-        // 1. Check if user is already logged in
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <script>
+    (() => {
+      // 1. Check if user is already logged in
+      try {
+        const savedUser = localStorage.getItem('ai_fitness_user');
+        if (savedUser) {
+          JSON.parse(savedUser); // Verify it's valid JSON
+          window.location.href = '/dashboard';
+          return; // Stop execution of auth logic
+        }
+      } catch (e) {
+        // Invalid session data, ignore and let user login
+        localStorage.removeItem('ai_fitness_user');
+      }
+
+      const alertBox = document.getElementById('authAlert');
+      const registerForm = document.getElementById('registerForm');
+      const loginForm = document.getElementById('loginForm');
+      // (Eliminado: elementos de token administrador)
+
+      const showAlert = (variant, message) => {
+        if (!alertBox) {
+          return;
+        }
+        alertBox.textContent = message;
+        alertBox.className = `alert alert-${variant}`;
+      };
+
+      const clearAlert = () => {
+        if (!alertBox) {
+          return;
+        }
+        alertBox.textContent = '';
+        alertBox.className = 'alert d-none';
+      };
+
+      const setLoading = (form, isLoading) => {
+        if (!form) {
+          return;
+        }
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) {
+          return;
+        }
+        if (isLoading) {
+          submitBtn.dataset.originalText = submitBtn.textContent;
+          submitBtn.textContent = 'Procesando...';
+          submitBtn.disabled = true;
+        } else {
+          submitBtn.disabled = false;
+          if (submitBtn.dataset.originalText) {
+            submitBtn.textContent = submitBtn.dataset.originalText;
+          }
+        }
+      };
+
+      const parseResponse = async (response) => {
         try {
-          const savedUser = localStorage.getItem('ai_fitness_user');
-          if (savedUser) {
-            JSON.parse(savedUser); // Verify it's valid JSON
-            window.location.href = '/dashboard';
-            return; // Stop execution of auth logic
-          }
-        } catch (e) {
-          // Invalid session data, ignore and let user login
-          localStorage.removeItem('ai_fitness_user');
+          return await response.json();
+        } catch (error) {
+          return {};
         }
+      };
 
-        const alertBox = document.getElementById('authAlert');
-        const registerForm = document.getElementById('registerForm');
-        const loginForm = document.getElementById('loginForm');
-        // (Eliminado: elementos de token administrador)
+      if (registerForm) {
+        registerForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
 
-        const showAlert = (variant, message) => {
-          if (!alertBox) {
-            return;
-          }
-          alertBox.textContent = message;
-          alertBox.className = `alert alert-${variant}`;
-        };
+          const passwordField = document.getElementById('regPassword');
+          const confirmField = document.getElementById('regPassword2');
 
-        const clearAlert = () => {
-          if (!alertBox) {
-            return;
-          }
-          alertBox.textContent = '';
-          alertBox.className = 'alert d-none';
-        };
-
-        const setLoading = (form, isLoading) => {
-          if (!form) {
-            return;
-          }
-          const submitBtn = form.querySelector('button[type="submit"]');
-          if (!submitBtn) {
-            return;
-          }
-          if (isLoading) {
-            submitBtn.dataset.originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Procesando...';
-            submitBtn.disabled = true;
+          if (passwordField.value !== confirmField.value) {
+            confirmField.setCustomValidity('Las contrasenas no coinciden');
           } else {
-            submitBtn.disabled = false;
-            if (submitBtn.dataset.originalText) {
-              submitBtn.textContent = submitBtn.dataset.originalText;
-            }
+            confirmField.setCustomValidity('');
           }
-        };
 
-        const parseResponse = async (response) => {
+          registerForm.classList.add('was-validated');
+          if (!registerForm.checkValidity()) {
+            return;
+          }
+
+          clearAlert();
+          setLoading(registerForm, true);
+
+          const payload = {
+            name: document.getElementById('regName').value.trim(),
+            username: document.getElementById('regUsername').value.trim(),
+            email: document.getElementById('regEmail').value.trim(),
+            password: passwordField.value
+          };
+
           try {
-            return await response.json();
-          } catch (error) {
-            return {};
-          }
-        };
+            const response = await fetch('/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await parseResponse(response);
 
-        if (registerForm) {
-          registerForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+            if (!response.ok) {
+              showAlert('danger', result.error || 'No fue posible completar el registro.');
+              return;
+            }
 
-            const passwordField = document.getElementById('regPassword');
-            const confirmField = document.getElementById('regPassword2');
-
-            if (passwordField.value !== confirmField.value) {
-              confirmField.setCustomValidity('Las contrasenas no coinciden');
+            if (result.user && result.user.status === 'pending') {
+              showAlert('info', 'Registro exitoso. Tu cuenta esta pendiente de activacion por un admin.');
             } else {
-              confirmField.setCustomValidity('');
-            }
-
-            registerForm.classList.add('was-validated');
-            if (!registerForm.checkValidity()) {
-              return;
-            }
-
-            clearAlert();
-            setLoading(registerForm, true);
-
-            const payload = {
-              name: document.getElementById('regName').value.trim(),
-              username: document.getElementById('regUsername').value.trim(),
-              email: document.getElementById('regEmail').value.trim(),
-              password: passwordField.value
-            };
-
-            try {
-              const response = await fetch('/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              const result = await parseResponse(response);
-
-              if (!response.ok) {
-                showAlert('danger', result.error || 'No fue posible completar el registro.');
-                return;
-              }
-
-              if (result.user && result.user.status === 'pending') {
-                showAlert('info', 'Registro exitoso. Tu cuenta esta pendiente de activacion por un admin.');
-              } else {
-                showAlert('success', result.message || 'Registro exitoso. Ahora puedes iniciar sesion.');
-                localStorage.setItem('ai_fitness_user', JSON.stringify(result.user || {}));
-              }
-
-              const loginTabTrigger = document.querySelector('#login-tab');
-              if (loginTabTrigger && window.bootstrap && window.bootstrap.Tab) {
-                new bootstrap.Tab(loginTabTrigger).show();
-              }
-
-              const loginIdentifierField = document.getElementById('loginIdentifier');
-              if (loginIdentifierField) {
-                loginIdentifierField.value = payload.email;
-              }
-
-              registerForm.reset();
-              registerForm.classList.remove('was-validated');
-            } catch (error) {
-              showAlert('danger', 'Error de conexion con el servidor. Intenta nuevamente.');
-            } finally {
-              setLoading(registerForm, false);
-            }
-          });
-        }
-
-        if (loginForm) {
-          loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            loginForm.classList.add('was-validated');
-            if (!loginForm.checkValidity()) {
-              return;
-            }
-
-            clearAlert();
-            setLoading(loginForm, true);
-
-            const payload = {
-              identifier: document.getElementById('loginIdentifier').value.trim(),
-              password: document.getElementById('loginPassword').value
-            };
-
-            try {
-              const response = await fetch('/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              const result = await parseResponse(response);
-
-              if (!response.ok) {
-                showAlert('danger', result.error || 'Credenciales invalidas.');
-                return;
-              }
-
-              showAlert('success', result.message || 'Inicio de sesion exitoso. Redirigiendo...');
+              showAlert('success', result.message || 'Registro exitoso. Ahora puedes iniciar sesion.');
               localStorage.setItem('ai_fitness_user', JSON.stringify(result.user || {}));
-              if (result.user && (result.user.user_id || result.user._id)) {
-                localStorage.setItem('ai_fitness_uid', String(result.user.user_id || result.user._id));
-              }
-
-              loginForm.reset();
-              loginForm.classList.remove('was-validated');
-
-              // Redirección estándar al dashboard
-              setTimeout(() => {
-                window.location.href = '/dashboard';
-              }, 800);
-            } catch (error) {
-              showAlert('danger', 'Error de conexion con el servidor. Intenta nuevamente.');
-            } finally {
-              setLoading(loginForm, false);
             }
-          });
-        }
 
-        // (Eliminado: lógica de toggle de token admin)
-      })();
-    </script>
-    <script src="/static/js/lang.js">
-    </script>
+            const loginTabTrigger = document.querySelector('#login-tab');
+            if (loginTabTrigger && window.bootstrap && window.bootstrap.Tab) {
+              new bootstrap.Tab(loginTabTrigger).show();
+            }
+
+            const loginIdentifierField = document.getElementById('loginIdentifier');
+            if (loginIdentifierField) {
+              loginIdentifierField.value = payload.email;
+            }
+
+            registerForm.reset();
+            registerForm.classList.remove('was-validated');
+          } catch (error) {
+            showAlert('danger', 'Error de conexion con el servidor. Intenta nuevamente.');
+          } finally {
+            setLoading(registerForm, false);
+          }
+        });
+      }
+
+      if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          loginForm.classList.add('was-validated');
+          if (!loginForm.checkValidity()) {
+            return;
+          }
+
+          clearAlert();
+          setLoading(loginForm, true);
+
+          const payload = {
+            identifier: document.getElementById('loginIdentifier').value.trim(),
+            password: document.getElementById('loginPassword').value
+          };
+
+          try {
+            const response = await fetch('/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await parseResponse(response);
+
+            if (!response.ok) {
+              showAlert('danger', result.error || 'Credenciales invalidas.');
+              return;
+            }
+
+            showAlert('success', result.message || 'Inicio de sesion exitoso. Redirigiendo...');
+            localStorage.setItem('ai_fitness_user', JSON.stringify(result.user || {}));
+            if (result.user && (result.user.user_id || result.user._id)) {
+              localStorage.setItem('ai_fitness_uid', String(result.user.user_id || result.user._id));
+            }
+
+            loginForm.reset();
+            loginForm.classList.remove('was-validated');
+
+            // Redirección estándar al dashboard
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 800);
+          } catch (error) {
+            showAlert('danger', 'Error de conexion con el servidor. Intenta nuevamente.');
+          } finally {
+            setLoading(loginForm, false);
+          }
+        });
+      }
+
+      // (Eliminado: lógica de toggle de token admin)
+    })();
+  </script>
+  <script src="/static/js/lang.js">
+  </script>
 </body>
 
 </html>

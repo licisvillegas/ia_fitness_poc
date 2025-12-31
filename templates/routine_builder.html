@@ -84,23 +84,29 @@
 
     <!-- Right: Exercise Picker -->
     <div class="col-lg-4">
-        <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card" style="top: 80px; max-height: 85vh;">
+        <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card"
+            style="top: 80px; max-height: 85vh;">
             <div class="card-header border-secondary pb-0">
                 <ul class="nav nav-tabs border-0" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-exercises" data-bs-toggle="tab" data-bs-target="#panel-exercises" type="button" role="tab" aria-controls="panel-exercises" aria-selected="true" title="Ejercicios Disponibles">
+                        <button class="nav-link active" id="tab-exercises" data-bs-toggle="tab"
+                            data-bs-target="#panel-exercises" type="button" role="tab" aria-controls="panel-exercises"
+                            aria-selected="true" title="Ejercicios Disponibles">
                             <i class="fas fa-dumbbell"></i>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-routines" data-bs-toggle="tab" data-bs-target="#panel-routines" type="button" role="tab" aria-controls="panel-routines" aria-selected="false" title="Rutinas Guardadas">
+                        <button class="nav-link" id="tab-routines" data-bs-toggle="tab" data-bs-target="#panel-routines"
+                            type="button" role="tab" aria-controls="panel-routines" aria-selected="false"
+                            title="Rutinas Guardadas">
                             <i class="fas fa-folder-open"></i>
                         </button>
                     </li>
                 </ul>
             </div>
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="panel-exercises" role="tabpanel" aria-labelledby="tab-exercises">
+                <div class="tab-pane fade show active" id="panel-exercises" role="tabpanel"
+                    aria-labelledby="tab-exercises">
                     <div class="px-3 pt-2">
                         <div class="d-inline-flex align-items-center gap-2 text-cyber-green small mb-2">
                             <i class="fas fa-dumbbell"></i>
@@ -131,7 +137,8 @@
                                 <option value="bodyweight">Peso Corporal</option>
                                 <option value="other">Otro</option>
                             </select>
-                            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterType">
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                id="filterType">
                                 <option value="">Tipo</option>
                                 <option value="weight">Peso</option>
                                 <option value="time">Tiempo</option>
@@ -175,7 +182,8 @@
                                 <option value="Core">Abdomen</option>
                                 <option value="Full Body">Cuerpo Completo</option>
                             </select>
-                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="resetRoutineFilters()">
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                onclick="resetRoutineFilters()">
                                 <i class="fas fa-undo me-1"></i> Restablecer
                             </button>
                         </div>
@@ -330,6 +338,20 @@
     .collapsed .transition-icon,
     [aria-expanded="false"] .transition-icon {
         transform: rotate(180deg);
+    }
+
+    @media (max-width: 992px) {
+        .builder-sidebar-card {
+            position: static !important;
+            max-height: none !important;
+            margin-top: 1rem;
+        }
+
+        .card-header .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
     }
 </style>
 
@@ -641,7 +663,7 @@
         }).join("");
     }
 
-function translateBodyPart(bp) {
+    function translateBodyPart(bp) {
         const map = {
             'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
             'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
@@ -793,11 +815,11 @@ function translateBodyPart(bp) {
     }
 
     function formatSeconds(value) {
-        return `${ value } s`;
+        return `${value} s`;
     }
 
     function formatMinutes(value) {
-        return `${ Math.floor(value / 60) } min`;
+        return `${Math.floor(value / 60)} min`;
     }
 
     function getGroupOptionsHtml(selectedId) {

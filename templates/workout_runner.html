@@ -959,12 +959,27 @@
 
     const RoutineDetails = ({ routine }) => {
         const { exerciseLookup } = useWorkout();
+        // Collapsed by default: We track EXPANDED groups.
+        const [expandedGroups, setExpandedGroups] = useState(new Set());
+
         if (!routine) return null;
+
+        const toggleGroup = (groupId) => {
+            const next = new Set(expandedGroups);
+            if (next.has(groupId)) {
+                next.delete(groupId);
+            } else {
+                next.add(groupId);
+            }
+            setExpandedGroups(next);
+        };
+
         const items = Array.isArray(routine.items) ? routine.items : [];
         const isRestItem = (item) => item && (item.item_type === 'rest' || (!item.exercise_id && item.rest_seconds != null));
         const isExerciseItem = (item) => item && item.item_type === 'exercise';
         const buildEntry = (item) => (isRestItem(item) ? { type: 'rest', data: item } : { type: 'exercise', data: item });
         const hasInlineGroups = items.some(item => Array.isArray(item.items));
+
         const displayData = hasInlineGroups
             ? (() => {
                 const groups = [];
@@ -977,6 +992,7 @@
                         groups.push({
                             id: item._id || item.id || `group_${idx}`,
                             name: item.name || item.group_name || "Circuito",
+                            note: item.note || item.description || "",
                             entries
                         });
                         return;
@@ -994,6 +1010,7 @@
                     groupMap.set(group._id, {
                         id: group._id,
                         name: group.group_name || "Grupo",
+                        note: group.note || group.description || "",
                         entries: []
                     });
                 });
@@ -1009,6 +1026,7 @@
                 });
                 return { groups: Array.from(groupMap.values()).filter(group => group.entries.length), ungrouped };
             })();
+
         const totalExercises = displayData.groups.reduce((acc, group) => acc + group.entries.filter(entry => entry.type === 'exercise').length, 0)
             + displayData.ungrouped.filter(entry => entry.type === 'exercise').length;
 
@@ -1122,19 +1140,34 @@
                         <p className="text-secondary m-0">{totalExercises} ejercicios -  Revisa los detalles antes de iniciar</p>
                     </div>
 
-                    <div className="d-flex flex-column gap-3">
-                        {displayData.groups.map((group, idx) => (
-                            <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
-                                <div className="mb-2 text-cyber-orange text-uppercase small">
-                                    {group.name || "Circuito"}
+                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll" style={{ maxHeight: '60vh' }}>
+                        {displayData.groups.map((group, idx) => {
+                            const isExpanded = expandedGroups.has(group.id);
+                            return (
+                                <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
+                                    <div
+                                        className="d-flex justify-content-between align-items-center cursor-pointer"
+                                        onClick={() => toggleGroup(group.id)}
+                                    >
+                                        <div>
+                                            <div className="text-cyber-orange text-uppercase small fw-bold">
+                                                {group.name || "Circuito"} ({group.entries.length} items)
+                                            </div>
+                                            {group.note && <div className="text-white small mt-1 fst-italic">"{group.note}"</div>}
+                                        </div>
+                                        <i className={`fas fa-chevron-down text-secondary transition-icon ${isExpanded ? 'rotate-180' : ''}`}></i>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className="d-flex flex-column gap-2 mt-3 animate-fade-in">
+                                            {group.entries.map((entry, entryIdx) => (
+                                                renderEntry(entry, `group_${idx}_${entryIdx}`)
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="d-flex flex-column gap-2">
-                                    {group.entries.map((entry, entryIdx) => (
-                                        renderEntry(entry, `group_${idx}_${entryIdx}`)
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {displayData.ungrouped.length > 0 && (
                             <div className="p-3 border border-secondary rounded-3 bg-black-trans">
                                 <div className="d-flex flex-column gap-2">

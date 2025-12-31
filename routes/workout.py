@@ -1,0 +1,386 @@
+"""
+Blueprint de Smart Workout
+Maneja dashboard, runner, sesiones y estadísticas de entrenamiento
+"""
+from flask import Blueprint, request, jsonify, render_template
+from bson import ObjectId
+from datetime import datetime
+import extensions
+from extensions import logger
+
+# Crear blueprint
+workout_bp = Blueprint('workout', __name__, url_prefix='/workout')
+
+# Helper para obtener la DB inicializada (evita capturar None en import)
+def get_db():
+    return extensions.db
+
+# ======================================================
+# RUTAS DE VISTAS
+# ======================================================
+
+@workout_bp.route("/dashboard")
+def view_workout_dashboard():
+    """Dashboard principal del modulo de Smart Workout."""
+    user_id = request.cookies.get("user_session")
+    db = get_db()
+    
+    # Check Admin for User Selector
+    is_admin = False
+    all_users = []
+    if user_id and db is not None:
+        try:
+            role_doc = db.user_roles.find_one({"user_id": user_id})
+            if role_doc and role_doc.get("role") == "admin":
+                is_admin = True
+                users_cursor = db.users.find({}, {"user_id": 1, "name": 1, "username": 1}).sort("name", 1)
+                all_users = []
+                for u in users_cursor:
+                    all_users.append({
+                        "user_id": u.get("user_id"),
+                        "name": u.get("name") or u.get("username") or "Usuario"
+                    })
+        except Exception as e:
+            logger.error(f"Error loading users for dashboard: {e}")
+            pass
+
+    return render_template("workout_dashboard.html", current_user_id=user_id, is_admin=is_admin, all_users=all_users)
+
+
+@workout_bp.route("/run/<routine_id>")
+def view_workout_run(routine_id):
+    """Renderiza el Player de Entrenamiento (React)."""
+    user_name = None
+    user_id = None
+    db = get_db()
+    try:
+        user_id = request.cookies.get("user_session")
+        if user_id and db is not None:
+            user_doc = db.users.find_one({"user_id": user_id}, {"name": 1, "username": 1})
+            if user_doc:
+                user_name = user_doc.get("name") or user_doc.get("username")
+    except Exception:
+        user_name = None
+    
+    # 1. DEMO MODE
+    if routine_id == "demo":
+        routine_data = {
+            "id": "demo_1",
+            "name": "Rutina Demo: Pectoral & Triceps",
+            "items": [
+                {
+                    "item_type": "exercise",
+                    "exercise_id": "bench_press",
+                    "name": "Press de Banca",
+                    "body_part": "Pecho",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "weight": 80,
+                    "rest": 90,
+                    "target_reps": "8-10"
+                },
+                {
+                    "item_type": "group",
+                    "name": "Superserie: Bombeo",
+                    "items": [
+                        {
+                            "exercise_id": "cable_fly",
+                            "name": "Cruce de Poleas",
+                            "body_part": "Pecho",
+                            "sets": 3,
+                            "reps": "15",
+                            "rest": 0,
+                             "target_reps": "15"
+                        },
+                        {
+                            "exercise_id": "pushup",
+                            "name": "Flexiones",
+                            "body_part": "Pecho",
+                            "sets": 3,
+                            "reps": "Fallo",
+                            "rest": 60,
+                             "target_reps": "Fallo"
+                        }
+                    ]
+                },
+                {
+                    "item_type": "exercise",
+                    "exercise_id": "plank",
+                    "name": "Plancha Abdominal",
+                    "exercise_type": "time",
+                    "body_part": "Core",
+                    "sets": 3,
+                    "time_seconds": 45,
+                    "rest": 60
+                }
+            ]
+        }
+        return render_template("workout_runner.html", routine=routine_data, current_user_name=user_name, current_user_id=user_id)
+
+    # 2. DB LOOKUP
+    try:
+        # Fallback Mock for dev persistence (since DB schema might vary)
+        routine_data = {
+            "id": routine_id,
+            "name": f"Rutina Persistida {routine_id}",
+            "items": []
+        }
+
+        def normalize_item(item, fallback_key):
+            if not isinstance(item, dict):
+                return None
+            if "item_type" not in item:
+                if isinstance(item.get("items"), list):
+                    item["item_type"] = "group"
+                elif item.get("rest_seconds") is not None or (item.get("exercise_id") is None and item.get("rest") is not None):
+                    item["item_type"] = "rest"
+                else:
+                    item["item_type"] = "exercise"
+            if item["item_type"] == "group":
+                item["_id"] = item.get("_id") or item.get("id") or f"group_{fallback_key}"
+                child_items = item.get("items")
+                if isinstance(child_items, list):
+                    normalized_children = []
+                    for idx, child in enumerate(child_items):
+                        normalized = normalize_item(child, f"{fallback_key}_{idx}")
+                        if normalized:
+                            normalized_children.append(normalized)
+                    item["items"] = normalized_children
+            return item
+
+        def normalize_routine_items(items):
+            if not isinstance(items, list):
+                return []
+            normalized = []
+            for idx, item in enumerate(items):
+                normalized_item = normalize_item(item, idx)
+                if normalized_item:
+                    normalized.append(normalized_item)
+            return normalized
+
+        if db is not None:
+            try:
+                if ObjectId.is_valid(routine_id):
+                    r = db.routines.find_one({"_id": ObjectId(routine_id)})
+                else:
+                    r = db.routines.find_one({"routine_id": routine_id})
+                if r:
+                    # Adapt DB schema to UI needs if necessary
+                    def _json_safe(value):
+                        if isinstance(value, ObjectId):
+                            return str(value)
+                        if isinstance(value, dict):
+                            return {k: _json_safe(v) for k, v in value.items()}
+                        if isinstance(value, list):
+                            return [_json_safe(v) for v in value]
+                        return value
+
+                    r["id"] = str(r["_id"])
+                    routine_data = _json_safe(r)
+                    routine_data["items"] = normalize_routine_items(routine_data.get("items"))
+                if not routine_data.get("items") and isinstance(routine_data.get("exercises"), list):
+                    routine_data["items"] = normalize_routine_items(routine_data.get("exercises"))
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error(f"Error loading routine {routine_id}: {e}")
+        return str(e), 500
+
+    return render_template("workout_runner.html", routine=routine_data, current_user_name=user_name, current_user_id=user_id)
+
+
+# ======================================================
+# API ENDPOINTS - SESIONES
+# ======================================================
+
+@workout_bp.route("/api/session/save", methods=["POST"])
+def api_save_session():
+    """Guarda un workout completado."""
+    try:
+        db = get_db()
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        data = request.get_json()
+        
+        # Data validation minimal
+        session_doc = {
+            "user_id": user_id,
+            "routine_id": data.get("routine_id"), 
+            "start_time": data.get("start_time"), # ISO Date expected
+            "end_time": data.get("end_time"),
+            "body_weight": data.get("body_weight"),
+            "total_volume": data.get("total_volume", 0),
+            "sets": data.get("sets", []), # Array of workout_sets
+            "created_at": datetime.utcnow()
+        }
+        db.workout_sessions.insert_one(session_doc)
+        return jsonify({"message": "Sesion guardada"}), 200
+    except Exception as e:
+        logger.error(f"Error saving session: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@workout_bp.route("/api/sessions", methods=["GET"])
+def api_get_workout_sessions():
+    """Lista sesiones recientes de entrenamiento."""
+    try:
+        db = get_db()
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            user_id = request.args.get("user_id")
+        if not user_id or db is None:
+            return jsonify([])
+
+        cursor = db.workout_sessions.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).limit(20)
+
+        sessions = []
+        for doc in cursor:
+            routine_id = doc.get("routine_id")
+            routine_id_str = None
+            if routine_id is not None:
+                routine_id_str = str(routine_id)
+            routine_name = None
+            try:
+                if routine_id_str and ObjectId.is_valid(routine_id_str):
+                    routine_doc = db.routines.find_one({"_id": ObjectId(routine_id_str)}, {"name": 1})
+                    if routine_doc:
+                        routine_name = routine_doc.get("name")
+            except Exception:
+                routine_name = None
+
+            created_at = doc.get("created_at")
+            if isinstance(created_at, datetime):
+                created_at = created_at.isoformat()
+            start_time = doc.get("start_time")
+            end_time = doc.get("end_time")
+            if isinstance(start_time, datetime):
+                start_time = start_time.isoformat()
+            if isinstance(end_time, datetime):
+                end_time = end_time.isoformat()
+            duration_seconds = None
+            if start_time and end_time:
+                try:
+                    duration_seconds = int((datetime.fromisoformat(end_time) - datetime.fromisoformat(start_time)).total_seconds())
+                except Exception:
+                    duration_seconds = None
+
+            sessions.append({
+                "id": str(doc.get("_id")) if doc.get("_id") else None,
+                "user_id": doc.get("user_id"),
+                "routine_id": routine_id_str or routine_id,
+                "routine_name": routine_name,
+                "created_at": created_at,
+                "start_time": start_time,
+                "end_time": end_time,
+                "duration_seconds": duration_seconds,
+                "total_volume": doc.get("total_volume", 0),
+                "body_weight": doc.get("body_weight"),
+                "sets": doc.get("sets", []),
+            })
+
+        return jsonify(sessions), 200
+    except Exception as e:
+        logger.error(f"Error getting workout sessions: {e}")
+        return jsonify([])
+
+
+@workout_bp.route("/api/history/exercise/<exercise_id>")
+def api_get_exercise_history(exercise_id):
+    """Obtiene el ultimo historial (pesos/reps) de este ejercicio para auto-fill."""
+    try:
+        db = get_db()
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify([])
+
+        # Pipeline: Filter by user -> Unwind sets -> Filter by exercise -> Sort date desc -> Limit
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$unwind": "$sets"},
+            {"$match": {"sets.exercise_id": exercise_id}},
+            {"$sort": {"created_at": -1}},
+            {"$limit": 5},
+            {"$project": {
+                "weight": "$sets.weight", 
+                "reps": "$sets.reps", 
+                "rpe": "$sets.rpe", 
+                "date": "$created_at"
+            }}
+        ]
+        history = list(db.workout_sessions.aggregate(pipeline))
+        # Serialize date
+        for h in history:
+            if "_id" in h: del h["_id"]
+            if "date" in h and isinstance(h["date"], datetime):
+                h["date"] = h["date"].isoformat()
+
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ======================================================
+# API ENDPOINTS - ESTADÍSTICAS
+# ======================================================
+
+@workout_bp.route("/api/stats/heatmap", methods=["GET"])
+def api_get_heatmap():
+    """Devuelve la frecuencia de entrenamientos del ultimo anio (Heatmap data)."""
+    try:
+        db = get_db()
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            user_id = request.args.get("user_id")
+        
+        if not user_id: return jsonify({})
+
+        # Aggregation: Group by Date (YYYY-MM-DD) -> Count sessions/volume
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$project": {
+                "dateStr": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}
+            }},
+            {"$group": {"_id": "$dateStr", "count": {"$sum": 1}}}
+        ]
+        data = list(db.workout_sessions.aggregate(pipeline))
+        # Format: {"2025-01-01": 1, "2025-01-03": 2}
+        result = {item["_id"]: item["count"] for item in data}
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error heatmap: {e}")
+        return jsonify({}), 500
+
+
+@workout_bp.route("/api/stats/volume", methods=["GET"])
+def api_get_volume_stats():
+    """Devuelve historial de volumen total y peso corporal."""
+    try:
+        db = get_db()
+        user_id = request.cookies.get("user_session")
+        if not user_id: 
+            user_id = request.args.get("user_id")
+            
+        if not user_id: return jsonify([])
+
+        # Get sessions sorted by date
+        cursor = db.workout_sessions.find(
+            {"user_id": user_id},
+            {"created_at": 1, "total_volume": 1, "body_weight": 1}
+        ).sort("created_at", 1).limit(50)
+        
+        data = []
+        for doc in cursor:
+            date_iso = doc["created_at"].strftime("%Y-%m-%d") if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at"))
+            data.append({
+                "date": date_iso,
+                "volume": doc.get("total_volume", 0),
+                "weight": doc.get("body_weight", 0)
+            })
+        return jsonify(data), 200
+    except Exception as e:
+        logger.error(f"Error volume stats: {e}")
+        return jsonify([]), 500

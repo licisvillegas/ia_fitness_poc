@@ -14,7 +14,8 @@
                 <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
                     placeholder="Buscar ejercicio...">
             </div>
-            <select class="form-select bg-dark text-white border-secondary" id="filterBodyPart" style="max-width: 180px;">
+            <select class="form-select bg-dark text-white border-secondary" id="filterBodyPart"
+                style="max-width: 180px;">
                 <option value="">Grupo muscular</option>
                 <option value="Chest">Pecho</option>
                 <option value="Back">Espalda</option>
@@ -24,7 +25,8 @@
                 <option value="Core">Abdomen</option>
                 <option value="Full Body">Cuerpo Completo</option>
             </select>
-            <select class="form-select bg-dark text-white border-secondary" id="filterEquipment" style="max-width: 160px;">
+            <select class="form-select bg-dark text-white border-secondary" id="filterEquipment"
+                style="max-width: 160px;">
                 <option value="">Equipo</option>
                 <option value="barbell">Barra</option>
                 <option value="dumbbell">Mancuernas</option>
@@ -173,9 +175,11 @@
             </div>
             <div class="modal-body"></div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" id="messageCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" id="messageCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-cyber-primary" id="messageConfirm">Confirmar</button>
-                <button type="button" class="btn btn-cyber-primary" id="messageOk" data-bs-dismiss="modal">Aceptar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageOk"
+                    data-bs-dismiss="modal">Aceptar</button>
             </div>
         </div>
     </div>
@@ -191,7 +195,9 @@
             </div>
             <div class="modal-body p-0">
                 <div class="ratio ratio-16x9">
-                    <iframe id="videoFrame" src="" title="Video ejercicio" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe id="videoFrame" src="" title="Video ejercicio"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
                 </div>
             </div>
             <div class="modal-footer border-secondary">
@@ -333,10 +339,19 @@
             </td>
             <td>${ex.is_custom ? '<span class="text-info">Custom</span>' : '<span class="text-secondary">Global</span>'}</td>
             <td>
-                ${ex.is_custom ? `
-                    <button class="btn btn-sm btn-outline-info" onclick="openExerciseModal('${ex._id}')" title="Editar"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExercise('${ex._id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
-                ` : ''}
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-warning" onclick="duplicateExercise('${ex._id}')" title="Duplicar ejercicio">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    ${ex.is_custom ? `
+                        <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
             </td>
         `;
             tbody.appendChild(tr);
@@ -538,6 +553,7 @@
         }
     }
 
+
     function openExerciseModal(id = null) {
         const form = document.getElementById("exerciseForm");
         form.reset();
@@ -548,26 +564,41 @@
         currentExerciseId = id;
         currentBodyPart = null;
 
+        const modalTitle = document.querySelector("#exerciseModal .modal-title");
+        let isGlobalEdit = false;
+
         if (id) {
             const ex = allExercises.find(e => e._id === id);
             if (ex) {
-                document.getElementById("exId").value = ex._id;
-                document.getElementById("exName").value = ex.name;
+                // If editing a global exercise, we'll create a custom copy instead
+                if (!ex.is_custom) {
+                    isGlobalEdit = true;
+                    modalTitle.textContent = "Crear Copia Personalizada";
+                    // Don't set the ID - this will create a new exercise
+                    document.getElementById("exId").value = "";
+                    document.getElementById("exName").value = ex.name + " (Copia)";
+                } else {
+                    modalTitle.textContent = "Editar Ejercicio";
+                    document.getElementById("exId").value = ex._id;
+                    document.getElementById("exName").value = ex.name;
+                }
+
                 document.getElementById("exBodyPart").value = ex.body_part;
                 document.getElementById("exType").value = ex.type;
-
                 document.getElementById("exEquipment").value = ex.equipment || 'other';
                 document.getElementById("exDescription").value = ex.description || '';
                 document.getElementById("exVideo").value = ex.video_url || '';
 
                 currentSubstitutes = ex.substitutes || [];
             }
+        } else {
+            modalTitle.textContent = "Nuevo Ejercicio";
         }
 
         const bodyPart = document.getElementById("exBodyPart").value;
         currentBodyPart = bodyPart;
-        // Populate rich list excluding self
-        populateSubstitutes(allExercises, id, currentSubstitutes, bodyPart);
+        // Populate rich list excluding self (use original ID for exclusion even if creating copy)
+        populateSubstitutes(allExercises, isGlobalEdit ? id : (id || null), currentSubstitutes, bodyPart);
 
         new bootstrap.Modal(document.getElementById("exerciseModal")).show();
     }
@@ -606,6 +637,45 @@
             loadExercises();
         } catch (e) {
             showAlertModal("Error al guardar", "Ocurrio un error al guardar el ejercicio.");
+        }
+    }
+
+    async function duplicateExercise(id) {
+        const ex = allExercises.find(e => e._id === id);
+        if (!ex) {
+            showAlertModal("Error", "No se encontró el ejercicio a duplicar.");
+            return;
+        }
+
+        const confirmed = await showConfirmModal(
+            "Duplicar Ejercicio",
+            `¿Deseas crear una copia personalizada de "${ex.name}"?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const payload = {
+                id: null, // No ID means create new
+                name: ex.name + " (Copia)",
+                body_part: ex.body_part,
+                type: ex.type,
+                equipment: ex.equipment || 'other',
+                description: ex.description || '',
+                video_url: ex.video_url || '',
+                substitutes: ex.substitutes || []
+            };
+
+            await fetch("/api/exercises/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            await showAlertModal("Éxito", "Ejercicio duplicado correctamente. Ahora puedes editarlo.");
+            loadExercises();
+        } catch (e) {
+            showAlertModal("Error", "Ocurrió un error al duplicar el ejercicio.");
         }
     }
 

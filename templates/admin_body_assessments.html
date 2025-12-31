@@ -326,9 +326,11 @@
             const emptyView = document.getElementById('emptyView');
 
             const savedUser = localStorage.getItem('ai_fitness_last_search_uid');
-            if (savedUser) {
+            const defaultUser = localStorage.getItem('ai_fitness_uid');
+            if (defaultUser) {
+                hiddenId.value = defaultUser;
+            } else if (savedUser) {
                 hiddenId.value = savedUser;
-                // searchInput.value = savedUser; // Optional: maybe we don't know the name if just ID
             }
 
             const performSearch = async () => {
@@ -372,6 +374,10 @@
                     msgObj.textContent = "Error: " + e.message;
                 }
             };
+
+            if (defaultUser) {
+                performSearch();
+            }
 
             // btnSearch.addEventListener('click', performSearch); // Removed
             // userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); }); // Removed due to rewrite

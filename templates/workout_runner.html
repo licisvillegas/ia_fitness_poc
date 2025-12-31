@@ -3,116 +3,61 @@
 {% block title %}Smart Runner - AI Fitness{% endblock %}
 
 {% block content %}
-<!-- Loading Overlay -->
-<div id="loading" class="text-center py-5">
-    <div class="spinner-border text-cyber-green" role="status"></div>
-    <p class="mt-2 text-secondary">Cargando Rutina...</p>
-</div>
+<!-- React Root (Replaces old static HTML) -->
+<div id="react-root" class="h-100"></div>
 
-<!-- Runner Interface -->
-<div id="runnerContainer" style="display:none;" class="runner-grid">
-
-    <!-- Top Bar: Timer & Progress -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h5 id="workoutName" class="m-0 fw-bold text-white">Nombre Rutina</h5>
-            <small id="progressText" class="text-secondary">Ejercicio 1/5</small>
-        </div>
-        <div class="timer-box" id="globalTimer">00:00</div>
-    </div>
-
-    <!-- Main Card: Active Set -->
-    <div class="card bg-black border-cyber-active shadow-lg mb-3 flex-grow-1">
-        <div class="card-body text-center d-flex flex-column justify-content-center">
-
-            <span class="badge bg-secondary mb-2 align-self-center" id="muscleGroup">Musculo</span>
-            <h1 class="display-4 fw-bold text-white mb-0" id="currentExerciseName">Nombre Ejercicio</h1>
-            <p class="text-info fs-5" id="targetInfo">Meta: 4 series x 10 reps</p>
-
-            <div class="py-4">
-                <div class="row g-2 justify-content-center">
-                    <div class="col-5">
-                        <label class="label-hud">KG</label>
-                        <input type="number" id="inputWeight" class="form-control input-hud text-center"
-                            placeholder="0">
-                        <small class="text-muted" id="prevWeight">Last: --</small>
-                    </div>
-                    <div class="col-5">
-                        <label class="label-hud">REPS</label>
-                        <input type="number" id="inputReps" class="form-control input-hud text-center" placeholder="0">
-                        <small class="text-muted" id="prevReps">Last: --</small>
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <label class="label-hud">RPE (1-10)</label>
-                    <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="rpe" id="rpe7" value="7" autocomplete="off">
-                        <label class="btn btn-outline-secondary btn-sm" for="rpe7">7</label>
-
-                        <input type="radio" class="btn-check" name="rpe" id="rpe8" value="8" autocomplete="off" checked>
-                        <label class="btn btn-outline-secondary btn-sm" for="rpe8">8</label>
-
-                        <input type="radio" class="btn-check" name="rpe" id="rpe9" value="9" autocomplete="off">
-                        <label class="btn btn-outline-secondary btn-sm" for="rpe9">9</label>
-
-                        <input type="radio" class="btn-check" name="rpe" id="rpe10" value="10" autocomplete="off">
-                        <label class="btn btn-outline-secondary btn-sm" for="rpe10">10</label>
-                    </div>
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-black text-white border border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
                 </div>
             </div>
-
-            <!-- ACTION BUTTON -->
-            <button class="btn btn-cyber-large w-100 py-3 mt-3 ripple" id="mainActionBtn" onclick="finishSet()">
-                TERMINAR SERIE <i class="fas fa-check ms-2"></i>
-            </button>
-
-        </div>
-    </div>
-
-    <!-- Set History for this session -->
-    <div class="card bg-panel border-0">
-        <div class="card-body p-2">
-            <small class="text-secondary text-uppercase fw-bold">Series Completadas Hoy</small>
-            <div id="setsLog" class="d-flex gap-2 overflow-auto mt-2 pb-2">
-                <!-- Badges go here -->
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
-
 </div>
 
-<!-- REST OVERLAY (Full Screen) -->
-<div id="restOverlay" class="rest-overlay d-flex flex-column align-items-center justify-content-center text-center">
-    <h2 class="text-secondary text-uppercase tracking-widest">Descanso</h2>
-    <div class="rest-timer display-1 fw-bold text-cyber-orange" id="restTimerDisplay">01:30</div>
-    <div class="mt-4">
-        <button class="btn btn-outline-light rounded-circle p-3 mx-2" onclick="adjustRest(-10)">-10s</button>
-        <button class="btn btn-outline-light rounded-circle p-3 mx-2" onclick="skipRest()">SKIP</button>
-        <button class="btn btn-outline-light rounded-circle p-3 mx-2" onclick="adjustRest(+10)">+10s</button>
-    </div>
-    <p class="mt-5 text-muted">Siguiente: <span id="nextUpText" class="text-white">...</span></p>
-</div>
-
-<!-- SCRIPTS & STYLES -->
+<!-- STYLES -->
 <style>
-    /* CYBERPUNK THEME OVERRIDES */
+    /* Base Overrides for Full Screen App */
     body {
         background-color: #000 !important;
+        overflow-x: hidden;
     }
 
-    /* OLED Black */
-    .bg-black {
-        background-color: #0a0a0a;
+    .runner-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding-bottom: 100px;
+        /* Space for Sticky Footer */
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
+    /* Utility Classes */
     .text-cyber-green {
-        color: #00ff9d;
+        color: #00ff9d !important;
     }
 
     .text-cyber-orange {
-        color: #ff9d00;
-        text-shadow: 0 0 20px rgba(255, 157, 0, 0.5);
+        color: #ff9d00 !important;
+        text-shadow: 0 0 15px rgba(255, 157, 0, 0.4);
+    }
+
+    .bg-black-trans {
+        background: rgba(10, 10, 10, 0.9);
     }
 
     .border-cyber-active {
@@ -120,12 +65,8 @@
         box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
     }
 
-    .label-hud {
-        font-size: 0.7rem;
-        color: #6c757d;
-        letter-spacing: 1px;
-        display: block;
-        margin-bottom: 5px;
+    .active-exercise-card {
+        padding-bottom: 1rem;
     }
 
     .input-hud {
@@ -133,14 +74,18 @@
         border: 1px solid #333;
         color: white;
         font-family: 'Courier New', monospace;
-        font-size: 2rem;
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 12px;
     }
 
     .input-hud:focus {
         background: #1a1a1a;
         color: #00ff9d;
         border-color: #00ff9d;
-        box-shadow: none;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+        outline: none;
     }
 
     .btn-cyber-large {
@@ -151,230 +96,1359 @@
         text-transform: uppercase;
         border: none;
         box-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
-        transition: transform 0.1s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 70px;
+        font-size: 1.2rem;
+        border-radius: 12px;
     }
 
     .btn-cyber-large:active {
-        transform: scale(0.98);
+        transform: scale(0.96);
     }
 
-    .rest-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 9999;
-        display: none;
-        /* Hidden by default */
-        backdrop-filter: blur(10px);
-    }
-
-    .rest-overlay.active {
-        display: flex;
-        animation: fadeIn 0.3s;
-    }
-
-    @keyframes fadeIn {
+    /* Animations */
+    @keyframes slideUp {
         from {
-            opacity: 0;
+            transform: translateY(100%);
         }
 
         to {
-            opacity: 1;
+            transform: translateY(0);
         }
     }
 
-    .scrolling-wrapper {
-        -webkit-overflow-scrolling: touch;
+    @keyframes pulse {
+        0% {
+            opacity: 0.8;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0.8;
+        }
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+
+    /* React Transition Group (Mock) */
+    .fade-enter {
+        opacity: 0;
+    }
+
+    .fade-enter-active {
+        opacity: 1;
+        transition: opacity 200ms;
+    }
+
+    .fade-exit {
+        opacity: 1;
+    }
+
+    .fade-exit-active {
+        opacity: 0;
+        transition: opacity 200ms;
     }
 </style>
 
+<!-- DEPENDENCIES (CDN) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- REACT APP -->
 <script>
-    const ROUTINE_ID = "{{ routine_id }}";
-    let routine = null;
-    let currentExerciseIndex = 0;
-    let currentSetIndex = 1;
-    let sessionSets = []; // Stores completed sets
-    let startTime = new Date();
-    let restInterval = null;
+    // Inject server-side data from Jinja OUTSIDE the raw block
+    window.initialRoutine = {{ routine | tojson }};
+    window.currentUserName = {{ current_user_name | default('', true) | tojson }};
+    window.currentUserId = {{ current_user_id | default('', true) | tojson }};
+</script>
 
-    // Audio
-    const beepAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+{% raw %}
+<script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback, createContext, useContext } = React;
 
-    document.addEventListener("DOMContentLoaded", initRunner);
+    // --- MOCK DATA / INJECTED DATA ---
+    const INITIAL_ROUTINE = window.initialRoutine;
+    const CURRENT_USER_NAME = window.currentUserName;
+    const CURRENT_USER_ID = window.currentUserId;
 
-    async function initRunner() {
+    // --- HELPERS ---
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
+    const getAudio = () => {
+        return new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    };
+
+    if (CURRENT_USER_ID) {
         try {
-            const res = await fetch(`/api/routines/${ROUTINE_ID}`);
-            if (!res.ok) throw new Error("Rutina no encontrada");
-            routine = await res.json();
+            localStorage.setItem("ai_fitness_uid", CURRENT_USER_ID);
+        } catch (e) { }
+    }
 
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("runnerContainer").style.display = "block";
-            document.getElementById("workoutName").innerText = routine.name;
+    const EQUIPMENT_MAP = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
+        machine: { label: "Maquina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
 
-            loadExercise(0);
-            startGlobalTimer();
+    const translateBodyPart = (bp) => {
+        const map = {
+            Chest: "Pecho",
+            Back: "Espalda",
+            Legs: "Piernas",
+            Shoulders: "Hombros",
+            Arms: "Brazos",
+            Core: "Abdomen",
+            "Full Body": "Cuerpo Completo"
+        };
+        return map[bp] || bp || "N/A";
+    };
 
-        } catch (e) {
-            alert("Error cargando rutina: " + e.message);
+    const getEquipmentMeta = (equipmentKey) => {
+        return EQUIPMENT_MAP[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+    };
+
+    const toEmbedUrl = (url) => {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
         }
-    }
-
-    function startGlobalTimer() {
-        const el = document.getElementById("globalTimer");
-        setInterval(() => {
-            const diff = Math.floor((new Date() - startTime) / 1000);
-            const m = Math.floor(diff / 60).toString().padStart(2, '0');
-            const s = (diff % 60).toString().padStart(2, '0');
-            el.innerText = `${m}:${s}`;
-        }, 1000);
-    }
-
-    async function loadExercise(index) {
-        if (index >= routine.items.length) {
-            finishWorkout();
-            return;
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
         }
+        return trimmed;
+    };
 
-        currentExerciseIndex = index;
-        const item = routine.items[index];
+    const openVideoModal = (url) => {
+        const modalEl = document.getElementById("videoModal");
+        const iframe = document.getElementById("videoFrame");
+        const embedUrl = toEmbedUrl(url);
+        if (!embedUrl) return;
+        iframe.src = embedUrl;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            iframe.src = "";
+        }, { once: true });
+    };
 
-        document.getElementById("currentExerciseName").innerText = item.exercise_name;
-        document.getElementById("progressText").innerText = `Ejercicio ${index + 1}/${routine.items.length}`;
-        document.getElementById("targetInfo").innerText = `Meta: ${item.target_sets} series x ${item.target_reps} reps`;
-        document.getElementById("inputReps").value = item.target_reps.split("-")[0]; // Suggest lower bound
+    const resolveSubstitutes = (substitutes, exerciseLookup) => {
+        if (!substitutes || substitutes.length === 0) return [];
+        return substitutes
+            .map(sub => {
+                if (typeof sub === "string") return exerciseLookup[sub];
+                if (sub && typeof sub === "object") return sub;
+                return null;
+            })
+            .filter(Boolean);
+    };
 
-        // Fetch History Logic
-        document.getElementById("prevWeight").innerText = "Cargando...";
-        try {
-            const histRes = await fetch(`/api/history/exercise/${item.exercise_id}`);
-            const history = await histRes.json();
-            if (history && history.length > 0) {
-                const last = history[0];
-                document.getElementById("prevWeight").innerText = `Last: ${last.weight}kg x ${last.reps}`;
-                document.getElementById("inputWeight").value = last.weight; // Auto-fill
-            } else {
-                document.getElementById("prevWeight").innerText = "Nuevo Ejercicio";
-                document.getElementById("inputWeight").value = "";
-            }
-        } catch (e) { console.error(e); }
+    const getRestSeconds = (item) => {
+        if (!item) return 60;
+        if (item.rest_seconds != null) return item.rest_seconds;
+        if (item.rest != null && item.rest !== item.target_time_seconds) return item.rest;
+        return 60;
+    };
 
-        updateSetsLogUI();
-    }
+    // --- ENGINE / STATE MACHINE ---
 
-    function finishSet() {
-        const item = routine.items[currentExerciseIndex];
-        const weight = parseFloat(document.getElementById("inputWeight").value) || 0;
-        const reps = parseInt(document.getElementById("inputReps").value) || 0;
-        const rpe = document.querySelector('input[name="rpe"]:checked').value;
+    /**
+     * FLATTENS the routine into a linear "Playlist" or Queue of Steps.
+     * This handles the complex logic of Circuits/Supersets upfront.
+     *
+     * Resulting Step Structure:
+     * {
+     *   id: string,
+     *   type: 'work' | 'rest' | 'prep',
+     *   exercise: object,
+     *   setNumber: number,
+     *   totalSets: number,
+     *   isTimeBased: boolean,
+     *   target: { weight?, reps?, time? },
+     *   restAfter: number
+     * }
+     */
+    const buildQueue = (routine) => {
+        const queue = [];
+        const items = Array.isArray(routine.items) ? routine.items : [];
+        const isRestItem = (item) => item && (item.item_type === 'rest' || (!item.exercise_id && item.rest_seconds != null));
+        const isExerciseItem = (item) => item && item.item_type === 'exercise';
+        const isGroupItem = (item) => item && item.item_type === 'group';
+        const groupMeta = new Map();
 
-        sessionSets.push({
-            exercise_id: item.exercise_id,
-            exercise_name: item.exercise_name,
-            weight,
-            reps,
-            rpe,
-            timestamp: new Date()
+        items.filter(isGroupItem).forEach(group => {
+            groupMeta.set(group._id, {
+                name: group.group_name || group.name || 'Grupo',
+                note: group.note || ''
+            });
         });
 
-        // Check if we finished target sets for this exercise
-        const setsForThisEx = sessionSets.filter(s => s.exercise_id === item.exercise_id).length;
-
-        if (setsForThisEx < item.target_sets) {
-            // More sets to go -> Rest Timer
-            startRest(item.rest_seconds || 60);
-        } else {
-            // Finished Exercise -> Transition
-            // Could ask "One more?" but assuming move on for MVP
-            loadExercise(currentExerciseIndex + 1);
-        }
-    }
-
-    function startRest(seconds) {
-        const overlay = document.getElementById("restOverlay");
-        const display = document.getElementById("restTimerDisplay");
-        const nextText = document.getElementById("nextUpText");
-
-        overlay.classList.add("active");
-        // nextText.innerText = `Siguiente: Serie ${sessionSets.filter(s => s.exercise_id === routine.items[currentExerciseIndex].exercise_id).length + 1}`;
-        nextText.innerText = "Recupera el aliento...";
-
-        let left = seconds;
-
-        updateDisplay = () => {
-            const m = Math.floor(left / 60).toString().padStart(2, '0');
-            const s = (left % 60).toString().padStart(2, '0');
-            display.innerText = `${m}:${s}`;
-        };
-
-        updateDisplay();
-
-        if (restInterval) clearInterval(restInterval);
-        restInterval = setInterval(() => {
-            left--;
-            updateDisplay();
-            if (left <= 0) {
-                clearInterval(restInterval);
-                beepAudio.play();
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                skipRest();
-            }
-        }, 1000);
-    }
-
-    function skipRest() {
-        const overlay = document.getElementById("restOverlay");
-        overlay.classList.remove("active");
-        if (restInterval) clearInterval(restInterval);
-        updateSetsLogUI();
-    }
-
-    function adjustRest(delta) {
-        // Hacky: access closure var via recreation? No, just restart with new time logic requires global var or complex logic.
-        // For MVP just skip or wait. I'll omit adjust implementation to save complexity or just mock it.
-        // Real impl: store finishTime and calc remainder. 
-    }
-
-    function updateSetsLogUI() {
-        const container = document.getElementById("setsLog");
-        const item = routine.items[currentExerciseIndex];
-        const mySets = sessionSets.filter(s => s.exercise_id === item.exercise_id);
-
-        container.innerHTML = mySets.map((s, i) => `
-        <span class="badge bg-dark border border-secondary p-2">
-            Set ${i + 1}: <span class="text-white">${s.weight}kg x ${s.reps}</span> <span class="text-muted">@${s.rpe}</span>
-        </span>
-    `).join("");
-    }
-
-    async function finishWorkout() {
-        if (!confirm("¡Rutina completada! ¿Guardar sesión?")) return;
-
-        const payload = {
-            routine_id: ROUTINE_ID,
-            start_time: startTime,
-            end_time: new Date(),
-            sets: sessionSets,
-            total_volume: sessionSets.reduce((acc, s) => acc + (s.weight * s.reps), 0)
-        };
-
-        try {
-            const res = await fetch("/api/workout/session/save", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+        const pushRest = (restItem, key) => {
+            queue.push({
+                id: `rest_${key}_${queue.length}`,
+                type: 'rest',
+                duration: parseInt(getRestSeconds(restItem)),
+                label: restItem.note || 'Descansar'
             });
-            if (res.ok) {
-                window.location.href = "/workout/dashboard";
-            } else {
-                alert("Error guardando");
+        };
+
+        const pushWorkStep = (ex, key, setNumber, totalSets, groupInfo) => {
+            const exType = (ex.exercise_type || ex.type);
+            const hasTimeTarget = ex.target_time_seconds != null || ex.time_seconds != null || ex.time != null;
+            const hasRepsTarget = ex.target_reps != null || ex.reps != null;
+            const isTime = exType === 'time' || exType === 'cardio' || (hasTimeTarget && !hasRepsTarget);
+            queue.push({
+                id: `step_${key}_${setNumber}`,
+                type: 'work',
+                exercise: ex,
+                groupName: groupInfo ? groupInfo.name : null,
+                groupComment: groupInfo ? groupInfo.note : null,
+                setNumber,
+                totalSets,
+                isTimeBased: isTime,
+                target: {
+                    weight: ex.weight,
+                    reps: ex.target_reps || ex.reps,
+                    time: ex.target_time_seconds || ex.time_seconds || ex.time || 60
+                }
+            });
+        };
+
+        const addStraightSets = (ex, key, groupInfo) => {
+            const exSets = parseInt(ex.target_sets || ex.sets || 1);
+            for (let s = 1; s <= exSets; s++) {
+                pushWorkStep(ex, key, s, exSets, groupInfo);
+                if (s < exSets) {
+                    queue.push({ type: 'rest', duration: parseInt(getRestSeconds(ex)), label: 'Descansar' });
+                }
             }
-        } catch (e) {
-            alert("Error de red");
+        };
+
+        const hasEmbeddedGroups = items.some(item => Array.isArray(item.items));
+        if (hasEmbeddedGroups) {
+            items.forEach((group, gIdx) => {
+                if (isGroupItem(group) && !Array.isArray(group.items)) return;
+                if (isRestItem(group)) {
+                    pushRest(group, gIdx);
+                    return;
+                }
+
+                const entries = Array.isArray(group.items) ? group.items : [group];
+                const exerciseEntries = entries.filter(isExerciseItem);
+                const restEntries = entries.filter(isRestItem);
+                if (!exerciseEntries.length && restEntries.length) {
+                    restEntries.forEach((restItem, rIdx) => pushRest(restItem, `${gIdx}_${rIdx}`));
+                    return;
+                }
+
+                const isCircuit = group.item_type === 'group' || (group.items && group.items.length > 1);
+                const maxSets = Math.max(...exerciseEntries.map(ex => parseInt(ex.target_sets || ex.sets || 1)));
+                const groupInfo = {
+                    name: group.name || group.group_name || 'Circuito',
+                    note: group.note || ''
+                };
+
+                for (let s = 1; s <= maxSets; s++) {
+                    entries.forEach((entry, exIdx) => {
+                        if (isRestItem(entry)) {
+                            pushRest(entry, `${gIdx}_${exIdx}_${s}`);
+                            return;
+                        }
+                        if (!isExerciseItem(entry)) return;
+                        const exSets = parseInt(entry.target_sets || entry.sets || 1);
+                        if (s <= exSets) {
+                            pushWorkStep(entry, `${gIdx}_${exIdx}`, s, exSets, groupInfo);
+
+                            const isLastInCircuit = exIdx === entries.length - 1;
+                            const isLastSet = s === maxSets;
+                            const restTime = parseInt(getRestSeconds(entry));
+
+                            if (isCircuit) {
+                                if (isLastInCircuit && !isLastSet) {
+                                    queue.push({ type: 'rest', duration: restTime, label: 'Descansar (Fin de Circuito)' });
+                                }
+                            } else if (!isLastSet) {
+                                queue.push({ type: 'rest', duration: restTime, label: 'Descansar' });
+                            }
+                        }
+                    });
+                }
+            });
+        } else {
+            const groupEntries = new Map();
+            const blocks = [];
+            const blockIds = new Set();
+
+            const ensureGroupBlock = (groupId) => {
+                if (!groupId || blockIds.has(groupId)) return;
+                blockIds.add(groupId);
+                blocks.push({ type: 'group', id: groupId });
+            };
+
+            items.forEach((item, idx) => {
+                if (isGroupItem(item)) {
+                    ensureGroupBlock(item._id);
+                    return;
+                }
+                if (!isExerciseItem(item) && !isRestItem(item)) return;
+
+                if (item.group_id) {
+                    ensureGroupBlock(item.group_id);
+                    if (!groupEntries.has(item.group_id)) groupEntries.set(item.group_id, []);
+                    groupEntries.get(item.group_id).push(item);
+                    return;
+                }
+
+                blocks.push({ type: 'entry', entry: item, key: `ungrouped_${idx}` });
+            });
+
+            const processedGroups = new Set();
+            blocks.forEach((block) => {
+                if (block.type === 'entry') {
+                    const entry = block.entry;
+                    if (isRestItem(entry)) {
+                        pushRest(entry, block.key);
+                    } else if (isExerciseItem(entry)) {
+                        addStraightSets(entry, block.key, null);
+                    }
+                    return;
+                }
+
+                if (processedGroups.has(block.id)) return;
+                processedGroups.add(block.id);
+                const entries = groupEntries.get(block.id) || [];
+                if (!entries.length) return;
+
+                const exerciseEntries = entries.filter(isExerciseItem);
+                const restEntries = entries.filter(isRestItem);
+                if (!exerciseEntries.length && restEntries.length) {
+                    restEntries.forEach((restItem, rIdx) => pushRest(restItem, `group_${block.id}_${rIdx}`));
+                    return;
+                }
+
+                const maxSets = Math.max(...exerciseEntries.map(ex => parseInt(ex.target_sets || ex.sets || 1)));
+                const groupInfo = groupMeta.has(block.id)
+                    ? groupMeta.get(block.id)
+                    : { name: 'Grupo', note: '' };
+                const hasTrailingRest = entries.length > 0 && isRestItem(entries[entries.length - 1]);
+
+                for (let s = 1; s <= maxSets; s++) {
+                    entries.forEach((entry, entryIdx) => {
+                        if (isRestItem(entry)) {
+                            pushRest(entry, `group_${block.id}_${entryIdx}_${s}`);
+                            return;
+                        }
+                        if (!isExerciseItem(entry)) return;
+                        const exSets = parseInt(entry.target_sets || entry.sets || 1);
+                        if (s <= exSets) {
+                            pushWorkStep(entry, `group_${block.id}_${entryIdx}`, s, exSets, groupInfo);
+                        }
+                    });
+
+                    if (s < maxSets && !hasTrailingRest) {
+                        const lastExercise = exerciseEntries[exerciseEntries.length - 1];
+                        const restTime = parseInt(getRestSeconds(lastExercise));
+                        queue.push({
+                            type: 'rest',
+                            duration: restTime,
+                            label: groupInfo && groupInfo.name ? `Descansar (${groupInfo.name})` : 'Descansar'
+                        });
+                    }
+                }
+            });
         }
+
+        return queue;
+    };
+
+    const WorkoutContext = createContext();
+
+    const WorkoutProvider = ({ children, routine }) => {
+        const [queue, setQueue] = useState([]);
+        const [cursor, setCursor] = useState(0); // Index in Queue
+        const [status, setStatus] = useState('LOADING'); // LOADING | IDLE | WORK | REST | FINISHED
+        const [sessionLog, setSessionLog] = useState([]);
+        const [exerciseLookup, setExerciseLookup] = useState({});
+        const [isPaused, setIsPaused] = useState(false);
+        const [message, setMessage] = useState(null);
+        const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, type: "danger" }); // type: danger | warning | info
+
+
+        // Timers
+        const [globalTime, setGlobalTime] = useState(0);
+        const [stepTimer, setStepTimer] = useState(0); // For Rest or Time-based work
+        const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+        // Refs for Interval
+        const stepIntervalRef = useRef(null);
+        const resumeTimerRef = useRef(false);
+        const onConfirmRef = useRef(null);
+
+
+        // INITIALIZE
+        useEffect(() => {
+            if (routine) {
+                const q = buildQueue(routine);
+                setQueue(q);
+                setStatus('IDLE');
+                console.log("Queue Built:", q);
+            }
+        }, [routine]);
+
+        useEffect(() => {
+            let isMounted = true;
+            const loadExercises = async () => {
+                try {
+                    const res = await fetch("/api/exercises");
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!isMounted || !Array.isArray(data)) return;
+                    const lookup = data.reduce((acc, ex) => {
+                        if (ex && ex._id) acc[ex._id] = ex;
+                        return acc;
+                    }, {});
+                    setExerciseLookup(lookup);
+                } catch (err) {
+                    console.log("Error loading exercises", err);
+                }
+            };
+            loadExercises();
+            return () => { isMounted = false; };
+        }, []);
+
+        // Wake Lock
+        useEffect(() => {
+            let wakeLock = null;
+            const requestWakeLock = async () => {
+                try {
+                    if ('wakeLock' in navigator) {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        console.log('Wake Lock active');
+                    }
+                } catch (err) {
+                    console.log('Wake Lock error:', err);
+                }
+            };
+            requestWakeLock();
+            // Re-request on visibility change
+            const handleVis = () => { if (document.visibilityState === 'visible') requestWakeLock(); };
+            document.addEventListener('visibilitychange', handleVis);
+            return () => {
+                if (wakeLock) wakeLock.release();
+                document.removeEventListener('visibilitychange', handleVis);
+            };
+        }, []);
+
+        // Global Timer (only when actively working or resting)
+        useEffect(() => {
+            if (status !== 'WORK' && status !== 'REST' || isPaused) return;
+            const int = setInterval(() => setGlobalTime(t => t + 1), 1000);
+            return () => clearInterval(int);
+        }, [status, isPaused]);
+
+        // Step Timer Logic (Countdown)
+        useEffect(() => {
+            if (isPaused) {
+                clearInterval(stepIntervalRef.current);
+                return;
+            }
+            if (isTimerRunning && stepTimer > 0) {
+                stepIntervalRef.current = setInterval(() => {
+                    setStepTimer(prev => {
+                        if (prev <= 1) {
+                            // TIMER DONE
+                            playAlarm();
+                            setIsTimerRunning(false);
+                            completeStepTimer(); // Auto-advance logic
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            } else {
+                clearInterval(stepIntervalRef.current);
+            }
+            return () => clearInterval(stepIntervalRef.current);
+        }, [isTimerRunning, stepTimer, isPaused]);
+
+        const playAlarm = () => {
+            try {
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                getAudio().play().catch(e => console.log("Audio permission needed"));
+            } catch (e) { }
+        }
+
+        const currentStep = useMemo(() => queue[cursor], [queue, cursor]);
+        const nextStep = useMemo(() => queue[cursor + 1], [queue, cursor]);
+
+        // Auto-advance logic when timer hits 0
+        const completeStepTimer = () => {
+            if (currentStep.type === 'rest') {
+                next(); // Auto-skip rest when done
+            } else {
+                // For Work (Time based), we just stop and wait for user to confirm "Done"? 
+                // Or auto-done? User req: "Sonar alarma y pasar al descanso o siguiente serie".
+                // Let's go to 'REVIEW' state or just mark done. 
+                // MVP: Mark done immediately.
+                logSet({
+                    time_seconds: currentStep.target.time
+                }); // Auto-log targeted time
+                next();
+            }
+        };
+
+        const logSet = (data) => {
+            const exerciseId = currentStep.exercise?.exercise_id || currentStep.exercise?._id || currentStep.exercise?.id;
+            const exerciseName = currentStep.exercise?.exercise_name || currentStep.exercise?.name;
+            const exerciseType = currentStep.exercise?.exercise_type || currentStep.exercise?.type;
+            const resolvedTime = data.time_seconds != null
+                ? data.time_seconds
+                : (currentStep.isTimeBased ? currentStep.target?.time : null);
+            setSessionLog(prev => [...prev, {
+                stepId: currentStep.id,
+                exerciseId,
+                exercise_id: exerciseId,
+                name: exerciseName,
+                exercise_type: exerciseType,
+                ...data,
+                ...(resolvedTime != null ? { time_seconds: resolvedTime } : {}),
+                timestamp: new Date()
+            }]);
+        };
+
+        const next = () => {
+            console.log("DEBUG: Next called. Cursor:", cursor, "QueueLen:", queue.length);
+            if (cursor >= queue.length - 1) {
+                finishWorkout();
+                return;
+            }
+            const nextIdx = cursor + 1;
+            setCursor(nextIdx);
+            setIsPaused(false);
+
+            // Setup next step state
+            const upcoming = queue[nextIdx];
+            if (upcoming.type === 'rest') {
+                setStatus('REST');
+                setStepTimer(upcoming.duration);
+                setIsTimerRunning(true);
+            } else {
+                // Work Step
+                setStatus('WORK');
+                setStepTimer(upcoming.isTimeBased ? upcoming.target.time : 0);
+                setIsTimerRunning(upcoming.isTimeBased); // Start immediately if timed? User said "Sonar alarma y pasar...". Usually explicit start is safer but for flow dynamic is ok.
+            }
+        };
+
+        const skipToNextWork = () => {
+            console.log("DEBUG: Skip to next work. Cursor:", cursor, "QueueLen:", queue.length);
+            if (cursor >= queue.length - 1) {
+                finishWorkout();
+                return;
+            }
+            let nextIdx = cursor + 1;
+            while (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
+                nextIdx += 1;
+            }
+            if (nextIdx >= queue.length) {
+                finishWorkout();
+                return;
+            }
+            const upcoming = queue[nextIdx];
+            setCursor(nextIdx);
+            setIsPaused(false);
+            setStatus('WORK');
+            setStepTimer(upcoming.isTimeBased ? upcoming.target.time : 0);
+            setIsTimerRunning(upcoming.isTimeBased);
+        };
+
+        const prev = () => {
+            if (cursor <= 0) return;
+            let idx = cursor - 1;
+            while (idx >= 0 && queue[idx].type === 'rest') {
+                idx -= 1;
+            }
+            if (idx < 0) return;
+            setCursor(idx);
+            setIsTimerRunning(false);
+            setIsPaused(false);
+            const prevStep = queue[idx];
+            setStatus('WORK');
+            setStepTimer(prevStep.isTimeBased ? prevStep.target.time : 0);
+        };
+
+        const skipRest = () => {
+            setIsTimerRunning(false);
+            setIsPaused(false);
+            showMessage("Descanso omitido", "info");
+            next();
+        };
+
+        const addRestTime = (seconds) => {
+            setStepTimer(t => {
+                if (seconds < 0 && t < 10) return t;
+                const nextValue = t + seconds;
+                return Math.max(0, nextValue);
+            });
+        };
+
+        const finishWorkout = async () => {
+            showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
+                setStatus('FINISHED');
+                // Save logic
+                try {
+                    const payload = {
+                        routine_id: routine.id,
+                        start_time: new Date(Date.now() - globalTime * 1000).toISOString(),
+                        end_time: new Date().toISOString(),
+                        sets: sessionLog
+                    };
+                    const res = await fetch("/workout/api/session/save", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) window.location.href = "/workout/dashboard";
+                } catch (e) {
+                    alert("Error saving: " + e.message);
+                }
+            }, "success");
+        };
+
+        const cancelWorkout = () => {
+            if (status === 'IDLE') {
+                window.location.href = "/workout/dashboard";
+                return;
+            }
+            showConfirm("Cancelar Rutina", "?Est?s seguro de que quieres salir? Se perder? el progreso actual.", () => {
+                showMessage("Rutina cancelada", "error");
+                window.location.href = "/workout/dashboard";
+            }, "danger");
+        };
+
+        const showMessage = (text, tone = "info") => {
+            setMessage({ text, tone });
+            setTimeout(() => setMessage(null), 3000);
+        };
+
+        const togglePause = () => {
+            if (status !== 'WORK' && status !== 'REST') return;
+            if (!isPaused) {
+                resumeTimerRef.current = isTimerRunning;
+                setIsTimerRunning(false);
+                setIsPaused(true);
+                return;
+            }
+            setIsPaused(false);
+            if (resumeTimerRef.current || status === 'REST') {
+                setIsTimerRunning(true);
+            }
+        };
+
+        const startWorkout = () => {
+            if (!queue.length) return;
+            const step = queue[cursor];
+            setIsPaused(false);
+            if (step.type === 'rest') {
+                setStatus('REST');
+                setStepTimer(step.duration);
+                setIsTimerRunning(true);
+            } else {
+                setStatus('WORK');
+                setStepTimer(step.isTimeBased ? step.target.time : 0);
+                setIsTimerRunning(step.isTimeBased);
+            }
+        };
+
+        const showConfirm = (title, message, onConfirm, type = "danger") => {
+            console.log("DEBUG: showConfirm called", { title });
+            onConfirmRef.current = onConfirm;
+            setConfirmModal({ isOpen: true, title, message, type });
+        };
+
+        const closeConfirm = () => {
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            // Optional: onConfirmRef.current = null; // Keep it or clear it.
+        };
+
+        const handleConfirmAction = () => {
+            console.log("DEBUG: handleConfirmAction called. Has Ref?", !!onConfirmRef.current);
+            if (onConfirmRef.current) {
+                console.log("DEBUG: Executing onConfirm callback via REF");
+                onConfirmRef.current();
+            }
+            closeConfirm();
+        };
+
+
+        const value = {
+            routine,
+            queue,
+            cursor,
+            currentStep,
+            nextStep,
+            status,
+            globalTime,
+            stepTimer,
+            isTimerRunning,
+            setIsTimerRunning,
+            next,
+            prev,
+            skipToNextWork,
+            skipRest,
+            addRestTime,
+            logSet,
+            sessionLog,
+            finishWorkout,
+            startWorkout,
+            cancelWorkout,
+            exerciseLookup,
+            isPaused,
+            togglePause,
+            message,
+            showMessage,
+            confirmModal,
+            showConfirm,
+            closeConfirm,
+            handleConfirmAction
+        };
+
+
+        return <WorkoutContext.Provider value={value}>{children}</WorkoutContext.Provider>;
+    };
+
+    const useWorkout = () => useContext(WorkoutContext);
+
+    const ConfirmModal = () => {
+        const { confirmModal, closeConfirm, handleConfirmAction } = useWorkout();
+        if (!confirmModal.isOpen) return null;
+
+        const { title, message, type } = confirmModal;
+        const colorClass = type === 'danger' ? 'text-danger' : type === 'warning' ? 'text-cyber-orange' : 'text-cyber-green';
+        const btnClass = type === 'danger' ? 'btn-outline-danger' : type === 'warning' ? 'btn-outline-warning' : 'btn-outline-success';
+
+        return (
+            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-black-trans animate-slide-up" style={{ zIndex: 3000 }}>
+                <div className="card bg-black border border-secondary shadow-lg p-3" style={{ maxWidth: '90%', width: '350px', borderRadius: '15px' }}>
+                    <div className="card-body text-center">
+                        <h4 className={`fw-bold mb-3 ${colorClass}`}>{title}</h4>
+                        <p className="text-white mb-4 fs-5">{message}</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button className="btn btn-secondary flex-grow-1" onClick={closeConfirm}>Cancelar</button>
+                            <button className={`btn ${btnClass} flex-grow-1 fw-bold`} onClick={handleConfirmAction}>Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+
+
+    // --- UI COMPONENTS ---
+
+    const Header = () => {
+        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout } = useWorkout();
+        const progress = useMemo(() => {
+            const workTotal = queue.filter(step => step.type === 'work').length;
+            if (!workTotal) return 0;
+            const workDone = queue.slice(0, cursor).filter(step => step.type === 'work').length;
+            return Math.round((workDone / workTotal) * 100);
+        }, [cursor, queue]);
+
+        return (
+            <div className="d-flex justify-content-between align-items-center mb-4 pt-3 px-3">
+                <div>
+                    <h5 className="m-0 fw-bold text-white mb-1" style={{ fontSize: '1.1rem' }}>{routine.name}</h5>
+                    {CURRENT_USER_NAME && (
+                        <div className="text-secondary small">{CURRENT_USER_NAME}</div>
+                    )}
+                    <div className="progress" style={{ height: '6px', width: '150px', background: '#333' }}>
+                        <div className="progress-bar bg-success" role="progressbar" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                    <button className="btn btn-sm btn-outline-light" onClick={togglePause}>
+                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'} me-1`}></i>{isPaused ? 'Reanudar' : 'Pausa'}
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={cancelWorkout}>
+                        <i className="fas fa-stop me-1"></i>Cancelar
+                    </button>
+                    <div className="font-monospace fs-4 text-cyber-green fw-bold ms-2">
+                        {formatTime(globalTime)}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const MessageBar = () => {
+        const { message } = useWorkout();
+        if (!message) return null;
+        const toneClass = message.tone === "error"
+            ? "border-danger text-danger"
+            : message.tone === "success"
+                ? "border-success text-cyber-green"
+                : "border-info text-info";
+        return (
+            <div className={`mx-3 mb-3 p-2 border rounded bg-black-trans small ${toneClass}`}>
+                {message.text}
+            </div>
+        );
+    };
+
+    const RoutineDetails = ({ routine }) => {
+        const { exerciseLookup } = useWorkout();
+        if (!routine) return null;
+        const items = Array.isArray(routine.items) ? routine.items : [];
+        const isRestItem = (item) => item && (item.item_type === 'rest' || (!item.exercise_id && item.rest_seconds != null));
+        const isExerciseItem = (item) => item && item.item_type === 'exercise';
+        const buildEntry = (item) => (isRestItem(item) ? { type: 'rest', data: item } : { type: 'exercise', data: item });
+        const hasInlineGroups = items.some(item => Array.isArray(item.items));
+        const displayData = hasInlineGroups
+            ? (() => {
+                const groups = [];
+                const ungrouped = [];
+                items.forEach((item, idx) => {
+                    if (item.item_type === 'group' || Array.isArray(item.items)) {
+                        const entries = (item.items || [])
+                            .filter(entry => entry && (entry.item_type === 'exercise' || isRestItem(entry)))
+                            .map(buildEntry);
+                        groups.push({
+                            id: item._id || item.id || `group_${idx}`,
+                            name: item.name || item.group_name || "Circuito",
+                            entries
+                        });
+                        return;
+                    }
+                    if (isExerciseItem(item) || isRestItem(item)) {
+                        ungrouped.push(buildEntry(item));
+                    }
+                });
+                return { groups, ungrouped };
+            })()
+            : (() => {
+                const groups = items.filter(item => item.item_type === 'group');
+                const groupMap = new Map();
+                groups.forEach(group => {
+                    groupMap.set(group._id, {
+                        id: group._id,
+                        name: group.group_name || "Grupo",
+                        entries: []
+                    });
+                });
+                const ungrouped = [];
+                items.forEach(item => {
+                    if (item.item_type === 'group') return;
+                    if (!isExerciseItem(item) && !isRestItem(item)) return;
+                    if (item.group_id && groupMap.has(item.group_id)) {
+                        groupMap.get(item.group_id).entries.push(buildEntry(item));
+                    } else {
+                        ungrouped.push(buildEntry(item));
+                    }
+                });
+                return { groups: Array.from(groupMap.values()).filter(group => group.entries.length), ungrouped };
+            })();
+        const totalExercises = displayData.groups.reduce((acc, group) => acc + group.entries.filter(entry => entry.type === 'exercise').length, 0)
+            + displayData.ungrouped.filter(entry => entry.type === 'exercise').length;
+
+        const renderEntry = (entry, key) => {
+            if (entry.type === 'rest') {
+                const restSeconds = getRestSeconds(entry.data);
+                const restLabel = entry.data.note || "Descanso";
+                return (
+                    <div key={key} className="d-flex justify-content-between align-items-center border border-secondary rounded px-2 py-2 bg-black-trans">
+                        <div>
+                            <div className="text-white fw-bold">{restLabel}</div>
+                            <div className="text-secondary small">Pausa</div>
+                        </div>
+                        <div className="text-end text-secondary small">
+                            <div>{restSeconds}s</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const ex = entry.data || {};
+            const isTime = (ex.exercise_type || ex.type) === 'time' || (ex.exercise_type || ex.type) === 'cardio';
+            const name = ex.exercise_name || ex.name || "Ejercicio";
+            const bodyPartLabel = translateBodyPart(ex.body_part);
+            const equipmentMeta = getEquipmentMeta(ex.equipment);
+            const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+            const substitutes = resolveSubstitutes(ex.substitutes || [], exerciseLookup);
+            const subsId = `subs_${key}`;
+            const sets = ex.target_sets || ex.sets || 1;
+            const reps = ex.target_reps || ex.reps;
+            const time = ex.target_time_seconds || ex.time_seconds;
+            const rest = getRestSeconds(ex);
+            return (
+                <div key={key} className="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="text-white fw-bold">{name}</div>
+                            {hasVideo && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger"
+                                    title="Ver video"
+                                    onClick={() => openVideoModal(ex.video_url)}
+                                >
+                                    <i className="fab fa-youtube"></i>
+                                </button>
+                            )}
+                        </div>
+                        <div className="text-secondary small d-flex flex-wrap gap-2 mt-1">
+                            <span className="badge bg-secondary">{bodyPartLabel}</span>
+                            <span className="badge bg-dark border border-secondary text-info">
+                                <i className={`${equipmentMeta.icon} me-1`}></i>{equipmentMeta.label}
+                            </span>
+                        </div>
+                        {substitutes.length > 0 && (
+                            <div className="mt-2">
+                                <button
+                                    className="btn btn-sm btn-outline-info"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target={`#${subsId}`}
+                                    aria-expanded="false"
+                                    aria-controls={subsId}
+                                >
+                                    Sustitutos ({substitutes.length})
+                                </button>
+                                <div className="collapse mt-2" id={subsId}>
+                                    <div className="d-flex flex-column gap-2">
+                                        {substitutes.map((sub, sIdx) => {
+                                            const subEquipment = getEquipmentMeta(sub.equipment);
+                                            const subHasVideo = sub.video_url && sub.video_url.trim() !== "";
+                                            return (
+                                                <div key={`${key}_sub_${sIdx}`} className="d-flex align-items-center justify-content-between border border-secondary rounded px-2 py-2">
+                                                    <div>
+                                                        <div className="fw-bold text-white">{sub.name || "Ejercicio"}</div>
+                                                        <div className="small text-secondary">
+                                                            <i className={`${subEquipment.icon} me-1`}></i>{subEquipment.label}
+                                                        </div>
+                                                    </div>
+                                                    {subHasVideo && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-outline-danger ms-2"
+                                                            title="Ver video"
+                                                            onClick={() => openVideoModal(sub.video_url)}
+                                                        >
+                                                            <i className="fab fa-youtube"></i>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="text-end text-secondary small">
+                        <div>{sets} sets {isTime ? `x ${time || 60}s` : `x ${reps || '-'}`}</div>
+                        <div>Descanso {rest || 60}s</div>
+                    </div>
+                </div>
+            );
+        };
+
+        return (
+            <div className="card bg-black border-cyber mx-3 shadow-lg animate-slide-up" style={{ borderRadius: '20px' }}>
+                <div className="card-body">
+                    <div className="text-center mb-4">
+                        <h2 className="display-6 fw-bold text-white mb-2">{routine.name || "Rutina"}</h2>
+                        <p className="text-secondary m-0">{totalExercises} ejercicios -  Revisa los detalles antes de iniciar</p>
+                    </div>
+
+                    <div className="d-flex flex-column gap-3">
+                        {displayData.groups.map((group, idx) => (
+                            <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
+                                <div className="mb-2 text-cyber-orange text-uppercase small">
+                                    {group.name || "Circuito"}
+                                </div>
+                                <div className="d-flex flex-column gap-2">
+                                    {group.entries.map((entry, entryIdx) => (
+                                        renderEntry(entry, `group_${idx}_${entryIdx}`)
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        {displayData.ungrouped.length > 0 && (
+                            <div className="p-3 border border-secondary rounded-3 bg-black-trans">
+                                <div className="d-flex flex-column gap-2">
+                                    {displayData.ungrouped.map((entry, entryIdx) => (
+                                        renderEntry(entry, `ungrouped_${entryIdx}`)
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const PreStart = () => {
+        const { routine, startWorkout } = useWorkout();
+        return (
+            <div className="runner-container position-relative">
+                <Header />
+                <RoutineDetails routine={routine} />
+                <div className="p-3 pb-4">
+                    <button className="btn btn-cyber-large w-100 shadow-lg ripple" onClick={startWorkout}>
+                        INICIAR RUTINA <i className="fas fa-play ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const InputControls = ({ step }) => {
+        const { logSet, next, sessionLog } = useWorkout();
+        // Local state for inputs so we can edit before committing
+          const [weight, setWeight] = useState(step.target.weight || '');
+          const [reps, setReps] = useState(step.target.reps || '');
+        const [rpe, setRpe] = useState(8);
+
+        // Pre-fill from history for the same exercise
+        useEffect(() => {
+            const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
+              let nextWeight = step.target.weight || '';
+              let nextReps = step.target.reps || '';
+              if (exerciseId) {
+                  const lastMatch = [...sessionLog].reverse().find(entry => entry.exerciseId === exerciseId);
+                  if (lastMatch) {
+                      if (nextWeight === '' && lastMatch.weight) nextWeight = lastMatch.weight;
+                      if (lastMatch.reps) nextReps = lastMatch.reps;
+                  }
+              }
+              setWeight(nextWeight);
+              setReps(nextReps);
+              setRpe(8);
+          }, [step, sessionLog]);
+
+          const adjustReps = (delta) => {
+              const current = parseInt(reps, 10);
+              const base = Number.isFinite(current) ? current : 0;
+              const nextValue = Math.max(0, base + delta);
+              setReps(String(nextValue));
+          };
+
+          const handleSubmit = () => {
+              logSet({ weight, reps, rpe });
+              next();
+          };
+
+        // Expose submit handler via Ref if we were using a parent generic button, 
+        // but cleaner to have the main button Context-aware or passed down. 
+        // We'll use a specific ID based approach or shared state if needed.
+        // BETTER: The MainButton is smart. It detects "Type". 
+        // Actually, let's keep the submit logic in the View for the 'Active' state.
+
+        // HACK: Attach a global handler or use context to pass the 'doAction' reference?
+        // Let's use a "Ref" stored in context? No, too complex.
+        // Simple: This component RENDERS the Main Action Button? No, button is sticky bottom.
+        // Solution: Lift state up to 'ActiveExercise' or use a Context setter.
+
+        return (
+            <div className="py-2">
+                <div className="row g-2 justify-content-center mb-4">
+                    <div className="col-5">
+                        <label className="text-secondary small fw-bold mb-2 d-block">PESO (KG)</label>
+                        <input type="number"
+                            className="form-control input-hud"
+                            value={weight}
+                            onChange={e => setWeight(e.target.value)}
+                            placeholder="0"
+                            onClick={(e) => e.target.select()}
+                        />
+                    </div>
+                      <div className="col-5">
+                          <label className="text-secondary small fw-bold mb-2 d-block">REPS</label>
+                          <div className="d-flex align-items-center gap-2">
+                              <button
+                                  className="btn btn-outline-secondary"
+                                  type="button"
+                                  style={{ width: '44px', height: '44px' }}
+                                  onClick={() => adjustReps(-1)}
+                              >-</button>
+                              <input
+                                  type="text"
+                                  className="form-control input-hud"
+                                  value={reps}
+                                  onChange={e => setReps(e.target.value)}
+                                  placeholder="0"
+                                  inputMode="numeric"
+                                  pattern="[0-9\\-]*"
+                                  onClick={(e) => e.target.select()}
+                              />
+                              <button
+                                  className="btn btn-outline-secondary"
+                                  type="button"
+                                  style={{ width: '44px', height: '44px' }}
+                                  onClick={() => adjustReps(1)}
+                              >+</button>
+                          </div>
+                      </div>
+                  </div>
+
+                <div className="mb-4">
+                    <label className="text-secondary small fw-bold mb-2 d-block text-center">RPE (Esfuerzo 1-10)</label>
+                    <div className="d-flex justify-content-center gap-2">
+                        {[7, 8, 9, 10].map(val => (
+                            <button key={val}
+                                className={`btn btn-sm ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
+                                style={{ width: '50px', height: '40px' }}
+                                onClick={() => setRpe(val)}
+                            >{val}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <button className="btn btn-cyber-large w-100 shadow-lg ripple" onClick={handleSubmit}>
+                    COMPLETAR SERIE <i className="fas fa-check ms-2"></i>
+                </button>
+            </div>
+        );
+    };
+
+    const TimerControls = ({ step }) => {
+        const { stepTimer, isTimerRunning, setIsTimerRunning, next, logSet } = useWorkout();
+
+        const toggle = () => setIsTimerRunning(!isTimerRunning);
+        const finish = () => {
+              logSet({
+                  time_seconds: step.target.time
+              }); // Or actual elapsed?
+            next();
+        }
+
+        return (
+            <div className="text-center py-4">
+                <div className="display-1 fw-bold text-white mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>
+                    {formatTime(stepTimer)}
+                </div>
+                <p className="text-cyber-green mb-4">TIEMPO OBJETIVO</p>
+
+                <div className="d-grid gap-2">
+                    {!isTimerRunning && stepTimer > 0 && (
+                        <button className="btn btn-cyber-large" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
+                    )}
+                    {isTimerRunning && (
+                        <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
+                    )}
+                    <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>Terminar Manualmente</button>
+                </div>
+            </div>
+        );
+    };
+
+    const ActiveExercise = () => {
+        const { currentStep } = useWorkout();
+
+        if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
+        const ex = currentStep.exercise || {};
+        const name = ex.exercise_name || ex.name || 'Ejercicio';
+        const bodyPart = translateBodyPart(ex.body_part);
+        const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+        const exerciseComment = ex.comment || ex.note || ex.description || "";
+        const groupComment = currentStep.groupComment || "";
+
+        return (
+            <div className="card bg-black border-cyber-active mx-3 shadow-lg animate-slide-up flex-grow-1 active-exercise-card" style={{ borderRadius: '20px' }}>
+                <div className="card-body d-flex flex-column justify-content-center">
+
+                    {currentStep.groupName && (
+                        <span className="badge bg-danger align-self-center mb-3 px-3 py-2">{currentStep.groupName}</span>
+                    )}
+
+                    <div className="text-center mb-4">
+                        <span className="text-secondary text-uppercase small tracking-widest">{bodyPart || 'Muscle'}</span>
+                        <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                            <h2 className="display-5 fw-bold text-white mt-1 mb-0">{name}</h2>
+                            {hasVideo && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger ms-2"
+                                    title="Ver video"
+                                    onClick={() => openVideoModal(ex.video_url)}
+                                >
+                                    <i className="fab fa-youtube"></i>
+                                </button>
+                            )}
+                        </div>
+                        <div className="mt-2 text-info fs-5">
+                            Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> de {currentStep.totalSets}
+                        </div>
+                    </div>
+
+                    <div className="mt-2">
+                        {currentStep.isTimeBased ? (
+                            <TimerControls step={currentStep} />
+                        ) : (
+                            <InputControls step={currentStep} />
+                        )}
+                    </div>
+
+                    {(groupComment || exerciseComment) && (
+                        <div className="mt-3 pt-3 border-top border-secondary text-center">
+                            {groupComment && <div className="text-cyber-orange small">{groupComment}</div>}
+                            {exerciseComment && <div className="text-secondary small">{exerciseComment}</div>}
+                        </div>
+                    )}
+
+                </div>
+            </div>
+        );
+    };
+
+    const RestOverlay = () => {
+        const { status, stepTimer, addRestTime, skipRest, nextStep, isPaused, togglePause } = useWorkout();
+
+        if (status !== 'REST') return null;
+
+        return (
+            <div className="position-fixed top-0 start-0 w-100 h-100 bg-black d-flex flex-column align-items-center justify-content-center text-center animate-slide-up" style={{ zIndex: 2000 }}>
+                <h6 className="text-secondary text-uppercase letter-spacing-2 mb-4">Descanso</h6>
+
+                <div className="display-1 fw-bold text-cyber-orange mb-4 font-monospace animate-pulse">
+                    {formatTime(stepTimer)}
+                </div>
+
+                <div className="d-flex gap-3 mb-5">
+                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={() => addRestTime(-10)}>-10</button>
+                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={togglePause}>
+                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
+                    </button>
+                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={skipRest}><i className="fas fa-forward"></i></button>
+                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={() => addRestTime(10)}>+10</button>
+                </div>
+
+                <div className="mt-4 opacity-75">
+                    <small className="text-muted text-uppercase d-block mb-2">Próximo</small>
+                    <h4 className="text-white">{nextStep?.exercise?.exercise_name || nextStep?.exercise?.name || "Fin"}</h4>
+                    <span className="badge bg-dark border border-secondary">{nextStep?.setNumber ? `Set ${nextStep.setNumber}` : ''}</span>
+                </div>
+            </div>
+        );
     }
+
+    const NextUpBar = () => {
+        const { queue, cursor, status } = useWorkout();
+        if (status === 'LOADING' || status === 'IDLE' || status === 'FINISHED') return null;
+
+        let idx = cursor + 1;
+        while (idx < queue.length && queue[idx].type !== 'work') {
+            idx += 1;
+        }
+        if (idx >= queue.length) return null;
+
+        let restInfo = "";
+        const restIdx = cursor + 1;
+        if (restIdx < queue.length && queue[restIdx].type === 'rest') {
+            const restStep = queue[restIdx];
+            restInfo = `${restStep.duration || 0}s`;
+        }
+
+        const ex = queue[idx].exercise || {};
+        const name = ex.exercise_name || ex.name || "Ejercicio";
+        return (
+            <div className="px-3 pb-2">
+                <div className="d-flex align-items-center justify-content-between border border-secondary rounded bg-black-trans px-3 py-2">
+                    <span className="text-secondary small text-uppercase">Siguiente</span>
+                    <div className="text-end">
+                        <div className="text-white small fw-bold">{name}</div>
+                        {restInfo && <div className="text-secondary small">Descanso: {restInfo}</div>}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const StickyControls = () => {
+        const { prev, skipToNextWork, status, showMessage, showConfirm } = useWorkout();
+        // Since main action is inside the card for context-awareness (Input State), 
+        // This footer is strictly for Nav overrides or secondary actions.
+
+        if (status === 'REST') return null; // Rest has its own overlay
+
+        return (
+            <div className="fixed-bottom p-3 pb-4 bg-black-trans border-top border-secondary">
+                <div className="container d-flex justify-content-between align-items-center" style={{ maxWidth: '600px' }}>
+                    <div className="d-flex gap-2">
+                        <button className="btn btn-link text-muted text-decoration-none" onClick={prev}>
+                            <i className="fas fa-chevron-left me-1"></i> Prev
+                        </button>
+                    </div>
+
+                    <span className="text-secondary small">
+                        <i className="fas fa-info-circle me-1"></i> Desliza para historial
+                    </span>
+
+                    <button className="btn btn-link text-muted text-decoration-none" onClick={() => {
+                        showConfirm("Saltar Serie", "¿Seguro que quieres omitir esta serie?", () => {
+                            showMessage("Set omitido", "info");
+                            skipToNextWork();
+                        }, "warning");
+                    }}>
+                        Skip <i className="fas fa-chevron-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // --- MAIN APP ---
+    const App = () => {
+        const { currentStep, status } = useWorkout();
+
+        if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
+        if (status === 'IDLE') return <PreStart />;
+        if (status === 'FINISHED') return <div className="text-center text-success py-5"><h1>¡Entrenamiento Terminado!</h1><p>Guardando...</p></div>;
+
+        return (
+            <div className="runner-container position-relative">
+                <Header />
+                <MessageBar />
+                {currentStep && <ActiveExercise />}
+                <RestOverlay />
+                <NextUpBar />
+                <ConfirmModal />
+                <StickyControls />
+            </div>
+        );
+    };
+
+    const Root = () => (
+        <WorkoutProvider routine={INITIAL_ROUTINE}>
+            <App />
+        </WorkoutProvider>
+    );
+
+    // Mount
+    const root = ReactDOM.createRoot(document.getElementById('react-root'));
+    root.render(<Root />);
 </script>
+{% endraw %}
 {% endblock %}

@@ -1,176 +1,75 @@
 ﻿# ======================================================
-# AI FITNESS - BACKEND FLASK FINAL
+# AI FITNESS - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
 from flask import Flask, request, jsonify, render_template, make_response, redirect
-from pymongo import MongoClient
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import base64
-import logging
-from dotenv import load_dotenv
 import traceback
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import errors as mongo_errors
-from ai_agents.reasoning_agent import ReasoningAgent
 from typing import Any, Dict, Optional
+
+# Agentes de IA
+from ai_agents.reasoning_agent import ReasoningAgent
 from ai_agents.meal_plan_agent import MealPlanAgent
 from ai_agents.body_assessment_agent import BodyAssessmentAgent
 from ai_agents.routine_agent import RoutineAgent
 from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
 
+# Módulos refactorizados
+from config import Config
+import extensions
+from extensions import logger, init_db, create_indexes
+from utils.auth_helpers import ensure_user_status, is_user_active, get_admin_token
+from utils.validators import (
+    normalize_user_status, parse_birth_date, format_birth_date,
+    compute_age, normalize_measurements, sanitize_photos
+)
+from utils.db_helpers import log_agent_execution, fetch_user_progress_for_agent, get_user_profile
+from middleware.auth_middleware import check_user_profile, inject_user_role
+from routes.workout import workout_bp
+
 # ======================================================
 # CONFIGURACIÓN INICIAL
 # ======================================================
 
-# Cargar variables de entorno (.env)
-load_dotenv()
-
 # Configuración de Flask
 app = Flask(__name__)
+app.config.from_object(Config)
 
-# Configuración de logging global
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logger = logging.getLogger("ai_fitness")
-logger.info("? Aplicación AI Fitness iniciada correctamente")
+# Inicializar base de datos
+init_db(app)
+
+# Alias para facilitar el uso
+db = extensions.db
+
+# Registrar middleware
+app.before_request(check_user_profile)
+app.context_processor(inject_user_role)
+
+# Registrar blueprints
+app.register_blueprint(workout_bp)
+
+# Crear índices de MongoDB
+create_indexes(extensions.db)
+
+# Log de inicio
+logger.info("✅ Aplicación AI Fitness iniciada correctamente")
 
 # Check OpenAI Key Status
 openai_key = os.getenv("OPENAI_API_KEY")
 if openai_key:
     masked_key = f"{openai_key[:8]}...{openai_key[-4:]}" if len(openai_key) > 12 else "***"
-    logger.info(f"? OPENAI_API_KEY detectada: {masked_key}")
+    logger.info(f"🔑 OPENAI_API_KEY detectada: {masked_key}")
 else:
-    logger.warning("? OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
+    logger.warning("⚠️ OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
 
 openai_model = os.getenv("OPENAI_MODEL", "gpt-4o (default)")
-logger.info(f"? Modelo OpenAI configurado: {openai_model}")
-
-
-def log_agent_execution(
-    stage: str,
-    name: str,
-    agent: Any,
-    payload: Optional[Dict[str, Any]] = None,
-    extra: Optional[Dict[str, Any]] = None,
-) -> None:
-    """Log agent execution details without leaking sensitive data."""
-    backend = agent.backend() if hasattr(agent, "backend") else "unknown"
-    model = getattr(agent, "model", None)
-    init_error = getattr(agent, "init_error", None)
-    key_present = bool(os.getenv("OPENAI_API_KEY"))
-    payload_keys = list(payload.keys()) if isinstance(payload, dict) else None
-    meta = {"backend": backend, "model": model, "key_present": key_present, "init_error": init_error}
-    if payload_keys is not None:
-        meta["payload_keys"] = payload_keys
-    if extra:
-        meta.update(extra)
-    logger.info(f"[AgentRun:{stage}] {name} | {meta}")
-
-# ======================================================
-# CONEXIÓN MONGODB
-# ======================================================
-#try:
-#    import certifi
-#    client = MongoClient(os.getenv("MONGO_URI"))
-#    db = client[os.getenv("MONGO_DB")]
-#    logger.info("? Conexión exitosa con MongoDB Atlas")
-#except Exception as e:
-#    logger.error(f"? Error al conectar a MongoDB: {str(e)}", exc_info=True)
-#    db = None
-
-
-# === Conexión MongoDB Atlas (versión final compatible PyMongo 4.7+) === #
-try:
-    import certifi
-    from pymongo import MongoClient
-
-    mongo_uri = os.getenv("MONGO_URI")
-    if not mongo_uri:
-        raise ValueError("? No se encontró la variable MONGO_URI en el entorno")
-
-    # Configurar conexión segura con certificados vÃ¡lidos
-    client = MongoClient(
-        mongo_uri,
-        tls=True,
-        tlsCAFile=certifi.where(),  # Certificados raÃ­z actualizados
-        serverSelectionTimeoutMS=30000,
-        connectTimeoutMS=20000,
-        socketTimeoutMS=20000
-    )
-
-    db = client[os.getenv("MONGO_DB")]
-    logger.info("? Conexión segura con MongoDB Atlas establecida correctamente")
-
-except Exception as e:
-    logger.error(f"? Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
-    db = None
-
-
-# ======================================================
-# CONTEXT PROCESSORS
-# ======================================================
-@app.context_processor
-def inject_user_role():
-    """Inyecta 'current_user_role' en todos los templates."""
-    try:
-        user_id = request.cookies.get("user_session")
-        if not user_id:
-            return {"current_user_role": None}
-        
-        # Check db logic for role
-        if db is not None:
-            # Optimizacion: podriamos cachear esto excepcionalmente si fuera muy lento
-            role_doc = db.user_roles.find_one({"user_id": user_id})
-            if role_doc:
-                return {"current_user_role": role_doc.get("role")}
-    except Exception:
-        pass
-    return {"current_user_role": None}
-
-
-@app.before_request
-def check_user_profile():
-    """
-    Middleware to ensure logged-in users have a profile.
-    If not, redirects them to /profile to complete it.
-    Excludes static files, auth routes, and admin routes.
-    """
-    if request.endpoint and "static" in request.endpoint:
-        return
-    
-    # Exclude auth and API routes from redirection loop
-    if request.path.startswith("/api/") or \
-       request.path.startswith("/login") or \
-       request.path.startswith("/logout") or \
-       request.path.startswith("/register") or \
-       request.path.startswith("/admin") or \
-       request.path == "/":
-        return
-
-    user_id = request.cookies.get("user_session")
-    if not user_id:
-        return
-
-    # If already on profile page, allow access
-    if request.path == "/profile":
-        return
-
-    # Check if user has profile
-    if db is not None:
-        try:
-            profile = db.user_profiles.find_one({"user_id": user_id})
-            if not profile:
-                # User logged in but no profile -> Force redirect
-                return redirect("/profile")
-        except Exception as e:
-            logger.error(f"Error checking profile middleware: {e}")
-            pass
-
+logger.info(f"🤖 Modelo OpenAI configurado: {openai_model}")
 
 # ======================================================
 # FUNCIONES AUXILIARES
@@ -2635,6 +2534,8 @@ def server_error(e):
     return jsonify({"error": "Internal Server Error", "message": "Ocurrió un error inesperado."}), 500
 
 
+
+
 # ======================================================
 # INDEXACION AUTOMATICA (MongoDB)
 # ======================================================
@@ -2653,7 +2554,7 @@ def seed_user_statuses():
                 {
                     "$setOnInsert": {
                         "status": USER_STATUS_DEFAULT,
-                        "updated_at": datetime.utcnow(),
+                        "updated_at": datetime.now(timezone.utc),
                     }
                 },
                 upsert=True,
@@ -2661,40 +2562,7 @@ def seed_user_statuses():
     except Exception as e:
         logger.warning(f"No se pudo backfill user_status: {e}")
 
-try:
-    db.plans.create_index([("user_id", 1), ("created_at", -1)])
-    try:
-        db.ai_adjustments.create_index([("user_id", 1), ("created_at", -1)])
-    except Exception:
-        pass
-    try:
-        existing_indexes = db.users.index_information()
-        for idx_name in ("user_id_1", "user_name_lower_1"):
-            if idx_name in existing_indexes:
-                db.users.drop_index(idx_name)
-                logger.info(f"Indice obsoleto eliminado: {idx_name}")
-    except Exception as drop_err:
-        logger.warning(f"No se pudo limpiar indices obsoletos: {drop_err}")
-    try:
-        db.users.create_index("email", unique=True)
-    except Exception:
-        pass
-    try:
-        db.users.create_index("username_lower", unique=True, sparse=True)
-    except Exception:
-        pass
-    try:
-        db.user_status.create_index("user_id", unique=True)
-    except Exception:
-        pass
-    try:
-        db.user_profiles.create_index("user_id", unique=True)
-    except Exception:
-        pass
-    seed_user_statuses()
-    logger.info("Ok. Indices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
-except Exception as e:
-    logger.warning(f"No se pudieron crear indices: {e}")
+# Indexacion movida al bloque __main__
 
 # ======================================================
 # MANEJADORES DE ERRORES GLOBALES
@@ -2869,6 +2737,7 @@ def api_save_routine():
             "description": data.get("description"),
             "items": data.get("items", []), # List of {exercise_id, sets, reps, rest, order_index...}
             "routine_body_parts": data.get("routine_body_parts", []),
+            "routine_day": data.get("routine_day"),
             "updated_at": datetime.utcnow()
         }
         
@@ -2887,134 +2756,21 @@ def api_save_routine():
 
 
 # --- WORKOUT RUNNER ---
-@app.route("/workout/dashboard")
-def view_workout_dashboard():
-    """Dashboard principal del modulo de Smart Workout."""
-    return render_template("workout_dashboard.html")
-
-@app.route("/workout/run/<routine_id>")
-def view_workout_run(routine_id):
-    """Interfaz 'Runner' para ejecutar la rutina."""
-    return render_template("workout_runner.html", routine_id=routine_id)
-
-@app.route("/api/workout/session/save", methods=["POST"])
-def api_save_session():
-    """Guarda un workout completado."""
-    try:
-        user_id = request.cookies.get("user_session")
-        data = request.get_json()
-        
-        # Data validation minimal
-        session_doc = {
-            "user_id": user_id,
-            "routine_id": data.get("routine_id"), 
-            "start_time": data.get("start_time"), # ISO Date expected
-            "end_time": data.get("end_time"),
-            "body_weight": data.get("body_weight"),
-            "total_volume": data.get("total_volume", 0),
-            "sets": data.get("sets", []), # Array of workout_sets
-            "created_at": datetime.utcnow()
-        }
-        db.workout_sessions.insert_one(session_doc)
-        return jsonify({"message": "Sesion guardada"}), 200
-    except Exception as e:
-        logger.error(f"Error saving session: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/history/exercise/<exercise_id>")
-def api_get_exercise_history(exercise_id):
-    """Obtiene el ultimo historial (pesos/reps) de este ejercicio para auto-fill."""
-    try:
-        user_id = request.cookies.get("user_session")
-        if not user_id: return jsonify([])
-
-        # Pipeline: Filter by user -> Unwind sets -> Filter by exercise -> Sort date desc -> Limit
-        pipeline = [
-            {"$match": {"user_id": user_id}},
-            {"$unwind": "$sets"},
-            {"$match": {"sets.exercise_id": exercise_id}},
-            {"$sort": {"created_at": -1}},
-            {"$limit": 5},
-            {"$project": {
-                "weight": "$sets.weight", 
-                "reps": "$sets.reps", 
-                "rpe": "$sets.rpe", 
-                "date": "$created_at"
-            }}
-        ]
-        history = list(db.workout_sessions.aggregate(pipeline))
-        # Serialize date
-        for h in history:
-            if "_id" in h: del h["_id"]
-            if "date" in h and isinstance(h["date"], datetime):
-                h["date"] = h["date"].isoformat()
-
-        return jsonify(history), 200
-    except Exception as e:
-        logger.error(f"Error history: {e}")
-        return jsonify({"error": str(e)}), 500
+# Rutas workout movidas a routes/workout.py
 
 
-@app.route("/api/stats/heatmap", methods=["GET"])
-def api_get_heatmap():
-    """Devuelve la frecuencia de entrenamientos del ultimo anio (Heatmap data)."""
-    try:
-        user_id = request.cookies.get("user_session")
-        if not user_id: return jsonify({})
-
-        # Aggregation: Group by Date (YYYY-MM-DD) -> Count sessions/volume
-        pipeline = [
-            {"$match": {"user_id": user_id}},
-            {"$project": {
-                "dateStr": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}
-            }},
-            {"$group": {"_id": "$dateStr", "count": {"$sum": 1}}}
-        ]
-        data = list(db.workout_sessions.aggregate(pipeline))
-        # Format: {"2025-01-01": 1, "2025-01-03": 2}
-        result = {item["_id"]: item["count"] for item in data}
-        return jsonify(result), 200
-    except Exception as e:
-        logger.error(f"Error heatmap: {e}")
-        return jsonify({}), 500
-
-@app.route("/api/stats/volume", methods=["GET"])
-def api_get_volume_stats():
-    """Devuelve historial de volumen total y peso corporal."""
-    try:
-        user_id = request.cookies.get("user_session")
-        if not user_id: return jsonify([])
-
-        # Get sessions sorted by date
-        cursor = db.workout_sessions.find(
-            {"user_id": user_id},
-            {"created_at": 1, "total_volume": 1, "body_weight": 1}
-        ).sort("created_at", 1).limit(50)
-        
-        data = []
-        for doc in cursor:
-            date_iso = doc["created_at"].strftime("%Y-%m-%d") if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at"))
-            data.append({
-                "date": date_iso,
-                "volume": doc.get("total_volume", 0),
-                "weight": doc.get("body_weight", 0)
-            })
-        return jsonify(data), 200
-    except Exception as e:
-        logger.error(f"Error volume stats: {e}")
-        return jsonify([]), 500
 
 
 # ======================================================
 # EJECUCIÓN LOCAL
 # ======================================================
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
-
-
-
-
-
+    # Solo ejecutar inicializacion DB en el proceso hijo del reloader
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        create_indexes(extensions.db)
+        seed_user_statuses()
+    use_reloader = False if os.name == "nt" else True
+    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=use_reloader)
 
 
 

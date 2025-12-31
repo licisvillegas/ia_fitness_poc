@@ -33,6 +33,8 @@
     body.sb-collapsed .user-icon-container {
         margin-right: 0 !important;
     }
+
+    /* Smart Workout links stay in the root list. */
 </style>
 <div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
     style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
@@ -106,35 +108,35 @@
                 <span>Rutinas AI</span>
             </a>
         </li>
-        <li>
-            <!-- SECCIÓN ENTRENAMIENTO (Módulo Nuevo) -->
-            <hr class="sidebar-divider my-2">
-            <div class="sidebar-heading">
-                Entrenamiento
-            </div>
+        <!-- SECCION ENTRENAMIENTO (Modulo Nuevo) -->
+        <hr class="sidebar-divider my-2">
+        <div class="sidebar-heading">
+            Entrenamiento
+        </div>
 
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseWorkout"
-                aria-expanded="true" aria-controls="collapseWorkout">
-                <i class="fas fa-dumbbell"></i>
-                <span>Smart Workout</span>
+        <li>
+            <a href="/admin/routines/builder"
+                class="nav-link {% if request.path == '/admin/routines/builder' %}active{% endif %}"
+                title="Constructor Rutinas">
+                <i class="fas fa-layer-group me-2" style="width: 24px; text-align: center;"></i>
+                <span>Constructor Rutinas</span>
             </a>
-            <div id="collapseWorkout" class="collapse" aria-labelledby="headingWorkout" data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Gestión:</h6>
-                    <a class="collapse-item" href="/admin/routines/builder">
-                        <i class="fas fa-layer-group me-2"></i>Constructor Rutinas
-                    </a>
-                    <a class="collapse-item" href="/admin/exercises">
-                        <i class="fas fa-book-medical me-2"></i>Catálogo Ejercicios
-                    </a>
-                    <div class="collapse-divider"></div>
-                    <h6 class="collapse-header">Ejecución:</h6>
-                    <a class="collapse-item" href="/workout/dashboard">
-                        <i class="fas fa-running me-2"></i>Runner / Historial
-                    </a>
-                </div>
-            </div>
+        </li>
+        <li>
+            <a href="/admin/exercises"
+                class="nav-link {% if request.path == '/admin/exercises' %}active{% endif %}"
+                title="Catalogo Ejercicios">
+                <i class="fas fa-book-medical me-2" style="width: 24px; text-align: center;"></i>
+                <span>Catalogo Ejercicios</span>
+            </a>
+        </li>
+        <li>
+            <a href="/workout/dashboard"
+                class="nav-link {% if request.path == '/workout/dashboard' %}active{% endif %}"
+                title="Runner / Historial">
+                <i class="fas fa-running me-2" style="width: 24px; text-align: center;"></i>
+                <span>Runner / Historial</span>
+            </a>
         </li>
 
         <li>
@@ -216,6 +218,7 @@
         const sidebarToggle = document.getElementById("sidebar-toggle");
         const toggleIcon = sidebarToggle.querySelector("i");
         const posButtons = document.querySelectorAll(".pos-toggle-btn");
+        
 
         // 1. Cargar preferencias
         const savedCollapsed = localStorage.getItem("sidebar_admin_collapsed") === "true";

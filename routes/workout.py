@@ -306,6 +306,8 @@ def api_get_exercise_history(exercise_id):
             {"$project": {
                 "weight": "$sets.weight", 
                 "reps": "$sets.reps", 
+                "time": "$sets.time_seconds",
+                "time_seconds": "$sets.time_seconds", 
                 "rpe": "$sets.rpe", 
                 "date": "$created_at"
             }}

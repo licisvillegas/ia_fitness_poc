@@ -213,6 +213,21 @@
         background-color: #39d353;
         box-shadow: 0 0 5px #39d353;
     }
+
+    .btn-cyber-success {
+        background: linear-gradient(45deg, #00ff9d, #10b981);
+        color: #000;
+        border: none;
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .btn-cyber-success:hover {
+        background: linear-gradient(45deg, #10b981, #059669);
+        box-shadow: 0 0 25px rgba(0, 255, 157, 0.6);
+        color: #000;
+        transform: translateY(-2px);
+    }
 </style>
 
 <script>
@@ -313,7 +328,7 @@
                     <span class="badge bg-secondary mb-3">${countExercises(r)} Ejercicios</span>
                     
                     <div class="d-grid">
-                        <a href="/workout/run/${r._id}" class="btn btn-cyber-primary">
+                        <a href="/workout/run/${r._id}" class="btn btn-cyber-success btn-lg w-100 py-3 fw-bold shadow-lg text-uppercase" style="font-size: 1.1rem; letter-spacing: 0.5px;">
                             <i class="fas fa-play me-2"></i> INICIAR
                         </a>
                     </div>

@@ -4,54 +4,66 @@
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <h2 class="fw-bold text-cyber-green mb-0"><i class="fas fa-book-medical me-2"></i>Catálogo de Ejercicios</h2>
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <h2 class="fw-bold text-cyber-green mb-0 text-center text-md-start"><i
+                class="fas fa-book-medical me-2"></i>Catálogo de Ejercicios</h2>
 
-        <div class="d-flex gap-2 align-items-center flex-grow-1 justify-content-end">
-            <div class="input-group" style="max-width: 300px;">
+        <div
+            class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-end w-100 w-md-auto">
+            <div class="input-group" style="min-width: 200px; flex-grow: 1; max-width: 100%;">
                 <span class="input-group-text bg-dark border-secondary text-secondary"><i
                         class="fas fa-search"></i></span>
                 <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
                     placeholder="Buscar ejercicio...">
             </div>
-            <select class="form-select bg-dark text-white border-secondary" id="filterBodyPart"
-                style="max-width: 180px;">
-                <option value="">Grupo muscular</option>
-                <option value="Chest">Pecho</option>
-                <option value="Back">Espalda</option>
-                <option value="Legs">Piernas</option>
-                <option value="Shoulders">Hombros</option>
-                <option value="Arms">Brazos</option>
-                <option value="Core">Abdomen</option>
-                <option value="Full Body">Cuerpo Completo</option>
-            </select>
-            <select class="form-select bg-dark text-white border-secondary" id="filterEquipment"
-                style="max-width: 160px;">
-                <option value="">Equipo</option>
-                <option value="barbell">Barra</option>
-                <option value="dumbbell">Mancuernas</option>
-                <option value="machine">M&#225;quina</option>
-                <option value="cable">Polea / Cable</option>
-                <option value="bodyweight">Peso Corporal</option>
-                <option value="other">Otro</option>
-            </select>
-            <select class="form-select bg-dark text-white border-secondary" id="filterType" style="max-width: 170px;">
-                <option value="">Tipo</option>
-                <option value="weight">Peso</option>
-                <option value="time">Tiempo</option>
-                <option value="cardio">Cardio</option>
-            </select>
-            <button class="btn btn-outline-secondary text-nowrap" onclick="resetFilters()">
-                <i class="fas fa-undo me-1"></i> Restablecer
-            </button>
-            <button class="btn btn-cyber-primary text-nowrap" onclick="openExerciseModal()">
-                <i class="fas fa-plus me-1"></i> Nuevo Ejercicio
-            </button>
+
+            <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
+                <!-- Scrollable filters on tiny screens -->
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterBodyPart" style="min-width: 130px;">
+                    <option value="">Grupo</option>
+                    <option value="Chest">Pecho</option>
+                    <option value="Back">Espalda</option>
+                    <option value="Legs">Piernas</option>
+                    <option value="Shoulders">Hombros</option>
+                    <option value="Arms">Brazos</option>
+                    <option value="Core">Abdomen</option>
+                    <option value="Full Body">Cuerpo Completo</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterEquipment" style="min-width: 130px;">
+                    <option value="">Equipo</option>
+                    <option value="barbell">Barra</option>
+                    <option value="dumbbell">Mancuernas</option>
+                    <option value="machine">M&#225;quina</option>
+                    <option value="cable">Polea / Cable</option>
+                    <option value="bodyweight">Peso Corporal</option>
+                    <option value="other">Otro</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterType" style="min-width: 100px;">
+                    <option value="">Tipo</option>
+                    <option value="weight">Peso</option>
+                    <option value="time">Tiempo</option>
+                    <option value="cardio">Cardio</option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
+                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0"
+                    onclick="resetFilters()">
+                    <i class="fas fa-undo me-1"></i> <span class="d-none d-md-inline">Restablecer</span>
+                </button>
+                <button class="btn btn-cyber-primary text-nowrap flex-grow-1 flex-md-grow-0"
+                    onclick="openExerciseModal()">
+                    <i class="fas fa-plus me-1"></i> Nuevo <span class="d-none d-md-inline">Ejercicio</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card bg-panel border-0 shadow-lg">
+<div class="card bg-panel border-0 shadow-lg d-none d-md-block">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle" id="exercisesTable">
@@ -72,6 +84,11 @@
             </table>
         </div>
     </div>
+</div>
+
+<!-- Mobile List View -->
+<div id="mobileExercisesList" class="d-md-none d-flex flex-column gap-3">
+    <!-- Populated by JS -->
 </div>
 
 <!-- Modal Crear/Editar Ejercicio -->
@@ -310,9 +327,12 @@
         } catch (e) { console.error(e); }
     }
 
-    function renderTable(exercises) {
+    function renderExercises(exercises) {
         const tbody = document.getElementById("exercisesList");
+        const mobileContainer = document.getElementById("mobileExercisesList");
+
         tbody.innerHTML = "";
+        mobileContainer.innerHTML = "";
 
         const equipmentMap = {
             'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
@@ -323,8 +343,16 @@
             'other': 'Otro'
         };
 
+        if (exercises.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No se encontraron ejercicios</td></tr>';
+            mobileContainer.innerHTML = '<div class="text-center text-muted py-5">No se encontraron ejercicios con los filtros seleccionados.</div>';
+            return;
+        }
+
         exercises.forEach(ex => {
             const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+
+            // Desktop Table Row
             const tr = document.createElement("tr");
             tr.innerHTML = `
             <td>
@@ -355,6 +383,44 @@
             </td>
         `;
             tbody.appendChild(tr);
+
+            // Mobile Card
+            const card = document.createElement("div");
+            card.className = "card bg-panel border-secondary shadow-sm";
+            const videoBtn = hasVideo ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '';
+
+            card.innerHTML = `
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title text-white fw-bold mb-1 d-flex align-items-center">
+                                ${ex.name}
+                                ${videoBtn}
+                            </h5>
+                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                <span class="badge bg-secondary" style="font-size: 0.7rem;">${translateBodyPart(ex.body_part)}</span>
+                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <span class="badge ${ex.is_custom ? 'bg-info text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.65rem;">
+                            ${ex.is_custom ? 'CUSTOM' : 'GLOBAL'}
+                        </span>
+                    </div>
+                    <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripción'}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
+                            <i class="fas fa-dumbbell me-1"></i> ${ex.type}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-warning" onclick="duplicateExercise('${ex._id}')"><i class="fas fa-copy"></i></button>
+                            <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')"><i class="fas fa-edit"></i></button>
+                            ${ex.is_custom ? `<button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            mobileContainer.appendChild(card);
         });
     }
 
@@ -487,7 +553,7 @@
             return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
         });
 
-        renderTable(filtered);
+        renderExercises(filtered);
     }
 
     function resetFilters() {
@@ -501,7 +567,7 @@
         if (filterEquipment) filterEquipment.value = "";
         if (filterType) filterType.value = "";
 
-        renderTable(allExercises);
+        renderExercises(allExercises);
     }
 
     function populateSubstitutes(exercises, currentId, selectedIds = [], bodyPart = null) {

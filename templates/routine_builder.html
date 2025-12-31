@@ -4,8 +4,26 @@
 
 {% block content %}
 <div class="row">
+    <!-- Mobile View Navigation -->
+    <div class="d-lg-none mb-3">
+        <ul class="nav nav-pills nav-fill bg-dark rounded p-1 border border-secondary" id="mobileBuilderNav">
+            <li class="nav-item">
+                <button class="nav-link active text-white" onclick="switchMobileView('details')"
+                    id="mobile-tab-details">
+                    <i class="fas fa-edit me-2"></i>Detalles
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-secondary" onclick="switchMobileView('exercises')"
+                    id="mobile-tab-exercises">
+                    <i class="fas fa-dumbbell me-2"></i>Ejercicios
+                </button>
+            </li>
+        </ul>
+    </div>
+
     <!-- Left: Builder Form -->
-    <div class="col-lg-8">
+    <div class="col-lg-8 mobile-view-pane active" id="builderFormCol">
         <div class="card bg-panel border-0 shadow text-white mb-4">
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
@@ -76,6 +94,10 @@
                     <div class="text-center text-muted py-5" id="emptyState">
                         <i class="fas fa-dumbbell fa-3x mb-3 opacity-25"></i>
                         <p>Selecciona ejercicios del panel derecho para agregarlos.</p>
+                        <button class="btn btn-outline-cyber-blue d-lg-none mt-3"
+                            onclick="switchMobileView('exercises')">
+                            <i class="fas fa-plus me-1"></i> Agregar Ejercicios
+                        </button>
                     </div>
                 </div>
             </div>
@@ -83,7 +105,7 @@
     </div>
 
     <!-- Right: Exercise Picker -->
-    <div class="col-lg-4">
+    <div class="col-lg-4 mobile-view-pane" id="builderSidebarCol">
         <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card"
             style="top: 80px; max-height: 85vh;">
             <div class="card-header border-secondary pb-0">
@@ -365,15 +387,40 @@
         transform: rotate(180deg);
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 991.98px) {
+
+        /* Hide all panes by default on mobile */
+        .mobile-view-pane {
+            display: none !important;
+        }
+
+        /* Show only the active pane */
+        .mobile-view-pane.active {
+            display: block !important;
+        }
+
+        /* Sticky nav top */
+        #mobileBuilderNav {
+            position: sticky;
+            top: 60px;
+            /* Adjust based on navbar height */
+            z-index: 1020;
+            background-color: rgba(33, 37, 41, 0.95);
+            backdrop-filter: blur(5px);
+        }
+
         .builder-sidebar-card {
-            position: relative !important;
-            /* Allow normal flow but constrain height */
-            height: 80vh !important;
-            /* Fixed height for mobile */
-            max-height: 80vh !important;
-            margin-top: 1rem;
-            /* Flex layout from desktop rules will handle the rest */
+            position: static !important;
+            /* Let it flow naturally in its tab */
+            max-height: none !important;
+            /* Full height */
+            height: auto !important;
+        }
+
+        /* Ensure internal tabs in sidebar still scroll if needed inside the pane */
+        .builder-sidebar-card .tab-content {
+            max-height: 70vh !important;
+            overflow-y: auto !important;
         }
 
         .card-header .nav-tabs {
@@ -544,6 +591,41 @@
         if (routineSearch) routineSearch.value = "";
         if (routineFilterBodyPart) routineFilterBodyPart.value = "";
         renderRoutineOptions();
+    }
+
+    // --- Mobile View Switching ---
+    function switchMobileView(viewName) {
+        // viewName: 'details' or 'exercises'
+        const formCol = document.getElementById('builderFormCol');
+        const sidebarCol = document.getElementById('builderSidebarCol');
+        const tabDetails = document.getElementById('mobile-tab-details');
+        const tabExercises = document.getElementById('mobile-tab-exercises');
+
+        if (viewName === 'details') {
+            formCol.classList.add('active');
+            sidebarCol.classList.remove('active');
+
+            tabDetails.classList.add('active', 'text-white');
+            tabDetails.classList.remove('text-secondary');
+
+            tabExercises.classList.remove('active', 'text-white');
+            tabExercises.classList.add('text-secondary');
+
+            // Scroll to top to see form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            formCol.classList.remove('active');
+            sidebarCol.classList.add('active');
+
+            tabDetails.classList.remove('active', 'text-white');
+            tabDetails.classList.add('text-secondary');
+
+            tabExercises.classList.add('active', 'text-white');
+            tabExercises.classList.remove('text-secondary');
+
+            // Scroll to top to see picker
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     async function loadSelectedRoutine() {

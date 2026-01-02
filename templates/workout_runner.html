@@ -197,6 +197,18 @@
             font-size: 1rem;
         }
     }
+
+
+    .heading-wrap {
+        white-space: normal;
+        /* Allow wrapping */
+        word-wrap: break-word;
+        /* Break long words if necessary */
+        line-height: 1.2;
+        /* Adjust line height for readability */
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        /* Responsive font size */
+    }
 </style>
 
 
@@ -1372,7 +1384,7 @@
                     <div className="text-center mb-4">
                         <span className="text-secondary text-uppercase small tracking-widest">{bodyPart}</span>
                         <div className="d-flex align-items-center justify-content-center gap-2 mt-1">
-                            <h2 className="display-6 fw-bold text-white m-0 text-truncate" style={{ maxWidth: '80%' }}>{name}</h2>
+                            <h2 className="display-6 fw-bold text-white m-0 heading-wrap">{name}</h2>
                             {hasVideo && (
                                 <button
                                     type="button"

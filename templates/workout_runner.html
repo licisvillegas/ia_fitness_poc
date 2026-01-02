@@ -2,6 +2,8 @@
 
 {% block title %}Smart Runner - AI Fitness{% endblock %}
 
+{% block sidebar %}{% endblock %}
+
 {% block content %}
 <!-- React Root (Replaces old static HTML) -->
 <div id="react-root" class="h-100"></div>
@@ -34,6 +36,12 @@
     body {
         background-color: #000 !important;
         overflow-x: hidden;
+    }
+
+    /* Hide sidebar margin for full screen */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 
     .runner-container {

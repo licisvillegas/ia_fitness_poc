@@ -162,11 +162,14 @@ def lookup_users():
         
         results = []
         for u in cursor:
+            uid = u.get("user_id")
+            has_p = extensions.db.user_profiles.find_one({"user_id": uid}) is not None
             results.append({
-                "user_id": u.get("user_id"),
+                "user_id": uid,
                 "name": u.get("name"),
                 "email": u.get("email"),
-                "username": u.get("username")
+                "username": u.get("username"),
+                "has_profile": has_p
             })
         return jsonify(results), 200
     except Exception as e:
@@ -682,4 +685,56 @@ def save_routine_builder():
 
     except Exception as e:
         logger.error(f"Error save routine: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.get("/admin/api/users/<user_id>/full_profile")
+def get_user_full_profile(user_id):
+    """Retorna perfil completo (User + Profile) para Body Assessment."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        
+        u = extensions.db.users.find_one({"user_id": user_id})
+        if not u: return jsonify({"error": "Usuario no encontrado"}), 404
+        
+        p = extensions.db.user_profiles.find_one({"user_id": user_id}) or {}
+        
+        # Merge basic info
+        data = {
+            "user_id": u.get("user_id"),
+            "name": u.get("name"),
+            "email": u.get("email"),
+            "username": u.get("username"),
+            "sex": p.get("sex"),
+            "birth_date": format_birth_date(p.get("birth_date")),
+            "age": compute_age(p.get("birth_date")),
+            "height": p.get("height"), # field exists? if not null
+            "weight": p.get("weight"), # field exists?
+            "goals": p.get("goals"),
+            "experience": p.get("experience"),
+            "injuries": p.get("injuries"),
+            "equipment": p.get("equipment"),
+            "equipment": p.get("equipment"),
+            "measurements": p.get("measurements", {})
+        }
+
+        # Try to load latest body assessment for more recent data
+        latest_assessment = extensions.db.body_assessments.find_one(
+            {"user_id": user_id},
+            sort=[("created_at", -1)]
+        )
+        if latest_assessment:
+            inp = latest_assessment.get("input", {})
+            # Prioritize assessment data for measurements and activity if available
+            if inp.get("measurements"):
+                data["measurements"] = inp.get("measurements")
+            if inp.get("activity_level"):
+                data["activity_level"] = inp.get("activity_level") # Inject activity_level
+            if inp.get("goal"):
+                data["goals"] = inp.get("goal") # Override goal if present in assessment
+
+        return jsonify(data), 200
+    except Exception as e:
+        logger.error(f"Error full profile: {e}")
         return jsonify({"error": "Error interno"}), 500

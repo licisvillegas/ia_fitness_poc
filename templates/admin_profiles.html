@@ -252,7 +252,7 @@
 
             async function loadProfiles() {
                 try {
-                    const resp = await fetch('/admin/api/user_profiles');
+                    const resp = await fetch('/api/admin/profiles');
                     if (!resp.ok) throw new Error("Error cargando perfiles");
                     allProfiles = await resp.json();
                     renderProfiles(allProfiles);
@@ -308,54 +308,65 @@
                 }
                 try {
                     const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(t)}`);
-                    const resJson = await resp.json().catch(() => ({}));
-                    if (resp.status === 409) {
-                        const matches = resJson.matches || [];
-                        if (matches.length) {
-                            matchesList.innerHTML = "";
-                            matches.forEach(m => {
-                                const btn = document.createElement("button");
-                                btn.type = "button";
-                                btn.className = "list-group-item list-group-item-action";
-                                btn.textContent = `${m.username || m.name || m.email || m.user_id} (${m.user_id})`;
-                                btn.addEventListener("click", () => {
-                                    matchesModal.hide();
-                                    openCreateFromId(m.user_id);
-                                });
-                                matchesList.appendChild(btn);
-                            });
-                            matchesModal.show();
-                        } else {
-                            showToast(resJson.error || "Multiples coincidencias.", "warning");
-                        }
-                        return;
-                    }
+                    const results = await resp.json().catch(() => ([]));
+
                     if (!resp.ok) {
-                        showToast(resJson.error || "Usuario no encontrado.", "warning");
+                        showToast(results.error || "Error buscando usuario.", "danger");
                         return;
                     }
-                    if (resJson.has_profile) {
+
+                    if (results.length === 0) {
+                        showToast("Usuario no encontrado.", "warning");
+                        return;
+                    }
+
+                    if (results.length > 1) {
+                        // Multiple matches
+                        matchesList.innerHTML = "";
+                        results.forEach(m => {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "list-group-item list-group-item-action";
+                            btn.textContent = `${m.username || m.name || m.email || m.user_id} (${m.user_id})`;
+                            btn.addEventListener("click", () => {
+                                matchesModal.hide();
+                                openCreateFromId(m.user_id);
+                            });
+                            matchesList.appendChild(btn);
+                        });
+                        matchesModal.show();
+                        return;
+                    }
+
+                    // Single match
+                    const m = results[0];
+                    if (m.has_profile) {
                         showToast("El usuario ya tiene perfil.", "info");
                     }
-                    openEditProfile(resJson.user_id, resJson.name || "", resJson.sex || "", resJson.birth_date || "", resJson.phone || "");
+                    openEditProfile(m.user_id, m.name || "", "", "", ""); // sex/birth/phone not returned by lookup yet but that's fine, modal will fetch or be empty
                 } catch (e) {
+                    console.error(e);
                     showToast("Error consultando usuario.", "danger");
                 }
             };
 
             async function openCreateFromId(userId) {
                 try {
-                    const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(userId)}&exact=1`);
-                    const resJson = await resp.json().catch(() => ({}));
-                    if (!resp.ok) {
-                        showToast(resJson.error || "Usuario no encontrado.", "warning");
+                    const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(userId)}&limit=1`);
+                    const results = await resp.json().catch(() => ([]));
+
+                    if (!resp.ok || results.length === 0) {
+                        showToast("Usuario no encontrado.", "warning");
                         return;
                     }
-                    if (resJson.has_profile) {
+
+                    const m = results[0];
+                    if (m.has_profile) {
                         showToast("El usuario ya tiene perfil.", "info");
                     }
-                    openEditProfile(resJson.user_id, resJson.name || "", resJson.sex || "", resJson.birth_date || "", resJson.phone || "");
+                    openEditProfile(m.user_id, m.name || "", "", "", "");
                 } catch (e) {
+                    console.error(e);
                     showToast("Error consultando usuario.", "danger");
                 }
             }
@@ -371,8 +382,8 @@
                 try {
                     btnSave.disabled = true;
                     btnSave.textContent = "Guardando...";
-                    const resp = await fetch('/admin/api/user_profiles/save', {
-                        method: 'POST',
+                    const resp = await fetch(`/api/admin/profiles/${payload.user_id}`, {
+                        method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });

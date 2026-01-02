@@ -197,6 +197,7 @@ def ai_body_assessment():
             "sex": ((payload or {}).get("sex") or "male").lower(),
             "age": (payload or {}).get("age"),
             "goal": (payload or {}).get("goal"),
+            "activity_level": (payload or {}).get("activity_level"),
             "measurements": measurements,
             "photos": sanitize_photos((payload or {}).get("photos")),
             "notes": (payload or {}).get("notes"),
@@ -225,6 +226,35 @@ def ai_body_assessment():
     except Exception as e:
         logger.error(f"Error generando evaluación corporal: {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar evaluación corporal"}), 500
+
+@ai_bp.get("/ai/body_assessment/history/<user_id>")
+def get_body_assessment_history(user_id):
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+        
+        cursor = extensions.db.body_assessments.find(
+            {"user_id": user_id},
+            {"created_at": 1, "output": 1, "backend": 1}
+        ).sort("created_at", -1)
+
+        history = []
+        for doc in cursor:
+            # Create a simple summary
+            created = doc.get("created_at")
+            str_date = created.strftime("%Y-%m-%d %H:%M") if created else "Fecha desconocida"
+            
+            history.append({
+                "id": str(doc.get("_id")),
+                "date": str_date,
+                "output": doc.get("output"),
+                "backend": doc.get("backend")
+            })
+        
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error fetching history: {e}")
+        return jsonify({"error": "Error interno"}), 500
 
 @ai_bp.post("/api/generate_routine")
 def api_generate_routine():

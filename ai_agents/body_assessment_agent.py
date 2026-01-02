@@ -113,16 +113,116 @@ class BodyAssessmentAgent:
             self.init_error,
             len(images) if images else 0,
         )
+
+        # ------------------------------------------------------------------
+        # 1. Deterministic Calculation (US Navy Method) & Context Prep
+        # ------------------------------------------------------------------
+        measurements = context.get("measurements") or {}
+        weight = self._safe_float(measurements.get("weight_kg"))
+        height_cm = self._safe_float(measurements.get("height_cm"))
+        
+        waist = self._safe_float(measurements.get("waist"))
+        abdomen = self._safe_float(measurements.get("abdomen"))
+        chest = self._safe_float(measurements.get("chest"))
+        hip = self._safe_float(measurements.get("hip"))
+        neck = self._safe_float(measurements.get("neck"))
+        
+        arm_relaxed = self._safe_float(measurements.get("arm_relaxed"))
+        arm_flexed = self._safe_float(measurements.get("arm_flexed"))
+        thigh = self._safe_float(measurements.get("thigh"))
+        calf = self._safe_float(measurements.get("calf"))
+
+        age = self._safe_float(context.get("age"), default=30.0)
+        sex = str(context.get("sex", "male")).lower()
+        activity_level = context.get("activity_level")
+
+        height_m = height_cm / 100 if height_cm else 1.75
+        bmi = weight / (height_m**2) if height_m > 0 else 22.0
+
+        # Strict Calc
+        calculated_body_fat = self._estimate_body_fat(
+            sex=sex, height_cm=height_cm or 175, waist=waist, abdomen=abdomen, hip=hip, neck=neck, bmi=bmi, age=age
+        )
+
+        fat_mass = max(0.0, weight * (calculated_body_fat / 100)) if weight else 0.0
+        lean_mass = max(0.0, (weight or 0.0) - fat_mass)
+        
+        # Inject into prompt
+        context["calculations"] = {
+             "body_fat_percent": round(calculated_body_fat, 1),
+             "lean_mass_kg": round(lean_mass, 1),
+             "bmi": round(bmi, 1)
+        }
+        
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_body_assessment_prompt(context_str)
+        
+        # ------------------------------------------------------------------
+        # 2. Execution
+        # ------------------------------------------------------------------
         if self._use_openai:
             try:
                 if images:
-                    return self._run_openai_vision(prompt, images)
-                return self._run_openai(prompt)
+                    result = self._run_openai_vision(prompt, images)
+                else:
+                    result = self._run_openai(prompt)
             except Exception:
-                return self._run_mock(context)
-        return self._run_mock(context)
+                result = self._run_mock(context)
+        else:
+             result = self._run_mock(context)
+        
+        # ------------------------------------------------------------------
+        # 3. Post-Process & Overwrite
+        # ------------------------------------------------------------------
+        # Ensure body composition reflects formula
+        if "body_composition" not in result:
+            result["body_composition"] = {}
+        
+        result["body_composition"]["body_fat_percent"] = round(calculated_body_fat, 1)
+        result["body_composition"]["lean_mass_kg"] = round(lean_mass, 1)
+        result["body_composition"]["fat_mass_kg"] = round(fat_mass, 1)
+        
+        # Muscle Percentage
+        muscle_percent, muscle_notes = self._estimate_muscle_percent(
+            sex=sex, lean_mass=lean_mass, weight=weight, height_cm=height_cm,
+            arm_relaxed=arm_relaxed, arm_flexed=arm_flexed, thigh=thigh, calf=calf
+        )
+        if "muscle_mass_percent" not in result["body_composition"] or result["body_composition"]["muscle_mass_percent"] == 0:
+             result["body_composition"]["muscle_mass_percent"] = round(muscle_percent, 1)
+
+        # Proportions
+        waist_metric = waist if (sex == "female" and waist) else (abdomen or waist or 80)
+        waist_to_height = waist_metric / height_cm if height_cm else None
+        waist_to_hip = waist_metric / hip if hip else None
+        waist_to_chest = waist_metric / chest if chest else None
+        
+        symmetry_notes = self._build_symmetry_notes(
+            waist_to_height, waist_to_hip, waist_to_chest, arm_relaxed, arm_flexed
+        )
+
+        if "proportions" not in result: result["proportions"] = {}
+        result["proportions"]["waist_to_height"] = round(waist_to_height, 3) if waist_to_height else None
+        result["proportions"]["symmetry_notes"] = result["proportions"].get("symmetry_notes") or symmetry_notes
+
+        # Create Frontend Alias
+        result["body_proportions"] = {
+            "waist_to_height_ratio": round(waist_to_height, 3) if waist_to_height else None,
+            "waist_to_hip_ratio": round(waist_to_hip, 3) if waist_to_hip else None,
+            "chest_to_waist_ratio": round(1/waist_to_chest, 3) if (waist_to_chest and waist_to_chest > 0) else None,
+            "symmetry_analysis": result["proportions"].get("symmetry_notes")
+        }
+
+        # Energy Expenditure
+        try:
+            if weight and height_cm and age:
+                energy = self._calculate_energy_expenditure(
+                    sex=sex, weight=weight, height_cm=height_cm, age=age, activity_level=activity_level
+                )
+                result["energy_expenditure"] = energy
+        except Exception:
+            pass 
+            
+        return result
 
     # ------------------------------------------------------------------
     # Backends
@@ -235,16 +335,16 @@ class BodyAssessmentAgent:
         height_m = height_cm / 100 if height_cm else 1.75
         bmi = weight / (height_m**2) if height_m > 0 else 22.0
 
-        waist_for_formula = abdomen or waist
-        waist_for_ratio = waist or abdomen or waist_for_formula or 80.0
+        waist_metric = waist if (sex == "female" and waist) else (abdomen or waist or 80.0)
 
         body_fat = self._estimate_body_fat(
             sex=sex,
             height_cm=height_cm,
-            weight=weight,
-            waist=waist_for_formula,
+            waist=waist,
+            abdomen=abdomen,
             hip=hip,
             neck=neck,
+            weight=weight,
             bmi=bmi,
             age=age,
         )
@@ -263,9 +363,9 @@ class BodyAssessmentAgent:
             calf=calf,
         )
 
-        waist_to_height = waist_for_ratio / height_cm if height_cm else None
-        waist_to_hip = waist_for_ratio / hip if hip else None
-        waist_to_chest = waist_for_ratio / chest if chest else None
+        waist_to_height = waist_metric / height_cm if height_cm else None
+        waist_to_hip = waist_metric / hip if hip else None
+        waist_to_chest = waist_metric / chest if chest else None
 
         symmetry_notes = self._build_symmetry_notes(
             waist_to_height,
@@ -311,6 +411,13 @@ class BodyAssessmentAgent:
                 "waist_to_chest": round(waist_to_chest, 3) if waist_to_chest else None,
                 "symmetry_notes": symmetry_notes,
             },
+            # Aliased for Frontend
+            "body_proportions": {
+                "waist_to_height_ratio": round(waist_to_height, 3) if waist_to_height else None,
+                "waist_to_hip_ratio": round(waist_to_hip, 3) if waist_to_hip else None,
+                "chest_to_waist_ratio": round(1/waist_to_chest, 3) if (waist_to_chest and waist_to_chest > 0) else None,
+                "symmetry_analysis": symmetry_notes
+            },
             "summary": summary,
             "recommendations": recommendations,
             "photo_feedback": photo_feedback,
@@ -333,32 +440,53 @@ class BodyAssessmentAgent:
         *,
         sex: str,
         height_cm: float,
-        weight: float,
-        waist: Optional[float],
+        waist: Optional[float],   # Narrowest (Women)
+        abdomen: Optional[float], # Navel (Men)
         hip: Optional[float],
         neck: Optional[float],
-        bmi: float,
-        age: float,
+        weight: Optional[float] = None, # Unused for navy but kept for signature comp
+        bmi: float = 22.0,
+        age: float = 30.0,
     ) -> float:
-        """Estima % graso utilizando fórmula marina o BMI+edad."""
-
-        try:
-            if all(x and x > 0 for x in (waist, neck, height_cm)):
-                if sex == "female" and hip and hip > 0:
-                    numerator = (waist or 0) + hip - (neck or 0)
-                    if numerator > 0:
-                        return max(12.0, min(48.0, 163.205 * math.log10(numerator) - 97.684 * math.log10(height_cm) - 78.387))
-                else:
-                    numerator = (waist or 0) - (neck or 0)
-                    if numerator > 0:
-                        return max(6.0, min(45.0, 86.010 * math.log10(numerator) - 70.041 * math.log10(height_cm) + 36.76))
-        except (ValueError, ZeroDivisionError):
-            pass
+        """Estima % graso utilizando fórmula marina de EE.UU."""
+        
+        # Ensure we have clean floats
+        h = height_cm
+        n = neck
+        
+        # Select measurement based on sex and instructions
+        if sex == "female":
+            # WOMEN: Use Waist (narrowest) + Hip - Neck
+            # Formula: 163.205 * log10(w + p - c) - 97.684 * log10(h) - 78.387
+            w = waist if (waist and waist > 0) else abdomen # Fallback if waist missing
+            p = hip
+            
+            if w and p and n and h:
+                try:
+                    term1 = w + p - n
+                    if term1 > 0:
+                        bf = 163.205 * math.log10(term1) - 97.684 * math.log10(h) - 78.387
+                        return max(5.0, min(60.0, bf))
+                except Exception:
+                    pass
+        else:
+            # MEN: Use Abdomen (navel) - Neck
+            # Formula: 86.010 * log10(a - c) - 70.041 * log10(h) + 36.76
+            a = abdomen if (abdomen and abdomen > 0) else waist # Fallback if abdomen missing
+            
+            if a and n and h:
+                try:
+                    term1 = a - n
+                    if term1 > 0:
+                        bf = 86.010 * math.log10(term1) - 70.041 * math.log10(h) + 36.76
+                        return max(3.0, min(50.0, bf))
+                except Exception:
+                    pass
 
         # Fallback: fórmula de Deurenberg (BMI + edad)
         sex_flag = 1 if sex != "female" else 0
         body_fat = 1.20 * bmi + 0.23 * age - 10.8 * sex_flag - 5.4
-        return float(max(6.0, min(45.0, body_fat)))
+        return float(max(5.0, min(50.0, body_fat)))
 
     def _estimate_muscle_percent(
         self,
@@ -563,4 +691,41 @@ class BodyAssessmentAgent:
             if start != -1 and end != -1 and end > start:
                 return json.loads(cleaned[start : end + 1])
             raise
+
+    def _calculate_energy_expenditure(
+        self, *, sex: str, weight: float, height_cm: float, age: float, activity_level: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Calcula TMB (Mifflin-St Jeor) y TDEE para varios niveles de actividad."""
+        
+        # Mifflin-St Jeor
+        # Men: (10 × weight) + (6.25 × height) - (5 × age) + 5
+        # Women: (10 × weight) + (6.25 × height) - (5 × age) - 161
+        
+        base = (10 * weight) + (6.25 * height_cm) - (5 * age)
+        if sex == "female":
+            tmb = base - 161
+        else:
+            tmb = base + 5
+            
+        tmb = round(tmb, 0)
+        
+        tdee_map = {
+            "sedentary": round(tmb * 1.2, 0),       # Poco o ningun ejercicio
+            "light": round(tmb * 1.375, 0),         # Ejercicio ligero 1-3 dias
+            "moderate": round(tmb * 1.55, 0),       # Ejercicio moderado 3-5 dias
+            "strong": round(tmb * 1.725, 0),        # Ejercicio fuerte 6-7 dias
+            "very_strong": round(tmb * 1.9, 0)      # Ejercicio muy fuerte / doble sesión
+        }
+
+        selected_tdee = None
+        if activity_level and activity_level in tdee_map:
+            selected_tdee = tdee_map[activity_level]
+
+        return {
+            "tmb": tmb,
+            "tdee": tdee_map,
+            "selected_activity": activity_level,
+            "selected_tdee": selected_tdee
+        }
+
 

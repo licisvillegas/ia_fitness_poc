@@ -214,7 +214,7 @@
                     Introduce datos antropométricos y observaciones de fotos para generar un informe AI.
                   </p>
                 </div>
-                <span class="badge-category">Agente IA Corporal</span>
+                <span class="badge-category"><i class="fas fa-robot"></i></span>
               </div>
 
               <!-- Admin User Search Injection -->
@@ -270,6 +270,16 @@
                         <option value="definicion">Definición</option>
                         <option value="volumen">Volumen</option>
                         <option value="mantenimiento">Mantenimiento</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="activity_level">Nivel de Actividad</label>
+                      <select class="form-select" id="activity_level" name="activity_level">
+                        <option value="sedentary">Sedentario (Poco o nada)</option>
+                        <option value="light">Ligero (1-3 días/sem)</option>
+                        <option value="moderate">Moderado (3-5 días/sem)</option>
+                        <option value="strong">Fuerte (6-7 días/sem)</option>
+                        <option value="very_strong">Muy Fuerte (Doble sesión)</option>
                       </select>
                     </div>
                     <div class="col-12">
@@ -339,6 +349,26 @@
                         step="0.1" />
                     </div>
                   </div>
+
+                  <!-- Visual Examples Carousel -->
+                  <div class="mt-4 border-top border-secondary pt-3">
+                    <h6 class="text-secondary small text-uppercase fw-bold mb-3">Referencias Visuales</h6>
+                    <div class="d-flex gap-3 overflow-auto pb-2" style="scrollbar-width: thin;">
+                      <img src="/static/images/examples/Gemini_Generated_Image_ini2ajini2ajini2.png"
+                        class="rounded border border-secondary example-img"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 1"
+                        onclick="openZoomModal(this.src)">
+                      <img src="/static/images/examples/Gemini_Generated_Image_nb7gfxnb7gfxnb7g.png"
+                        class="rounded border border-secondary example-img"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 2"
+                        onclick="openZoomModal(this.src)">
+                      <img src="/static/images/examples/Gemini_Generated_Image_zhf78hzhf78hzhf7.png"
+                        class="rounded border border-secondary example-img"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 3"
+                        onclick="openZoomModal(this.src)">
+                    </div>
+                    <small class="text-muted" style="font-size: 0.75rem;">* Click para ver en pantalla completa.</small>
+                  </div>
                 </section>
 
                 <section class="mb-4">
@@ -374,20 +404,23 @@
         <div class="col-12 col-xl-5">
           <div class="card h-100">
             <div class="card-body d-flex flex-column">
-              <h2 class="section-title h5 mb-3">Resultado del agente</h2>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title h5 mb-0">Resultado del agente</h2>
+                <select id="history-selector" class="form-select form-select-sm bg-dark text-white border-secondary"
+                  style="width: auto; max-width: 150px; font-size: 0.8rem; display:none;">
+                  <option value="new">Nuevo Análisis</option>
+                </select>
+              </div>
 
               <!-- Placeholder State -->
               <div id="result-placeholder"
-                class="d-flex align-items-center justify-content-center text-secondary border-theme rounded p-4"
-                style="min-height: 400px; background-color: var(--bg-card-hover);">
-                <div class="text-center">
-                  <i class="fas fa-robot fa-3x mb-3 text-theme"></i>
-                  <p>Completa el formulario para iniciar.</p>
-                </div>
+                class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-secondary opacity-75">
+                <i class="fas fa-chart-pie fa-3x mb-3 opacity-25"></i>
+                <p class="mb-0 fw-light small text-uppercase letter-spacing-1">Esperando datos...</p>
               </div>
 
               <!-- Visual Report Container -->
-              <div id="result-container" style="display:none;">
+              <div id="result-container" class="d-none flex-column h-100">
                 <ul class="nav nav-tabs border-secondary mb-3" role="tablist">
                   <li class="nav-item"><button class="nav-link active text-theme bg-transparent" data-bs-toggle="tab"
                       data-bs-target="#tab-visual">Reporte Visual</button></li>
@@ -395,7 +428,7 @@
                       data-bs-target="#tab-json">JSON</button></li>
                 </ul>
 
-                <div class="tab-content h-100" style="overflow-y:auto; max-height:800px; padding-right:5px;">
+                <div class="tab-content flex-grow-1" style="overflow-y:auto; padding-right:5px;">
                   <!-- Visual Tab -->
                   <div class="tab-pane fade show active" id="tab-visual">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -403,38 +436,111 @@
                       <span class="badge bg-primary badge-focus" id="res-focus"></span>
                     </div>
 
-                    <!-- Metrics -->
+                    <!-- Metrics (Always Visible) -->
                     <div class="row g-2 mb-4" id="res-metrics"></div>
 
-                    <!-- Summary -->
-                    <div class="mb-4">
-                      <h6 class="section-title">Resumen</h6>
-                      <p id="res-summary" class="text-theme small"></p>
-                    </div>
+                    <!-- Accordion for detailed sections -->
+                    <div class="accordion" id="assessmentAccordion">
 
-                    <!-- Proportions -->
-                    <div class="mb-4">
-                      <h6 class="section-title">Análisis de Proporciones</h6>
-                      <div class="p-3 rounded" style="background: var(--bg-input);">
-                        <p id="res-symmetry" class="mb-2 text-info small fst-italic"></p>
-                        <div class="d-flex flex-wrap gap-3 small text-secondary">
-                          <span id="res-prop-wh"></span>
-                          <span id="res-prop-whip"></span>
-                          <span id="res-prop-wc"></span>
+                      <!-- Summary -->
+                      <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header" id="headingSummary">
+                          <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseSummary">
+                            <i class="fas fa-align-left me-2 text-primary"></i> Resumen
+                          </button>
+                        </h2>
+                        <div id="collapseSummary" class="accordion-collapse collapse"
+                          data-bs-parent="#assessmentAccordion">
+                          <div class="accordion-body text-theme small">
+                            <p id="res-summary" class="mb-0"></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Recommendations -->
-                    <div class="mb-4">
-                      <h6 class="section-title">Recomendaciones</h6>
-                      <ul id="res-actions" class="list-group list-group-flush bg-transparent"></ul>
-                    </div>
+                      <!-- Energy Expenditure -->
+                      <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header" id="headingEnergy">
+                          <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseEnergy">
+                            <i class="fas fa-fire me-2 text-warning"></i> Gasto Energético
+                          </button>
+                        </h2>
+                        <div id="collapseEnergy" class="accordion-collapse collapse"
+                          data-bs-parent="#assessmentAccordion">
+                          <div class="accordion-body">
+                            <div class="card bg-dark border-secondary">
+                              <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                  <span class="text-secondary small text-uppercase">Tasa Metabólica Basal (TMB)</span>
+                                  <span class="text-warning fw-bold fs-5" id="res-tmb"
+                                    style="text-shadow: 0 0 10px rgba(255, 193, 7, 0.3);">-- kcal</span>
+                                </div>
+                                <hr class="border-secondary my-2" style="opacity: 0.2">
+                                <small class="text-info d-block mb-3 text-uppercase fw-bold"
+                                  style="font-size: 0.75rem; letter-spacing: 1px;">Gasto Total Diario (TDEE)</small>
+                                <ul class="list-unstyled mb-0 small" id="res-tdee-list"></ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                    <!-- Photo Feedback -->
-                    <div class="mb-4">
-                      <h6 class="section-title">Feedback Fotos</h6>
-                      <ul id="res-photos" class="list-group list-group-flush bg-transparent"></ul>
+                      <!-- Proportions -->
+                      <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header" id="headingProps">
+                          <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseProps">
+                            <i class="fas fa-ruler-combined me-2 text-info"></i> Análisis de Proporciones
+                          </button>
+                        </h2>
+                        <div id="collapseProps" class="accordion-collapse collapse"
+                          data-bs-parent="#assessmentAccordion">
+                          <div class="accordion-body">
+                            <div class="p-3 rounded" style="background: var(--bg-input);">
+                              <p id="res-symmetry" class="mb-2 text-info small fst-italic"></p>
+                              <div class="d-flex flex-wrap gap-3 small text-secondary">
+                                <span id="res-prop-wh"></span>
+                                <span id="res-prop-whip"></span>
+                                <span id="res-prop-wc"></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Recommendations -->
+                      <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header" id="headingActions">
+                          <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseActions">
+                            <i class="fas fa-clipboard-list me-2 text-success"></i> Recomendaciones
+                          </button>
+                        </h2>
+                        <div id="collapseActions" class="accordion-collapse collapse"
+                          data-bs-parent="#assessmentAccordion">
+                          <div class="accordion-body p-0">
+                            <ul id="res-actions" class="list-group list-group-flush bg-transparent"></ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Photo Feedback -->
+                      <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header" id="headingPhotos">
+                          <button class="accordion-button collapsed bg-dark text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapsePhotos">
+                            <i class="fas fa-camera-retro me-2 text-secondary"></i> Feedback Fotos
+                          </button>
+                        </h2>
+                        <div id="collapsePhotos" class="accordion-collapse collapse"
+                          data-bs-parent="#assessmentAccordion">
+                          <div class="accordion-body p-0">
+                            <ul id="res-photos" class="list-group list-group-flush bg-transparent"></ul>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
 
@@ -489,7 +595,19 @@
           resultsConfig.style.display = 'block';
 
           const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
-          const data = await resp.json();
+          if (!resp.ok) {
+            const errText = await resp.text();
+            resultsConfig.innerHTML = `<div class="list-group-item text-danger">Error ${resp.status}: ${errText || 'No se pudo buscar'}</div>`;
+            return;
+          }
+
+          let data = [];
+          try {
+            data = await resp.json();
+          } catch (e) {
+            resultsConfig.innerHTML = '<div class="list-group-item text-danger">Respuesta no valida del servidor</div>';
+            return;
+          }
           resultsConfig.innerHTML = '';
 
           let users = [];
@@ -508,7 +626,7 @@
               el.innerHTML = `<div><strong>${u.name || u.username || 'Usuario'}</strong> <small class="text-muted">(${u.email || ''})</small></div><small class="text-xs text-secondary">ID: ${u.user_id}</small>`;
               el.onclick = (e) => {
                 e.preventDefault();
-                selectUser(u.user_id);
+                selectUser(u);
               };
               resultsConfig.appendChild(el);
             });
@@ -518,23 +636,46 @@
         }
       }
 
-      async function selectUser(userId) {
+      async function selectUser(userOrId) {
+        const userId = typeof userOrId === 'string' ? userOrId : (userOrId && userOrId.user_id);
+        if (!userId) return;
+
         resultsConfig.style.display = 'none';
         searchInput.value = "Cargando datos...";
 
         try {
-          // Save Context (Optimistic, before fetch)
-          // We don't have the full object here yet, but we have the ID. 
-          // Actually, selectUser takes userId. We might need to fetch first to get name for storage?
-          // The previous pages passed the whole object 'u'. This function takes 'userId'.
-          // Let's fetch first, then save.
+          // Optimistic prefill so the form can submit even if lookup fails.
+          document.getElementById("user_id").value = userId;
+          if (document.getElementById("display_user_name")) {
+            const displayName = (userOrId && (userOrId.name || userOrId.username)) || userId;
+            document.getElementById("display_user_name").value = displayName;
+          }
+
+          // Save Context when we already have a user object.
+          if (userOrId && typeof userOrId === 'object') {
+            try {
+              const ctxUser = {
+                user_id: userOrId.user_id,
+                name: userOrId.name,
+                username: userOrId.username,
+                email: userOrId.email
+              };
+              localStorage.setItem('admin_working_user', JSON.stringify(ctxUser));
+            } catch (e) { }
+          }
+
+          // Load history even if full profile fetch fails.
+          if (typeof loadHistory === 'function') {
+            loadHistory(userId);
+          } else {
+            console.error("loadHistory function is missing!");
+          }
 
           const resp = await fetch(`/admin/api/users/${userId}/full_profile`);
           if (!resp.ok) throw new Error("Error cargando perfil");
 
           const data = await resp.json();
 
-          // Populate Form
           // Populate Form
           document.getElementById("user_id").value = data.user_id || "";
 
@@ -558,7 +699,14 @@
 
           if (data.sex) document.getElementById("sex").value = data.sex;
           if (data.age) document.getElementById("age").value = data.age;
-          if (data.goal) document.getElementById("goal").value = data.goal;
+
+          // Handle Goal (legacy 'goals' vs new 'goal')
+          const goalVal = data.goal || data.goals;
+          if (goalVal) document.getElementById("goal").value = goalVal;
+
+          // Handle Activity Level
+          if (data.activity_level) document.getElementById("activity_level").value = data.activity_level;
+
           if (data.notes) document.getElementById("notes").value = data.notes;
 
           const measures = data.measurements || {};
@@ -578,25 +726,107 @@
         } catch (e) {
           console.error(e);
           searchInput.value = "";
-          alert("Error cargando datos del usuario: " + e.message);
+          alert("Error cargando datos del usuario: " + e.message + "\nVerificar consola para mas detalles.");
         }
       }
 
-      if (document.getElementById('btnLookupUser')) {
-        document.getElementById('btnLookupUser').addEventListener('click', performUserLookup);
-        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
-        document.addEventListener('click', (e) => {
-          if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
-            resultsConfig.style.display = 'none';
+      // History Logic
+      let currentHistory = [];
+      const historySelector = document.getElementById('history-selector');
+
+      async function loadHistory(userId) {
+        try {
+          historySelector.style.display = 'none';
+          historySelector.innerHTML = '<option value="new">Nuevo Análisis</option>';
+          currentHistory = [];
+
+          const resp = await fetch(`/ai/body_assessment/history/${userId}`);
+          if (resp.ok) {
+            const histData = await resp.json();
+            if (histData.length > 0) {
+              currentHistory = histData;
+              histData.forEach((item, idx) => {
+                const op = document.createElement('option');
+                op.value = idx; // index in currentHistory
+                op.text = item.date;
+                historySelector.appendChild(op);
+              });
+              historySelector.style.display = 'block';
+            }
           }
-        });
+          // Reset view to new
+          renderAssessmentResult(null);
+          historySelector.value = "new";
+
+        } catch (e) { console.error("History error", e); }
       }
+
+      historySelector.addEventListener('change', function () {
+        if (this.value === 'new') {
+          renderAssessmentResult(null);
+        } else {
+          const item = currentHistory[this.value];
+          if (item) {
+            // Construct a mock response object consistent with renderAssessmentResult expectation
+            const mockData = {
+              backend: item.backend,
+              output: item.output,
+              input: {} // We might not have full input stored in this simple View, but focus badge uses it. 
+              // Ideally backend should return it or we fallback safely.
+            };
+            renderAssessmentResult(mockData);
+          }
+        }
+      });
+
+
       // ---------------------------------------------
 
       let zoomModal;
       document.addEventListener('DOMContentLoaded', () => {
         const modalEl = document.getElementById('imageZoomModal');
         if (modalEl) zoomModal = new bootstrap.Modal(modalEl);
+
+        // Bind Search Events safely
+        const btnLookup = document.getElementById('btnLookupUser');
+        const searchInp = document.getElementById('userSearchTerm');
+
+        if (btnLookup) {
+          btnLookup.addEventListener('click', performUserLookup);
+        }
+        if (searchInp) {
+          searchInp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              performUserLookup();
+            }
+          });
+          // Close search results on click outside
+          document.addEventListener('click', (e) => {
+            if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
+              if (resultsConfig) resultsConfig.style.display = 'none';
+            }
+          });
+        }
+
+        // Auto-load user from URL or LocalStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('user_id');
+
+        if (urlUserId) {
+          selectUser(urlUserId);
+        } else {
+          // Check LocalStorage
+          try {
+            const stored = localStorage.getItem('admin_working_user');
+            if (stored) {
+              const u = JSON.parse(stored);
+              if (u && u.user_id) {
+                selectUser(u);
+              }
+            }
+          } catch (e) { }
+        }
       });
 
       function createPhotoRow(initial = {}) {
@@ -722,10 +952,11 @@
         if (document.getElementById("display_user_name")) {
           document.getElementById("display_user_name").value = "Usuario Demo 01";
         }
-        document.getElementById("sex").value = sampleData.sex;
-        document.getElementById("age").value = sampleData.age;
-        document.getElementById("goal").value = sampleData.goal;
-        document.getElementById("notes").value = sampleData.notes;
+        document.getElementById("sex").value = sampleData.sex || "male";
+        document.getElementById("age").value = sampleData.age || "";
+        document.getElementById("goal").value = sampleData.goals || "volumen";
+        document.getElementById("activity_level").value = sampleData.activity_level || "sedentary";
+        document.getElementById("notes").value = sampleData.notes || "";
 
         document.querySelectorAll("[data-measure]").forEach((input) => {
           const key = input.getAttribute("data-measure");
@@ -746,6 +977,7 @@
           sex: form.sex.value,
           age: form.age.value ? Number(form.age.value) : null,
           goal: form.goal.value || null,
+          activity_level: form.activity_level.value || "sedentary",
           notes: form.notes.value.trim() || null,
           measurements: {},
           photos: [],
@@ -795,103 +1027,149 @@
             throw new Error(data.error || "Error al generar la evaluación");
           }
 
-          // --- SUCCES: Render Visual Report ---
-          document.getElementById('result-placeholder').style.display = 'none';
-          document.getElementById('result-container').style.display = 'block';
+          // Use shared render function
+          renderAssessmentResult(data);
 
-          // 1. JSON Raw (para debug)
-          resultOutput.textContent = JSON.stringify(data, null, 2);
-
-          // 2. Populate Visual Elements
-          const out = data.output || {};
-          const inp = data.input || {};
-
-          document.getElementById('res-backend').textContent = 'Backend: ' + (data.backend || 'unknown');
-
-          // Focus Badge
-          const rec = out.recommendations || {};
-          const focus = rec.focus || (inp.goal || 'General');
-          const badge = document.getElementById('res-focus');
-          badge.textContent = focus.toUpperCase();
-          badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
-
-          // Metrics
-          const comp = out.body_composition || {};
-          const metricsRow = document.getElementById('res-metrics');
-          metricsRow.innerHTML = '';
-          const metrics = [
-            { label: '% GRASA', val: comp.body_fat_percent, unit: '%' },
-            { label: 'MASA MAGRA', val: comp.lean_mass_kg, unit: 'kg' },
-            { label: 'MASA GRASA', val: comp.fat_mass_kg, unit: 'kg' },
-            { label: '% MÚSCULO', val: comp.muscle_mass_percent, unit: '%' }
-          ];
-          metrics.forEach(m => {
-            const col = document.createElement('div');
-            col.className = 'col-6 col-md-3';
-            col.innerHTML = `
-                  <div class="metric-card p-2">
-                      <div class="metric-value" style="font-size:1.4rem">${m.val !== undefined ? m.val : '-'} <small style="font-size:0.5em">${m.unit}</small></div>
-                      <div class="metric-label" style="font-size:0.7rem">${m.label}</div>
-                  </div>
-              `;
-            metricsRow.appendChild(col);
-          });
-
-          // Summary
-          document.getElementById('res-summary').textContent = out.summary || 'Sin resumen disponible.';
-
-          // Proportions
-          const prop = out.proportions || {};
-          document.getElementById('res-symmetry').textContent = prop.symmetry_notes || '';
-          document.getElementById('res-prop-wh').innerHTML = `Cin/Alt: <strong class="text-theme">${prop.waist_to_height || '-'}</strong>`;
-          document.getElementById('res-prop-whip').innerHTML = `Cin/Cad: <strong class="text-theme">${prop.waist_to_hip || '-'}</strong>`;
-          document.getElementById('res-prop-wc').innerHTML = `Cin/Pecho: <strong class="text-theme">${prop.waist_to_chest || '-'}</strong>`;
-
-          // Actions
-          const actionsList = document.getElementById('res-actions');
-          actionsList.innerHTML = '';
-          if (rec.actions && rec.actions.length) {
-            rec.actions.forEach(a => {
-              const li = document.createElement('li');
-              li.className = 'list-group-item bg-transparent text-secondary ps-0 small py-1';
-              li.innerHTML = `<i class="fas fa-check-circle text-primary me-2"></i> ${a}`;
-              actionsList.appendChild(li);
-            });
-          } else {
-            actionsList.innerHTML = '<li class="text-muted small">Sin recomendaciones</li>';
-          }
-
-          // Photos
-          const photoListEl = document.getElementById('res-photos');
-          photoListEl.innerHTML = '';
-          if (out.photo_feedback && out.photo_feedback.length) {
-            out.photo_feedback.forEach(f => {
-              const li = document.createElement('li');
-              li.className = 'list-group-item bg-transparent text-secondary ps-0 small py-1';
-              li.innerHTML = `<i class="fas fa-camera text-secondary me-2"></i> ${f}`;
-              photoListEl.appendChild(li);
-            });
-          } else {
-            photoListEl.innerHTML = '<li class="text-muted small">Sin feedback de fotos</li>';
-          }
-
-          // Activate Visual Tab
-          const visualTabBtn = document.querySelector('#result-container button[data-bs-target="#tab-visual"]');
-          if (visualTabBtn) { const t = new bootstrap.Tab(visualTabBtn); t.show(); }
-
-        } catch (error) {
-          resultOutput.textContent = `⚠️ ${error.message}`;
-          document.getElementById('result-placeholder').style.display = 'none';
-          document.getElementById('result-container').style.display = 'block';
-          // Switch to JSON tab to see error
-          const jsonTabBtn = document.querySelector('#result-container button[data-bs-target="#tab-json"]');
-          if (jsonTabBtn) { const t = new bootstrap.Tab(jsonTabBtn); t.show(); }
+        } catch (e) {
+          console.error(e);
+          alert(e.message);
         } finally {
           loadingIndicator.classList.add("d-none");
+          loadingIndicator.classList.remove("d-flex");
           submitBtn.disabled = false;
         }
       });
 
+      // --- Rendering Logic ---
+      function renderAssessmentResult(data) {
+        const resultPlace = document.getElementById('result-placeholder');
+        const resultCont = document.getElementById('result-container');
+
+        if (!data || !data.output) {
+          resultPlace.classList.remove('d-none');
+          resultPlace.classList.add('d-flex');
+          resultCont.classList.add('d-none');
+          resultCont.classList.remove('d-flex');
+          return;
+        }
+
+        resultPlace.classList.add('d-none');
+        resultPlace.classList.remove('d-flex');
+
+        resultCont.classList.remove('d-none');
+        resultCont.classList.add('d-flex');
+
+        // 1. JSON Raw
+        resultOutput.textContent = JSON.stringify(data, null, 2);
+
+        // 2. Populate Visual Elements
+        const out = data.output || {};
+        const inp = data.input || {};
+        const res = data.output; // Alias
+
+        document.getElementById('res-backend').textContent = 'Backend: ' + (data.backend || 'unknown');
+
+        // Focus Badge
+        const rec = out.recommendations || {};
+        const focus = rec.focus || (inp.goal || 'General');
+        const badge = document.getElementById('res-focus');
+        badge.textContent = focus.toUpperCase();
+        badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
+
+        // Metrics
+        const metricsDiv = document.getElementById('res-metrics');
+        metricsDiv.innerHTML = `
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.body_fat_percent}%</div><div class="metric-label">Grasa Corporal</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.muscle_mass_percent}%</div><div class="metric-label">Masa Muscular</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.lean_mass_kg} kg</div><div class="metric-label">Masa Magra</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.fat_mass_kg} kg</div><div class="metric-label">Masa Grasa</div></div></div>
+          `;
+
+        // Summary
+        document.getElementById('res-summary').innerText = res.summary || "Sin resumen disponible.";
+
+        // Energy Expenditure
+        const energy = res.energy_expenditure || {};
+        const tmbVal = energy.tmb ? `${energy.tmb} kcal` : "--";
+        document.getElementById('res-tmb').innerText = tmbVal;
+
+        const tdeeList = document.getElementById('res-tdee-list');
+        tdeeList.innerHTML = '';
+        if (energy.tdee) {
+          const labels = {
+            "sedentary": "Sedentario",
+            "light": "Ligero (1-3 días)",
+            "moderate": "Moderado (3-5 días)",
+            "strong": "Fuerte (6-7 días)",
+            "very_strong": "Muy fuerte"
+          };
+          for (const [key, val] of Object.entries(energy.tdee)) {
+            const label = labels[key] || key;
+            const isSelected = energy.selected_activity === key;
+
+            const labelClass = isSelected ? "text-white fw-bold" : "text-secondary";
+            const valueClass = isSelected ? "text-warning fw-bold" : "text-light";
+            const bgClass = isSelected ? "bg-dark border border-warning rounded shadow-sm py-2 px-2 my-2" : "py-1 px-2";
+            const checkIcon = isSelected ? '<i class="fas fa-check-circle text-warning me-2"></i>' : '';
+
+            tdeeList.innerHTML += `
+                    <li class="d-flex justify-content-between align-items-center ${bgClass}">
+                        <span class="${labelClass}">${checkIcon}${label}</span>
+                        <span class="${valueClass} font-monospace">${val} kcal</span>
+                    </li>`;
+          }
+        } else {
+          tdeeList.innerHTML = '<li class="text-muted fst-italic">No disponible</li>';
+        }
+
+        // Proportions - Symmetry
+        let props = res.body_proportions;
+
+        // Fallback for legacy history items (old format had 'proportions' but not 'body_proportions')
+        if (!props && res.proportions) {
+          const old = res.proportions;
+          props = {
+            symmetry_analysis: old.symmetry_notes,
+            waist_to_height_ratio: old.waist_to_height,
+            waist_to_hip_ratio: old.waist_to_hip,
+            // Old was waist_to_chest. New wants chest_to_waist. Invert if possible.
+            chest_to_waist_ratio: (old.waist_to_chest && old.waist_to_chest > 0) ? (1 / old.waist_to_chest).toFixed(2) : null
+          };
+        }
+        props = props || {};
+        document.getElementById('res-symmetry').innerText = props.symmetry_analysis || "";
+
+        document.getElementById('res-prop-wh').innerHTML = `Cintura/Altura: <strong class="text-white">${props.waist_to_height_ratio || '--'}</strong>`;
+        document.getElementById('res-prop-whip').innerHTML = `Cintura/Cadera: <strong class="text-white">${props.waist_to_hip_ratio || '--'}</strong>`;
+        document.getElementById('res-prop-wc').innerHTML = `Pecho/Cintura: <strong class="text-white">${props.chest_to_waist_ratio || '--'}</strong>`;
+
+        // Actions / Recommendations
+        const actionsList = document.getElementById('res-actions');
+        const photoListEl = document.getElementById('res-photos');
+        if (actionsList) actionsList.innerHTML = '<li class="text-muted small">Sin acciones registradas</li>';
+        if (photoListEl) photoListEl.innerHTML = '<li class="text-muted small">Sin feedback de fotos</li>';
+
+        // Populate Recommendations
+        if (rec.actions && rec.actions.length > 0) {
+          actionsList.innerHTML = '';
+          rec.actions.forEach(action => {
+            actionsList.innerHTML += `<li class="list-group-item bg-transparent text-white border-0 ps-0"><i class="fas fa-check text-success me-2"></i>${action}</li>`;
+          });
+        }
+
+        // Populate Photo Feedback
+        const feedback = res.photo_feedback || [];
+        if (feedback && feedback.length > 0) {
+          photoListEl.innerHTML = '';
+          feedback.forEach(item => {
+            photoListEl.innerHTML += `<li class="list-group-item bg-transparent text-white border-0 ps-0"><i class="fas fa-camera text-info me-2"></i>${item}</li>`;
+          });
+        }
+
+        // Activate Visual Tab
+        const visualTabBtn = document.querySelector('#result-container button[data-bs-target="#tab-visual"]');
+        if (visualTabBtn) { const t = new bootstrap.Tab(visualTabBtn); t.show(); }
+      }
 
       // Context Recovery
       window.addEventListener('DOMContentLoaded', () => {
@@ -901,12 +1179,20 @@
             const u = JSON.parse(ctx);
             // Only auto-load if input is empty
             if (u && u.user_id && !document.getElementById('user_id').value) {
-              // We call selectUser with ID
-              selectUser(u.user_id);
+              // We call selectUser with cached user object
+              selectUser(u);
             }
           }
         } catch (e) { }
       });
+
+      // Global zoom helper
+      window.openZoomModal = function (src) {
+        if (src && zoomModal) {
+          document.getElementById('zoomedImage').src = src;
+          zoomModal.show();
+        }
+      };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   </div>

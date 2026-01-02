@@ -204,9 +204,9 @@
         /* Allow wrapping */
         word-wrap: break-word;
         /* Break long words if necessary */
-        line-height: 1.2;
+        line-height: 1.1;
         /* Adjust line height for readability */
-        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        font-size: clamp(1.2rem, 5vw, 2.2rem);
         /* Responsive font size */
     }
 </style>
@@ -1257,32 +1257,49 @@
         // but cleaner to have the main button Context-aware or passed down. 
         // We'll use a specific ID based approach or shared state if needed.
         // BETTER: The MainButton is smart. It detects "Type". 
-        // Actually, let's keep the submit logic in the View for the 'Active' state.
 
-        // HACK: Attach a global handler or use context to pass the 'doAction' reference?
-        // Let's use a "Ref" stored in context? No, too complex.
-        // Simple: This component RENDERS the Main Action Button? No, button is sticky bottom.
-        // Solution: Lift state up to 'ActiveExercise' or use a Context setter.
+
+
+        const adjustWeight = (delta) => {
+            let val = parseFloat(weight) || 0;
+            const newVal = Math.max(0, val + delta);
+            setWeight(newVal.toString());
+        };
 
         return (
             <div className="py-2">
                 <div className="row g-2 justify-content-center mb-4">
-                    <div className="col-4">
-                        <label className="text-secondary small fw-bold mb-2 d-block">PESO (KG)</label>
-                        <input type="number"
-                            ref={weightInputRef}
-                            className="form-control input-hud"
-                            value={weight}
-                            onChange={e => setWeight(e.target.value)}
-                            placeholder="0"
-                            onClick={(e) => e.target.select()}
-                        />
+                    <div className="col-12 col-md-6">
+                        <label className="text-secondary small fw-bold mb-2 d-block text-center">PESO (KG)</label>
+                        <div className="d-flex align-items-center justify-content-center gap-2">
+                            <button
+                                className="btn btn-outline-secondary"
+                                type="button"
+                                style={{ width: '44px', height: '44px' }}
+                                onClick={() => adjustWeight(-2.5)}
+                            >-</button>
+                            <input type="number"
+                                ref={weightInputRef}
+                                className="form-control input-hud text-center"
+                                style={{ maxWidth: '120px' }}
+                                value={weight}
+                                onChange={e => setWeight(e.target.value)}
+                                placeholder="0"
+                                onClick={(e) => e.target.select()}
+                            />
+                            <button
+                                className="btn btn-outline-secondary"
+                                type="button"
+                                style={{ width: '44px', height: '44px' }}
+                                onClick={() => adjustWeight(2.5)}
+                            >+</button>
+                        </div>
                     </div>
-                    <div className="col-8">
-                        <label className="text-secondary small fw-bold mb-2 d-block">
+                    <div className="col-12 col-md-6">
+                        <label className="text-secondary small fw-bold mb-2 d-block text-center">
                             REPS {step.target.reps && <span className="text-cyber-green ms-2">(Meta: {step.target.reps})</span>}
                         </label>
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center justify-content-center gap-2">
                             <button
                                 className="btn btn-outline-secondary"
                                 type="button"
@@ -1292,6 +1309,7 @@
                             <input
                                 type="text"
                                 className="form-control input-hud"
+                                style={{ maxWidth: '120px' }}
                                 value={reps}
                                 onChange={e => setReps(e.target.value)}
                                 placeholder="0"
@@ -1383,15 +1401,16 @@
 
                     <div className="text-center mb-4">
                         <span className="text-secondary text-uppercase small tracking-widest">{bodyPart}</span>
-                        <div className="d-flex align-items-center justify-content-center gap-2 mt-1">
+                        <div className="d-flex flex-column align-items-center justify-content-center gap-2 mt-1">
                             <h2 className="display-6 fw-bold text-white m-0 heading-wrap">{name}</h2>
                             {hasVideo && (
                                 <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger rounded-circle"
+                                    className="btn btn-sm btn-outline-danger rounded-pill px-3 py-1"
+                                    style={{ fontSize: '0.8rem' }}
                                     onClick={() => openVideoModal(ex.video_url)}
                                 >
-                                    <i className="fab fa-youtube"></i>
+                                    <i className="fab fa-youtube me-2"></i> Ver Tutorial
                                 </button>
                             )}
                         </div>

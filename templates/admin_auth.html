@@ -267,7 +267,7 @@
             } catch (_) {
               // ignorar errores de precarga; la redirección intentará cargar de todos modos
             }
-            window.location.href = `/admin/plans`;
+            window.location.href = `/admin`;
           } catch (error) {
             // Error de red o servidor: mostrar alerta, limpiar y re-habilitar
             setLoading(loginForm, false);
@@ -327,7 +327,7 @@
             return;
           }
           // Éxito: cookie establecida; redirige sin token en la URL
-          window.location.href = '/admin/plans';
+          window.location.href = '/admin';
         } catch (e) {
           if (submitBtn) {
             submitBtn.disabled = false;

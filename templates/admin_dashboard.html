@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fitness | Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container py-4">
+            <div class="mb-4">
+                <h2 class="text-theme">Panel de Administración</h2>
+                <p class="text-secondary">Bienvenido al centro de control de AI Fitness.</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Tarjeta Usuarios -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-primary mb-3"><i class="fas fa-users"></i></div>
+                            <h5 class="card-title">Usuarios</h5>
+                            <p class="card-text text-secondary">Gestionar usuarios, roles y estados.</p>
+                            <a href="/admin/users" class="btn btn-outline-primary stretched-link">Ir a Usuarios</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Perfiles -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-info mb-3"><i class="fas fa-user-circle"></i></div>
+                            <h5 class="card-title">Perfiles Deportivos</h5>
+                            <p class="card-text text-secondary">Ver y editar datos físicos y preferencias.</p>
+                            <a href="/admin/profiles" class="btn btn-outline-info stretched-link">Ir a Perfiles</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Planes -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-success mb-3"><i class="fas fa-dumbbell"></i></div>
+                            <h5 class="card-title">Planes de Entrenamiento</h5>
+                            <p class="card-text text-secondary">Administrar planes activos e historial.</p>
+                            <a href="/admin/plans" class="btn btn-outline-success stretched-link">Ir a Planes</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Nutrición -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-warning mb-3"><i class="fas fa-utensils"></i></div>
+                            <h5 class="card-title">Planes de Nutrición</h5>
+                            <p class="card-text text-secondary">Gestionar dietas y macros generados por IA.</p>
+                            <a href="/admin/meal_plans" class="btn btn-outline-warning stretched-link">Ir a
+                                Nutrición</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Evaluaciones -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-purple mb-3"><i class="fas fa-camera"></i></div>
+                            <h5 class="card-title">Evaluaciones Corporales</h5>
+                            <p class="card-text text-secondary">Revisar análisis de cuerpo por IA.</p>
+                            <a href="/admin/body_assessments" class="btn btn-outline-primary stretched-link"
+                                style="border-color: var(--bs-purple); color: var(--bs-purple);">Ir a Evaluaciones</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Ejercicios -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-secondary mb-3"><i class="fas fa-list-ul"></i></div>
+                            <h5 class="card-title">Catálogo de Ejercicios</h5>
+                            <p class="card-text text-secondary">Administrar base de datos de ejercicios.</p>
+                            <a href="/admin/exercises" class="btn btn-outline-secondary stretched-link">Ir a
+                                Ejercicios</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Routine Builder -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-danger mb-3"><i class="fas fa-hammer"></i></div>
+                            <h5 class="card-title">Constructor de Rutinas</h5>
+                            <p class="card-text text-secondary">Herramienta visual para crear rutinas.</p>
+                            <a href="/admin/routines/builder" class="btn btn-outline-danger stretched-link">Ir a
+                                Builder</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Privilegios -->
+                <div class="col-md-4">
+                    <div class="card h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="display-4 text-light mb-3"><i class="fas fa-shield-alt"></i></div>
+                            <h5 class="card-title">Privilegios</h5>
+                            <p class="card-text text-secondary">Control de acceso avanzado.</p>
+                            <a href="/admin/privileges" class="btn btn-outline-light stretched-link">Ir a
+                                Privilegios</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .hover-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary-color);
+        }
+
+        .text-purple {
+            color: #6f42c1;
+        }
+    </style>
+</body>
+
+</html>

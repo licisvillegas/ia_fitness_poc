@@ -222,6 +222,29 @@ def api_save_session():
         return jsonify({"error": str(e)}), 500
 
 
+@workout_bp.get("/api/routines")
+def list_routines():
+    """Retorna lista de rutinas para un usuario"""
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify([]), 200
+    
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "DB not ready"}), 503
+        
+    try:
+        cursor = db.routines.find({"user_id": user_id}).sort("created_at", -1)
+        results = []
+        for r in cursor:
+            r["_id"] = str(r["_id"])
+            results.append(r)
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error fetching routines: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+
 @workout_bp.route("/api/sessions", methods=["GET"])
 def api_get_workout_sessions():
     """Lista sesiones recientes de entrenamiento."""

@@ -32,187 +32,169 @@
 
 <!-- STYLES -->
 <style>
-    /* Base Overrides for Full Screen App */
+    /* Zero-Scroll Native Layout */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
     body {
         background-color: #000 !important;
-        overflow-x: hidden;
+        color: white;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        height: 100dvh;
+        /* Dynamic Viewport Height */
+        width: 100vw;
+        overflow: hidden;
+        /* Prevent body scroll */
+        overscroll-behavior: none;
+        /* No bounce */
     }
 
-    /* Hide sidebar margin for full screen */
-    .main-content {
-        margin-left: 0 !important;
-        width: 100% !important;
+    #react-root {
+        height: 100%;
+        width: 100%;
     }
 
-    .runner-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding-bottom: 100px;
-        /* Space for Sticky Footer */
-        min-height: 100vh;
+    /* Main Flex Container */
+    .player-container {
+        height: 100%;
+        width: 100%;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        background: #000;
     }
 
-    /* Utility Classes */
+    /* 1. HEADER (Fixed) */
+    .header-section {
+        flex: 0 0 auto;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+    }
+
+    /* 2. VISUAL STAGE (Flexible) */
+    .visual-stage {
+        flex: 1 1 auto;
+        position: relative;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
+        /* Internal scroll if needed */
+        overflow-x: hidden;
+        perspective: 1000px;
+        padding: 1rem;
+    }
+
+    /* 3. CONTROLS (Fixed Bottom) */
+    .controls-section {
+        flex: 0 0 auto;
+        background: #111;
+        border-top: 1px solid #333;
+        padding: 15px;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        z-index: 20;
+    }
+
+    /* Component Styles */
+    .active-card {
+        width: 100%;
+        max-width: 600px;
+        background: #1a1a1a;
+        border: 2px solid #333;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    .active-card.time-mode {
+        border-color: #00ff9d;
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.15);
+    }
+
+    /* Typography & Utilities */
     .text-cyber-green {
         color: #00ff9d !important;
     }
 
     .text-cyber-orange {
         color: #ff9d00 !important;
-        text-shadow: 0 0 15px rgba(255, 157, 0, 0.4);
-    }
-
-    .bg-black-trans {
-        background: rgba(10, 10, 10, 0.9);
-    }
-
-    .border-cyber-active {
-        border: 2px solid #00ff9d;
-        box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
-    }
-
-    .active-exercise-card {
-        padding-bottom: 1rem;
     }
 
     .input-hud {
-        background: #111;
+        background: #000;
         border: 1px solid #333;
         color: white;
         font-family: 'Courier New', monospace;
-        font-size: 2.5rem;
-        font-weight: bold;
+        font-size: 2rem;
         text-align: center;
         border-radius: 12px;
+        height: 60px;
     }
 
     .input-hud:focus {
-        background: #1a1a1a;
-        color: #00ff9d;
         border-color: #00ff9d;
-        box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
         outline: none;
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
     }
 
-    .btn-cyber-large {
-        background: #00ff9d;
-        /* Green default */
-        color: black;
-        font-weight: 900;
-        letter-spacing: 2px;
+    .btn-action {
+        background: #00E676;
+        /* Vibrant Green */
+        color: #000;
+        font-weight: 800;
         text-transform: uppercase;
         border: none;
-        box-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        height: 70px;
-        font-size: 1.2rem;
-        border-radius: 12px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        padding: 16px;
+        width: 100%;
+        box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+        transition: transform 0.1s;
     }
 
-    .btn-cyber-large:hover {
-        background: #00d2ff;
-        /* Blue on hover */
-        box-shadow: 0 0 30px rgba(0, 210, 255, 0.6);
-        transform: translateY(-2px);
-    }
-
-    .btn-cyber-large:active {
-        background: #00b8e6;
-        /* Darker blue active */
-        transform: scale(0.96);
+    .btn-action:active {
+        transform: scale(0.98);
     }
 
     /* Animations */
-    @keyframes slideUp {
+    @keyframes slideIn {
         from {
-            transform: translateY(100%);
+            opacity: 0;
+            transform: translateY(20px);
         }
 
         to {
+            opacity: 1;
             transform: translateY(0);
         }
     }
 
-    @keyframes pulse {
-        0% {
-            opacity: 0.8;
-        }
-
-        50% {
-            opacity: 1;
-        }
-
-        100% {
-            opacity: 0.8;
-        }
-    }
-
-    .animate-slide-up {
-        animation: slideUp 0.3s ease-out;
-    }
-
-    .animate-pulse {
-        animation: pulse 2s infinite;
-    }
-
-    /* React Transition Group (Mock) */
-    .fade-enter {
-        opacity: 0;
-    }
-
-    .fade-enter-active {
-        opacity: 1;
-        transition: opacity 200ms;
-    }
-
-    .fade-exit {
-        opacity: 1;
-    }
-
-    .fade-exit-active {
-        opacity: 0;
-        transition: opacity 200ms;
+    .animate-entry {
+        animation: slideIn 0.3s ease-out forwards;
     }
 
     @media (max-width: 768px) {
+        .active-card {
+            padding: 1rem;
+            border-radius: 20px;
+        }
+
         .input-hud {
             font-size: 1.5rem;
             height: 50px;
         }
 
-        .btn-cyber-large {
-            height: 50px;
-            font-size: 0.95rem;
-        }
-
-        .runner-container {
-            padding-bottom: 70px;
-        }
-
-        h2.display-2 {
-            font-size: 2.5rem;
-        }
-
-        /* Timer */
-        h2.display-5 {
-            font-size: 1.75rem;
-        }
-
-        /* Exercise Title */
-        .display-1 {
-            font-size: 3rem;
-        }
-
-        /* Timer Overlay */
-        .display-6 {
-            font-size: 1.5rem;
-        }
-
-        /* Routine Title */
-        .card-body {
-            padding: 1rem;
+        .btn-action {
+            padding: 14px;
+            font-size: 1rem;
         }
     }
 </style>
@@ -594,26 +576,49 @@
             return () => { isMounted = false; };
         }, []);
 
-        // Wake Lock
+        // Wake Lock Implementation
         useEffect(() => {
             let wakeLock = null;
-            const requestWakeLock = async () => {
+
+            async function requestWakeLock() {
                 try {
                     if ('wakeLock' in navigator) {
                         wakeLock = await navigator.wakeLock.request('screen');
-                        console.log('Wake Lock active');
+                        console.log('Pantalla activa: Wake Lock adquirido');
+
+                        wakeLock.addEventListener('release', () => {
+                            console.log('Pantalla normal: Wake Lock liberado');
+                        });
+                    } else {
+                        console.warn('Este navegador no soporta Wake Lock API');
                     }
                 } catch (err) {
-                    console.log('Wake Lock error:', err);
+                    console.error(`${err.name}, ${err.message}`);
+                }
+            }
+
+            async function releaseWakeLock() {
+                if (wakeLock !== null) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                }
+            }
+
+            const handleVisibilityChange = async () => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    await requestWakeLock();
                 }
             };
+
+            // Initial request
             requestWakeLock();
-            // Re-request on visibility change
-            const handleVis = () => { if (document.visibilityState === 'visible') requestWakeLock(); };
-            document.addEventListener('visibilitychange', handleVis);
+
+            // Event Listener
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
             return () => {
-                if (wakeLock) wakeLock.release();
-                document.removeEventListener('visibilitychange', handleVis);
+                releaseWakeLock();
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
             };
         }, []);
 
@@ -935,22 +940,22 @@
         }, [cursor, queue]);
 
         return (
-            <div className="d-flex justify-content-between align-items-center mb-4 pt-3 px-3">
+            <div className="header-section d-flex justify-content-between align-items-center p-3">
                 <div>
                     <h5 className="m-0 fw-bold text-white mb-1" style={{ fontSize: '1.1rem' }}>{routine.name}</h5>
                     {CURRENT_USER_NAME && (
                         <div className="text-secondary small">{CURRENT_USER_NAME}</div>
                     )}
-                    <div className="progress" style={{ height: '6px', width: '150px', background: '#333' }}>
+                    <div className="progress mt-2" style={{ height: '4px', width: '150px', background: '#333' }}>
                         <div className="progress-bar bg-success" role="progressbar" style={{ width: `${progress}%` }}></div>
                     </div>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                    <button className="btn btn-sm btn-outline-light" onClick={togglePause}>
-                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'} me-1`}></i>{isPaused ? 'Reanudar' : 'Pausa'}
+                    <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
+                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'} me-1`}></i>{isPaused ? 'Resume' : 'Pausa'}
                     </button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={cancelWorkout}>
-                        <i className="fas fa-stop me-1"></i>Cancelar
+                    <button className="btn btn-sm btn-outline-danger rounded-pill px-3" onClick={cancelWorkout}>
+                        <i className="fas fa-times"></i>
                     </button>
                     <div className="font-monospace fs-4 text-cyber-green fw-bold ms-2">
                         {formatTime(globalTime)}
@@ -1209,12 +1214,14 @@
     const PreStart = () => {
         const { routine, startWorkout } = useWorkout();
         return (
-            <div className="runner-container position-relative">
+            <div className="player-container">
                 <Header />
-                <RoutineDetails routine={routine} />
-                <div className="p-3 pb-4">
-                    <button className="btn btn-cyber-large w-100 shadow-lg ripple" onClick={startWorkout}>
-                        INICIAR RUTINA <i className="fas fa-play ms-2"></i>
+                <div className="visual-stage text-center">
+                    <RoutineDetails routine={routine} />
+                </div>
+                <div className="controls-section">
+                    <button className="btn btn-action shadow-lg ripple" onClick={startWorkout}>
+                        INICIAR ENTRENAMIENTO <i className="fas fa-play ms-2"></i>
                     </button>
                 </div>
             </div>
@@ -1336,7 +1343,7 @@
                     </div>
                 </div>
 
-                <button className="btn btn-cyber-large w-100 shadow-lg ripple" onClick={handleSubmit}>
+                <button className="btn btn-action shadow-lg ripple" onClick={handleSubmit}>
                     COMPLETAR SERIE <i className="fas fa-check ms-2"></i>
                 </button>
             </div>
@@ -1363,7 +1370,7 @@
 
                 <div className="d-grid gap-2">
                     {!isTimerRunning && stepTimer > 0 && (
-                        <button className="btn btn-cyber-large" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
+                        <button className="btn btn-action" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
                     )}
                     {isTimerRunning && (
                         <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
@@ -1386,22 +1393,23 @@
         const groupComment = currentStep.groupComment || "";
 
         return (
-            <div className="card bg-black border-cyber-active mx-3 shadow-lg animate-slide-up flex-grow-1 active-exercise-card" style={{ borderRadius: '20px' }}>
-                <div className="card-body d-flex flex-column justify-content-center">
+            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry`}>
+                <div className="d-flex flex-column justify-content-center h-100">
 
                     {currentStep.groupName && (
-                        <span className="badge bg-danger align-self-center mb-3 px-3 py-2">{currentStep.groupName}</span>
+                        <div className="text-center mb-3">
+                            <span className="badge bg-danger px-3 py-2">{currentStep.groupName}</span>
+                        </div>
                     )}
 
                     <div className="text-center mb-4">
-                        <span className="text-secondary text-uppercase small tracking-widest">{bodyPart || 'Muscle'}</span>
-                        <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                            <h2 className="display-5 fw-bold text-white mt-1 mb-0">{name}</h2>
+                        <span className="text-secondary text-uppercase small tracking-widest">{bodyPart}</span>
+                        <div className="d-flex align-items-center justify-content-center gap-2 mt-1">
+                            <h2 className="display-6 fw-bold text-white m-0 text-truncate" style={{ maxWidth: '80%' }}>{name}</h2>
                             {hasVideo && (
                                 <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger ms-2"
-                                    title="Ver video"
+                                    className="btn btn-sm btn-outline-danger rounded-circle"
                                     onClick={() => openVideoModal(ex.video_url)}
                                 >
                                     <i className="fab fa-youtube"></i>
@@ -1409,7 +1417,7 @@
                             )}
                         </div>
                         <div className="mt-2 text-info fs-5">
-                            Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> de {currentStep.totalSets}
+                            Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
                         </div>
                     </div>
 
@@ -1427,7 +1435,6 @@
                             {exerciseComment && <div className="text-secondary small">{exerciseComment}</div>}
                         </div>
                     )}
-
                 </div>
             </div>
         );
@@ -1498,25 +1505,17 @@
 
     const StickyControls = () => {
         const { prev, skipToNextWork, status, showMessage, showConfirm } = useWorkout();
-        // Since main action is inside the card for context-awareness (Input State), 
-        // This footer is strictly for Nav overrides or secondary actions.
 
-        if (status === 'REST') return null; // Rest has its own overlay
+        if (status === 'REST') return null;
 
         return (
-            <div className="fixed-bottom p-3 pb-4 bg-black-trans border-top border-secondary">
-                <div className="container d-flex justify-content-between align-items-center" style={{ maxWidth: '600px' }}>
-                    <div className="d-flex gap-2">
-                        <button className="btn btn-link text-muted text-decoration-none" onClick={prev}>
-                            <i className="fas fa-chevron-left me-1"></i> Prev
-                        </button>
-                    </div>
+            <div className="controls-section">
+                <div className="d-flex justify-content-between align-items-center">
+                    <button className="btn btn-link text-secondary text-decoration-none" onClick={prev}>
+                        <i className="fas fa-chevron-left me-1"></i> Prev
+                    </button>
 
-                    <span className="text-secondary small">
-                        <i className="fas fa-info-circle me-1"></i> Desliza para historial
-                    </span>
-
-                    <button className="btn btn-link text-muted text-decoration-none" onClick={() => {
+                    <button className="btn btn-link text-secondary text-decoration-none" onClick={() => {
                         showConfirm("Saltar Serie", "¿Seguro que quieres omitir esta serie?", () => {
                             showMessage("Set omitido", "info");
                             skipToNextWork();
@@ -1535,17 +1534,21 @@
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
         if (status === 'IDLE') return <PreStart />;
-        if (status === 'FINISHED') return <div className="text-center text-success py-5"><h1>¡Entrenamiento Terminado!</h1><p>Guardando...</p></div>;
+        if (status === 'FINISHED') return <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success"><h1>¡Entrenamiento Completado!</h1><p>Guardando...</p></div>;
 
         return (
-            <div className="runner-container position-relative">
+            <div className="player-container">
                 <Header />
-                <MessageBar />
-                {currentStep && <ActiveExercise />}
-                <RestOverlay />
-                <NextUpBar />
-                <ConfirmModal />
+
+                <div className="visual-stage">
+                    <MessageBar />
+                    <NextUpBar />
+                    {currentStep && <ActiveExercise />}
+                    <RestOverlay />
+                </div>
+
                 <StickyControls />
+                <ConfirmModal />
             </div>
         );
     };

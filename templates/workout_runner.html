@@ -183,19 +183,46 @@
 
     @media (max-width: 768px) {
         .active-card {
-            padding: 1rem;
-            border-radius: 20px;
+            padding: 0.75rem;
+            /* Reduced padding */
+            border-radius: 16px;
         }
 
         .input-hud {
-            font-size: 1.5rem;
-            height: 50px;
+            font-size: 1.2rem;
+            /* reduced from 1.5rem */
+            height: 40px;
+            /* reduced from 50px */
         }
 
         .btn-action {
-            padding: 14px;
-            font-size: 1rem;
+            padding: 10px;
+            /* reduced from 14px */
+            font-size: 0.9rem;
+            /* reduced from 1rem */
         }
+
+        .btn-control-hud {
+            width: 36px !important;
+            height: 36px !important;
+        }
+
+        .btn-rpe-hud {
+            width: 40px !important;
+            height: 36px !important;
+            font-size: 0.8rem !important;
+            padding: 0 !important;
+        }
+    }
+
+    .btn-control-hud {
+        width: 44px;
+        height: 44px;
+    }
+
+    .btn-rpe-hud {
+        width: 50px;
+        height: 40px;
     }
 
 
@@ -1213,6 +1240,7 @@
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
+        const [unit, setUnit] = useState('kg');
         const weightInputRef = useRef(null);
 
         // Pre-fill from history and AUTO-FOCUS
@@ -1249,7 +1277,11 @@
         };
 
         const handleSubmit = () => {
-            logSet({ weight, reps, rpe });
+            let finalWeight = parseFloat(weight) || 0;
+            if (unit === 'lb') {
+                finalWeight = finalWeight / 2.20462;
+            }
+            logSet({ weight: finalWeight.toFixed(1), reps, rpe });
             next();
         };
 
@@ -1260,38 +1292,67 @@
 
 
 
+        const toggleUnit = () => {
+            setUnit(prev => prev === 'kg' ? 'lb' : 'kg');
+            const val = parseFloat(weight) || 0;
+            if (val > 0) {
+                if (unit === 'kg') {
+                    setWeight((val * 2.20462).toFixed(1));
+                } else {
+                    setWeight((val / 2.20462).toFixed(1));
+                }
+            }
+        };
+
         const adjustWeight = (delta) => {
             let val = parseFloat(weight) || 0;
             const newVal = Math.max(0, val + delta);
-            setWeight(newVal.toString());
+            setWeight(newVal.toFixed(1));
         };
+
+        const equivalentText = React.useMemo(() => {
+            const val = parseFloat(weight) || 0;
+            if (unit === 'kg') {
+                return `≈ ${(val * 2.20462).toFixed(1)} lb`;
+            } else {
+                return `≈ ${(val / 2.20462).toFixed(1)} kg`;
+            }
+        }, [weight, unit]);
 
         return (
             <div className="py-2">
-                <div className="row g-2 justify-content-center mb-4">
+                <div className="row g-2 justify-content-center mb-3 mb-md-4">
                     <div className="col-12 col-md-6">
-                        <label className="text-secondary small fw-bold mb-2 d-block text-center">PESO (KG)</label>
+                        <div className="d-flex align-items-center justify-content-center mb-2 gap-2">
+                            <label className="text-secondary small fw-bold m-0">PESO</label>
+                            <button className="btn btn-sm btn-dark border border-secondary py-0 px-2 small font-monospace" onClick={toggleUnit}>
+                                {unit.toUpperCase()} <i className="fas fa-sync-alt ms-1 text-muted" style={{ fontSize: '0.7em' }}></i>
+                            </button>
+                        </div>
                         <div className="d-flex align-items-center justify-content-center gap-2">
                             <button
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
-                                style={{ width: '44px', height: '44px' }}
-                                onClick={() => adjustWeight(-2.5)}
+                                onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
                             >-</button>
-                            <input type="number"
-                                ref={weightInputRef}
-                                className="form-control input-hud text-center"
-                                style={{ maxWidth: '120px' }}
-                                value={weight}
-                                onChange={e => setWeight(e.target.value)}
-                                placeholder="0"
-                                onClick={(e) => e.target.select()}
-                            />
+                            <div className="position-relative">
+                                <input type="number"
+                                    ref={weightInputRef}
+                                    className="form-control input-hud text-center"
+                                    style={{ maxWidth: '120px' }}
+                                    value={weight}
+                                    onChange={e => setWeight(e.target.value)}
+                                    placeholder="0"
+                                    onClick={(e) => e.target.select()}
+                                />
+                                <div className="position-absolute start-50 translate-middle-x text-muted small" style={{ bottom: '-20px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                                    {equivalentText}
+                                </div>
+                            </div>
                             <button
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
-                                style={{ width: '44px', height: '44px' }}
-                                onClick={() => adjustWeight(2.5)}
+                                onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
                             >+</button>
                         </div>
                     </div>
@@ -1301,9 +1362,8 @@
                         </label>
                         <div className="d-flex align-items-center justify-content-center gap-2">
                             <button
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
-                                style={{ width: '44px', height: '44px' }}
                                 onClick={() => adjustReps(-1)}
                             >-</button>
                             <input
@@ -1318,22 +1378,20 @@
                                 onClick={(e) => e.target.select()}
                             />
                             <button
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
-                                style={{ width: '44px', height: '44px' }}
                                 onClick={() => adjustReps(1)}
                             >+</button>
                         </div>
                     </div>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-3 mb-md-4">
                     <label className="text-secondary small fw-bold mb-2 d-block text-center">RPE (Esfuerzo 1-10)</label>
                     <div className="d-flex justify-content-center gap-2">
                         {[7, 8, 9, 10].map(val => (
                             <button key={val}
-                                className={`btn btn-sm ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
-                                style={{ width: '50px', height: '40px' }}
+                                className={`btn btn-sm btn-rpe-hud d-flex align-items-center justify-content-center ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
                                 onClick={() => setRpe(val)}
                             >{val}</button>
                         ))}

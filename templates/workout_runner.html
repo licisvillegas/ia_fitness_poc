@@ -181,6 +181,24 @@
         animation: slideIn 0.3s ease-out forwards;
     }
 
+    .animate-slide-up {
+        animation: slideIn 0.4s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+
     @media (max-width: 768px) {
         .active-card {
             padding: 0.75rem;
@@ -991,7 +1009,9 @@
         // Collapsed by default: We track EXPANDED groups.
         const [expandedGroups, setExpandedGroups] = useState(new Set());
 
-        if (!routine) return null;
+        console.log("RoutineDetails Rendering:", routine);
+
+        if (!routine) return <div className="text-white text-center">No routine data</div>;
 
         const toggleGroup = (groupId) => {
             const next = new Set(expandedGroups);
@@ -1167,7 +1187,7 @@
         };
 
         return (
-            <div className="card bg-black border-cyber mx-3 shadow-lg animate-slide-up" style={{ borderRadius: '20px' }}>
+            <div className="card mx-3" style={{ background: 'rgba(30,30,30,0.95)', border: '1px solid #444', borderRadius: '20px', minHeight: '300px', opacity: 1 }}>
                 <div className="card-body">
                     <div className="text-center mb-4">
                         <h2 className="display-6 fw-bold text-white mb-2">{routine.name || "Rutina"}</h2>
@@ -1413,8 +1433,39 @@
         );
     };
 
+    const TimerControls = ({ step }) => {
+        const { stepTimer, isTimerRunning, setIsTimerRunning, next, logSet } = useWorkout();
+
+        const toggle = () => setIsTimerRunning(!isTimerRunning);
+        const finish = () => {
+            logSet({
+                time_seconds: step.target.time
+            });
+            next();
+        }
+
+        return (
+            <div className="text-center py-4">
+                <div className="display-1 fw-bold text-white mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>
+                    {formatTime(stepTimer)}
+                </div>
+                <p className="text-cyber-green mb-4">TIEMPO OBJETIVO</p>
+
+                <div className="d-grid gap-2">
+                    {!isTimerRunning && stepTimer > 0 && (
+                        <button className="btn btn-action" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
+                    )}
+                    {isTimerRunning && (
+                        <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
+                    )}
+                    <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>Terminar Manualmente</button>
+                </div>
+            </div>
+        );
+    };
+
     const RestOverlay = ({ nextStep }) => {
-        const { currentStep, skipRest } = useWorkout();
+        const { currentStep, skipRest, stepTimer } = useWorkout();
 
         if (currentStep.type !== 'rest') return null;
 
@@ -1426,7 +1477,7 @@
         return (
             <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark text-white p-4" style={{ zIndex: 2000 }}>
                 <div className="text-center mb-5">
-                    <h2 className="display-1 fw-bold mb-0 text-cyber-green font-monospace">{formatTime(currentStep.timer)}</h2>
+                    <h2 className="display-1 fw-bold mb-0 text-cyber-green font-monospace">{formatTime(stepTimer)}</h2>
                     <p className="text-secondary text-uppercase letter-spacing-2 mt-2">Descanso</p>
                 </div>
 
@@ -1507,36 +1558,7 @@
         );
     };
 
-    const RestOverlay = () => {
-        const { status, stepTimer, addRestTime, skipRest, nextStep, isPaused, togglePause } = useWorkout();
 
-        if (status !== 'REST') return null;
-
-        return (
-            <div className="position-fixed top-0 start-0 w-100 h-100 bg-black d-flex flex-column align-items-center justify-content-center text-center animate-slide-up" style={{ zIndex: 2000 }}>
-                <h6 className="text-secondary text-uppercase letter-spacing-2 mb-4">Descanso</h6>
-
-                <div className="display-1 fw-bold text-cyber-orange mb-4 font-monospace animate-pulse">
-                    {formatTime(stepTimer)}
-                </div>
-
-                <div className="d-flex gap-3 mb-5">
-                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={() => addRestTime(-10)}>-10</button>
-                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={togglePause}>
-                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
-                    </button>
-                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={skipRest}><i className="fas fa-forward"></i></button>
-                    <button className="btn btn-outline-light rounded-circle p-3" style={{ width: '60px', height: '60px' }} onClick={() => addRestTime(10)}>+10</button>
-                </div>
-
-                <div className="mt-4 opacity-75">
-                    <small className="text-muted text-uppercase d-block mb-2">Próximo</small>
-                    <h4 className="text-white">{nextStep?.exercise?.exercise_name || nextStep?.exercise?.name || "Fin"}</h4>
-                    <span className="badge bg-dark border border-secondary">{nextStep?.setNumber ? `Set ${nextStep.setNumber}` : ''}</span>
-                </div>
-            </div>
-        );
-    }
 
     const NextUpBar = () => {
         const { queue, cursor, status } = useWorkout();
@@ -1664,6 +1686,9 @@
             // Find next WORK step
             return queue.slice(cursor + 1).find(s => s.type === 'work');
         }, [queue, cursor]);
+
+        console.log("App Status:", status);
+        console.log("App Routine:", window.initialRoutine);
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
         if (status === 'IDLE') return <PreStart />;

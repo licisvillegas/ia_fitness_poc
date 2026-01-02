@@ -1458,11 +1458,11 @@
         const ex = queue[idx].exercise || {};
         const name = ex.exercise_name || ex.name || "Ejercicio";
         return (
-            <div className="px-3 pb-2 text-center">
-                <div className="d-inline-flex align-items-center gap-2 py-1 px-3 rounded-pill bg-black-trans border border-dark" style={{ opacity: 0.7 }}>
-                    <span className="text-secondary text-uppercase" style={{ fontSize: '0.7rem', letterSpacing: '1px' }}>Siguiente</span>
-                    <span className="text-light fw-bold text-truncate" style={{ fontSize: '0.8rem', maxWidth: '200px' }}>{name}</span>
-                    {restInfo && <span className="text-muted" style={{ fontSize: '0.7rem' }}>({restInfo})</span>}
+            <div className="px-3 pb-2 text-center w-100">
+                <div className="d-inline-flex align-items-center justify-content-center gap-2 py-1 px-3 rounded-pill bg-black-trans border border-dark" style={{ opacity: 0.7, maxWidth: '95%' }}>
+                    <span className="text-secondary text-uppercase flex-shrink-0" style={{ fontSize: '0.7rem', letterSpacing: '1px' }}>Siguiente</span>
+                    <span className="text-light fw-bold text-truncate" style={{ fontSize: '0.8rem', maxWidth: '60vw' }}>{name}</span>
+                    {restInfo && <span className="text-muted flex-shrink-0" style={{ fontSize: '0.7rem' }}>({restInfo})</span>}
                 </div>
             </div>
         );

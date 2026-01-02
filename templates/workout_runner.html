@@ -1240,7 +1240,7 @@
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
-        const [unit, setUnit] = useState('kg');
+        const [unit, setUnit] = useState('lb');
         const weightInputRef = useRef(null);
 
         // Pre-fill from history and AUTO-FOCUS
@@ -1255,6 +1255,14 @@
                     if (lastMatch.reps) nextReps = lastMatch.reps;
                 }
             }
+            if (unit === 'lb' && nextWeight !== '') {
+                // Convert KG (from DB) to LB
+                const valKg = parseFloat(nextWeight);
+                if (!isNaN(valKg)) {
+                    nextWeight = (valKg * 2.20462).toFixed(1);
+                }
+            }
+
             setWeight(nextWeight);
             setReps(nextReps);
             setRpe(8);
@@ -1405,33 +1413,36 @@
         );
     };
 
-    const TimerControls = ({ step }) => {
-        const { stepTimer, isTimerRunning, setIsTimerRunning, next, logSet } = useWorkout();
+    const RestOverlay = ({ nextStep }) => {
+        const { currentStep, skipRest } = useWorkout();
 
-        const toggle = () => setIsTimerRunning(!isTimerRunning);
-        const finish = () => {
-            logSet({
-                time_seconds: step.target.time
-            }); // Or actual elapsed?
-            next();
-        }
+        if (currentStep.type !== 'rest') return null;
+
+        const nextExName = nextStep?.exercise?.name || nextStep?.exercise?.exercise_name || "Siguiente Ejercicio";
+        // Check for comment/note/description
+        const nextNote = nextStep?.exercise?.comment || nextStep?.exercise?.note || nextStep?.exercise?.description || "";
+        const isNextTimeBased = nextStep?.isTimeBased || false; // Or check type
 
         return (
-            <div className="text-center py-4">
-                <div className="display-1 fw-bold text-white mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>
-                    {formatTime(stepTimer)}
+            <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark text-white p-4" style={{ zIndex: 2000 }}>
+                <div className="text-center mb-5">
+                    <h2 className="display-1 fw-bold mb-0 text-cyber-green font-monospace">{formatTime(currentStep.timer)}</h2>
+                    <p className="text-secondary text-uppercase letter-spacing-2 mt-2">Descanso</p>
                 </div>
-                <p className="text-cyber-green mb-4">TIEMPO OBJETIVO</p>
 
-                <div className="d-grid gap-2">
-                    {!isTimerRunning && stepTimer > 0 && (
-                        <button className="btn btn-action" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
+                <div className="text-center mb-5 animate-pulse">
+                    <p className="text-muted small mb-2 text-uppercase">A continuación</p>
+                    <h3 className="h2 fw-bold mb-3">{nextExName}</h3>
+                    {nextNote && (
+                        <div className="alert alert-dark border-secondary text-info d-inline-block px-4 py-2" style={{ maxWidth: '90%' }}>
+                            <i className="fas fa-info-circle me-2"></i>{nextNote}
+                        </div>
                     )}
-                    {isTimerRunning && (
-                        <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
-                    )}
-                    <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>Terminar Manualmente</button>
                 </div>
+
+                <button className="btn btn-outline-light rounded-pill px-5 py-3" onClick={skipRest}>
+                    SALTAR DESCANSO <i className="fas fa-forward ms-2"></i>
+                </button>
             </div>
         );
     };
@@ -1645,7 +1656,14 @@
 
     // --- MAIN APP ---
     const App = () => {
-        const { currentStep, status } = useWorkout();
+        const { currentStep, status, queue, cursor } = useWorkout();
+
+        // Calculate next work step for preview
+        const nextStep = React.useMemo(() => {
+            if (!queue || cursor >= queue.length - 1) return null;
+            // Find next WORK step
+            return queue.slice(cursor + 1).find(s => s.type === 'work');
+        }, [queue, cursor]);
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
         if (status === 'IDLE') return <PreStart />;
@@ -1663,7 +1681,7 @@
                     </NavigationWrapper>
                 </div>
 
-                <RestOverlay />
+                <RestOverlay nextStep={nextStep} />
                 <ConfirmModal />
             </div>
         );

@@ -930,40 +930,7 @@
 
     // --- UI COMPONENTS ---
 
-    const Header = () => {
-        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout } = useWorkout();
-        const progress = useMemo(() => {
-            const workTotal = queue.filter(step => step.type === 'work').length;
-            if (!workTotal) return 0;
-            const workDone = queue.slice(0, cursor).filter(step => step.type === 'work').length;
-            return Math.round((workDone / workTotal) * 100);
-        }, [cursor, queue]);
 
-        return (
-            <div className="header-section d-flex justify-content-between align-items-center p-3">
-                <div>
-                    <h5 className="m-0 fw-bold text-white mb-1" style={{ fontSize: '1.1rem' }}>{routine.name}</h5>
-                    {CURRENT_USER_NAME && (
-                        <div className="text-secondary small">{CURRENT_USER_NAME}</div>
-                    )}
-                    <div className="progress mt-2" style={{ height: '4px', width: '150px', background: '#333' }}>
-                        <div className="progress-bar bg-success" role="progressbar" style={{ width: `${progress}%` }}></div>
-                    </div>
-                </div>
-                <div className="d-flex align-items-center gap-2">
-                    <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
-                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'} me-1`}></i>{isPaused ? 'Resume' : 'Pausa'}
-                    </button>
-                    <button className="btn btn-sm btn-outline-danger rounded-pill px-3" onClick={cancelWorkout}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                    <div className="font-monospace fs-4 text-cyber-green fw-bold ms-2">
-                        {formatTime(globalTime)}
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     const MessageBar = () => {
         const { message } = useWorkout();
@@ -1503,25 +1470,76 @@
         );
     };
 
-    const StickyControls = () => {
-        const { prev, skipToNextWork, status, showMessage, showConfirm } = useWorkout();
-
-        if (status === 'REST') return null;
+    const Header = () => {
+        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout } = useWorkout();
 
         return (
-            <div className="controls-section">
-                <div className="d-flex justify-content-between align-items-center">
-                    <button className="btn btn-link text-secondary text-decoration-none" onClick={prev}>
-                        <i className="fas fa-chevron-left me-1"></i> Prev
-                    </button>
+            <div className="header-section d-flex justify-content-between align-items-center p-3 relative">
+                {/* Left: Info */}
+                <div style={{ flex: 1 }}>
+                    <h5 className="m-0 fw-bold text-white text-truncate" style={{ fontSize: '1rem' }}>{routine.name}</h5>
+                    <div className="text-secondary small text-truncate">{cursor + 1} / {queue.length}</div>
+                </div>
 
-                    <button className="btn btn-link text-secondary text-decoration-none" onClick={() => {
-                        showConfirm("Saltar Serie", "¿Seguro que quieres omitir esta serie?", () => {
-                            showMessage("Set omitido", "info");
-                            skipToNextWork();
-                        }, "warning");
-                    }}>
-                        Skip <i className="fas fa-chevron-right ms-1"></i>
+                {/* Center: Global Timer */}
+                <div className="position-absolute start-50 top-50 translate-middle">
+                    <div className="font-monospace fs-3 text-cyber-green fw-bold bg-black px-3 rounded-pill border border-secondary shadow-sm">
+                        {formatTime(globalTime)}
+                    </div>
+                </div>
+
+                {/* Right: Controls */}
+                <div className="d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                    <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
+                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger rounded-circle" onClick={cancelWorkout} style={{ width: '32px', height: '32px', padding: 0 }}>
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const NavigationWrapper = ({ children }) => {
+        const { prev, skipToNextWork, showMessage, showConfirm } = useWorkout();
+
+        const handleSkip = () => {
+            showConfirm("Saltar Serie", "¿Seguro que quieres omitir esta serie?", () => {
+                showMessage("Set omitido", "info");
+                skipToNextWork();
+            }, "warning");
+        };
+
+        return (
+            <div className="d-flex w-100 h-100 align-items-center justify-content-center position-relative">
+
+                {/* Desktop Prev (Left) */}
+                <div className="d-none d-md-block me-3">
+                    <button className="btn btn-outline-secondary rounded-circle p-3" onClick={prev} style={{ width: '60px', height: '60px' }}>
+                        <i className="fas fa-chevron-left fa-lg"></i>
+                    </button>
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center w-100" style={{ maxWidth: '600px' }}>
+                    {children}
+
+                    {/* Mobile Navigation (Bottom of Card) */}
+                    <div className="d-flex d-md-none w-100 justify-content-between px-3 mt-3">
+                        <button className="btn btn-link text-secondary text-decoration-none" onClick={prev}>
+                            <i className="fas fa-chevron-left me-1"></i> Anterior
+                        </button>
+                        <button className="btn btn-link text-secondary text-decoration-none" onClick={handleSkip}>
+                            Saltar <i className="fas fa-chevron-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Desktop Skip (Right) */}
+                <div className="d-none d-md-block ms-3">
+                    <button className="btn btn-outline-secondary rounded-circle p-3" onClick={handleSkip} style={{ width: '60px', height: '60px' }}>
+                        <i className="fas fa-chevron-right fa-lg"></i>
                     </button>
                 </div>
             </div>
@@ -1543,11 +1561,12 @@
                 <div className="visual-stage">
                     <MessageBar />
                     <NextUpBar />
-                    {currentStep && <ActiveExercise />}
-                    <RestOverlay />
+                    <NavigationWrapper>
+                        {currentStep && <ActiveExercise />}
+                    </NavigationWrapper>
                 </div>
 
-                <StickyControls />
+                <RestOverlay />
                 <ConfirmModal />
             </div>
         );

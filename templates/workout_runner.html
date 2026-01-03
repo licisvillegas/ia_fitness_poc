@@ -305,13 +305,10 @@
         other: { label: "Otro", icon: "fas fa-toolbox" }
     };
 
+    let BODY_PART_MAP = {};
+
     const translateBodyPart = (bp) => {
-        const map = {
-            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
-            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps', 'Forearms': 'Antebrazos',
-            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
-        };
-        return map[bp] || bp || "N/A";
+        return BODY_PART_MAP[bp] || bp || "N/A";
     };
 
     const getEquipmentMeta = (equipmentKey) => {
@@ -627,11 +624,27 @@
                         return acc;
                     }, {});
                     setExerciseLookup(lookup);
-                } catch (err) {
-                    console.log("Error loading exercises", err);
-                }
+                } catch (e) { console.error("Error loading exercises", e); }
             };
+
+            const loadBodyParts = async () => {
+                try {
+                    const res = await fetch("/workout/api/body-parts");
+                    const parts = await res.json();
+                    parts.forEach(p => {
+                        BODY_PART_MAP[p.key] = p.label_es || p.label_en || p.key;
+                    });
+                    // Trigger re-render if needed? 
+                    // Since BODY_PART_MAP is external, components using translateBodyPart during render might need a forceUpdate, 
+                    // but usually this loads fast specificly. UseState would be better but requires passing map everywhere.
+                    // For MVP let's force a re-render by setting a dummy state or relying on exercise load which happens parallel.
+                    setExerciseLookup(prev => ({ ...prev }));
+                } catch (e) { console.error("Error loading body parts", e); }
+            };
+
             loadExercises();
+            loadBodyParts();
+
             return () => { isMounted = false; };
         }, []);
 

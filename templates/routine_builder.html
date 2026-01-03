@@ -46,34 +46,8 @@
                 </div>
                 <div class="mb-3">
                     <label class="text-secondary small">Grupos Musculares de la Rutina</label>
-                    <div class="d-flex flex-wrap gap-2">
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Chest">Pecho
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Back">Espalda
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Legs">Piernas
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox"
-                                value="Shoulders">Hombros
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Biceps">Bíceps
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox"
-                                value="Triceps">Tríceps
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Core">Abdomen
-                        </label>
-                        <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox"
-                                value="Full Body">Cuerpo Completo
-                        </label>
+                    <div class="d-flex flex-wrap gap-2" id="routineBodyPartsContainer">
+                        <!-- Loaded via JS -->
                     </div>
                 </div>
                 <div class="mb-3">
@@ -144,15 +118,7 @@
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="filterBodyPart">
-                                <option value="">Grupo muscular</option>
-                                <option value="Chest">Pecho</option>
-                                <option value="Back">Espalda</option>
-                                <option value="Legs">Piernas</option>
-                                <option value="Shoulders">Hombros</option>
-                                <option value="Biceps">Bíceps</option>
-                                <option value="Triceps">Tríceps</option>
-                                <option value="Core">Abdomen</option>
-                                <option value="Full Body">Cuerpo Completo</option>
+                                <!-- Loaded JS -->
                             </select>
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="filterEquipment">
@@ -200,15 +166,7 @@
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="routineFilterBodyPart">
-                                <option value="">Grupo muscular</option>
-                                <option value="Chest">Pecho</option>
-                                <option value="Back">Espalda</option>
-                                <option value="Legs">Piernas</option>
-                                <option value="Shoulders">Hombros</option>
-                                <option value="Biceps">Bíceps</option>
-                                <option value="Triceps">Tríceps</option>
-                                <option value="Core">Abdomen</option>
-                                <option value="Full Body">Cuerpo Completo</option>
+                                <!-- Loaded JS -->
                             </select>
                             <button class="btn btn-sm btn-outline-secondary" type="button"
                                 onclick="resetRoutineFilters()">
@@ -460,18 +418,24 @@
         other: { label: "Otro", icon: "fas fa-toolbox" }
     };
 
+    let bodyPartMap = {};
+
     document.addEventListener("DOMContentLoaded", async () => {
+        await loadBodyPartsConfig();
         await loadExercises();
         await loadRoutines();
+
         const searchInput = document.getElementById("searchEx");
         const filterBodyPart = document.getElementById("filterBodyPart");
         const filterEquipment = document.getElementById("filterEquipment");
         const filterType = document.getElementById("filterType");
         const picker = document.getElementById("exercisePicker");
+        // Re-select inputs after dynamic load
         const routineBodyPartInputs = document.querySelectorAll(".routine-bodypart");
         const routineItemsContainer = document.getElementById("routineItemsContainer");
         const routineSearch = document.getElementById("routineSearch");
         const routineFilterBodyPart = document.getElementById("routineFilterBodyPart");
+
 
         if (searchInput) searchInput.addEventListener("input", filterExercises);
         if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
@@ -783,12 +747,50 @@
     }
 
     function translateBodyPart(bp) {
-        const map = {
-            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
-            'Shoulders': 'Hombros', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps',
-            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
-        };
-        return map[bp] || bp;
+        return bodyPartMap[bp] || bp;
+    }
+
+    async function loadBodyPartsConfig() {
+        try {
+            const res = await fetch("/workout/api/body-parts");
+            const parts = await res.json();
+
+            const container = document.getElementById("routineBodyPartsContainer");
+            const filter1 = document.getElementById("filterBodyPart");
+            const filter2 = document.getElementById("routineFilterBodyPart");
+
+            if (container) container.innerHTML = '';
+            if (filter1) filter1.innerHTML = '<option value="">Grupo muscular</option>';
+            if (filter2) filter2.innerHTML = '<option value="">Grupo muscular</option>';
+
+            parts.forEach(p => {
+                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
+
+                // Checkboxes
+                if (container) {
+                    const label = document.createElement("label");
+                    label.className = "badge bg-dark border border-secondary px-3 py-2";
+                    label.innerHTML = `<input class="form-check-input me-2 routine-bodypart" type="checkbox" value="${p.key}">${bodyPartMap[p.key]}`;
+                    container.appendChild(label);
+                }
+
+                // Filters
+                [filter1, filter2].forEach(sel => {
+                    if (sel) {
+                        const opt = document.createElement("option");
+                        opt.value = p.key;
+                        opt.textContent = bodyPartMap[p.key];
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+
+            // Re-attach listeners to new checkboxes
+            document.querySelectorAll(".routine-bodypart").forEach(input => {
+                input.addEventListener("change", filterExercises);
+            });
+
+        } catch (e) { console.error("Error loading body parts config", e); }
     }
 
     function getRoutineBodyParts() {

@@ -409,3 +409,18 @@ def api_get_volume_stats():
     except Exception as e:
         logger.error(f"Error volume stats: {e}")
         return jsonify([]), 500
+
+
+@workout_bp.get("/api/body-parts")
+def api_get_body_parts():
+    """Retorna la lista de partes del cuerpo disponibles (Dynamic Collection)."""
+    try:
+        db = get_db()
+        parts = list(db.body_parts.find({}, {"_id": 0}).sort("label_es", 1))
+        # Fallback if empty (should be seeded)
+        if not parts:
+            return jsonify([]), 200
+        return jsonify(parts), 200
+    except Exception as e:
+        logger.error(f"Error getting body parts: {e}")
+        return jsonify({"error": str(e)}), 500

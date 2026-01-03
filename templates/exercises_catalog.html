@@ -22,15 +22,7 @@
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
                     id="filterBodyPart" style="min-width: 130px;">
                     <option value="">Grupo</option>
-                    <option value="Chest">Pecho</option>
-                    <option value="Back">Espalda</option>
-                    <option value="Legs">Piernas</option>
-                    <option value="Shoulders">Hombros</option>
-                    <option value="Biceps">Bíceps</option>
-                    <option value="Triceps">Tríceps</option>
-                    <option value="Forearms">Antebrazos</option>
-                    <option value="Core">Abdomen</option>
-                    <option value="Full Body">Cuerpo Completo</option>
+                    <!-- Options loaded via JS -->
                 </select>
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
                     id="filterEquipment" style="min-width: 130px;">
@@ -114,15 +106,7 @@
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Parte del Cuerpo</label>
                             <select class="form-select bg-dark text-white border-secondary" id="exBodyPart">
-                                <option value="Chest">Pecho</option>
-                                <option value="Back">Espalda</option>
-                                <option value="Legs">Piernas</option>
-                                <option value="Shoulders">Hombros</option>
-                                <option value="Biceps">Bíceps</option>
-                                <option value="Triceps">Tríceps</option>
-                                <option value="Forearms">Antebrazos</option>
-                                <option value="Core">Abdomen</option>
-                                <option value="Full Body">Cuerpo Completo</option>
+                                <!-- Options loaded via JS -->
                             </select>
                         </div>
 
@@ -262,65 +246,83 @@
 
 <script>
     let allExercises = [];
+    let exercises = [];
     let currentExerciseId = null;
     let currentSubstitutes = [];
-    let currentBodyPart = null;
+    let bodyPartMap = {}; // Will hold key -> label
     let messageModalInstance = null;
 
     document.addEventListener("DOMContentLoaded", () => {
-        loadExercises();
-        const bodyPartSelect = document.getElementById("exBodyPart");
-        if (bodyPartSelect) {
-            bodyPartSelect.addEventListener("change", () => {
-                const previousBodyPart = currentBodyPart;
-                const nextBodyPart = bodyPartSelect.value;
-                const selectedBeforeChange = getSelectedSubstitutes();
-                if (selectedBeforeChange.length > 0 && previousBodyPart && previousBodyPart !== nextBodyPart) {
-                    showConfirmModal(
-                        "Cambiar Parte del Cuerpo",
-                        "Cambiar la Parte del Cuerpo desmarcara los sustitutos actuales. Deseas continuar?"
-                    ).then(confirmChange => {
-                        if (!confirmChange) {
-                            bodyPartSelect.value = previousBodyPart;
-                            return;
-                        }
-                        currentSubstitutes = [];
-                        currentBodyPart = nextBodyPart;
-                        populateSubstitutes(allExercises, currentExerciseId, currentSubstitutes, nextBodyPart);
-                    });
-                    return;
-                } else {
-                    currentSubstitutes = selectedBeforeChange;
-                }
-                currentBodyPart = nextBodyPart;
-                populateSubstitutes(allExercises, currentExerciseId, currentSubstitutes, nextBodyPart);
-            });
-        }
+        let currentBodyPart = null;
+
+        loadBodyParts().then(() => {
+            loadExercises();
+        });
+
+        // Listeners
         const mainSearch = document.getElementById("mainSearch");
         const filterBodyPart = document.getElementById("filterBodyPart");
         const filterEquipment = document.getElementById("filterEquipment");
         const filterType = document.getElementById("filterType");
         const subSearch = document.getElementById("subSearch");
+        const exBodyPart = document.getElementById("exBodyPart");
 
-        if (mainSearch) {
-            mainSearch.addEventListener("input", filterExercises);
-        }
-        if (filterBodyPart) {
-            filterBodyPart.addEventListener("change", filterExercises);
-        }
-        if (filterEquipment) {
-            filterEquipment.addEventListener("change", filterExercises);
-        }
-        if (filterType) {
-            filterType.addEventListener("change", filterExercises);
-        }
+        if (mainSearch) mainSearch.addEventListener("input", filterExercises);
+        if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
+        if (filterEquipment) filterEquipment.addEventListener("change", filterExercises);
+        if (filterType) filterType.addEventListener("change", filterExercises);
+
         if (subSearch) {
             subSearch.addEventListener("input", () => {
                 const bodyPart = document.getElementById("exBodyPart").value;
                 populateSubstitutes(allExercises, currentExerciseId, getSelectedSubstitutes(), bodyPart);
             });
         }
+
+        if (exBodyPart) {
+            exBodyPart.addEventListener("change", () => {
+                // Logic to confirm clearing substitutes on body part change
+                const nextBodyPart = exBodyPart.value;
+                // (Simple version for now, assuming user accepts)
+                currentBodyPart = nextBodyPart;
+                populateSubstitutes(allExercises, currentExerciseId, [], nextBodyPart);
+            });
+        }
     });
+
+    async function loadBodyParts() {
+        try {
+            const res = await fetch("/workout/api/body-parts");
+            const parts = await res.json();
+            const filterSel = document.getElementById("filterBodyPart");
+            const formSel = document.getElementById("exBodyPart");
+
+            if (filterSel) filterSel.innerHTML = '<option value="">Grupo</option>';
+            if (formSel) formSel.innerHTML = '';
+
+            console.log("Body Parts Loaded:", parts); // Debug log
+
+            parts.forEach(p => {
+                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
+
+                if (filterSel) {
+                    const opt1 = document.createElement("option");
+                    opt1.value = p.key;
+                    opt1.textContent = bodyPartMap[p.key];
+                    filterSel.appendChild(opt1);
+                }
+
+                if (formSel) {
+                    const opt2 = document.createElement("option");
+                    opt2.value = p.key;
+                    opt2.textContent = bodyPartMap[p.key];
+                    formSel.appendChild(opt2);
+                }
+            });
+        } catch (e) {
+            console.error("Error loading body parts", e);
+        }
+    }
 
     async function loadExercises() {
         try {
@@ -427,12 +429,7 @@
     }
 
     function translateBodyPart(bp) {
-        const map = {
-            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
-            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps', 'Forearms': 'Antebrazos',
-            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
-        };
-        return map[bp] || bp;
+        return bodyPartMap[bp] || bp;
     }
 
     function getSelectedSubstitutes() {

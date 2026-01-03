@@ -26,7 +26,9 @@
                     <option value="Back">Espalda</option>
                     <option value="Legs">Piernas</option>
                     <option value="Shoulders">Hombros</option>
-                    <option value="Arms">Brazos</option>
+                    <option value="Biceps">Bíceps</option>
+                    <option value="Triceps">Tríceps</option>
+                    <option value="Forearms">Antebrazos</option>
                     <option value="Core">Abdomen</option>
                     <option value="Full Body">Cuerpo Completo</option>
                 </select>
@@ -116,7 +118,9 @@
                                 <option value="Back">Espalda</option>
                                 <option value="Legs">Piernas</option>
                                 <option value="Shoulders">Hombros</option>
-                                <option value="Arms">Brazos</option>
+                                <option value="Biceps">Bíceps</option>
+                                <option value="Triceps">Tríceps</option>
+                                <option value="Forearms">Antebrazos</option>
                                 <option value="Core">Abdomen</option>
                                 <option value="Full Body">Cuerpo Completo</option>
                             </select>
@@ -374,11 +378,9 @@
                     <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    ${ex.is_custom ? `
-                        <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    ` : ''}
+                    <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </td>
         `;
@@ -415,7 +417,7 @@
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-warning" onclick="duplicateExercise('${ex._id}')"><i class="fas fa-copy"></i></button>
                             <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')"><i class="fas fa-edit"></i></button>
-                            ${ex.is_custom ? `<button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>` : ''}
+                            <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
@@ -427,7 +429,8 @@
     function translateBodyPart(bp) {
         const map = {
             'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
-            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
+            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps', 'Forearms': 'Antebrazos',
+            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
         };
         return map[bp] || bp;
     }
@@ -636,18 +639,15 @@
         if (id) {
             const ex = allExercises.find(e => e._id === id);
             if (ex) {
-                // If editing a global exercise, we'll create a custom copy instead
-                if (!ex.is_custom) {
-                    isGlobalEdit = true;
-                    modalTitle.textContent = "Crear Copia Personalizada";
-                    // Don't set the ID - this will create a new exercise
-                    document.getElementById("exId").value = "";
-                    document.getElementById("exName").value = ex.name + " (Copia)";
-                } else {
-                    modalTitle.textContent = "Editar Ejercicio";
-                    document.getElementById("exId").value = ex._id;
-                    document.getElementById("exName").value = ex.name;
-                }
+                // Allow editing ANY exercise (Global or Custom)
+                modalTitle.textContent = "Editar Ejercicio";
+                document.getElementById("exId").value = ex._id;
+                document.getElementById("exName").value = ex.name;
+
+                // Removed "Force Copy for Global" logic
+                /* 
+                if (!ex.is_custom) { ... } 
+                */
 
                 document.getElementById("exBodyPart").value = ex.body_part;
                 document.getElementById("exType").value = ex.type;

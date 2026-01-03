@@ -307,13 +307,9 @@
 
     const translateBodyPart = (bp) => {
         const map = {
-            Chest: "Pecho",
-            Back: "Espalda",
-            Legs: "Piernas",
-            Shoulders: "Hombros",
-            Arms: "Brazos",
-            Core: "Abdomen",
-            "Full Body": "Cuerpo Completo"
+            'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
+            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps', 'Forearms': 'Antebrazos',
+            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
         };
         return map[bp] || bp || "N/A";
     };
@@ -600,6 +596,7 @@
         const stepIntervalRef = useRef(null);
         const resumeTimerRef = useRef(false);
         const onConfirmRef = useRef(null);
+        const startTimeRef = useRef(Date.now()); // Track start time of current step
 
 
         // INITIALIZE
@@ -611,6 +608,11 @@
                 console.log("Queue Built:", q);
             }
         }, [routine]);
+
+        // Reset start time when step changes
+        useEffect(() => {
+            startTimeRef.current = Date.now();
+        }, [cursor]); // Reset on cursor change
 
         useEffect(() => {
             let isMounted = true;
@@ -751,6 +753,7 @@
                 name: exerciseName,
                 exercise_type: exerciseType,
                 ...data,
+                duration_seconds: (Date.now() - startTimeRef.current) / 1000, // Actual execution time
                 ...(resolvedTime != null ? { time_seconds: resolvedTime } : {}),
                 timestamp: new Date()
             }]);
@@ -1364,13 +1367,14 @@
                                 onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
                             >-</button>
                             <div className="position-relative">
-                                <input type="number"
+                                <input type="text"
                                     ref={weightInputRef}
                                     className="form-control input-hud text-center"
                                     style={{ maxWidth: '120px' }}
                                     value={weight}
                                     onChange={e => setWeight(e.target.value)}
                                     placeholder="0"
+                                    inputMode="decimal"
                                     onClick={(e) => e.target.select()}
                                 />
                                 <div className="position-absolute start-50 translate-middle-x text-muted small" style={{ bottom: '-20px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>

@@ -61,7 +61,11 @@
                                 value="Shoulders">Hombros
                         </label>
                         <label class="badge bg-dark border border-secondary px-3 py-2">
-                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Arms">Brazos
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Biceps">Bíceps
+                        </label>
+                        <label class="badge bg-dark border border-secondary px-3 py-2">
+                            <input class="form-check-input me-2 routine-bodypart" type="checkbox"
+                                value="Triceps">Tríceps
                         </label>
                         <label class="badge bg-dark border border-secondary px-3 py-2">
                             <input class="form-check-input me-2 routine-bodypart" type="checkbox" value="Core">Abdomen
@@ -145,7 +149,8 @@
                                 <option value="Back">Espalda</option>
                                 <option value="Legs">Piernas</option>
                                 <option value="Shoulders">Hombros</option>
-                                <option value="Arms">Brazos</option>
+                                <option value="Biceps">Bíceps</option>
+                                <option value="Triceps">Tríceps</option>
                                 <option value="Core">Abdomen</option>
                                 <option value="Full Body">Cuerpo Completo</option>
                             </select>
@@ -200,7 +205,8 @@
                                 <option value="Back">Espalda</option>
                                 <option value="Legs">Piernas</option>
                                 <option value="Shoulders">Hombros</option>
-                                <option value="Arms">Brazos</option>
+                                <option value="Biceps">Bíceps</option>
+                                <option value="Triceps">Tríceps</option>
                                 <option value="Core">Abdomen</option>
                                 <option value="Full Body">Cuerpo Completo</option>
                             </select>
@@ -705,7 +711,7 @@
                 exercise_id: item.exercise_id,
                 exercise_name: item.exercise_name || ex.name || "Ejercicio",
                 exercise_type: item.exercise_type || ex.type || "weight",
-                equipment: item.equipment || ex.equipment || "",
+                equipment: item.equipment || "",
                 video_url: item.video_url || ex.video_url || "",
                 body_part: item.body_part || ex.body_part || "",
                 substitutes: item.substitutes || ex.substitutes || [],
@@ -714,7 +720,7 @@
                 rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
                 target_time_seconds: item.target_time_seconds || 600,
                 group_id: item.group_id || "",
-                comment: item.comment || ""
+                comment: ""
             };
         });
     }
@@ -779,7 +785,8 @@
     function translateBodyPart(bp) {
         const map = {
             'Chest': 'Pecho', 'Back': 'Espalda', 'Legs': 'Piernas',
-            'Shoulders': 'Hombros', 'Arms': 'Brazos', 'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
+            'Shoulders': 'Hombros', 'Biceps': 'Bíceps', 'Triceps': 'Tríceps',
+            'Core': 'Abdomen', 'Full Body': 'Cuerpo Completo'
         };
         return map[bp] || bp;
     }

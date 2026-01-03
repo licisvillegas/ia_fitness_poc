@@ -222,24 +222,78 @@ def api_save_session():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+
+
 @workout_bp.get("/api/routines")
 def list_routines():
-    """Retorna lista de rutinas para un usuario"""
+    """
+    Retorna lista de rutinas.
+    - Si user_id es enviado: Retorna rutinas ASIGNADAS a ese usuario.
+    - Si type='template' o no user_id: Retorna TODAS las rutinas (templates).
+    """
     user_id = request.args.get("user_id")
-    if not user_id:
-        return jsonify([]), 200
+    req_type = request.args.get("type")
     
     db = get_db()
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
         
     try:
-        cursor = db.routines.find({"user_id": user_id}).sort("created_at", -1)
         results = []
-        for r in cursor:
+        
+        # CASO 1: Listar Templates (todas las rutinas del sistema)
+        # Se asume que ahora las rutinas en db.routines son "templates"
+        if req_type == 'template' or not user_id:
+            cursor = db.routines.find({}).sort("created_at", -1)
+            for r in cursor:
+                r["_id"] = str(r["_id"])
+                results.append(r)
+            return jsonify(results), 200
+            
+        # CASO 2: Listar Rutinas Asignadas a Usuario
+        # 1. Buscar en routine_assignments
+        assignments = list(db.routine_assignments.find({"user_id": user_id, "active": True}))
+        
+        if not assignments:
+            # RETROCOMPATIBILIDAD: Buscar si hay rutinas legacy con user_id directo
+            legacy_cursor = db.routines.find({"user_id": user_id})
+            for r in legacy_cursor:
+                r["_id"] = str(r["_id"])
+                r["is_legacy"] = True # Flag debug
+                results.append(r)
+            return jsonify(results), 200
+            
+        # 2. Obtener IDs de rutinas
+        routine_ids_str = [asn["routine_id"] for asn in assignments]
+        # Convertir a ObjectId si es necesario (el frontend manda strings, en db a veces son str o objid)
+        # Intentamos ambos por consistencia laxa
+        obj_ids = []
+        str_ids = []
+        for rid in routine_ids_str:
+            if ObjectId.is_valid(rid):
+                obj_ids.append(ObjectId(rid))
+            str_ids.append(rid)
+            
+        # 3. Fetch rutinas reales
+        # $in busca en ambos formatos
+        query = {"$or": [
+            {"_id": {"$in": obj_ids}},
+            {"_id": {"$in": str_ids}}, # Si se guardó como string en _id (raro pero posible)
+            {"routine_id": {"$in": str_ids}} # Si usa id custom
+        ]}
+        
+        routines_cursor = db.routines.find(query)
+        
+        for r in routines_cursor:
             r["_id"] = str(r["_id"])
+            # Añadir fecha de asignación si se quiere
+            # (opcional cruzar datos)
             results.append(r)
+            
         return jsonify(results), 200
+
     except Exception as e:
         logger.error(f"Error fetching routines: {e}")
         return jsonify({"error": "Internal Error"}), 500

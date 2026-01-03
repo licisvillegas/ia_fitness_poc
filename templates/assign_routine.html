@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignar Rutinas | Smart Workout</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .page-header {
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        /* User Selector Styling */
+        .user-select-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Routine Card Styling */
+        .routine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .routine-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .routine-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: var(--primary);
+        }
+
+        .routine-header {
+            background: linear-gradient(135deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .routine-body {
+            padding: 1.25rem;
+        }
+
+        .routine-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-assign {
+            width: 100%;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            font-weight: 600;
+            padding: 0.6rem;
+            transition: all 0.2s;
+        }
+
+        .btn-assign:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-assign:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-muted);
+        }
+
+        /* Selected User Badge */
+        .selected-user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Search Box */
+        .search-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .search-box:focus {
+            background: var(--bg-input);
+            border-color: var(--primary);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        select.form-select {
+            background-color: var(--bg-input);
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        select.form-select:focus {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border-color: var(--primary);
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar Component -->
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <div class="container">
+
+            <!-- Header -->
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1 fw-bold text-gradient">Asignar Rutinas</h2>
+                    <p class="text-muted mb-0">Gestiona y asigna templates de entrenamiento a tus usuarios.</p>
+                </div>
+                <a href="/workout/dashboard" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
+
+            <!-- User Selector Section -->
+            <div class="user-select-container">
+                <label class="form-label text-primary fw-bold mb-2">1. Seleccionar Usuario</label>
+                <div class="row align-items-center g-3">
+                    <div class="col-md-6">
+                        <select id="userSelect" class="form-select">
+                            <option value="" selected disabled>-- Elegir Usuario --</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="selectedUserDisplay" style="display: none;">
+                            <span class="text-muted small me-2">Asignando a:</span>
+                            <div class="selected-user-badge">
+                                <i class="fas fa-user-check"></i>
+                                <span id="badgeName">Nombre Usuario</span>
+                            </div>
+                        </div>
+                        <div id="noUserDisplay" class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i> Selecciona un usuario para habilitar la asignación.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Routines List Section -->
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <label class="form-label text-primary fw-bold mb-0">2. Seleccionar Rutina (Templates)</label>
+                    <div style="width: 250px;">
+                        <input type="text" id="passFilter" class="form-control search-box form-control-sm"
+                            placeholder="Buscar rutina...">
+                    </div>
+                </div>
+
+                <div id="loadingRoutines" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Cargando templates...</p>
+                </div>
+
+                <div id="routinesGrid" class="routine-grid" style="display: none;">
+                    <!-- Cards injected via JS -->
+                </div>
+
+                <div id="emptyState" class="text-center py-5 text-muted" style="display: none;">
+                    <i class="fas fa-dumbbell fa-3x mb-3 opacity-50"></i>
+                    <p>No se encontraron rutinas disponibles.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast for feedback -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+            aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    Acción completada con éxito.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // State
+        let selectedUserId = null;
+        let allRoutines = [];
+
+        // Elements
+        const userSelect = document.getElementById('userSelect');
+        const routinesGrid = document.getElementById('routinesGrid');
+        const loadingRoutines = document.getElementById('loadingRoutines');
+        const emptyState = document.getElementById('emptyState');
+        const routineFilter = document.getElementById('passFilter');
+        const selectedUserDisplay = document.getElementById('selectedUserDisplay');
+        const noUserDisplay = document.getElementById('noUserDisplay');
+        const badgeName = document.getElementById('badgeName');
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadRoutines();
+        });
+
+        // --- Load Users ---
+        async function loadUsers() {
+            try {
+                // Use Admin API
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+
+                users.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.user_id;
+                    // Construct display name locally
+                    const displayName = u.name || u.username || u.email || "Usuario";
+                    opt.textContent = `${displayName} (${u.user_id})`;
+                    userSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error(e);
+                showToast("Error cargando usuarios", "bg-danger");
+            }
+        }
+
+        // --- Handle User Selection ---
+        userSelect.addEventListener('change', (e) => {
+            selectedUserId = e.target.value;
+            const text = e.target.options[e.target.selectedIndex].text;
+
+            if (selectedUserId) {
+                selectedUserDisplay.style.display = 'block';
+                noUserDisplay.style.display = 'none';
+                badgeName.textContent = text.split('(')[0]; // Just the name part
+
+                // Enable buttons
+                document.querySelectorAll('.btn-assign').forEach(btn => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-plus-circle me-2"></i>Asignar Rutina`;
+                });
+            }
+        });
+
+        // --- Load Routines ---
+        async function loadRoutines() {
+            try {
+                // Admin endpoint to list all
+                const res = await fetch('/api/routines');
+                allRoutines = await res.json();
+
+                renderRoutines(allRoutines);
+
+                loadingRoutines.style.display = 'none';
+                if (allRoutines.length === 0) {
+                    emptyState.style.display = 'block';
+                } else {
+                    routinesGrid.style.display = 'grid';
+                }
+            } catch (e) {
+                console.error(e);
+                loadingRoutines.innerHTML = `<p class="text-danger">Error cargando rutinas</p>`;
+            }
+        }
+
+        // --- Render Routines ---
+        function renderRoutines(routines) {
+            routinesGrid.innerHTML = '';
+
+            routines.forEach(routine => {
+                const card = document.createElement('div');
+                card.className = 'routine-card';
+
+                const exerciseCount = routine.items ? routine.items.length : (routine.exercises ? routine.exercises.length : 0);
+                const dateStr = routine.created_at ? new Date(routine.created_at).toLocaleDateString() : 'N/A';
+
+                card.innerHTML = `
+                <div class="routine-header">
+                    <h5 class="mb-0 text-truncate fw-bold" title="${routine.name}">${routine.name}</h5>
+                    <small class="text-muted" style="font-size: 0.75rem;">ID: ${routine._id}</small>
+                </div>
+                <div class="routine-body">
+                    <div class="routine-stats">
+                        <div class="stat-item" title="Ejercicios">
+                            <i class="fas fa-list-ol"></i>
+                            <span>${exerciseCount} Ejercicios</span>
+                        </div>
+                        <div class="stat-item" title="Fecha Creación">
+                            <i class="far fa-calendar-alt"></i>
+                            <span>${dateStr}</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted small mb-3 text-truncate">
+                        ${routine.description || "Sin descripción disponible."}
+                    </p>
+                    
+                    <button class="btn btn-assign btn-sm" onclick="assignRoutine('${routine._id}')" ${!selectedUserId ? 'disabled' : ''}>
+                        ${!selectedUserId ? 'Selecciona Usuario Primero' : '<i class="fas fa-plus-circle me-2"></i>Asignar Rutina'}
+                    </button>
+                </div>
+            `;
+                routinesGrid.appendChild(card);
+            });
+        }
+
+        // --- Filter logic ---
+        routineFilter.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allRoutines.filter(r => r.name.toLowerCase().includes(term));
+            renderRoutines(filtered);
+        });
+
+        // --- Assign Action ---
+        window.assignRoutine = async (routineId) => {
+            if (!selectedUserId) {
+                showToast("Debes seleccionar un usuario primero", "bg-warning");
+                return;
+            }
+
+            const btn = event.currentTarget; // Get button reference
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Asignando...`;
+
+            try {
+                const resp = await fetch('/api/admin/routines/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: selectedUserId,
+                        routine_id: routineId
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    showToast(data.message || "Asignada con éxito", "bg-success");
+                } else {
+                    showToast(data.error || "Error al asignar", "bg-danger");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Error de conexión", "bg-danger");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
+        // --- Toast Helper ---
+        function showToast(msg, bgClass = 'bg-primary') {
+            const toastEl = document.getElementById('liveToast');
+            const toastBody = document.getElementById('toastMessage');
+
+            toastEl.className = `toast align-items-center text-white border-0 ${bgClass}`;
+            toastBody.textContent = msg;
+
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    </script>
+</body>
+
+</html>

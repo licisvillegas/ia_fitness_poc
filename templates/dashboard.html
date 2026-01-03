@@ -158,6 +158,38 @@
       color: var(--text-main) !important;
       border-color: var(--border-color) !important;
     }
+
+    /* Heatmap Grid */
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 4px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .heatmap-cell {
+      aspect-ratio: 1;
+      background-color: #2c3035;
+      border-radius: 2px;
+    }
+
+    .heatmap-cell.level-1 {
+      background-color: #0e4429;
+    }
+
+    .heatmap-cell.level-2 {
+      background-color: #006d32;
+    }
+
+    .heatmap-cell.level-3 {
+      background-color: #26a641;
+    }
+
+    .heatmap-cell.level-4 {
+      background-color: #39d353;
+      box-shadow: 0 0 5px #39d353;
+    }
   </style>
 </head>
 
@@ -185,6 +217,9 @@
         <button id="loadDataBtn" class="btn btn-primary">Cargar progreso</button>
         <button id="aiSuggestBtn" class="btn btn-outline-info">Ajustes AI</button>
         <button id="aiHistoryBtn" class="btn btn-outline-secondary">Histórico AI</button>
+        {% if is_admin %}
+        <a href="/workout/assign-routine" class="btn btn-warning"><i class="fas fa-tasks me-1"></i> Asignar Rutinas</a>
+        {% endif %}
       </div>
       <div id="loading">
         <div class="spinner-border text-primary" role="status"></div>
@@ -195,6 +230,7 @@
     </div>
 
     <!-- EstadÃ­sticas -->
+
     <!-- Ajustes del Agente -->
     <section id="ai-section" class="container mt-5" style="display:none;">
       <div class="card ai-card-theme" style="border-radius:12px;">
@@ -243,6 +279,36 @@
     <section id="stats" class="mt-5 container">
       <!-- Tarjetas con Ãºltimo registro (peso, grasa, rendimiento, adherencia) -->
       <div class="row g-4">
+
+        <!-- Admin Card (Visible only if is_admin) -->
+        {% if is_admin %}
+        <div class="col-12 col-md-12 mb-2">
+          <a href="/workout/assign-routine" class="text-decoration-none">
+            <div class="stat-card flex-row align-items-center justify-content-start px-4 py-3"
+              style="background: linear-gradient(45deg, var(--primary), #1e40af); border: none;">
+              <div class="stat-icon text-white mb-0 me-3"><i class="fas fa-tasks"></i></div>
+              <div class="text-start">
+                <h5 class="text-white mb-0">Panel de Entrenador</h5>
+                <p class="text-white-50 mb-0 small">Asignar nuevas rutinas y gestionar plantillas</p>
+              </div>
+              <div class="ms-auto text-white"><i class="fas fa-chevron-right"></i></div>
+            </div>
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- Heatmap Card -->
+        <div class="col-12 col-md-12 mb-3">
+          <div class="card bg-panel border-0 shadow">
+            <div class="card-header border-secondary text-white fw-bold">
+              <i class="fas fa-th text-success me-2"></i>Consistencia (Últimos 60 días)
+            </div>
+            <div class="card-body d-flex justify-content-center py-4">
+              <div id="heatmapGrid" class="heatmap-grid"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="col-6 col-md-3">
           <div class="stat-card">
             <div class="stat-icon">🔥</div>
@@ -279,6 +345,14 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- My Routines Section -->
+    <section id="my-routines" class="container mt-5" style="display:none;">
+      <h4 class="mb-3">Mis Rutinas Asignadas</h4>
+      <div id="routines-list" class="row g-3">
+        <!-- Routines injected here -->
       </div>
     </section>
 
@@ -429,7 +503,92 @@
         if (!targetId) { message.textContent = "â ï¸ Ingresa un ID de usuario."; return; }
         loadProgress(targetId);
         loadActivePlanIndicator(targetId);
+        loadRoutines(targetId);
+        loadHeatmap(targetId);
       });
+
+      // --- New Function: Load Routines ---
+      async function loadRoutines(userId) {
+        const listEl = document.getElementById('routines-list');
+        const sectionEl = document.getElementById('my-routines');
+
+        if (!listEl || !sectionEl) return;
+
+        // Clear current
+        listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+        sectionEl.style.display = 'block';
+
+        try {
+          const res = await fetch(`/workout/api/routines?user_id=${encodeURIComponent(userId)}`);
+          const routines = await res.json();
+
+          listEl.innerHTML = '';
+
+          if (!routines || routines.length === 0) {
+            listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No hay rutinas asignadas para este usuario.</div>`;
+            return;
+          }
+
+          routines.forEach(r => {
+            const cardCol = document.createElement('div');
+            cardCol.className = 'col-md-6 col-lg-4';
+
+            // Safe checks
+            const name = r.name || 'Rutina sin nombre';
+            const exCount = (r.items ? r.items.length : 0);
+            const id = r._id;
+
+            cardCol.innerHTML = `
+                    <div class="card h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary mb-2 text-truncate" title="${name}">${name}</h5>
+                            <p class="card-text text-muted small mb-3">
+                                <i class="fas fa-dumbbell me-1"></i> ${exCount} ejercicios
+                            </p>
+                            <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="fas fa-play me-1"></i> Iniciar
+                            </a>
+                        </div>
+                    </div>
+                  `;
+            listEl.appendChild(cardCol);
+          });
+
+        } catch (e) {
+          console.error(e);
+          listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas.</div>`;
+        }
+      }
+
+      // --- New Function: Load Heatmap ---
+      async function loadHeatmap(userId) {
+        try {
+          const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}`);
+          const hMap = await hRes.json();
+          const grid = document.getElementById("heatmapGrid");
+
+          // Generate last 60 days
+          grid.innerHTML = "";
+          grid.style.gridTemplateColumns = `repeat(10, 1fr)`;
+
+          const today = new Date();
+          for (let i = 59; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            const count = hMap[key] || 0;
+
+            const cell = document.createElement("div");
+            cell.className = `heatmap-cell level-${Math.min(count * 2, 4)}`;
+            if (count === 0) cell.className = "heatmap-cell";
+            else if (count >= 2) cell.className = "heatmap-cell level-4";
+            else cell.className = "heatmap-cell level-2";
+
+            cell.title = `${key}: ${count} workouts`;
+            grid.appendChild(cell);
+          }
+        } catch (e) { console.error("Heatmap error", e); }
+      }
 
       // BotÃ³n: solicitar ajustes AI y mostrar resumen en el mensaje
       const aiBtn = document.getElementById("aiSuggestBtn");
@@ -659,6 +818,8 @@
         if (loadId) {
           loadProgress(loadId);
           loadActivePlanIndicator(loadId);
+          loadRoutines(loadId);
+          loadHeatmap(loadId);
         }
       });
     </script>

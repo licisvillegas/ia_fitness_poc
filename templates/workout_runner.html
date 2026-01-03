@@ -290,6 +290,12 @@
         return new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
     };
 
+    const getReturnUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        // Default to home if no specific return_to is provided
+        return params.get('return_to') || '/';
+    };
+
     if (CURRENT_USER_ID) {
         try {
             localStorage.setItem("ai_fitness_uid", CURRENT_USER_ID);
@@ -864,7 +870,7 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload)
                     });
-                    if (res.ok) window.location.href = "/workout/dashboard";
+                    if (res.ok) window.location.href = getReturnUrl();
                 } catch (e) {
                     alert("Error saving: " + e.message);
                 }
@@ -873,12 +879,12 @@
 
         const cancelWorkout = () => {
             if (status === 'IDLE') {
-                window.location.href = "/workout/dashboard";
+                window.location.href = getReturnUrl();
                 return;
             }
             showConfirm("Cancelar Rutina", "¿Estás seguro de que quieres salir? Se perderá el progreso actual.", () => {
                 showMessage("Rutina cancelada", "error");
-                window.location.href = "/workout/dashboard";
+                window.location.href = getReturnUrl();
             }, "danger");
         };
 
@@ -1608,7 +1614,7 @@
     };
 
     const Header = () => {
-        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout } = useWorkout();
+        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout } = useWorkout();
 
         // Calculate Work Steps only
         const workStats = React.useMemo(() => {
@@ -1637,9 +1643,15 @@
 
                 {/* Right: Controls */}
                 <div className="d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
-                    <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
-                        <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
-                    </button>
+                    {status === 'IDLE' ? (
+                        <button className="btn btn-sm btn-outline-success rounded-pill px-3" onClick={startWorkout}>
+                            <i className="fas fa-play"></i>
+                        </button>
+                    ) : (
+                        <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
+                            <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
+                        </button>
+                    )}
                     <button className="btn btn-sm btn-outline-danger rounded-circle" onClick={cancelWorkout} style={{ width: '32px', height: '32px', padding: 0 }}>
                         <i className="fas fa-times"></i>
                     </button>

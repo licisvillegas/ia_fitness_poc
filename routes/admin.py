@@ -687,6 +687,48 @@ def save_routine_builder():
         logger.error(f"Error save routine: {e}")
         return jsonify({"error": "Error interno"}), 500
 
+@admin_bp.get("/admin/routines/assign")
+def admin_assign_routine_page():
+    return render_template("assign_routine.html")
+
+@admin_bp.post("/api/admin/routines/assign")
+def admin_api_assign_routine():
+    """Asigna una rutina a un usuario (tabla de enlace)"""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        data = request.json
+        user_id = data.get("user_id")
+        routine_id = data.get("routine_id")
+        
+        if not user_id or not routine_id:
+            return jsonify({"error": "Faltan datos"}), 400
+            
+        # Verificar si ya existe asignación activa
+        exists = extensions.db.routine_assignments.find_one({
+            "user_id": user_id, 
+            "routine_id": routine_id,
+            "active": True
+        })
+        
+        if exists:
+             return jsonify({"message": "Ya está asignada"}), 200
+             
+        # Crear asignación
+        assignment = {
+            "user_id": user_id,
+            "routine_id": routine_id,
+            "assigned_at": datetime.utcnow(),
+            "active": True
+        }
+        extensions.db.routine_assignments.insert_one(assignment)
+        return jsonify({"message": "Rutina asignada correctamente"}), 200
+    except Exception as e:
+        logger.error(f"Error assigning routine: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
 @admin_bp.get("/admin/api/users/<user_id>/full_profile")
 def get_user_full_profile(user_id):
     """Retorna perfil completo (User + Profile) para Body Assessment."""

@@ -45,6 +45,18 @@
             </div>
         </div>
     </div>
+
+    {% if is_admin %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card bg-panel border-0 shadow h-100 hover-card" onclick="location.href='/admin/routines/assign'">
+            <div class="card-body text-center py-4 py-md-5">
+                <i class="fas fa-users-cog fa-4x text-success mb-3"></i>
+                <h4 class="text-white">Asignar Rutinas</h4>
+                <p class="text-muted">Gestiona y asigna planes a usuarios.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 
@@ -328,7 +340,7 @@
                     <span class="badge bg-secondary mb-3">${countExercises(r)} Ejercicios</span>
                     
                     <div class="d-grid">
-                        <a href="/workout/run/${r._id}" class="btn btn-cyber-success btn-lg w-100 py-3 fw-bold shadow-lg text-uppercase" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                        <a href="/workout/run/${r._id}?return_to=/workout/dashboard" class="btn btn-cyber-success btn-lg w-100 py-3 fw-bold shadow-lg text-uppercase" style="font-size: 1.1rem; letter-spacing: 0.5px;">
                             <i class="fas fa-play me-2"></i> INICIAR
                         </a>
                     </div>

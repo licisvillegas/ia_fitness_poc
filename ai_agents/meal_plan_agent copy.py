@@ -208,16 +208,10 @@ class MealPlanAgent:
                 "items": items
             })
 
-        # Recalculate global totals based on actual generated meals for consistency
-        global_real_kcal = sum(m["kcal"] for m in meals_out)
-        global_real_p = sum(m["macros"]["p"] for m in meals_out)
-        global_real_c = sum(m["macros"]["c"] for m in meals_out)
-        global_real_f = sum(m["macros"]["f"] for m in meals_out)
-
         return {
             "source": "mock_granular_v3",
-            "total_kcal": global_real_kcal,
-            "macros_daily": {"p": global_real_p, "c": global_real_c, "f": global_real_f},
+            "total_kcal": total_kcal,
+            "macros_daily": {"p": int(p_daily), "c": int(c_daily), "f": int(f_daily)},
             "meals": meals_out,
             "tips": ["Pesa los alimentos en crudo a menos que se indique lo contrario.", "Bebe agua en las comidas."]
         }

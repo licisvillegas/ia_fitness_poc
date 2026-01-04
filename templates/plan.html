@@ -172,6 +172,7 @@
             <h6 class="text-primary">Nutrición</h6>
             <div id="active-kcal" class="text-theme"></div>
             <div id="active-macros" class="text-theme"></div>
+            <div id="active-meals-list" class="mt-3"></div>
           </div>
           <div class="mt-3">
             <h6 class="text-primary">Entrenamiento</h6>
@@ -221,6 +222,7 @@
                 <h6 class="text-primary">Nutrición</h6>
                 <div id="plan-kcal" class="text-theme"></div>
                 <div id="plan-macros" class="text-theme"></div>
+                <div id="plan-meals-list" class="mt-3"></div>
               </div>
               <div class="mt-3">
                 <h6 class="text-primary">Entrenamiento</h6>
@@ -441,7 +443,8 @@
               frag.appendChild(li);
             });
             listEl.appendChild(frag);
-            if (rows[0]) renderPlan(rows[0]);
+            listEl.appendChild(frag);
+            if (rows[0] && !currentPlanId) renderPlan(rows[0]);
           } catch (e) {
             msgEl.textContent = `Error al cargar planes: ${e.message}`;
           }
@@ -461,6 +464,7 @@
           const fG = macros.fat ?? macros2.fat ?? macros2.g;
           kcalEl.textContent = `Calorias/día: ${kcal} ${np.kcal_delta != null ? `(delta: ${np.kcal_delta})` : ''}`;
           macrosEl.textContent = `Macros (p/c/g): ${pG ?? '-'} / ${cG ?? '-'} / ${fG ?? '-'}`;
+          renderMeals(np.meals || [], 'plan-meals-list');
           trainEl.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
           const ai = p.ai_summary || {};
           if (ai && (ai.razonamiento_resumido || ai.proxima_revision_dias != null)) {
@@ -472,6 +476,84 @@
             aiReason.textContent = '';
             aiNext.textContent = '';
           }
+        }
+
+        function renderMeals(meals, containerId) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          container.innerHTML = '';
+          if (!meals || meals.length === 0) {
+            container.innerHTML = '<div class="text-muted small">No hay detalle de comidas disponible.</div>';
+            return;
+          }
+
+          const accordionId = `acc-${containerId}`;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'accordion';
+          wrapper.id = accordionId;
+
+          meals.forEach((m, idx) => {
+            const itemId = `${accordionId}-item-${idx}`;
+            const isFirst = idx === 0;
+
+            // Safe access to macros
+            const p = (m.macros && (m.macros.p || m.macros.protein)) || 0;
+            const c = (m.macros && (m.macros.c || m.macros.carbs)) || 0;
+            const f = (m.macros && (m.macros.f || m.macros.fat)) || 0;
+
+            const item = document.createElement('div');
+            item.className = 'accordion-item bg-dark border-secondary text-white';
+
+            // Build items list HTML
+            let itemsHtml = '<ul class="list-group list-group-flush">';
+            if (m.items && Array.isArray(m.items)) {
+              m.items.forEach(i => {
+                const ip = (i.macros && i.macros.p) || 0;
+                const ic = (i.macros && i.macros.c) || 0;
+                const if_ = (i.macros && i.macros.f) || 0;
+                const macroStr = `P:${ip} C:${ic} G:${if_}`;
+
+                itemsHtml += `
+                   <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+                     <div>
+                       <div class="fw-bold fs-6 text-light">${i.food}</div>
+                       <div class="small text-muted">${i.qty}</div>
+                     </div>
+                     <div class="text-end small">
+                       <div class="text-warning">${i.kcal} kcal</div>
+                       <div class="text-secondary" style="font-size:0.75rem;">${macroStr}</div>
+                     </div>
+                   </li>
+                 `;
+              });
+            }
+            itemsHtml += '</ul>';
+
+            item.innerHTML = `
+              <h2 class="accordion-header" id="heading-${itemId}">
+                <button class="accordion-button ${isFirst ? '' : 'collapsed'} bg-dark text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#${itemId}" aria-expanded="${isFirst}" aria-controls="${itemId}">
+                  <div class="d-flex w-100 justify-content-between align-items-center me-3">
+                    <span class="fw-bold text-primary">${m.name}</span>
+                    <span class="badge bg-secondary rounded-pill">${m.kcal} kcal</span>
+                  </div>
+                </button>
+              </h2>
+              <div id="${itemId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}" aria-labelledby="heading-${itemId}" data-bs-parent="#${accordionId}">
+                <div class="accordion-body p-0">
+                  <div class="p-2 border-bottom border-secondary bg-panel small">
+                    <div class="d-flex justify-content-around text-theme">
+                      <span>Prot: ${p}g</span>
+                      <span>Carb: ${c}g</span>
+                      <span>Grasa: ${f}g</span>
+                    </div>
+                  </div>
+                  ${itemsHtml}
+                </div>
+              </div>
+            `;
+            wrapper.appendChild(item);
+          });
+          container.appendChild(wrapper);
         }
 
         function formatDateDMY(value) {
@@ -508,6 +590,7 @@
             const kcal = (np.calories_per_day ?? np.kcal_obj ?? '-');
             aKcal.textContent = `Calorias/día: ${kcal} ${np.kcal_delta != null ? `(delta: ${np.kcal_delta})` : ''}`;
             aMacros.textContent = `Macros (p/c/g): ${macros.protein ?? '-'} / ${macros.carbs ?? '-'} / ${macros.fat ?? '-'}`;
+            renderMeals(np.meals || [], 'active-meals-list');
             aTrain.textContent = `Cardio: ${tr.cardio ?? '-'} · Volumen Δ: ${tr.ai_volumen_delta_ratio ?? '-'}`;
             const ai = p.ai_summary || {};
             if (ai && (ai.razonamiento_resumido || ai.proxima_revision_dias != null)) {

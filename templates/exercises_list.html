@@ -312,6 +312,16 @@
                     return;
                 }
 
+                // Equipment Map (copied from catalog)
+                const equipmentMap = {
+                    'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
+                    'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
+                    'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
+                    'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
+                    'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
+                    'other': 'Otro'
+                };
+
                 // Group by body_part
                 const groups = exercises.reduce((acc, ex) => {
                     const key = ex.body_part || "Otros";
@@ -335,6 +345,9 @@
                                 <i class="fas fa-play"></i>
                              </button>` : '';
 
+                        // Formatted tags similar to mobile admin view
+                        const equipLabel = equipmentMap[ex.equipment] || ex.equipment || 'N/A';
+
                         return `
                         <div class="col-md-6 col-lg-4 mb-3">
                             <div class="exercise-card position-relative h-100">
@@ -342,9 +355,12 @@
                                 <img src="${ex.image_url || '/static/images/placeholder_exercise.jpg'}" class="exercise-img" alt="${ex.name}">
                                 <div class="card-body p-3">
                                     <h5 class="card-title text-light mb-1">${ex.name}</h5>
-                                    <div class="mb-2">
-                                        <span class="badge badge-muscle rounded-pill px-2 py-1 small">${ex.body_part}</span>
+                                    
+                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">${ex.body_part}</span>
+                                        <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipLabel}</span>
                                     </div>
+
                                     <p class="card-text text-muted small text-truncate">${ex.description || 'Sin descripción'}</p>
                                 </div>
                             </div>

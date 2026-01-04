@@ -563,7 +563,8 @@
       // --- New Function: Load Heatmap ---
       async function loadHeatmap(userId) {
         try {
-          const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}`);
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}&timezone=${encodeURIComponent(tz)}`);
           const hMap = await hRes.json();
           const grid = document.getElementById("heatmapGrid");
 
@@ -575,7 +576,8 @@
           for (let i = 59; i >= 0; i--) {
             const d = new Date();
             d.setDate(today.getDate() - i);
-            const key = d.toISOString().split('T')[0];
+            // Use local date string (YYYY-MM-DD)
+            const key = d.toLocaleDateString('en-CA');
             const count = hMap[key] || 0;
 
             const cell = document.createElement("div");

@@ -417,14 +417,22 @@ def api_get_heatmap():
         
         if not user_id: return jsonify({})
 
+        # Get timezone from query param, default to UTC
+        tz = request.args.get("timezone", "UTC")
+        
         # Aggregation: Group by Date (YYYY-MM-DD) -> Count sessions/volume
         pipeline = [
             {"$match": {"user_id": user_id}},
             {"$project": {
-                "dateStr": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}
+                # Ensure created_at is treated as Date (handles strings/dates)
+                "dateStr": {"$dateToString": {"format": "%Y-%m-%d", "date": {"$toDate": "$created_at"}, "timezone": tz}}
             }},
             {"$group": {"_id": "$dateStr", "count": {"$sum": 1}}}
         ]
+        
+        # Debug log
+        logger.info(f"Heatmap req for {user_id}, tz={tz}")
+        
         data = list(db.workout_sessions.aggregate(pipeline))
         # Format: {"2025-01-01": 1, "2025-01-03": 2}
         result = {item["_id"]: item["count"] for item in data}
@@ -463,6 +471,75 @@ def api_get_volume_stats():
     except Exception as e:
         logger.error(f"Error volume stats: {e}")
         return jsonify([]), 500
+
+
+@workout_bp.get("/api/exercises/filter")
+def api_filter_exercises():
+    """
+    Public API to filter exercises by muscle groups (comma separated).
+    Query params:
+    - muscles: "Pecho,Tríceps" or "all"
+    - q: search term (optional)
+    """
+    db = get_db()
+    if db is None: return jsonify([]), 503
+    
+    muscles_arg = request.args.get("muscles", "")
+    query_term = request.args.get("q", "").strip()
+    
+    query = {}
+    
+    # Muscle Filter
+    if muscles_arg and muscles_arg.lower() != "all":
+        # Split by comma and strip
+        raw_parts = [m.strip() for m in muscles_arg.split(",") if m.strip()]
+        
+        resolved_parts = set()
+        for p in raw_parts:
+            # 1. Check if p is a key (case-insensitive check)
+            # Assuming keys are stored capitalized or we check regex, 
+            # but simpler: check if any body_part has key=p or label_es=p
+            
+            # Efficient lookup:
+            # Find body_part where key=p OR label=p OR label_es=p
+            bp = db.body_parts.find_one({
+                "$or": [
+                    {"key": {"$regex": f"^{p}$", "$options": "i"}},
+                    {"label": {"$regex": f"^{p}$", "$options": "i"}},
+                    {"label_es": {"$regex": f"^{p}$", "$options": "i"}}
+                ]
+            })
+            
+            if bp:
+                resolved_parts.add(bp["key"]) # Use the internal key
+            else:
+                # If not found in body_parts, assume it might be a direct key use by exercise
+                # (fallback)
+                resolved_parts.add(p)
+                
+        if resolved_parts:
+            query["body_part"] = {"$in": list(resolved_parts)}
+            
+    # Search Term
+    if query_term:
+        query["name"] = {"$regex": query_term, "$options": "i"}
+        
+    try:
+        # Projection: keep it light
+        cursor = db.exercises.find(query, {
+            "exercise_id": 1, "name": 1, "body_part": 1, 
+            "difficulty": 1, "equipment": 1, "video_url": 1,
+            "description": 1, "image_url": 1
+        }).sort("name", 1).limit(50)
+        
+        results = list(cursor)
+        for r in results:
+            r["_id"] = str(r["_id"])
+            
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error filtering exercises: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @workout_bp.get("/api/body-parts")

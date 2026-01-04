@@ -401,7 +401,8 @@
         // 2. Heatmap (Mini grid simulation)
         try {
             const uid = getActiveUserId();
-            const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${uid}`); // { "2025-01-01": 1 }
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${uid}&timezone=${encodeURIComponent(tz)}`); // { "2025-01-01": 1 }
             const hMap = await hRes.json();
             const grid = document.getElementById("heatmapGrid");
 
@@ -413,7 +414,7 @@
             for (let i = 59; i >= 0; i--) { // 60 days
                 const d = new Date();
                 d.setDate(today.getDate() - i);
-                const key = d.toISOString().split('T')[0];
+                const key = d.toLocaleDateString('en-CA');
                 const count = hMap[key] || 0;
 
                 const cell = document.createElement("div");

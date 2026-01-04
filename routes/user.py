@@ -29,6 +29,10 @@ def about_page():
 def plan_page():
     return render_template("plan.html")
 
+@user_bp.route("/exercises/list")
+def exercises_list_page():
+    return render_template("exercises_list.html")
+
 @user_bp.route("/profile")
 def profile_page():
     user_id = request.cookies.get("user_session")

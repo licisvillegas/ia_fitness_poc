@@ -200,36 +200,63 @@
     }
 
     @media (max-width: 768px) {
+        .player-container {
+            /* Ensure full height usage */
+        }
+
+        .visual-stage {
+            padding: 0.5rem;
+            /* Reduced from 1rem */
+            justify-content: flex-start;
+            /* Align top on mobile to avoid centering issues if overflow */
+            padding-top: 1rem;
+        }
+
         .active-card {
-            padding: 0.75rem;
-            /* Reduced padding */
+            padding: 1rem;
             border-radius: 16px;
+            max-width: 100%;
+            border-width: 1px;
+            /* Thinner border */
+        }
+
+        .heading-wrap {
+            font-size: 1.5rem;
+            /* Smaller title */
+            line-height: 1.2;
+            margin-bottom: 0.25rem !important;
         }
 
         .input-hud {
-            font-size: 1.2rem;
-            /* reduced from 1.5rem */
-            height: 40px;
-            /* reduced from 50px */
-        }
-
-        .btn-action {
-            padding: 10px;
-            /* reduced from 14px */
-            font-size: 0.9rem;
-            /* reduced from 1rem */
+            font-size: 1.5rem;
+            height: 48px;
+            width: 80px !important;
+            /* Fixed compact width */
         }
 
         .btn-control-hud {
-            width: 36px !important;
-            height: 36px !important;
+            width: 40px !important;
+            height: 40px !important;
         }
 
-        .btn-rpe-hud {
-            width: 40px !important;
-            height: 36px !important;
-            font-size: 0.8rem !important;
-            padding: 0 !important;
+        .btn-action {
+            padding: 12px;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Compact layout helpers */
+        .mobile-compact-mb {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .mobile-hide {
+            display: none !important;
+        }
+
+        .controls-section {
+            padding: 10px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
         }
     }
 
@@ -243,16 +270,11 @@
         height: 40px;
     }
 
-
     .heading-wrap {
         white-space: normal;
-        /* Allow wrapping */
         word-wrap: break-word;
-        /* Break long words if necessary */
         line-height: 1.1;
-        /* Adjust line height for readability */
-        font-size: clamp(1.2rem, 5vw, 2.2rem);
-        /* Responsive font size */
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
     }
 </style>
 
@@ -1370,16 +1392,16 @@
         }, [weight, unit]);
 
         return (
-            <div className="py-2">
-                <div className="row g-2 justify-content-center mb-3 mb-md-4">
-                    <div className="col-12 col-md-6">
-                        <div className="d-flex align-items-center justify-content-center mb-2 gap-2">
-                            <label className="text-secondary small fw-bold m-0">PESO</label>
-                            <button className="btn btn-sm btn-dark border border-secondary py-0 px-2 small font-monospace" onClick={toggleUnit}>
-                                {unit.toUpperCase()} <i className="fas fa-sync-alt ms-1 text-muted" style={{ fontSize: '0.7em' }}></i>
+            <div className="py-1">
+                <div className="row g-2 justify-content-center mb-2">
+                    <div className="col-6">
+                        <div className="d-flex align-items-center justify-content-center mb-1 gap-1">
+                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
+                            <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
+                                {unit.toUpperCase()}
                             </button>
                         </div>
-                        <div className="d-flex align-items-center justify-content-center gap-2">
+                        <div className="d-flex align-items-center justify-content-center gap-1">
                             <button
                                 className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
@@ -1388,17 +1410,13 @@
                             <div className="position-relative">
                                 <input type="text"
                                     ref={weightInputRef}
-                                    className="form-control input-hud text-center"
-                                    style={{ maxWidth: '120px' }}
+                                    className="form-control input-hud text-center p-0"
                                     value={weight}
                                     onChange={e => setWeight(e.target.value)}
                                     placeholder="0"
                                     inputMode="decimal"
                                     onClick={(e) => e.target.select()}
                                 />
-                                <div className="position-absolute start-50 translate-middle-x text-muted small" style={{ bottom: '-20px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                                    {equivalentText}
-                                </div>
                             </div>
                             <button
                                 className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
@@ -1406,12 +1424,15 @@
                                 onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
                             >+</button>
                         </div>
+                        <div className="text-center text-muted small mt-1" style={{ fontSize: '0.7rem' }}>
+                            {equivalentText}
+                        </div>
                     </div>
-                    <div className="col-12 col-md-6">
-                        <label className="text-secondary small fw-bold mb-2 d-block text-center">
-                            REPS {step.target.reps && <span className="text-cyber-green ms-2">(Meta: {step.target.reps})</span>}
+                    <div className="col-6">
+                        <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>
+                            REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
                         </label>
-                        <div className="d-flex align-items-center justify-content-center gap-2">
+                        <div className="d-flex align-items-center justify-content-center gap-1">
                             <button
                                 className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
                                 type="button"
@@ -1419,8 +1440,7 @@
                             >-</button>
                             <input
                                 type="text"
-                                className="form-control input-hud"
-                                style={{ maxWidth: '120px' }}
+                                className="form-control input-hud text-center p-0"
                                 value={reps}
                                 onChange={e => setReps(e.target.value)}
                                 placeholder="0"
@@ -1437,9 +1457,9 @@
                     </div>
                 </div>
 
-                <div className="mb-3 mb-md-4">
-                    <label className="text-secondary small fw-bold mb-2 d-block text-center">RPE (Esfuerzo 1-10)</label>
-                    <div className="d-flex justify-content-center gap-2">
+                <div className="mb-3">
+                    <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
+                    <div className="d-flex justify-content-center gap-1">
                         {[7, 8, 9, 10].map(val => (
                             <button key={val}
                                 className={`btn btn-sm btn-rpe-hud d-flex align-items-center justify-content-center ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
@@ -1449,9 +1469,11 @@
                     </div>
                 </div>
 
-                <button className="btn btn-action shadow-lg ripple" onClick={handleSubmit}>
-                    COMPLETAR SERIE <i className="fas fa-check ms-2"></i>
-                </button>
+                <div className="d-grid px-3">
+                    <button className="btn btn-action shadow-lg ripple py-3" onClick={handleSubmit}>
+                        COMPLETAR <i className="fas fa-check ms-2"></i>
+                    </button>
+                </div>
             </div>
         );
     };
@@ -1533,36 +1555,38 @@
         const groupComment = currentStep.groupComment || "";
 
         return (
-            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry`}>
-                <div className="d-flex flex-column justify-content-center h-100">
+            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100`}>
+                <div className="d-flex flex-column justify-content-between h-100">
 
-                    {currentStep.groupName && (
-                        <div className="text-center mb-3">
-                            <span className="badge bg-danger px-3 py-2">{currentStep.groupName}</span>
-                        </div>
-                    )}
+                    {/* Header Part */}
+                    <div className="text-center mobile-compact-mb mb-3">
+                        {currentStep.groupName && (
+                            <div className="mb-1">
+                                <span className="badge bg-danger px-2 py-1 small">{currentStep.groupName}</span>
+                            </div>
+                        )}
+                        <span className="text-secondary text-uppercase small tracking-widest d-block mb-1" style={{ fontSize: '0.7rem' }}>{bodyPart}</span>
 
-                    <div className="text-center mb-4">
-                        <span className="text-secondary text-uppercase small tracking-widest">{bodyPart}</span>
-                        <div className="d-flex flex-column align-items-center justify-content-center gap-2 mt-1">
-                            <h2 className="display-6 fw-bold text-white m-0 heading-wrap">{name}</h2>
+                        <div className="d-flex flex-column align-items-center justify-content-center gap-1">
+                            <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
                             {hasVideo && (
                                 <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger rounded-pill px-3 py-1"
-                                    style={{ fontSize: '0.8rem' }}
+                                    className="btn btn-sm btn-outline-danger rounded-pill px-3 py-0"
+                                    style={{ fontSize: '0.75rem' }}
                                     onClick={() => openVideoModal(ex.video_url)}
                                 >
-                                    <i className="fab fa-youtube me-2"></i> Ver Tutorial
+                                    <i className="fab fa-youtube me-1"></i> Tutorial
                                 </button>
                             )}
                         </div>
-                        <div className="mt-2 text-info fs-5">
+                        <div className="mt-1 text-info fs-6">
                             Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
                         </div>
                     </div>
 
-                    <div className="mt-2">
+                    {/* Controls Part */}
+                    <div className="flex-grow-1 d-flex flex-column justify-content-center">
                         {currentStep.isTimeBased ? (
                             <TimerControls step={currentStep} />
                         ) : (
@@ -1570,8 +1594,9 @@
                         )}
                     </div>
 
+                    {/* Footer Part */}
                     {(groupComment || exerciseComment) && (
-                        <div className="mt-3 pt-3 border-top border-secondary text-center">
+                        <div className="mt-2 pt-2 border-top border-secondary text-center">
                             {groupComment && <div className="text-cyber-orange small">{groupComment}</div>}
                             {exerciseComment && <div className="text-secondary small">{exerciseComment}</div>}
                         </div>

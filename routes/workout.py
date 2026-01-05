@@ -278,3 +278,87 @@ def api_get_sessions():
     except Exception as e:
         logger.error(f"Error fetching sessions: {e}")
         return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.get("/run/<routine_id>")
+def run_routine(routine_id):
+    """
+    Renders the workout runner for a specific routine.
+    """
+    try:
+        db = get_db()
+        if not ObjectId.is_valid(routine_id):
+            return render_template("404.html", message="ID de rutina inválido"), 400
+            
+        routine = db.routines.find_one({"_id": ObjectId(routine_id)})
+        if not routine:
+            return render_template("404.html", message="Rutina no encontrada"), 404
+            
+        # Convert ObjectId to string
+        routine["_id"] = str(routine["_id"])
+        routine["id"] = str(routine["_id"])
+        
+        # Ensure items exist
+        if "items" not in routine:
+            routine["items"] = []
+            
+        # Get Current User Name (for personalized hello)
+        user_id = request.cookies.get("user_session")
+        user_name = ""
+        if user_id:
+             u = db.users.find_one({"user_id": user_id})
+             if u:
+                 user_name = u.get("name") or u.get("username")
+        
+        return render_template("workout_runner.html", 
+                               routine=routine,
+                               current_user_id=user_id,
+                               current_user_name=user_name)
+    except Exception as e:
+        logger.error(f"Error running routine: {e}")
+        return f"Error interno: {e}", 500
+
+@workout_bp.post("/api/session/save")
+def api_save_session():
+    """
+    Saves a completed workout session.
+    """
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+             return jsonify({"error": "Unauthorized"}), 401
+             
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data"}), 400
+            
+        db = get_db()
+        
+        # Calculate stats
+        sets = data.get("sets", [])
+        total_volume = 0
+        for s in sets:
+             try:
+                 w = float(s.get("weight", 0))
+                 r = float(s.get("reps", 0))
+                 total_volume += w * r
+             except: pass
+             
+        # Prepare document
+        session_doc = {
+            "user_id": user_id,
+            "routine_id": data.get("routine_id"),
+            "started_at": data.get("start_time"),
+            "completed_at": data.get("end_time") or datetime.now().isoformat(),
+            "created_at": datetime.now(),
+            "sets": sets,
+            "total_volume": round(total_volume, 2),
+            "body_weight": 0
+        }
+        
+        res = db.workout_sessions.insert_one(session_doc)
+        
+        return jsonify({"success": True, "id": str(res.inserted_id)}), 200
+        
+    except Exception as e:
+        logger.error(f"Error saving session: {e}")
+        return jsonify({"error": str(e)}), 500

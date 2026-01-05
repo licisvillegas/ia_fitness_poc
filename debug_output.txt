@@ -1,0 +1,40 @@
+--- SESSIONS COLLECTION DEBUG ---
+Total 'sessions' found: 0
+
+--- WORKOUT_SESSIONS COLLECTION DEBUG ---
+Total 'workout_sessions' found: 5
+
+Session ID: 6954962a8fa6139f1f431d5a
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+Started At: None (Type: <class 'NoneType'>)
+Created At: 2025-12-31 03:19:06.583000 (Type: <class 'datetime.datetime'>)
+
+Session ID: 69549bda8fa6139f1f431d5b
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+Started At: None (Type: <class 'NoneType'>)
+Created At: 2025-12-31 03:43:22.598000 (Type: <class 'datetime.datetime'>)
+
+Session ID: 69549f168fa6139f1f431d5e
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+Started At: None (Type: <class 'NoneType'>)
+Created At: 2025-12-31 03:57:10.120000 (Type: <class 'datetime.datetime'>)
+
+Session ID: 69549fa48fa6139f1f431d5f
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+Started At: None (Type: <class 'NoneType'>)
+Created At: 2025-12-31 03:59:32.472000 (Type: <class 'datetime.datetime'>)
+
+Session ID: 69553d750c054343ddffab0e
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+Started At: None (Type: <class 'NoneType'>)
+Created At: 2025-12-31 15:12:53.777000 (Type: <class 'datetime.datetime'>)
+
+--- PLAN DEBUG ---
+
+Plan ID: 6951c2b261dfcd7dba980b4a
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)
+
+--- ROUTINE ASSIGNMENTS DEBUG ---
+
+Assignment ID: 695999933f4c883411dfcdde
+User ID: 6931cf1adeba6b26a5fb524e (Type: <class 'str'>)

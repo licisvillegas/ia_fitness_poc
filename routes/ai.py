@@ -147,6 +147,10 @@ def ai_get_adjustments(user_id: str):
 def body_assessment_tester():
     return render_template("body_assessment.html")
 
+@ai_bp.get("/ai/body_assessment/user")
+def body_assessment_user():
+    return render_template("body_assessment_user.html")
+
 @ai_bp.post("/ai/body_assessment")
 def ai_body_assessment():
     try:

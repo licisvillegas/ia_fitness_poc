@@ -215,3 +215,59 @@ def get_progress(user_id):
     except Exception as e:
         logger.error(f"Error al obtener progreso de {user_id}: {str(e)}", exc_info=True)
         return jsonify({"error": "Error interno al obtener progreso"}), 500
+@user_bp.get("/api/user/my_profile")
+def get_my_profile_aggregated():
+    """Endpoint agregado para precargar formularios del usuario."""
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+         return jsonify({"error": "No autenticado"}), 401
+    
+    if extensions.db is None:
+         return jsonify({"error": "DB not ready"}), 503
+
+    try:
+        # 1. Basic User Info
+        user_doc = extensions.db.users.find_one({"user_id": user_id}) or {}
+        
+        # 2. Profile Info
+        profile_doc = extensions.db.user_profiles.find_one({"user_id": user_id}) or {}
+        
+        # 3. Active Plan Goal/Activity
+        plan_doc = extensions.db.plans.find_one({"user_id": user_id, "active": True}) or {}
+        
+        # 4. Latest Measurements (from body_assessments or progress)
+        measurements = {}
+        # Try latest assessment
+        last_assess = extensions.db.body_assessments.find_one(
+            {"user_id": user_id}, sort=[("created_at", -1)]
+        )
+        if last_assess and "input" in last_assess and "measurements" in last_assess["input"]:
+             measurements = last_assess["input"]["measurements"]
+        
+        # Calculate Age
+        age = None
+        if profile_doc.get("birth_date"):
+            dob = profile_doc["birth_date"]
+            if isinstance(dob, datetime):
+                today = datetime.utcnow()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+        
+        # Construct Response
+        data = {
+            "user_id": user_id,
+            "name": user_doc.get("name") or user_doc.get("username"),
+            "email": user_doc.get("email"),
+            "sex": profile_doc.get("sex"),
+            "age": age,
+            "phone": profile_doc.get("phone"),
+            "goal": plan_doc.get("goal") or user_doc.get("goal"), # Fallback to user doc
+            "activity_level": plan_doc.get("activity_level"), # Note: Plan might not check activity level, checking input logic usually relies on creation input.
+            "notes": None, # Could fetch from last plan or assessment
+            "measurements": measurements
+        }
+        
+        return jsonify(data), 200
+        
+    except Exception as e:
+        logger.error(f"Error fetching my_profile for {user_id}: {e}", exc_info=True)
+        return jsonify({"error": "Error interno fetching profile"}), 500

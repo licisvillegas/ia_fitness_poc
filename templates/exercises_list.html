@@ -117,6 +117,21 @@
                                 <!-- Populated via JS -->
                             </ul>
                         </div>
+                        <div class="dropdown">
+                            <button class="btn btn-dark border-secondary dropdown-toggle text-white" type="button"
+                                id="equipmentFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                Equipo
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="equipmentFilterBtn">
+                                <li><a class="dropdown-item active" href="#" data-val="">Todos</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="bodyweight">Peso Corporal</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="dumbbell">Mancuernas</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="barbell">Barra</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="machine">Máquina</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="cable">Polea / Cable</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="other">Otro</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -156,6 +171,7 @@
     <script>
         let currentMuscles = "all";
         let currentQ = "";
+        let currentEquipment = "";
 
         document.addEventListener("DOMContentLoaded", async () => {
             const params = new URLSearchParams(window.location.search);
@@ -165,6 +181,8 @@
             const titleEl = document.getElementById("pageTitle");
             const searchInput = document.getElementById("searchInput");
             const muscleList = document.getElementById("muscleDropdownList");
+            const equipBtn = document.getElementById("equipmentFilterBtn");
+            const equipItems = document.querySelectorAll("[aria-labelledby='equipmentFilterBtn'] .dropdown-item");
 
             // Init Inputs
             searchInput.value = currentQ;
@@ -207,6 +225,25 @@
                 if (e.target.classList.contains("muscle-check")) {
                     handleCheckboxChange(e.target);
                 }
+            });
+
+            // Equipment Filter Listener
+            equipItems.forEach(item => {
+                item.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    // Remove active from all
+                    equipItems.forEach(i => i.classList.remove("active"));
+                    // Add active to clicked
+                    e.target.classList.add("active");
+
+                    // Update Button Text
+                    const val = e.target.getAttribute("data-val");
+                    equipBtn.textContent = e.target.textContent;
+                    if (val === "") equipBtn.textContent = "Equipo";
+
+                    currentEquipment = val;
+                    fetchExercises();
+                });
             });
 
             updateTitle();
@@ -302,7 +339,7 @@
             emptyMsg.style.display = "none";
 
             try {
-                const resp = await fetch(`/workout/api/exercises/filter?muscles=${encodeURIComponent(currentMuscles)}&q=${encodeURIComponent(currentQ)}`);
+                const resp = await fetch(`/workout/api/exercises/filter?muscles=${encodeURIComponent(currentMuscles)}&equipment=${encodeURIComponent(currentEquipment)}&q=${encodeURIComponent(currentQ)}`);
                 const exercises = await resp.json();
 
                 loader.style.display = "none";

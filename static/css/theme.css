@@ -16,17 +16,19 @@
 
     --text-main: #f8fafc;
     /* Gray-50 (White-ish) */
+    --text-header: #f8fafc;
+    /* Forced Dark Mode Header Color */
     --text-secondary: #cbd5e1;
     /* Gray-200 (Very Light Gray) - WAS #d1d5db */
     --text-muted: #94a3b8;
     /* Gray-300 (Light Gray) - WAS #9ca3af */
-    --text-placeholder: #9aa7b8;
+    --text-placeholder: #88a9d5;
 
     --primary: #4f8df7;
     /* Blue-500 */
     --primary-hover: #2f6de6;
 
-    --table-text: #e2e8f0;
+    --table-text: #b1caeb;
     /* Blue-400 (Lighter blue for dark mode) */
     --table-header-bg: #1b2230;
 
@@ -62,9 +64,9 @@
     --bg-body: #f1f5f9;
     /* Slate-100 - Crisp light gray background */
 
-    --bg-panel: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f8fafc;
+    --bg-panel: #c8def1;
+    --bg-card: #c2eaed;
+    --bg-card-hover: #9cc0e4;
     /* Slate-50 hover */
 
     --bg-input: #f8fafc;
@@ -163,8 +165,8 @@ h3,
 h4,
 h5,
 h6 {
-    color: var(--text-main) !important;
-    /* Force visibility in both modes */
+    color: var(--text-header) !important;
+    /* Force Dark Mode color in both themes per user request */
 }
 
 /* Utility classes for theme usage */
@@ -559,4 +561,40 @@ textarea::-ms-input-placeholder {
 
 .border-secondary {
     border-color: var(--secondary) !important;
+}
+
+/* Premium Cards (Landing) - Simplified to standard color #1b2230 */
+.card-premium {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    /* Removed top border per user request for standard look */
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Hover Effects */
+.card-premium:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px -10px var(--hover-shadow, rgba(79, 141, 247, 0.2));
+    /* Optional: lighter background on hover like dashboard? */
+    /* background-color: var(--bg-card-hover); */
+}
+
+/* Color Modifiers - Only for hover shadow now */
+.card-premium-primary {
+    --hover-shadow: rgba(79, 141, 247, 0.3);
+}
+
+.card-premium-success {
+    --hover-shadow: rgba(34, 197, 94, 0.3);
+}
+
+.card-premium-info {
+    --hover-shadow: rgba(56, 189, 248, 0.3);
+}
+
+.card-premium-warning {
+    --hover-shadow: rgba(245, 158, 11, 0.3);
 }

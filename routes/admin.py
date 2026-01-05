@@ -63,8 +63,8 @@ def enforce_admin_token():
     token = request.cookies.get("admin_token")
     real_token = get_admin_token()
 
-    # debug print
-    print(f"DEBUG ADMIN AUTH: Endpoint={request.endpoint}, Token in Cookie={token}, Real={real_token}")
+    # debug print without leaking token values
+    print(f"DEBUG ADMIN AUTH: Endpoint={request.endpoint}, Token present={bool(token)}")
 
     if not token or token != real_token:
         print("DEBUG ADMIN AUTH: Token mismatch or missing -> Redirecting to login")

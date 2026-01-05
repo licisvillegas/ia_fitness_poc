@@ -356,7 +356,7 @@
 
             btnSaveUser.addEventListener('click', async () => {
                 const isEdit = !!userIdInput.value;
-                const endpoint = isEdit ? '/admin/api/users/edit' : '/admin/api/users/create';
+                const endpoint = isEdit ? `/api/admin/users/${userIdInput.value}` : '/api/admin/users';
 
                 const payload = {
                     user_id: userIdInput.value || undefined,
@@ -382,7 +382,7 @@
 
                 try {
                     const resp = await fetch(endpoint, {
-                        method: 'POST',
+                        method: isEdit ? 'PUT' : 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
@@ -415,7 +415,7 @@
                 btnConfirmDelete.textContent = "Eliminando...";
 
                 try {
-                    const resp = await fetch(`/admin/api/users/${deletingUserId}`, {
+                    const resp = await fetch(`/api/admin/users/${deletingUserId}`, {
                         method: 'DELETE'
                     });
                     if (!resp.ok) throw new Error("Error al eliminar usuario");

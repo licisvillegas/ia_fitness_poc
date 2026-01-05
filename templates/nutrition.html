@@ -268,7 +268,8 @@
     <section class="daily-plan">
       <div class="container mt-4">
         <h3 class="text-center mb-4">Plan de Nutrición (AI)</h3>
-        <div class="text-center mb-3">
+        {% if current_user_role == 'admin' %}
+        <div class="text-center mb-3" id="daily-plan-controls" style="display:none;">
           <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
             <input id="nutriUserId" type="text" class="form-control text-center"
               placeholder="user_id o deja vacío para usar el del login" autocomplete="off" autocorrect="off"
@@ -292,6 +293,17 @@
           </div>
           <div id="nutriMsg" class="mt-2 text-info"></div>
         </div>
+        <script>
+          (function () {
+            try {
+              if (sessionStorage.getItem('admin_unlocked') === 'true') {
+                const controls = document.getElementById('daily-plan-controls');
+                if (controls) controls.style.display = 'block';
+              }
+            } catch (e) { }
+          })();
+        </script>
+        {% endif %}
         <div id="mealsContainer"></div>
       </div>
     </section>

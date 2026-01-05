@@ -208,9 +208,9 @@
       </div>
     </section>
 
-    <!-- Selector de usuario -->
-    <div class="container text-center mt-5">
-      <!-- Input del ID de usuario y botÃ³n; el spinner aparece durante la carga -->
+    <!-- Selector de usuario (Visible solo si Token Admin OK) -->
+    <div id="admin-controls" class="container text-center mt-5" style="display:none;">
+      <!-- Input del ID de usuario y bootón; el spinner aparece durante la carga -->
       <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
       <div class="input-group mb-3 justify-content-center" style="max-width: 720px; margin: 0 auto; gap: 8px;">
         <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
@@ -221,6 +221,15 @@
         <a href="/workout/assign-routine" class="btn btn-warning"><i class="fas fa-tasks me-1"></i> Asignar Rutinas</a>
         {% endif %}
       </div>
+      <script>
+        (function () {
+          try {
+            if (sessionStorage.getItem('admin_unlocked') === 'true') {
+              document.getElementById('admin-controls').style.display = 'block';
+            }
+          } catch (e) { }
+        })();
+      </script>
       <div id="loading">
         <div class="spinner-border text-primary" role="status"></div>
         <p id="loading-text">Cargando datos...</p>

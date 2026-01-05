@@ -174,3 +174,23 @@ def admin_validate():
         return jsonify({"ok": True}), 200
     except Exception:
         return jsonify({"error": "Error validando acceso admin"}), 500
+@auth_bp.post("/verify_admin_token")
+def verify_admin_token_endpoint():
+    """Valida token para funciones avanzadas de admin (frontend)."""
+    try:
+        from config import Config
+        data = request.get_json() or {}
+        token = data.get("token")
+        
+        expected = Config.ADMIN_TOKEN
+        if not expected:
+            return jsonify({"ok": False, "error": "Token no configurado"}), 503
+            
+        if token == expected:
+            return jsonify({"ok": True}), 200
+        else:
+            return jsonify({"ok": False, "error": "Token inválido"}), 403
+            
+    except Exception as e:
+        logger.error(f"Error verificando token admin: {e}")
+        return jsonify({"ok": False, "error": "Error interno"}), 500

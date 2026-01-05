@@ -27,6 +27,9 @@ class Config:
     USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending"}
     USER_STATUS_DEFAULT = "active"
     
+    # Admin
+    ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "12345") # Token por defecto para desarrollo
+    
     # Server
     HOST = "0.0.0.0"
     PORT = 5000

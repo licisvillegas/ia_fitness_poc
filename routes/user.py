@@ -12,6 +12,10 @@ user_bp = Blueprint('user', __name__)
 def index():
     return render_template("auth.html")
 
+@user_bp.route("/landing")
+def landing_page():
+    return render_template("landing.html")
+
 @user_bp.route("/dashboard")
 def dashboard_page():
     # Redirige al dashboard directamente

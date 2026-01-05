@@ -1323,7 +1323,10 @@
                 // Convert KG (from DB) to LB
                 const valKg = parseFloat(nextWeight);
                 if (!isNaN(valKg)) {
-                    nextWeight = (valKg * 2.20462).toFixed(1);
+                    // Round to nearest 0.5 to match input behavior
+                    const valLb = valKg * 2.20462;
+                    const roundedLb = Math.round(valLb * 2) / 2;
+                    nextWeight = roundedLb % 1 === 0 ? roundedLb.toString() : roundedLb.toFixed(1);
                 }
             }
 

@@ -112,6 +112,7 @@
 
     <hr style="border-color: #374151; margin: 1rem 0;">
 
+    {% if current_user_role != 'admin' %}
     <div class="mb-4">
         <small class="text-secondary text-uppercase fw-bold mb-2 d-block"
             style="font-size: 0.75rem; letter-spacing: 0.05em;">Idioma</small>
@@ -121,6 +122,7 @@
             <button id="lang-en" class="btn btn-sm pos-toggle-btn" data-lang="en" title="English (EN)">EN</button>
         </div>
     </div>
+    {% endif %}
 
     <!-- Sidebar Settings (Only visible when expanded) -->
     <div class="mb-3 px-1" id="sidebar-settings">

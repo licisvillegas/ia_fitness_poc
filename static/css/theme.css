@@ -11,6 +11,9 @@
     --border-color: #2f3a4e;
     --border-light: #415067;
 
+    --card-shadow: none;
+    /* No shadow in dark mode */
+
     --text-main: #f8fafc;
     /* Gray-50 (White-ish) */
     --text-secondary: #cbd5e1;
@@ -55,64 +58,85 @@
 }
 
 [data-theme="light"] {
-    /* Light Mode - Pastel Blue/Slate Theme */
-    --bg-body: #f5f7fb;
-    /* Soft Pastel Blue background */
+    /* Light Mode - Premium Soft UI */
+    --bg-body: #f1f5f9;
+    /* Slate-100 - Crisp light gray background */
+
     --bg-panel: #ffffff;
-    /* Clean White */
     --bg-card: #ffffff;
-    --bg-card-hover: #edf2f7;
-    /* Very light slate hover */
-    --bg-input: #ffffff;
+    --bg-card-hover: #f8fafc;
+    /* Slate-50 hover */
 
-    --border-color: #c7d2e0;
-    /* Blue-tinted gray border */
-    --border-light: #e7edf4;
-    /* Lighter border */
+    --bg-input: #f8fafc;
+    /* Slate-50 - Distinct from white card */
 
-    --text-main: #1a2433;
-    /* Slate-800 (Deep Blue-Gray) - Softer than pure black */
-    --text-secondary: #2c3a4f;
+    --border-color: #e2e8f0;
+    /* Slate-200 - Soft border */
+    --border-light: #f1f5f9;
+    /* Slate-100 */
+
+    --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    /* Subtle shadow */
+
+    --text-main: #0f172a;
+    /* Slate-900 - High contrast */
+    --text-secondary: #334155;
     /* Slate-700 */
-    --text-muted: #52627a;
+    --text-muted: #64748b;
     /* Slate-500 */
-    --text-placeholder: #6b7a92;
+    --text-placeholder: #94a3b8;
+    /* Slate-400 */
 
     --primary: #2563eb;
-    /* Blue-500 - Standard Bright Blue */
+    /* Blue-600 - Validated accessible blue */
     --primary-hover: #1d4ed8;
-    /* Blue-600 */
+    /* Blue-700 */
 
-    --table-text: #1a2b4c;
-    /* Dark Blue-Gray for table text */
-    --table-header-bg: #eef2f7;
-    /* Matching hover/light bg */
+    --table-text: #1e293b;
+    /* Slate-800 */
+    --table-header-bg: #f8fafc;
+    /* Slate-50 */
 
-    /* State colors */
+    /* State colors - Adjusted for light mode contrast */
     --success: #16a34a;
+    /* Green-600 */
     --success-hover: #15803d;
-    --success-bg: #ecfdf5;
-    --success-text: #166534;
+    --success-bg: #dcfce7;
+    /* Green-100 */
+    --success-text: #14532d;
+    /* Green-900 */
 
-    --info: #0ea5e9;
-    --info-hover: #0284c7;
-    --info-bg: #ecfeff;
-    --info-text: #0e7490;
+    --info: #0284c7;
+    /* Sky-600 */
+    --info-hover: #0369a1;
+    --info-bg: #e0f2fe;
+    /* Sky-100 */
+    --info-text: #0c4a6e;
+    /* Sky-900 */
 
     --warning: #d97706;
+    /* Amber-600 */
     --warning-hover: #b45309;
-    --warning-bg: #fffbeb;
-    --warning-text: #92400e;
+    --warning-bg: #fef3c7;
+    /* Amber-100 */
+    --warning-text: #78350f;
+    /* Amber-900 */
 
     --danger: #dc2626;
+    /* Red-600 */
     --danger-hover: #b91c1c;
-    --danger-bg: #fef2f2;
-    --danger-text: #991b1b;
+    --danger-bg: #fee2e2;
+    /* Red-100 */
+    --danger-text: #7f1d1d;
+    /* Red-900 */
 
     --secondary: #64748b;
+    /* Slate-500 */
     --secondary-hover: #475569;
     --secondary-bg: #f1f5f9;
+    /* Slate-100 */
     --secondary-text: #334155;
+    /* Slate-700 */
 }
 
 body {
@@ -166,7 +190,8 @@ h6 {
 textarea {
     background-color: var(--bg-input) !important;
     color: var(--text-main) !important;
-    border-color: var(--border-light) !important;
+    border-color: var(--border-color) !important;
+    /* Use main border color by default */
 }
 
 .form-control:focus,
@@ -175,6 +200,8 @@ textarea:focus {
     background-color: var(--bg-input) !important;
     border-color: var(--primary) !important;
     color: var(--text-main) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    /* Add focus ring for better usability */
 }
 
 .form-control::placeholder,
@@ -225,6 +252,7 @@ textarea::-ms-input-placeholder {
 .card {
     background-color: var(--bg-card) !important;
     border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
 }
 
 .list-group-item {

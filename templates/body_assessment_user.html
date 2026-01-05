@@ -586,9 +586,13 @@
             const loadingIndicator = document.getElementById("loading-indicator");
             const resultOutput = document.getElementById("result-output");
             const submitBtn = document.getElementById("submit-btn");
+            let zoomModal;
 
             // --- Auto-Load User Data (Standard User Mode) ---
             document.addEventListener('DOMContentLoaded', async () => {
+                const modalEl = document.getElementById('imageZoomModal');
+                if (modalEl) zoomModal = new bootstrap.Modal(modalEl);
+
                 const userJson = localStorage.getItem('ai_fitness_user');
                 let userId = null;
 

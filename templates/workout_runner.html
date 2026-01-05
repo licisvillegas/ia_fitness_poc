@@ -1368,11 +1368,18 @@
             setUnit(prev => prev === 'kg' ? 'lb' : 'kg');
             const val = parseFloat(weight) || 0;
             if (val > 0) {
+                let converted;
                 if (unit === 'kg') {
-                    setWeight((val * 2.20462).toFixed(1));
+                    // kg -> lb
+                    converted = val * 2.20462;
                 } else {
-                    setWeight((val / 2.20462).toFixed(1));
+                    // lb -> kg
+                    converted = val / 2.20462;
                 }
+                // Round to nearest 0.5
+                const rounded = Math.round(converted * 2) / 2;
+                // Remove decimal if .0, keep if .5
+                setWeight(rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1));
             }
         };
 
@@ -1384,11 +1391,21 @@
 
         const equivalentText = React.useMemo(() => {
             const val = parseFloat(weight) || 0;
+            if (val === 0) return "";
+
+            let converted;
+            let targetUnit;
             if (unit === 'kg') {
-                return `≈ ${(val * 2.20462).toFixed(1)} lb`;
+                // Current is kg, show lb equivalent
+                converted = val * 2.20462;
+                targetUnit = 'lb';
             } else {
-                return `≈ ${(val / 2.20462).toFixed(1)} kg`;
+                converted = val / 2.20462;
+                targetUnit = 'kg';
             }
+            const rounded = Math.round(converted * 2) / 2;
+            const displayVal = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+            return `≈ ${displayVal} ${targetUnit}`;
         }, [weight, unit]);
 
         return (

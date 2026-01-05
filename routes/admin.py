@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, g
 import os
 import shutil
+import time
 from bson import ObjectId
 from datetime import datetime
 from werkzeug.security import generate_password_hash
@@ -14,11 +15,17 @@ admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route("/admin/login")
 def admin_login_page():
+    from utils.auth_helpers import get_admin_token
+    token = request.cookies.get("admin_token")
+    real_token = get_admin_token()
+    if token and token == real_token:
+        return redirect(url_for("admin.admin_dashboard_page"))
     return render_template("admin_auth.html")
 
 @admin_bp.post("/admin/login")
 def admin_login_action():
     from utils.auth_helpers import get_admin_token
+    from config import Config
     
     data = request.get_json() or {}
     token = data.get("token")
@@ -27,24 +34,98 @@ def admin_login_action():
     if token == real_token:
         resp = jsonify({"ok": True})
         resp.set_cookie("admin_token", token, httponly=True, samesite="Lax", max_age=86400*7)
+        resp.set_cookie("admin_last_active", str(int(time.time())), httponly=True, samesite="Lax",
+                        max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS)
         return resp, 200
     else:
         return jsonify({"ok": False, "error": "Token incorrecto"}), 401
 
-@admin_bp.route("/admin")
-def admin_dashboard_page():
-    from utils.auth_helpers import get_admin_token
+@admin_bp.before_request
+def enforce_admin_token():
+    """
+    Admin middleware:
+    Verifica la cookie admin_token para cualquier ruta /admin.
+    Excluye:
+      - /admin/login (POST y GET)
+      - /admin/logout
+      - API calls (podriamos excluirlas si dependen del header, pero mejor ser estrictos)
+    """
+    # Lista de rutas exentas controlada
+    if request.endpoint in ["admin.admin_login_page", "admin.admin_login_action", "admin.admin_logout_action", "static"]:
+        return
+
+    # Si es una ruta bajo este blueprint
+    # (Nota: admin_bp.before_request corre para todas las rutas de este BP)
     
-    # Simple Token Check as requested
-    # Note: Full API access requires user session + role (check_admin_access)
-    # But for the dashboard page load, we ensure at least the crypto token is present.
+    from utils.auth_helpers import get_admin_token
+    from config import Config
     
     token = request.cookies.get("admin_token")
     real_token = get_admin_token()
-    
+
+    # debug print
+    print(f"DEBUG ADMIN AUTH: Endpoint={request.endpoint}, Token in Cookie={token}, Real={real_token}")
+
     if not token or token != real_token:
+        print("DEBUG ADMIN AUTH: Token mismatch or missing -> Redirecting to login")
+        # Si es una peticion API (JSON), devuelve 401
+        if request.path.startswith("/api/") or request.headers.get("Content-Type") == "application/json":
+             # Opcional: Para APIs a veces dejamos que check_admin_access maneje validacion + rol
+             # Pero el usuario pidio "para ingresar a panel admin siempre debe proporcionarse token"
+             # Asi que rechazamos aqui nivel 'puerta blindada'
+             return jsonify({"error": "Admin Token Requerido (Cookie)"}), 401
+        
+        # Si es navegacion web, redirige a login
         return redirect(url_for("admin.admin_login_page"))
 
+    last_active_raw = request.cookies.get("admin_last_active")
+    now = int(time.time())
+    try:
+        last_active = int(last_active_raw) if last_active_raw else 0
+    except ValueError:
+        last_active = 0
+
+    if not last_active or (now - last_active) > Config.ADMIN_IDLE_TIMEOUT_SECONDS:
+        if request.path.startswith("/api/") or request.headers.get("Content-Type") == "application/json":
+            resp = jsonify({"error": "Sesion admin expirada. Ingresa el token nuevamente."})
+            resp.delete_cookie("admin_token")
+            resp.delete_cookie("admin_last_active")
+            return resp, 401
+        resp = redirect(url_for("admin.admin_login_page"))
+        resp.delete_cookie("admin_token")
+        resp.delete_cookie("admin_last_active")
+        return resp
+
+    g.admin_touch = True
+
+@admin_bp.after_request
+def refresh_admin_activity(response):
+    if getattr(g, "admin_touch", False):
+        from config import Config
+        response.set_cookie(
+            "admin_last_active",
+            str(int(time.time())),
+            httponly=True,
+            samesite="Lax",
+            max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS,
+        )
+    return response
+
+@admin_bp.route("/admin/logout")
+def admin_logout_action():
+    print("DEBUG ADMIN AUTH: Executing Logout")
+    resp = redirect("/")
+    # Force expire
+    resp.set_cookie("admin_token", "", expires=0, max_age=0)
+    resp.delete_cookie("admin_token")
+    resp.set_cookie("admin_last_active", "", expires=0, max_age=0)
+    resp.delete_cookie("admin_last_active")
+    return resp
+
+@admin_bp.route("/admin")
+def admin_dashboard_page():
+    # El hook before_request ya valida el token.
+    # Aquí solo renderizamos.
     return render_template("admin_dashboard.html")
 
 @admin_bp.route("/admin/plans")

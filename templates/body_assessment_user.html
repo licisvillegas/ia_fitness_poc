@@ -335,16 +335,23 @@
                                     <div class="mt-4 border-top border-secondary pt-3">
                                         <h6 class="text-secondary small text-uppercase fw-bold mb-3">Referencias
                                             Visuales</h6>
-                                        <div class="d-flex gap-3 overflow-auto pb-2" style="scrollbar-width: thin;">
+                                        <div class="d-flex justify-content-center gap-3 overflow-auto pb-2"
+                                            style="scrollbar-width: thin;">
                                             <img src="/static/images/examples/Gemini_Generated_Image_ezkgn3ezkgn3ezkg.png"
+                                                data-male="/static/images/examples/Gemini_Generated_Image_ezkgn3ezkgn3ezkg.png"
+                                                data-female="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;"
                                                 alt="Ejemplo 1" onclick="openZoomModal(this.src)">
                                             <img src="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
+                                                data-male="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
+                                                data-female="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;"
                                                 alt="Ejemplo 2" onclick="openZoomModal(this.src)">
                                             <img src="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
+                                                data-male="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
+                                                data-female="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;"
                                                 alt="Ejemplo 3" onclick="openZoomModal(this.src)">
@@ -586,12 +593,28 @@
             const loadingIndicator = document.getElementById("loading-indicator");
             const resultOutput = document.getElementById("result-output");
             const submitBtn = document.getElementById("submit-btn");
+            const sexSelect = document.getElementById("sex");
+            const exampleImages = Array.from(document.querySelectorAll(".example-img"));
             let zoomModal;
+
+            const updateExampleImages = () => {
+                if (!sexSelect || !exampleImages.length) return;
+                const useFemale = sexSelect.value === "female";
+                exampleImages.forEach((img) => {
+                    const nextSrc = useFemale ? img.dataset.female : img.dataset.male;
+                    if (nextSrc) img.src = nextSrc;
+                });
+            };
 
             // --- Auto-Load User Data (Standard User Mode) ---
             document.addEventListener('DOMContentLoaded', async () => {
                 const modalEl = document.getElementById('imageZoomModal');
                 if (modalEl) zoomModal = new bootstrap.Modal(modalEl);
+
+                if (sexSelect) {
+                    sexSelect.addEventListener('change', updateExampleImages);
+                    updateExampleImages();
+                }
 
                 const userJson = localStorage.getItem('ai_fitness_user');
                 let userId = null;
@@ -617,6 +640,7 @@
                                 const data = await resp.json();
                                 // Populate form
                                 if (data.sex) document.getElementById("sex").value = data.sex;
+                                updateExampleImages();
                                 if (data.age) document.getElementById("age").value = data.age;
 
                                 const goalVal = data.goal;

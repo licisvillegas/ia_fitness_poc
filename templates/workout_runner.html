@@ -276,6 +276,44 @@
         line-height: 1.1;
         font-size: clamp(1.5rem, 5vw, 2.5rem);
     }
+
+    .header-info {
+        z-index: 1;
+    }
+
+    .header-controls {
+        z-index: 2;
+    }
+
+    .header-timer {
+        z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+        .header-section {
+            position: relative;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-info {
+            width: 100%;
+            text-align: center;
+        }
+
+        .header-timer {
+            position: static !important;
+            transform: none !important;
+            order: 2;
+        }
+
+        .header-controls {
+            width: 100%;
+            justify-content: center !important;
+            order: 3;
+        }
+    }
 </style>
 
 
@@ -1052,7 +1090,6 @@
         const { exerciseLookup } = useWorkout();
         // Collapsed by default: We track EXPANDED groups.
         const [expandedGroups, setExpandedGroups] = useState(new Set());
-        const [showAllDetails, setShowAllDetails] = useState(false);
 
         console.log("RoutineDetails Rendering:", routine);
 
@@ -1240,7 +1277,7 @@
                     </div>
 
                     <div className="d-flex flex-column gap-3 overflow-auto custom-scroll"
-                        style={{ maxHeight: showAllDetails ? '60vh' : '240px' }}>
+                        style={{ maxHeight: '240px' }}>
                         {displayData.groups.map((group, idx) => {
                             const isExpanded = expandedGroups.has(group.id);
                             return (
@@ -1278,17 +1315,6 @@
                             </div>
                         )}
                     </div>
-                    {(displayData.groups.length > 0 || displayData.ungrouped.length > 0) && (
-                        <div className="d-flex justify-content-center mt-3">
-                            <button
-                                className="btn btn-sm btn-outline-info rounded-pill px-3"
-                                type="button"
-                                onClick={() => setShowAllDetails(prev => !prev)}
-                            >
-                                {showAllDetails ? 'Ver menos' : 'Ver mas'}
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
         );
@@ -1720,7 +1746,7 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
         return (
             <div className="header-section d-flex justify-content-between align-items-center p-3 relative">
                 {/* Left: Info */}
-                <div style={{ flex: 1 }}>
+                <div className="header-info" style={{ flex: 1 }}>
                     <h5 className="m-0 fw-bold text-white text-truncate" style={{ fontSize: '1rem' }}>{routine.name}</h5>
                     <div className="text-secondary small text-truncate">
                         Serie {workStats.passed} / {workStats.total}
@@ -1728,14 +1754,14 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
                 </div>
 
                 {/* Center: Global Timer */}
-                <div className="position-absolute start-50 top-50 translate-middle">
+                <div className="header-timer position-absolute start-50 top-50 translate-middle">
                     <div className="font-monospace fs-3 text-cyber-green fw-bold bg-black px-3 rounded-pill border border-secondary shadow-sm">
                         {formatTime(globalTime)}
                     </div>
                 </div>
 
                 {/* Right: Controls */}
-                <div className="d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                <div className="header-controls d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
                     <button
                         className={`btn btn-sm rounded-pill px-3 ${focusMode ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
                         onClick={onToggleFocus}

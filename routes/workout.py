@@ -184,8 +184,22 @@ def api_get_user_routines():
         
         db = get_db()
         
+        now = datetime.utcnow()
+        db.routine_assignments.update_many(
+            {"user_id": user_id, "active": True, "expires_at": {"$lte": now}},
+            {"$set": {"active": False, "expired_at": now}}
+        )
+
         # 1. Fetch active assignments for this user
-        assignments_cursor = db.routine_assignments.find({"user_id": user_id, "active": True})
+        assignments_cursor = db.routine_assignments.find({
+            "user_id": user_id,
+            "active": True,
+            "$or": [
+                {"expires_at": {"$exists": False}},
+                {"expires_at": None},
+                {"expires_at": {"$gt": now}}
+            ]
+        })
         assigned_ids = [ObjectId(a["routine_id"]) for a in assignments_cursor if a.get("routine_id")]
         
         routines = []

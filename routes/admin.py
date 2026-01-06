@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 import extensions
@@ -783,31 +783,180 @@ def admin_api_assign_routine():
         data = request.json
         user_id = data.get("user_id")
         routine_id = data.get("routine_id")
-        
+        valid_days_raw = data.get("valid_days")
+
         if not user_id or not routine_id:
             return jsonify({"error": "Faltan datos"}), 400
-            
-        # Verificar si ya existe asignación activa
+
+        try:
+            valid_days = int(valid_days_raw)
+        except (TypeError, ValueError):
+            valid_days = 0
+
+        if valid_days <= 0:
+            return jsonify({"error": "Los dias de vigencia deben ser mayor a 0"}), 400
+
+        # Verificar si ya existe asignacion activa
         exists = extensions.db.routine_assignments.find_one({
-            "user_id": user_id, 
+            "user_id": user_id,
             "routine_id": routine_id,
             "active": True
         })
-        
+
         if exists:
-             return jsonify({"message": "Ya está asignada"}), 200
-             
-        # Crear asignación
+            expires_at = exists.get("expires_at")
+            if isinstance(expires_at, datetime) and expires_at <= datetime.utcnow():
+                extensions.db.routine_assignments.update_one(
+                    {"_id": exists["_id"]},
+                    {"$set": {"active": False, "expired_at": datetime.utcnow()}}
+                )
+            else:
+                return jsonify({"message": "Ya esta asignada"}), 200
+
+        # Crear asignacion
+        assigned_at = datetime.utcnow()
+        expires_at = assigned_at + timedelta(days=valid_days)
         assignment = {
             "user_id": user_id,
             "routine_id": routine_id,
-            "assigned_at": datetime.utcnow(),
+            "assigned_at": assigned_at,
+            "expires_at": expires_at,
+            "valid_days": valid_days,
             "active": True
         }
         extensions.db.routine_assignments.insert_one(assignment)
         return jsonify({"message": "Rutina asignada correctamente"}), 200
     except Exception as e:
         logger.error(f"Error assigning routine: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.get("/api/admin/routines/assignments")
+def admin_api_list_assignments():
+    """Lista asignaciones activas por usuario."""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Falta user_id"}), 400
+
+        now = datetime.utcnow()
+        extensions.db.routine_assignments.update_many(
+            {"user_id": user_id, "active": True, "expires_at": {"$lte": now}},
+            {"$set": {"active": False, "expired_at": now}}
+        )
+
+        cursor = extensions.db.routine_assignments.find({
+            "user_id": user_id,
+            "active": True,
+            "$or": [
+                {"expires_at": {"$exists": False}},
+                {"expires_at": None},
+                {"expires_at": {"$gt": now}}
+            ]
+        }, {"routine_id": 1, "expires_at": 1, "valid_days": 1, "assigned_at": 1})
+
+        results = []
+        for doc in cursor:
+            expires_at = doc.get("expires_at")
+            assigned_at = doc.get("assigned_at")
+            routine_id = doc.get("routine_id")
+            if isinstance(expires_at, datetime):
+                expires_at = expires_at.isoformat()
+            if isinstance(assigned_at, datetime):
+                assigned_at = assigned_at.isoformat()
+            if isinstance(routine_id, ObjectId):
+                routine_id = str(routine_id)
+
+            results.append({
+                "assignment_id": str(doc.get("_id")),
+                "routine_id": routine_id,
+                "expires_at": expires_at,
+                "valid_days": doc.get("valid_days"),
+                "assigned_at": assigned_at
+            })
+
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error listing routine assignments: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.post("/api/admin/routines/unassign")
+def admin_api_unassign_routine():
+    """Desactiva una asignacion de rutina a un usuario."""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        data = request.json or {}
+        user_id = data.get("user_id")
+        routine_id = data.get("routine_id")
+        if not user_id or not routine_id:
+            return jsonify({"error": "Faltan datos"}), 400
+
+        res = extensions.db.routine_assignments.update_many(
+            {"user_id": user_id, "routine_id": routine_id, "active": True},
+            {"$set": {"active": False, "unassigned_at": datetime.utcnow()}}
+        )
+
+        if res.modified_count == 0:
+            return jsonify({"message": "No habia asignacion activa"}), 200
+
+        return jsonify({"message": "Rutina removida"}), 200
+    except Exception as e:
+        logger.error(f"Error unassigning routine: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.post("/api/admin/routines/assignments/update")
+def admin_api_update_assignment():
+    """Actualiza vigencia de una asignacion activa."""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        data = request.json or {}
+        user_id = data.get("user_id")
+        routine_id = data.get("routine_id")
+        assignment_id = data.get("assignment_id")
+        valid_days_raw = data.get("valid_days")
+
+        if not user_id or not routine_id:
+            return jsonify({"error": "Faltan datos"}), 400
+
+        try:
+            valid_days = int(valid_days_raw)
+        except (TypeError, ValueError):
+            valid_days = 0
+
+        if valid_days <= 0:
+            return jsonify({"error": "Los dias de vigencia deben ser mayor a 0"}), 400
+
+        assigned_at = datetime.utcnow()
+        expires_at = assigned_at + timedelta(days=valid_days)
+
+        if assignment_id and ObjectId.is_valid(assignment_id):
+            query = {"_id": ObjectId(assignment_id), "user_id": user_id, "active": True}
+        else:
+            routine_match = routine_id
+            if ObjectId.is_valid(routine_id):
+                routine_match = {"$in": [routine_id, ObjectId(routine_id)]}
+            query = {"user_id": user_id, "routine_id": routine_match, "active": True}
+
+        res = extensions.db.routine_assignments.update_one(
+            query,
+            {"$set": {"valid_days": valid_days, "expires_at": expires_at, "updated_at": assigned_at}}
+        )
+
+        if res.matched_count == 0:
+            return jsonify({"error": "Asignacion activa no encontrada"}), 404
+
+        return jsonify({"message": "Vigencia actualizada"}), 200
+    except Exception as e:
+        logger.error(f"Error updating routine assignment: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.get("/admin/api/users/<user_id>/full_profile")

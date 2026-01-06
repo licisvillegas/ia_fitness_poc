@@ -406,7 +406,7 @@
     const collapsedBodyParts = new Set();
     let selectedRoutineId = "";
     const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
-    const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP"];
+    const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP", "Reps fijas"];
     const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180];
     const TIME_OPTIONS = [300, 600, 900, 1200, 1800];
     const EQUIPMENT_MAP = {
@@ -936,6 +936,29 @@
         }).join("");
     }
 
+    function isExactRepsValue(value) {
+        return value !== null && value !== undefined && /^\d+$/.test(String(value));
+    }
+
+    function getRepsSelectValue(value) {
+        return isExactRepsValue(value) ? "Reps fijas" : (value || "8-12");
+    }
+
+    function getExactRepsValue(value) {
+        return isExactRepsValue(value) ? value : "";
+    }
+
+    function handleRepsSelectChange(index, value) {
+        if (value === "Reps fijas") {
+            const input = document.getElementById(`reps_exact_${index}`);
+            const exactValue = input && input.value ? input.value : 10;
+            updateItem(index, "target_reps", exactValue);
+        } else {
+            updateItem(index, "target_reps", value);
+        }
+        renderRoutineItems();
+    }
+
     function formatSeconds(value) {
         return `${value} s`;
     }
@@ -1248,9 +1271,14 @@
                 <div class="col-4">
                     <label class="small text-secondary">Reps Objetivo</label>
                     <select class="form-select form-select-sm bg-dark text-white border-secondary"
-                        onchange="updateItem(${idx}, 'target_reps', this.value)">
-                        ${renderSelectOptions(item.target_reps, REPS_OPTIONS)}
+                        onchange="handleRepsSelectChange(${idx}, this.value)">
+                        ${renderSelectOptions(getRepsSelectValue(item.target_reps), REPS_OPTIONS)}
                     </select>
+                    <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1"
+                        id="reps_exact_${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}"
+                        style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};"
+                        ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}
+                        onchange="updateItem(${idx}, 'target_reps', this.value)">
                 </div>
                 `}
                 <div class="col-4">

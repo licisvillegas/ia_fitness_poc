@@ -104,6 +104,29 @@
             color: var(--text-muted);
         }
 
+        .btn-remove {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            font-weight: 600;
+            padding: 0.6rem;
+            transition: all 0.2s;
+        }
+
+        .btn-remove:hover:not(:disabled) {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-remove:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-muted);
+        }
+
         /* Selected User Badge */
         .selected-user-badge {
             display: inline-flex;
@@ -195,9 +218,31 @@
             <div>
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <label class="form-label text-primary fw-bold mb-0">2. Seleccionar Rutina (Templates)</label>
-                    <div style="width: 250px;">
-                        <input type="text" id="passFilter" class="form-control search-box form-control-sm"
-                            placeholder="Buscar rutina...">
+                    <div class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                id="muscleFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                Filtrar Músculos
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark p-3" aria-labelledby="muscleFilterBtn"
+                                style="min-width: 240px; max-height: 360px; overflow-y: auto;" id="muscleDropdownList">
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input muscle-check" type="checkbox" value="all"
+                                            id="checkAll" checked>
+                                        <label class="form-check-label" for="checkAll">Todos</label>
+                                    </div>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <!-- Populated via JS -->
+                            </ul>
+                        </div>
+                        <div style="width: 250px;">
+                            <input type="text" id="passFilter" class="form-control search-box form-control-sm"
+                                placeholder="Buscar rutina...">
+                        </div>
                     </div>
                 </div>
 
@@ -238,6 +283,8 @@
         // State
         let selectedUserId = null;
         let allRoutines = [];
+        let assignedMap = {};
+        let currentMuscles = "all";
 
         // Elements
         const userSelect = document.getElementById('userSelect');
@@ -253,6 +300,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadUsers();
             loadRoutines();
+            loadBodyParts();
         });
 
         // --- Load Users ---
@@ -285,12 +333,7 @@
                 selectedUserDisplay.style.display = 'block';
                 noUserDisplay.style.display = 'none';
                 badgeName.textContent = text.split('(')[0]; // Just the name part
-
-                // Enable buttons
-                document.querySelectorAll('.btn-assign').forEach(btn => {
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fas fa-plus-circle me-2"></i>Asignar Rutina`;
-                });
+                loadAssignmentsForUser(selectedUserId);
             }
         });
 
@@ -301,7 +344,7 @@
                 const res = await fetch('/api/routines');
                 allRoutines = await res.json();
 
-                renderRoutines(allRoutines);
+                applyFilters();
 
                 loadingRoutines.style.display = 'none';
                 if (allRoutines.length === 0) {
@@ -315,6 +358,138 @@
             }
         }
 
+        // --- Load Assignments for User ---
+        async function loadAssignmentsForUser(userId) {
+            if (!userId) {
+                assignedMap = {};
+                applyFilters();
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/routines/assignments?user_id=${encodeURIComponent(userId)}`);
+                const assignments = await res.json();
+
+                assignedMap = {};
+                assignments.forEach(a => {
+                    assignedMap[a.routine_id] = a;
+                });
+
+                applyFilters();
+            } catch (e) {
+                console.error(e);
+                showToast("Error cargando asignaciones", "bg-danger");
+            }
+        }
+
+        // --- Load Body Parts ---
+        async function loadBodyParts() {
+            try {
+                const res = await fetch('/workout/api/body-parts');
+                const parts = await res.json();
+                const muscleList = document.getElementById('muscleDropdownList');
+
+                parts.forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input muscle-check" type="checkbox" value="${p.key}" id="check_${p.key}">
+                            <label class="form-check-label" for="check_${p.key}">${p.label_es || p.label}</label>
+                        </div>
+                    `;
+                    muscleList.appendChild(li);
+                });
+
+                muscleList.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('muscle-check')) {
+                        handleMuscleCheckboxChange(e.target);
+                        applyFilters();
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+                showToast("Error cargando grupos musculares", "bg-danger");
+            }
+        }
+
+        function handleMuscleCheckboxChange(target) {
+            const allCheck = document.getElementById('checkAll');
+            const checkboxes = document.querySelectorAll('.muscle-check:not(#checkAll)');
+
+            if (target.id === 'checkAll') {
+                if (allCheck.checked) {
+                    checkboxes.forEach(cb => cb.checked = false);
+                    currentMuscles = "all";
+                } else {
+                    allCheck.checked = true;
+                    currentMuscles = "all";
+                }
+                updateMuscleButtonText();
+                return;
+            }
+
+            if (target.checked) {
+                allCheck.checked = false;
+            }
+
+            const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+            if (selected.length === 0) {
+                allCheck.checked = true;
+                currentMuscles = "all";
+            } else {
+                currentMuscles = selected;
+            }
+            updateMuscleButtonText();
+        }
+
+        function updateMuscleButtonText() {
+            const btn = document.getElementById('muscleFilterBtn');
+            if (currentMuscles === "all") {
+                btn.textContent = "Filtrar Músculos";
+                return;
+            }
+
+            const count = Array.isArray(currentMuscles) ? currentMuscles.length : 0;
+            btn.textContent = `Músculos (${count})`;
+        }
+
+        function getRoutineBodyParts(routine) {
+            const parts = new Set();
+            if (Array.isArray(routine.routine_body_parts)) {
+                routine.routine_body_parts.forEach(p => {
+                    if (p) parts.add(String(p).toLowerCase());
+                });
+            }
+
+            if (parts.size === 0 && Array.isArray(routine.items)) {
+                routine.items.forEach(item => {
+                    if (item && item.body_part) {
+                        parts.add(String(item.body_part).toLowerCase());
+                    }
+                });
+            }
+
+            return Array.from(parts);
+        }
+
+        function applyFilters() {
+            const term = routineFilter.value.toLowerCase();
+            const selected = currentMuscles;
+
+            let filtered = allRoutines.filter(r => r.name && r.name.toLowerCase().includes(term));
+
+            if (selected !== "all" && Array.isArray(selected) && selected.length > 0) {
+                const selectedSet = new Set(selected.map(s => String(s).toLowerCase()));
+                filtered = filtered.filter(r => {
+                    const parts = getRoutineBodyParts(r);
+                    if (parts.length === 0) return false;
+                    return parts.some(p => selectedSet.has(p));
+                });
+            }
+
+            renderRoutines(filtered);
+        }
+
         // --- Render Routines ---
         function renderRoutines(routines) {
             routinesGrid.innerHTML = '';
@@ -325,6 +500,12 @@
 
                 const exerciseCount = routine.items ? routine.items.length : (routine.exercises ? routine.exercises.length : 0);
                 const dateStr = routine.created_at ? new Date(routine.created_at).toLocaleDateString() : 'N/A';
+                const assignedInfo = assignedMap[routine._id];
+                const isAssigned = Boolean(assignedInfo);
+                const assignedUntil = assignedInfo && assignedInfo.expires_at
+                    ? new Date(assignedInfo.expires_at).toLocaleDateString()
+                    : null;
+                const daysValue = assignedInfo && assignedInfo.valid_days ? assignedInfo.valid_days : 30;
 
                 card.innerHTML = `
                 <div class="routine-header">
@@ -337,19 +518,42 @@
                             <i class="fas fa-list-ol"></i>
                             <span>${exerciseCount} Ejercicios</span>
                         </div>
-                        <div class="stat-item" title="Fecha Creación">
+                        <div class="stat-item" title="Fecha Creaci?n">
                             <i class="far fa-calendar-alt"></i>
                             <span>${dateStr}</span>
                         </div>
                     </div>
                     
                     <p class="text-muted small mb-3 text-truncate">
-                        ${routine.description || "Sin descripción disponible."}
+                        ${routine.description || "Sin descripci?n disponible."}
                     </p>
-                    
-                    <button class="btn btn-assign btn-sm" onclick="assignRoutine('${routine._id}')" ${!selectedUserId ? 'disabled' : ''}>
-                        ${!selectedUserId ? 'Selecciona Usuario Primero' : '<i class="fas fa-plus-circle me-2"></i>Asignar Rutina'}
+
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Vigencia (dias)</label>
+                        <input type="number" min="1" class="form-control form-control-sm"
+                            id="days-${routine._id}" value="${daysValue}" ${!selectedUserId ? 'disabled' : ''}>
+                    </div>
+
+                    <button class="btn btn-assign btn-sm mb-2"
+                        onclick="assignRoutine('${routine._id}', event)"
+                        ${!selectedUserId || isAssigned ? 'disabled' : ''}>
+                        ${!selectedUserId ? 'Selecciona Usuario Primero' : (isAssigned ? 'Asignada' : '<i class="fas fa-plus-circle me-2"></i>Asignar Rutina')}
                     </button>
+
+                    ${isAssigned ? `
+                        <button class="btn btn-assign btn-sm mb-2" onclick="updateAssignment('${routine._id}', event)" ${!selectedUserId ? 'disabled' : ''}>
+                            <i class="fas fa-sync-alt me-2"></i>Actualizar Vigencia
+                        </button>
+                        <button class="btn btn-remove btn-sm mb-2" onclick="unassignRoutine('${routine._id}', event)" ${!selectedUserId ? 'disabled' : ''}>
+                            <i class="fas fa-times-circle me-2"></i>Remover Asignacion
+                        </button>
+                    ` : ''}
+
+                    ${isAssigned ? `
+                        <div class="text-muted small">
+                            ${assignedUntil ? `Vence: ${assignedUntil}` : 'Asignada sin vencimiento'}
+                        </div>
+                    ` : ''}
                 </div>
             `;
                 routinesGrid.appendChild(card);
@@ -358,25 +562,132 @@
 
         // --- Filter logic ---
         routineFilter.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allRoutines.filter(r => r.name.toLowerCase().includes(term));
-            renderRoutines(filtered);
+            applyFilters();
         });
 
         // --- Assign Action ---
-        window.assignRoutine = async (routineId) => {
+        window.assignRoutine = async (routineId, evt) => {
             if (!selectedUserId) {
                 showToast("Debes seleccionar un usuario primero", "bg-warning");
                 return;
             }
 
-            const btn = event.currentTarget; // Get button reference
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Asignando...`;
+            const daysInput = document.getElementById(`days-${routineId}`);
+            const validDays = parseInt(daysInput ? daysInput.value : '0', 10);
+            if (!validDays || validDays <= 0) {
+                showToast("Selecciona dias de vigencia validos", "bg-warning");
+                return;
+            }
+
+            const btn = evt && evt.currentTarget ? evt.currentTarget : null;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Asignando...`;
+            }
 
             try {
                 const resp = await fetch('/api/admin/routines/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: selectedUserId,
+                        routine_id: routineId,
+                        valid_days: validDays
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    showToast(data.message || "Asignada con exito", "bg-success");
+                    await loadAssignmentsForUser(selectedUserId);
+                } else {
+                    showToast(data.error || "Error al asignar", "bg-danger");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Error de conexion", "bg-danger");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+        };
+
+        window.updateAssignment = async (routineId, evt) => {
+            if (!selectedUserId) {
+                showToast("Debes seleccionar un usuario primero", "bg-warning");
+                return;
+            }
+
+            const assignmentInfo = assignedMap[routineId];
+            if (!assignmentInfo || !assignmentInfo.assignment_id) {
+                showToast("Asignacion no encontrada", "bg-danger");
+                return;
+            }
+
+            const daysInput = document.getElementById(`days-${routineId}`);
+            const validDays = parseInt(daysInput ? daysInput.value : '0', 10);
+            if (!validDays || validDays <= 0) {
+                showToast("Selecciona dias de vigencia validos", "bg-warning");
+                return;
+            }
+
+            const btn = evt && evt.currentTarget ? evt.currentTarget : null;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...`;
+            }
+
+            try {
+                const resp = await fetch('/api/admin/routines/assignments/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: selectedUserId,
+                        routine_id: routineId,
+                        assignment_id: assignmentInfo.assignment_id,
+                        valid_days: validDays
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    showToast(data.message || "Vigencia actualizada", "bg-success");
+                    await loadAssignmentsForUser(selectedUserId);
+                } else {
+                    showToast(data.error || "Error al actualizar", "bg-danger");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Error de conexion", "bg-danger");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+        };
+
+        window.unassignRoutine = async (routineId, evt) => {
+            if (!selectedUserId) {
+                showToast("Debes seleccionar un usuario primero", "bg-warning");
+                return;
+            }
+
+            const btn = evt && evt.currentTarget ? evt.currentTarget : null;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Removiendo...`;
+            }
+
+            try {
+                const resp = await fetch('/api/admin/routines/unassign', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -388,16 +699,19 @@
                 const data = await resp.json();
 
                 if (resp.ok) {
-                    showToast(data.message || "Asignada con éxito", "bg-success");
+                    showToast(data.message || "Rutina removida", "bg-success");
+                    await loadAssignmentsForUser(selectedUserId);
                 } else {
-                    showToast(data.error || "Error al asignar", "bg-danger");
+                    showToast(data.error || "Error al remover", "bg-danger");
                 }
             } catch (e) {
                 console.error(e);
-                showToast("Error de conexión", "bg-danger");
+                showToast("Error de conexion", "bg-danger");
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
             }
         };
 

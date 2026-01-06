@@ -1052,6 +1052,7 @@
         const { exerciseLookup } = useWorkout();
         // Collapsed by default: We track EXPANDED groups.
         const [expandedGroups, setExpandedGroups] = useState(new Set());
+        const [showAllDetails, setShowAllDetails] = useState(false);
 
         console.log("RoutineDetails Rendering:", routine);
 
@@ -1238,7 +1239,8 @@
                         <p className="text-secondary m-0">{totalExercises} ejercicios -  Revisa los detalles antes de iniciar</p>
                     </div>
 
-                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll" style={{ maxHeight: '60vh' }}>
+                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll"
+                        style={{ maxHeight: showAllDetails ? '60vh' : '240px' }}>
                         {displayData.groups.map((group, idx) => {
                             const isExpanded = expandedGroups.has(group.id);
                             return (
@@ -1276,16 +1278,27 @@
                             </div>
                         )}
                     </div>
+                    {(displayData.groups.length > 0 || displayData.ungrouped.length > 0) && (
+                        <div className="d-flex justify-content-center mt-3">
+                            <button
+                                className="btn btn-sm btn-outline-info rounded-pill px-3"
+                                type="button"
+                                onClick={() => setShowAllDetails(prev => !prev)}
+                            >
+                                {showAllDetails ? 'Ver menos' : 'Ver mas'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     };
 
-    const PreStart = () => {
+const PreStart = ({ focusMode, onToggleFocus }) => {
         const { routine, startWorkout } = useWorkout();
         return (
             <div className="player-container">
-                <Header />
+                <Header focusMode={focusMode} onToggleFocus={onToggleFocus} />
                 <div className="visual-stage text-center">
                     <RoutineDetails routine={routine} />
                 </div>
@@ -1298,7 +1311,7 @@
         );
     };
 
-    const InputControls = ({ step }) => {
+    const InputControls = ({ step, compact = false }) => {
         const { logSet, next, sessionLog } = useWorkout();
         // Local state for inputs so we can edit before committing
         const [weight, setWeight] = useState(step.target.weight || '');
@@ -1306,6 +1319,7 @@
         const [rpe, setRpe] = useState(8);
         const [unit, setUnit] = useState('lb');
         const weightInputRef = useRef(null);
+        const repsInputRef = useRef(null);
 
         // Pre-fill from history and AUTO-FOCUS
         useEffect(() => {
@@ -1335,11 +1349,12 @@
             setRpe(8);
 
             // Auto-focus logic
-            if (weightInputRef.current) {
+            const targetRef = compact ? repsInputRef : weightInputRef;
+            if (targetRef.current) {
                 // Small timeout to ensure DOM is ready and transition is done
                 setTimeout(() => {
-                    weightInputRef.current.focus();
-                    weightInputRef.current.select();
+                    targetRef.current.focus();
+                    targetRef.current.select();
                 }, 100);
             }
         }, [step, sessionLog]);
@@ -1414,41 +1429,43 @@
         return (
             <div className="py-1">
                 <div className="row g-2 justify-content-center mb-2">
-                    <div className="col-6">
-                        <div className="d-flex align-items-center justify-content-center mb-1 gap-1">
-                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
-                            <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
-                                {unit.toUpperCase()}
-                            </button>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-center gap-1">
-                            <button
-                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                type="button"
-                                onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
-                            >-</button>
-                            <div className="position-relative">
-                                <input type="text"
-                                    ref={weightInputRef}
-                                    className="form-control input-hud text-center p-0"
-                                    value={weight}
-                                    onChange={e => setWeight(e.target.value)}
-                                    placeholder="0"
-                                    inputMode="decimal"
-                                    onClick={(e) => e.target.select()}
-                                />
+                    {!compact && (
+                        <div className="col-6">
+                            <div className="d-flex align-items-center justify-content-center mb-1 gap-1">
+                                <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
+                                <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
+                                    {unit.toUpperCase()}
+                                </button>
                             </div>
-                            <button
-                                className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                type="button"
-                                onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
-                            >+</button>
+                            <div className="d-flex align-items-center justify-content-center gap-1">
+                                <button
+                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                    type="button"
+                                    onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
+                                >-</button>
+                                <div className="position-relative">
+                                    <input type="text"
+                                        ref={weightInputRef}
+                                        className="form-control input-hud text-center p-0"
+                                        value={weight}
+                                        onChange={e => setWeight(e.target.value)}
+                                        placeholder="0"
+                                        inputMode="decimal"
+                                        onClick={(e) => e.target.select()}
+                                    />
+                                </div>
+                                <button
+                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                    type="button"
+                                    onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
+                                >+</button>
+                            </div>
+                            <div className="text-center text-muted small mt-1" style={{ fontSize: '0.7rem' }}>
+                                {equivalentText}
+                            </div>
                         </div>
-                        <div className="text-center text-muted small mt-1" style={{ fontSize: '0.7rem' }}>
-                            {equivalentText}
-                        </div>
-                    </div>
-                    <div className="col-6">
+                    )}
+                    <div className={compact ? "col-12" : "col-6"}>
                         <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>
                             REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
                         </label>
@@ -1460,6 +1477,7 @@
                             >-</button>
                             <input
                                 type="text"
+                                ref={repsInputRef}
                                 className="form-control input-hud text-center p-0"
                                 value={reps}
                                 onChange={e => setReps(e.target.value)}
@@ -1477,17 +1495,19 @@
                     </div>
                 </div>
 
-                <div className="mb-3">
-                    <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
-                    <div className="d-flex justify-content-center gap-1">
-                        {[7, 8, 9, 10].map(val => (
-                            <button key={val}
-                                className={`btn btn-sm btn-rpe-hud d-flex align-items-center justify-content-center ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
-                                onClick={() => setRpe(val)}
-                            >{val}</button>
-                        ))}
+                {!compact && (
+                    <div className="mb-3">
+                        <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
+                        <div className="d-flex justify-content-center gap-1">
+                            {[7, 8, 9, 10].map(val => (
+                                <button key={val}
+                                    className={`btn btn-sm btn-rpe-hud d-flex align-items-center justify-content-center ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
+                                    onClick={() => setRpe(val)}
+                                >{val}</button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div className="d-grid px-3">
                     <button className="btn btn-action shadow-lg ripple py-3" onClick={handleSubmit}>
@@ -1563,7 +1583,7 @@
         );
     };
 
-    const ActiveExercise = () => {
+    const ActiveExercise = ({ focusMode }) => {
         const { currentStep } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
@@ -1573,6 +1593,34 @@
         const hasVideo = ex.video_url && ex.video_url.trim() !== "";
         const exerciseComment = ex.comment || ex.note || ex.description || "";
         const groupComment = currentStep.groupComment || "";
+
+        if (focusMode) {
+            return (
+                <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100`}>
+                    <div className="d-flex flex-column justify-content-between h-100">
+                        <div className="text-center mb-2">
+                            <div className="text-info fs-6 mb-1">
+                                Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
+                            </div>
+                            <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
+                            {currentStep.isTimeBased && (
+                                <div className="text-secondary small mt-1">Tiempo objetivo: {Math.round((currentStep.target?.time || 0) / 60)} min</div>
+                            )}
+                            {!currentStep.isTimeBased && currentStep.target?.reps && (
+                                <div className="text-secondary small mt-1">Reps objetivo: {currentStep.target.reps}</div>
+                            )}
+                        </div>
+                        <div className="flex-grow-1 d-flex flex-column justify-content-center">
+                            {currentStep.isTimeBased ? (
+                                <TimerControls step={currentStep} />
+                            ) : (
+                                <InputControls step={currentStep} compact />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100`}>
@@ -1658,7 +1706,7 @@
         );
     };
 
-    const Header = () => {
+    const Header = ({ focusMode, onToggleFocus }) => {
         const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout } = useWorkout();
 
         // Calculate Work Steps only
@@ -1688,6 +1736,13 @@
 
                 {/* Right: Controls */}
                 <div className="d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                    <button
+                        className={`btn btn-sm rounded-pill px-3 ${focusMode ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                        onClick={onToggleFocus}
+                        title="Modo foco"
+                    >
+                        <i className="fas fa-bullseye"></i>
+                    </button>
                     {status === 'IDLE' ? (
                         <button className="btn btn-sm btn-outline-success rounded-pill px-3" onClick={startWorkout}>
                             <i className="fas fa-play"></i>
@@ -1753,6 +1808,7 @@
     // --- MAIN APP ---
     const App = () => {
         const { currentStep, status, queue, cursor } = useWorkout();
+        const [focusMode, setFocusMode] = useState(false);
 
         // Calculate next work step for preview
         const nextStep = React.useMemo(() => {
@@ -1765,18 +1821,18 @@
         console.log("App Routine:", window.initialRoutine);
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
-        if (status === 'IDLE') return <PreStart />;
+        if (status === 'IDLE') return <PreStart focusMode={focusMode} onToggleFocus={() => setFocusMode(prev => !prev)} />;
         if (status === 'FINISHED') return <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success"><h1>¡Entrenamiento Completado!</h1><p>Guardando...</p></div>;
 
         return (
-            <div className="player-container">
-                <Header />
+            <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
+                <Header focusMode={focusMode} onToggleFocus={() => setFocusMode(prev => !prev)} />
 
                 <div className="visual-stage">
-                    <MessageBar />
-                    <NextUpBar />
+                    {!focusMode && <MessageBar />}
+                    {!focusMode && <NextUpBar />}
                     <NavigationWrapper>
-                        {currentStep && <ActiveExercise />}
+                        {currentStep && <ActiveExercise focusMode={focusMode} />}
                     </NavigationWrapper>
                 </div>
 

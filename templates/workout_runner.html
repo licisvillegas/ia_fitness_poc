@@ -277,6 +277,54 @@
         font-size: clamp(1.5rem, 5vw, 2.5rem);
     }
 
+    .pending-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1400;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .pending-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .pending-panel {
+        position: fixed;
+        top: 70px;
+        right: 0;
+        width: 320px;
+        height: calc(100vh - 70px);
+        background: #0b0b0b;
+        border-left: 1px solid #222;
+        z-index: 1500;
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pending-panel.open {
+        transform: translateX(0);
+    }
+
+    .pending-panel-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #222;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .pending-panel-body {
+        padding: 12px 16px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
     .header-info {
         z-index: 1;
     }
@@ -312,6 +360,22 @@
             width: 100%;
             justify-content: center !important;
             order: 3;
+        }
+
+        .pending-panel {
+            top: auto;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 60vh;
+            border-left: none;
+            border-top: 1px solid #222;
+            transform: translateY(100%);
+        }
+
+        .pending-panel.open {
+            transform: translateY(0);
         }
     }
 </style>
@@ -1320,11 +1384,11 @@
         );
     };
 
-const PreStart = ({ focusMode, onToggleFocus }) => {
+    const PreStart = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
         const { routine, startWorkout } = useWorkout();
         return (
             <div className="player-container">
-                <Header focusMode={focusMode} onToggleFocus={onToggleFocus} />
+                <Header focusMode={focusMode} onToggleFocus={onToggleFocus} showPending={showPending} onTogglePending={onTogglePending} />
                 <div className="visual-stage text-center">
                     <RoutineDetails routine={routine} />
                 </div>
@@ -1732,7 +1796,57 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
         );
     };
 
-    const Header = ({ focusMode, onToggleFocus }) => {
+    const PendingPanel = ({ isOpen, onClose }) => {
+        const { queue, cursor, status } = useWorkout();
+        if (status === 'LOADING' || status === 'IDLE' || status === 'FINISHED') return null;
+
+        const pendingSteps = queue.slice(cursor + 1).filter(step => step.type === 'work');
+
+        return (
+            <>
+                <div className={`pending-backdrop ${isOpen ? 'show' : ''}`} onClick={onClose}></div>
+                <div className={`pending-panel ${isOpen ? 'open' : ''}`}>
+                    <div className="pending-panel-header">
+                        <div className="fw-bold text-white">Pendientes</div>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div className="pending-panel-body">
+                        {pendingSteps.length === 0 && (
+                            <div className="text-secondary small">No hay ejercicios pendientes.</div>
+                        )}
+                        {pendingSteps.map((step, idx) => {
+                            const ex = step.exercise || {};
+                            const name = ex.exercise_name || ex.name || 'Ejercicio';
+                            const target = step.isTimeBased
+                                ? `${Math.round((step.target?.time || 0))}s`
+                                : (step.target?.reps || '-');
+                            const setsLabel = `${step.setNumber}/${step.totalSets}`;
+                            return (
+                                <div key={`${step.id}_${idx}`} className="border border-secondary rounded p-2 mb-2 bg-black-trans">
+                                    <div className="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div className="text-white fw-bold">{name}</div>
+                                            {step.groupName && (
+                                                <div className="text-cyber-orange small">{step.groupName}</div>
+                                            )}
+                                        </div>
+                                        <div className="text-secondary small text-end">
+                                            <div>Serie {setsLabel}</div>
+                                            <div>{step.isTimeBased ? `Tiempo ${target}` : `Reps ${target}`}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </>
+        );
+    };
+
+    const Header = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
         const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout } = useWorkout();
 
         // Calculate Work Steps only
@@ -1762,6 +1876,15 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
 
                 {/* Right: Controls */}
                 <div className="header-controls d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                    {status !== 'IDLE' && status !== 'FINISHED' && (
+                        <button
+                            className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                            onClick={onTogglePending}
+                            title="Pendientes"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    )}
                     <button
                         className={`btn btn-sm rounded-pill px-3 ${focusMode ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
                         onClick={onToggleFocus}
@@ -1835,6 +1958,7 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
     const App = () => {
         const { currentStep, status, queue, cursor } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
+        const [showPending, setShowPending] = useState(false);
 
         // Calculate next work step for preview
         const nextStep = React.useMemo(() => {
@@ -1847,12 +1971,24 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
         console.log("App Routine:", window.initialRoutine);
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
-        if (status === 'IDLE') return <PreStart focusMode={focusMode} onToggleFocus={() => setFocusMode(prev => !prev)} />;
+        if (status === 'IDLE') return (
+            <PreStart
+                focusMode={focusMode}
+                onToggleFocus={() => setFocusMode(prev => !prev)}
+                showPending={showPending}
+                onTogglePending={() => setShowPending(prev => !prev)}
+            />
+        );
         if (status === 'FINISHED') return <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success"><h1>¡Entrenamiento Completado!</h1><p>Guardando...</p></div>;
 
         return (
             <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
-                <Header focusMode={focusMode} onToggleFocus={() => setFocusMode(prev => !prev)} />
+                <Header
+                    focusMode={focusMode}
+                    onToggleFocus={() => setFocusMode(prev => !prev)}
+                    showPending={showPending}
+                    onTogglePending={() => setShowPending(prev => !prev)}
+                />
 
                 <div className="visual-stage">
                     {!focusMode && <MessageBar />}
@@ -1861,6 +1997,10 @@ const PreStart = ({ focusMode, onToggleFocus }) => {
                         {currentStep && <ActiveExercise focusMode={focusMode} />}
                     </NavigationWrapper>
                 </div>
+
+                {(status === 'WORK' || status === 'REST') && (
+                    <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
+                )}
 
                 <RestOverlay nextStep={nextStep} />
                 <ConfirmModal />

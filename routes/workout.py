@@ -108,9 +108,10 @@ def api_filter_exercises():
     try:
         # Projection: keep it light
         cursor = db.exercises.find(query, {
-            "exercise_id": 1, "name": 1, "body_part": 1, 
+            "exercise_id": 1, "name": 1, "body_part": 1,
             "difficulty": 1, "equipment": 1, "video_url": 1,
-            "description": 1, "image_url": 1
+            "description": 1, "image_url": 1,
+            "substitutes": 1, "equivalents": 1, "equivalent_exercises": 1
         }).sort("name", 1).limit(50)
         
         results = list(cursor)

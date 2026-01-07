@@ -422,7 +422,9 @@
 
         function addToLookup(ex) {
             if (!ex) return;
-            if (ex._id) exerciseLookup[ex._id] = ex;
+            const rawId = ex._id && typeof ex._id === "object" ? (ex._id.$oid || ex._id.oid || ex._id.id) : ex._id;
+            const idValue = rawId != null ? String(rawId) : null;
+            if (idValue) exerciseLookup[idValue] = ex;
             if (ex.exercise_id) exerciseLookup[String(ex.exercise_id)] = ex;
             const nameKey = (ex.name || ex.exercise_name || "").trim().toLowerCase();
             if (nameKey) exerciseLookupByName[nameKey] = ex;

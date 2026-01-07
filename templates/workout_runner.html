@@ -779,7 +779,7 @@
             let isMounted = true;
             const loadExercises = async () => {
                 try {
-                    const res = await fetch("/api/exercises");
+                    const res = await fetch("/workout/api/exercises");
                     if (!res.ok) return;
                     const data = await res.json();
                     if (!isMounted || !Array.isArray(data)) return;

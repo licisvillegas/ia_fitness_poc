@@ -156,24 +156,32 @@ def api_get_body_parts():
 def api_stats_heatmap():
     """Returns frequency map of workouts for the user (last year)."""
     try:
-        user_id = request.args.get("user_id")
-        if not user_id: return jsonify({"error": "Missing user_id"}), 400
+        current_user_id = request.cookies.get("user_session")
+        req_user_id = request.args.get("user_id")
+        if not current_user_id: return jsonify({"error": "Unauthorized"}), 401
             
         db = get_db()
         if db is None: return jsonify({}), 503
+
+        # Resolve user_id
+        user_id = current_user_id
+        if req_user_id and req_user_id != current_user_id:
+             role_doc = db.user_roles.find_one({"user_id": current_user_id})
+             if role_doc and role_doc.get("role") == "admin":
+                 user_id = req_user_id
         
         # Robust Logic: Fetch raw and process in Python to handle Mixed Types (Date/String)
         # Fetch only needed fields from 'workout_sessions'
         cursor = db.workout_sessions.find(
             {"user_id": user_id}, 
-            {"started_at": 1, "created_at": 1}
+            {"completed_at": 1}
         )
         
         heatmap_data = {}
         
         for s in cursor:
             # Determine date
-            raw_date = s.get("started_at") or s.get("created_at")
+            raw_date = s.get("completed_at")
             date_str = None
             
             if isinstance(raw_date, datetime):

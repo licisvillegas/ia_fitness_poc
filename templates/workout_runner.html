@@ -758,6 +758,14 @@
         const resumeTimerRef = useRef(false);
         const onConfirmRef = useRef(null);
         const startTimeRef = useRef(Date.now()); // Track start time of current step
+        const visibilitySnapshotRef = useRef(null);
+        const completeStepTimerRef = useRef(null);
+        const statusRef = useRef(status);
+        const isPausedRef = useRef(isPaused);
+        const isTimerRunningRef = useRef(isTimerRunning);
+        const stepTimerRef = useRef(stepTimer);
+        const globalTimeRef = useRef(globalTime);
+        const currentStepRef = useRef(null);
 
 
         // INITIALIZE
@@ -901,6 +909,13 @@
         const currentStep = useMemo(() => queue[cursor], [queue, cursor]);
         const nextStep = useMemo(() => queue[cursor + 1], [queue, cursor]);
 
+        useEffect(() => { statusRef.current = status; }, [status]);
+        useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+        useEffect(() => { isTimerRunningRef.current = isTimerRunning; }, [isTimerRunning]);
+        useEffect(() => { stepTimerRef.current = stepTimer; }, [stepTimer]);
+        useEffect(() => { globalTimeRef.current = globalTime; }, [globalTime]);
+        useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+
         // Auto-advance logic when timer hits 0
         const completeStepTimer = () => {
             if (currentStep.type === 'rest') {
@@ -916,6 +931,52 @@
                 next();
             }
         };
+
+        useEffect(() => {
+            completeStepTimerRef.current = completeStepTimer;
+        }, [completeStepTimer]);
+
+        useEffect(() => {
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'hidden') {
+                    visibilitySnapshotRef.current = {
+                        hiddenAt: Date.now(),
+                        status: statusRef.current,
+                        isPaused: isPausedRef.current,
+                        isTimerRunning: isTimerRunningRef.current,
+                        stepTimer: stepTimerRef.current,
+                        globalTime: globalTimeRef.current
+                    };
+                    return;
+                }
+                if (document.visibilityState !== 'visible') return;
+                const snap = visibilitySnapshotRef.current;
+                visibilitySnapshotRef.current = null;
+                if (!snap || snap.isPaused) return;
+                if (snap.status !== 'WORK' && snap.status !== 'REST') return;
+
+                const deltaSec = Math.floor((Date.now() - snap.hiddenAt) / 1000);
+                if (deltaSec <= 0) return;
+
+                setGlobalTime(current => Math.max(current, snap.globalTime + deltaSec));
+
+                if (snap.isTimerRunning && snap.stepTimer > 0) {
+                    const nextTimer = Math.max(0, snap.stepTimer - deltaSec);
+                    if (nextTimer <= 0) {
+                        setStepTimer(0);
+                        setIsTimerRunning(false);
+                        if (completeStepTimerRef.current) {
+                            completeStepTimerRef.current();
+                        }
+                    } else {
+                        setStepTimer(prev => Math.min(prev, nextTimer));
+                    }
+                }
+            };
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }, []);
 
         const logSet = (data) => {
             const exerciseId = currentStep.exercise?.exercise_id || currentStep.exercise?._id || currentStep.exercise?.id;

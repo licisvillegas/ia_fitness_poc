@@ -32,9 +32,6 @@
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" id="toggleAdvancedBtn" type="button">
-                        Opciones avanzadas
-                    </button>
                     <button class="btn btn-sm btn-outline-secondary" id="cancelRoutineBtn" onclick="cancelRoutine()" type="button" disabled>
                         Cancelar
                     </button>
@@ -151,6 +148,9 @@
                             </select>
                             <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
                                 <i class="fas fa-undo me-1"></i> Restablecer
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="toggleAdvancedBtn" type="button">
+                                Opciones avanzadas
                             </button>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2 advanced-only">
@@ -748,6 +748,7 @@
         renderRoutineItems();
         filterExercises();
         updateCancelState();
+        switchMobileView('details');
     }
 
     function normalizeRoutineItems(items) {
@@ -970,6 +971,7 @@
             comment: ""
         });
         renderRoutineItems();
+        switchMobileView('details');
     }
 
     function addGroupBlock() {

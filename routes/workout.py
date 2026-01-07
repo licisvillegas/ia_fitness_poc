@@ -223,8 +223,20 @@ def api_get_user_routines():
                 {"expires_at": None},
                 {"expires_at": {"$gt": now}}
             ]
-        })
-        assigned_ids = [ObjectId(a["routine_id"]) for a in assignments_cursor if a.get("routine_id")]
+        }, {"routine_id": 1, "expires_at": 1})
+        assignments = list(assignments_cursor)
+        assigned_ids = []
+        assignment_map = {}
+        for a in assignments:
+            rid = a.get("routine_id")
+            if not rid:
+                continue
+            if ObjectId.is_valid(str(rid)):
+                assigned_ids.append(ObjectId(str(rid)))
+            expires_at = a.get("expires_at")
+            if isinstance(expires_at, datetime):
+                expires_at = expires_at.isoformat()
+            assignment_map[str(rid)] = expires_at
         
         routines = []
         if assigned_ids:
@@ -234,6 +246,7 @@ def api_get_user_routines():
                 r["_id"] = str(r["_id"])
                 # Ensure items array exists
                 if "items" not in r: r["items"] = []
+                r["assigned_expires_at"] = assignment_map.get(r["_id"])
                 routines.append(r)
         
         return jsonify(routines), 200
@@ -248,6 +261,13 @@ def user_routine_builder_page():
     if not user_id:
         return redirect("/")
     return render_template("routine_builder_user.html")
+
+@workout_bp.route("/routines")
+def user_routines_catalog_page():
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return redirect("/")
+    return render_template("routines_catalog_user.html")
 
 @workout_bp.get("/api/my-routines")
 def api_list_my_routines():

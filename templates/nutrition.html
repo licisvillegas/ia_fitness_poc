@@ -307,6 +307,129 @@
     .alert-tone-success {
       color: #00ff9d;
     }
+
+    @media print {
+
+      /* Hide all non-essential elements */
+      .sidebar,
+      .navbar,
+      .hero,
+      .recipes,
+      .equivalences,
+      footer,
+      #daily-plan-controls,
+      #btnGenMeals,
+      #btnSaveMealPlan,
+      .main-content>.container>h3>button {
+        display: none !important;
+      }
+
+      /* Adjust Main Layout for Print */
+      body,
+      .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: white !important;
+        color: black !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Specific visibility for the plan section */
+      .daily-plan {
+        padding: 0 !important;
+        display: block !important;
+      }
+
+      .daily-plan .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px !important;
+      }
+
+      /* Ensure the meals container and its children are visible and styled */
+      #mealsContainer {
+        display: block !important;
+      }
+
+      /* Style Meal Cards for Print */
+      .meal-card {
+        break-inside: avoid;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        background-color: white !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid;
+      }
+
+      .meal-header {
+        background-color: #f8f9fa !important;
+        color: black !important;
+        border-bottom: 1px solid #ddd !important;
+      }
+
+      .meal-title {
+        color: black !important;
+      }
+
+      .meal-header span {
+        color: #333 !important;
+      }
+
+      .nutrition-list li {
+        color: black !important;
+        border-color: #eee !important;
+      }
+
+      .nutrition-list li strong {
+        color: #000 !important;
+      }
+
+      .nutrition-list li .small {
+        color: #555 !important;
+      }
+
+      .meal-details {
+        display: block !important;
+        /* Force expand details */
+      }
+
+      .meal-details p {
+        color: #333 !important;
+      }
+
+      /* Hide icons that don't make sense in print */
+      .meal-header i,
+      .meal-details i {
+        display: none !important;
+      }
+
+      /* Ensure total text is visible */
+      .h5.text-white {
+        color: black !important;
+        font-size: 1.2rem !important;
+        margin-bottom: 1.5rem !important;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+      }
+
+      /* Header adjustments */
+      h3.text-center {
+        text-align: left !important;
+        font-size: 2rem !important;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 20px !important;
+        color: #000 !important;
+      }
+
+      /* Remove background from list items */
+      .list-group-item {
+        background-color: transparent !important;
+      }
+    }
   </style>
 </head>
 
@@ -337,7 +460,17 @@
     <!-- Generador de plan diario (AI) -->
     <section class="daily-plan">
       <div class="container mt-4">
-        <h3 class="text-center mb-4">Plan de Nutrición (AI)</h3>
+        <h3 class="text-center mb-4 text-white">Plan de Nutrición (AI)</h3>
+
+        <!-- Summary & Print Control -->
+        <div id="nutritionPlanSummary" class="d-flex justify-content-between align-items-center mb-3 px-1"
+          style="display:none;">
+          <div id="nutritionPlanTotal" class="h5 text-white mb-0"></div>
+          <button class="btn btn-outline-light btn-sm" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Imprimir
+          </button>
+        </div>
+
         {% if current_user_role == 'admin' %}
         <div class="text-center mb-3" id="daily-plan-controls" style="display:none;">
           <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
@@ -539,6 +672,11 @@
           // Calculate totals from items to ensure consistency
           let dailySumKcal = 0;
 
+          // Show summary container
+          const summaryContainer = document.getElementById('nutritionPlanSummary');
+          const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
+          if (summaryContainer) summaryContainer.style.display = 'flex';
+
           // Prepare meal elements
           const mealElements = meals.map(m => {
             const card = document.createElement('div');
@@ -611,10 +749,9 @@
 
           // Display Daily Total
           const targetTotal = out.total_kcal;
-          const totalEl = document.createElement('div');
-          totalEl.className = 'mb-3 text-white h5';
-          totalEl.innerHTML = `Total del día (Plan): <strong>${dailySumKcal} kcal</strong><br><span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
-          container.appendChild(totalEl);
+          if (summaryTotalDiv) {
+            summaryTotalDiv.innerHTML = `Total del día: <strong>${dailySumKcal} kcal</strong><br><span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
+          }
 
           // Append all cards
           mealElements.forEach(c => container.appendChild(c));
@@ -678,7 +815,15 @@
             const uid = resolveUserId(document.getElementById('nutriUserId').value);
             if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
             const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}/active`);
-            if (!resp.ok) { msg.textContent = 'No cuenta con plan de nutrición activo'; container.innerHTML = ''; btnSave.style.display = 'none'; return; }
+            if (!resp.ok) {
+              msg.textContent = 'No cuenta con plan de nutrición activo';
+              container.innerHTML = '';
+              btnSave.style.display = 'none';
+              // Hide summary if no plan
+              const s = document.getElementById('nutritionPlanSummary');
+              if (s) s.style.display = 'none';
+              return;
+            }
             const doc = await resp.json();
             renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
             msg.textContent = 'Plan de nutrición activo cargado';

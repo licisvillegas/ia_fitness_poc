@@ -53,6 +53,21 @@
     </div>
 </div>
 
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs border-secondary mb-3">
+    <li class="nav-item">
+        <button class="nav-link active text-theme" id="tab-all" onclick="setTab('all')">
+            <i class="fas fa-list me-2"></i>Todas
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link text-theme" id="tab-assigned" onclick="setTab('assigned')">
+            <i class="fas fa-clipboard-check me-2"></i>Vigentes Asignadas
+        </button>
+    </li>
+</ul>
+
 <div class="card bg-panel border-0 shadow-lg d-none d-md-block">
     <div class="card-body">
         <div class="table-responsive">
@@ -195,6 +210,25 @@
         border-radius: 10px;
         padding: 10px 12px;
     }
+
+    .nav-tabs .nav-link {
+        color: var(--text-secondary);
+        border: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: transparent;
+        color: #00d2ff !important;
+        border-bottom: 2px solid #00d2ff;
+        font-weight: bold;
+    }
 </style>
 
 <script>
@@ -202,6 +236,7 @@
     let bodyPartMap = {};
     let exerciseLookup = {};
     let messageModalInstance = null;
+    let activeTab = 'all'; // 'all' or 'assigned'
 
     document.addEventListener("DOMContentLoaded", async () => {
         await loadBodyParts();
@@ -262,6 +297,22 @@
         return match ? decodeURIComponent(match[1]) : "";
     }
 
+    function setTab(mode) {
+        activeTab = mode;
+
+        // Update UI
+        document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active', 'text-white'));
+        document.querySelectorAll('.nav-link').forEach(btn => btn.classList.add('text-theme'));
+
+        const activeBtn = document.getElementById(mode === 'assigned' ? 'tab-assigned' : 'tab-all');
+        if (activeBtn) {
+            activeBtn.classList.add('active', 'text-white');
+            activeBtn.classList.remove('text-theme');
+        }
+
+        filterRoutines();
+    }
+
     async function loadRoutines() {
         try {
             const uid = getUserId();
@@ -315,7 +366,27 @@
             const routineBodyParts = Array.isArray(r.routine_body_parts) ? r.routine_body_parts : [];
             const bodyMatch = !bodyPart || routineBodyParts.includes(bodyPart);
             const dayMatch = !day || r.routine_day === day;
-            return nameMatch && bodyMatch && dayMatch;
+
+            // Tab Filter
+            let tabMatch = true;
+            if (activeTab === 'assigned') {
+                // Must have assigned_expires_at
+                tabMatch = !!r.assigned_expires_at;
+            }
+
+            return nameMatch && bodyMatch && dayMatch && tabMatch;
+        });
+
+        // SORTING: Day of week (Mon->Sun), then others
+        const dayOrder = {
+            "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
+            "Friday": 5, "Saturday": 6, "Sunday": 7
+        };
+
+        filtered.sort((a, b) => {
+            const da = dayOrder[a.routine_day] || 99;
+            const db = dayOrder[b.routine_day] || 99;
+            return da - db;
         });
 
         renderRoutines(filtered);

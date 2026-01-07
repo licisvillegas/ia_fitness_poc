@@ -82,6 +82,14 @@
             </a>
         </li>
         <li>
+            <a href="#"
+                onclick="const u=JSON.parse(localStorage.getItem('ai_fitness_user')||'{}'); if(u.user_id) window.location.href='/ai/body_assessment/history/view/'+u.user_id; else alert('Debes iniciar sesión'); return false;"
+                class="nav-link {% if 'history/view' in request.path %}active{% endif %}" title="Historial">
+                <i class="fas fa-history me-2" style="width: 24px; text-align: center;"></i>
+                <span>Historial</span>
+            </a>
+        </li>
+        <li>
             <a href="/plan" class="nav-link {% if request.path == '/plan' %}active{% endif %}" title="Mi Plan">
                 <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
                 <span>Mi Plan</span>
@@ -96,8 +104,7 @@
             </a>
         </li>
         <li>
-            <a href="/workout/routines"
-                class="nav-link {% if request.path == '/workout/routines' %}active{% endif %}"
+            <a href="/workout/routines" class="nav-link {% if request.path == '/workout/routines' %}active{% endif %}"
                 title="Mis Rutinas">
                 <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
                 <span>Mis Rutinas</span>

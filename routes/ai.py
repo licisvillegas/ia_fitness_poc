@@ -3,6 +3,9 @@ import os
 import base64
 from datetime import datetime, timezone
 from bson import ObjectId
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 import extensions
 from extensions import logger
@@ -18,6 +21,14 @@ from ai_agents.body_assessment_agent import BodyAssessmentAgent
 from ai_agents.routine_agent import RoutineAgent
 from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
 from ai_agents.meal_plan_agent import MealPlanAgent # Used in diagnostics
+
+# Configuración Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 ai_bp = Blueprint('ai', __name__)
 
@@ -178,11 +189,38 @@ def ai_body_assessment():
                     file_storage = request.files.get(file_key)
                     if not file_storage: continue
                     try:
+                        # Leer bytes para base64 (agente)
                         raw = file_storage.read()
                         if not raw: continue
+                        
+                        # Reset pointer para posible subida o relectura
+                        file_storage.seek(0)
+                        
+                        # 1. Base64 para el Agente (procesamiento inmediato)
                         b64 = base64.b64encode(raw).decode("utf-8")
                         mime = file_storage.mimetype or "image/jpeg"
                         img_list.append({"data": b64, "mime": mime, "view": ph.get("view")})
+
+                        # 2. Subida a Cloudinary (persistencia)
+                        # Cloud name requerido para subir
+                        if os.getenv("CLOUDINARY_CLOUD_NAME"):
+                            try:
+                                # Upload toma el file_storage directamente (file-like object)
+                                file_storage.seek(0) 
+                                upload_result = cloudinary.uploader.upload(
+                                    file_storage, 
+                                    folder="ia_fitness/body_assessments",
+                                    resource_type="image"
+                                )
+                                secure_url = upload_result.get("secure_url")
+                                if secure_url:
+                                    ph["url"] = secure_url
+                            except Exception as cloud_err:
+                                logger.error(f"Error subiendo a Cloudinary: {cloud_err}")
+                                # No fallamos el request entero, solo no hay URL
+                        else:
+                            logger.warning("Cloudinary no configurado. No se subirán imágenes.")
+
                     finally:
                         try: file_storage.close()
                         except: pass
@@ -231,6 +269,23 @@ def ai_body_assessment():
         logger.error(f"Error generando evaluación corporal: {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar evaluación corporal"}), 500
 
+@ai_bp.get("/ai/body_assessment/history/view/<user_id>")
+def body_assessment_history_view(user_id):
+    user_name = user_id
+    try:
+        logger.info(f"Viewing history for user_id: {user_id}")
+        if extensions.db is not None:
+             user = extensions.db.users.find_one({"_id": ObjectId(user_id)})
+             if user:
+                 user_name = user.get("name") or user.get("username") or user_id
+                 logger.info(f"Found user name: {user_name}")
+             else:
+                 logger.warning("User not found in DB")
+    except Exception as e:
+        logger.error(f"Error fetching user name: {e}")
+        pass
+    return render_template("body_assessment_history.html", user_id=user_id, user_name=user_name)
+
 @ai_bp.get("/ai/body_assessment/history/<user_id>")
 def get_body_assessment_history(user_id):
     try:
@@ -239,7 +294,7 @@ def get_body_assessment_history(user_id):
         
         cursor = extensions.db.body_assessments.find(
             {"user_id": user_id},
-            {"created_at": 1, "output": 1, "backend": 1}
+            {"created_at": 1, "output": 1, "backend": 1, "input": 1}
         ).sort("created_at", -1)
 
         history = []
@@ -252,7 +307,8 @@ def get_body_assessment_history(user_id):
                 "id": str(doc.get("_id")),
                 "date": str_date,
                 "output": doc.get("output"),
-                "backend": doc.get("backend")
+                "backend": doc.get("backend"),
+                "input": doc.get("input")
             })
         
         return jsonify(history), 200

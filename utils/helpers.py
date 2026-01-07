@@ -156,6 +156,7 @@ def sanitize_photos(raw: Any) -> list:
                     "view": view.lower() or None,
                     "notes": notes or None,
                     "quality": quality or None,
+                    "url": str(item.get("url", "")).strip() or None,
                 }
             )
     return sanitized

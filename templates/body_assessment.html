@@ -137,7 +137,8 @@
     .img-thumbnail-preview {
       width: 80px;
       height: 80px;
-      object-fit: cover;
+      object-fit: contain;
+      background-color: #000;
       border-radius: 8px;
       cursor: zoom-in;
       border: 2px solid var(--primary);
@@ -201,6 +202,7 @@
         opacity: 0;
         transform: translateY(10px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -427,20 +429,20 @@
                         data-male="/static/images/examples/Gemini_Generated_Image_ezkgn3ezkgn3ezkg.png"
                         data-female="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 1"
-                        onclick="openZoomModal(this.src)">
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        alt="Ejemplo 1" onclick="openZoomModal(this.src)">
                       <img src="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
                         data-male="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
                         data-female="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 2"
-                        onclick="openZoomModal(this.src)">
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        alt="Ejemplo 2" onclick="openZoomModal(this.src)">
                       <img src="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
                         data-male="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
                         data-female="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: cover;" alt="Ejemplo 3"
-                        onclick="openZoomModal(this.src)">
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        alt="Ejemplo 3" onclick="openZoomModal(this.src)">
                     </div>
                     <small class="text-muted" style="font-size: 0.75rem;">* Click para ver en pantalla completa.</small>
                   </div>

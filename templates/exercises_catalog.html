@@ -476,63 +476,79 @@
         return messageModalInstance;
     }
 
-    function showConfirmModal(title, message) {
+    const getLocalMessageModal = () => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return null;
+        return bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+
+    const showConfirmModal = (title, message, tone = "warning") => {
+        if (window.showConfirmModal) {
+            return window.showConfirmModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return Promise.resolve(confirm(message || title || "Confirmar"));
+        const modalTitle = modalEl.querySelector(".modal-title");
+        const modalBody = modalEl.querySelector(".modal-body");
+        const confirmBtn = modalEl.querySelector("#messageConfirm");
+        const cancelBtn = modalEl.querySelector("#messageCancel");
+        const okBtn = modalEl.querySelector("#messageOk");
+
+        modalTitle.textContent = title || "Confirmar";
+        modalBody.textContent = message || "";
+        confirmBtn.classList.remove("d-none");
+        cancelBtn.classList.remove("d-none");
+        okBtn.classList.add("d-none");
+
+        confirmBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-success";
+        cancelBtn.className = "btn btn-outline-secondary";
+
         return new Promise(resolve => {
-            const modalEl = document.getElementById("messageModal");
-            const modalTitle = modalEl.querySelector(".modal-title");
-            const modalBody = modalEl.querySelector(".modal-body");
-            const confirmBtn = modalEl.querySelector("#messageConfirm");
-            const cancelBtn = modalEl.querySelector("#messageCancel");
-            const okBtn = modalEl.querySelector("#messageOk");
-
-            modalTitle.textContent = title;
-            modalBody.textContent = message;
-            confirmBtn.classList.remove("d-none");
-            cancelBtn.classList.remove("d-none");
-            okBtn.classList.add("d-none");
-
-            let resolved = false;
             const onConfirm = () => {
-                resolved = true;
-                ensureMessageModalInstance().hide();
+                getLocalMessageModal()?.hide();
                 resolve(true);
             };
             const onCancel = () => {
-                resolved = true;
                 resolve(false);
             };
-            const onHidden = () => {
-                if (!resolved) resolve(false);
-            };
-
-            confirmBtn.addEventListener("click", onConfirm, { once: true });
-            cancelBtn.addEventListener("click", onCancel, { once: true });
-            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
-
-            ensureMessageModalInstance().show();
+            confirmBtn.onclick = onConfirm;
+            cancelBtn.onclick = onCancel;
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(false), { once: true });
+            getLocalMessageModal()?.show();
         });
-    }
+    };
 
-    function showAlertModal(title, message) {
+    const showAlertModal = (title, message, tone = "warning") => {
+        if (window.showAlertModal) {
+            return window.showAlertModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) {
+            alert(message || title || "Aviso");
+            return Promise.resolve(true);
+        }
+        const modalTitle = modalEl.querySelector(".modal-title");
+        const modalBody = modalEl.querySelector(".modal-body");
+        const confirmBtn = modalEl.querySelector("#messageConfirm");
+        const cancelBtn = modalEl.querySelector("#messageCancel");
+        const okBtn = modalEl.querySelector("#messageOk");
+
+        modalTitle.textContent = title || "Aviso";
+        modalBody.textContent = message || "";
+        confirmBtn.classList.add("d-none");
+        cancelBtn.classList.add("d-none");
+        okBtn.classList.remove("d-none");
+        okBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-light";
+
         return new Promise(resolve => {
-            const modalEl = document.getElementById("messageModal");
-            const modalTitle = modalEl.querySelector(".modal-title");
-            const modalBody = modalEl.querySelector(".modal-body");
-            const confirmBtn = modalEl.querySelector("#messageConfirm");
-            const cancelBtn = modalEl.querySelector("#messageCancel");
-            const okBtn = modalEl.querySelector("#messageOk");
-
-            modalTitle.textContent = title;
-            modalBody.textContent = message;
-            confirmBtn.classList.add("d-none");
-            cancelBtn.classList.add("d-none");
-            okBtn.classList.remove("d-none");
-
-            const onOk = () => resolve(true);
-            okBtn.addEventListener("click", onOk, { once: true });
-            ensureMessageModalInstance().show();
+            okBtn.onclick = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(true), { once: true });
+            getLocalMessageModal()?.show();
         });
-    }
+    };
 
     function filterExercises() {
         const mainSearch = document.getElementById("mainSearch");
@@ -743,7 +759,12 @@
     }
 
     async function deleteExercise(id) {
-        if (!confirm("¿Estás seguro de que deseas eliminar este ejercicio?")) return;
+        const confirmed = await showConfirmModal(
+            "Eliminar ejercicio",
+            "¿Estás seguro de que deseas eliminar este ejercicio?",
+            "danger"
+        );
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/exercises/delete/${id}`, { method: "DELETE" });
@@ -751,10 +772,10 @@
                 loadExercises();
             } else {
                 const err = await res.json();
-                alert("Error: " + (err.error || "No se pudo eliminar"));
+                showAlertModal("Error", err.error || "No se pudo eliminar", "danger");
             }
         } catch (e) {
-            alert("Error de conexión: " + e);
+            showAlertModal("Error", `Error de conexión: ${e}`, "danger");
         }
     }
 </script>

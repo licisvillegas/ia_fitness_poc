@@ -21,6 +21,75 @@
             background-color: var(--bg-body);
             color: var(--text-main);
         }
+
+        @keyframes alertSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 5000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .alert-modal-backdrop.show {
+            display: flex;
+        }
+
+        .alert-modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: #0b0b0b;
+            border: 1px solid #2a2a2a;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            padding: 1.5rem;
+            color: #fff;
+            animation: alertSlideIn 0.25s ease-out;
+        }
+
+        .alert-modal-card .alert-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-modal-card .alert-message {
+            color: #c7c7c7;
+            margin-bottom: 1.25rem;
+            line-height: 1.4;
+        }
+
+        .alert-modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .alert-tone-warning {
+            color: #ff9d00;
+        }
+
+        .alert-tone-danger {
+            color: #ff5c5c;
+        }
+
+        .alert-tone-success {
+            color: #00ff9d;
+        }
     </style>
 </head>
 
@@ -36,8 +105,82 @@
         </main>
     </div>
 
+    <div id="appAlertModal" class="alert-modal-backdrop">
+        <div class="alert-modal-card">
+            <div id="appAlertTitle" class="alert-title"></div>
+            <div id="appAlertMessage" class="alert-message"></div>
+            <div class="alert-modal-actions">
+                <button id="appAlertCancel" class="btn btn-outline-secondary">Cancelar</button>
+                <button id="appAlertConfirm" class="btn btn-outline-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/lang.js"></script>
+    <script>
+        const appAlertModal = document.getElementById("appAlertModal");
+        const appAlertTitle = document.getElementById("appAlertTitle");
+        const appAlertMessage = document.getElementById("appAlertMessage");
+        const appAlertCancel = document.getElementById("appAlertCancel");
+        const appAlertConfirm = document.getElementById("appAlertConfirm");
+        let appAlertResolve = null;
+
+        const applyAlertTone = (tone) => {
+            appAlertTitle.classList.remove("alert-tone-warning", "alert-tone-danger", "alert-tone-success");
+            if (tone === "warning") appAlertTitle.classList.add("alert-tone-warning");
+            if (tone === "danger") appAlertTitle.classList.add("alert-tone-danger");
+            if (tone === "success") appAlertTitle.classList.add("alert-tone-success");
+        };
+
+        const showAlertModal = (title, message, tone = "warning") => {
+            if (!appAlertModal) {
+                alert(message || title || "Aviso");
+                return Promise.resolve(true);
+            }
+            appAlertTitle.textContent = title || "Aviso";
+            appAlertMessage.textContent = message || "";
+            appAlertCancel.style.display = "none";
+            appAlertConfirm.textContent = "Cerrar";
+            appAlertConfirm.className = "btn btn-outline-light";
+            applyAlertTone(tone);
+            appAlertModal.classList.add("show");
+            return new Promise(resolve => {
+                appAlertResolve = resolve;
+            });
+        };
+
+        const showConfirmModal = (title, message, tone = "danger") => {
+            if (!appAlertModal) {
+                return Promise.resolve(confirm(message || title || "Confirmar"));
+            }
+            appAlertTitle.textContent = title || "Confirmar";
+            appAlertMessage.textContent = message || "";
+            appAlertCancel.style.display = "inline-flex";
+            appAlertConfirm.textContent = "Confirmar";
+            appAlertConfirm.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-success";
+            applyAlertTone(tone);
+            appAlertModal.classList.add("show");
+            return new Promise(resolve => {
+                appAlertResolve = resolve;
+            });
+        };
+
+        const closeAlertModal = (result) => {
+            appAlertModal.classList.remove("show");
+            if (appAlertResolve) appAlertResolve(result);
+            appAlertResolve = null;
+        };
+
+        appAlertCancel?.addEventListener("click", () => closeAlertModal(false));
+        appAlertConfirm?.addEventListener("click", () => closeAlertModal(true));
+        appAlertModal?.addEventListener("click", (event) => {
+            if (event.target === appAlertModal) closeAlertModal(false);
+        });
+
+        window.showAlertModal = showAlertModal;
+        window.showConfirmModal = showConfirmModal;
+    </script>
 </body>
 
 </html>

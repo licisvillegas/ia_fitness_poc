@@ -407,7 +407,8 @@
           if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
           const token = document.getElementById('adminToken').value.trim();
           if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          if (!confirm('¿Seguro que deseas borrar este plan?')) return;
+          const confirmed = await showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este plan?", "danger");
+          if (!confirmed) return;
           msg.textContent = 'Borrando...';
           try {
             const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });

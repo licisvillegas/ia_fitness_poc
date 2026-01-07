@@ -241,12 +241,15 @@ def get_my_profile_aggregated():
         
         # 4. Latest Measurements (from body_assessments or progress)
         measurements = {}
+        latest_input = {}
         # Try latest assessment
         last_assess = extensions.db.body_assessments.find_one(
             {"user_id": user_id}, sort=[("created_at", -1)]
         )
-        if last_assess and "input" in last_assess and "measurements" in last_assess["input"]:
-             measurements = last_assess["input"]["measurements"]
+        if last_assess and "input" in last_assess:
+             latest_input = last_assess["input"] or {}
+             if "measurements" in latest_input:
+                 measurements = latest_input["measurements"]
         
         # Calculate Age
         age = None
@@ -264,11 +267,16 @@ def get_my_profile_aggregated():
             "sex": profile_doc.get("sex"),
             "age": age,
             "phone": profile_doc.get("phone"),
-            "goal": plan_doc.get("goal") or user_doc.get("goal"), # Fallback to user doc
+            "goal": plan_doc.get("goal") or user_doc.get("goal") or user_doc.get("goals"), # Fallback to user doc
             "activity_level": plan_doc.get("activity_level"), # Note: Plan might not check activity level, checking input logic usually relies on creation input.
             "notes": None, # Could fetch from last plan or assessment
             "measurements": measurements
         }
+
+        if latest_input.get("goal") or latest_input.get("goals"):
+            data["goal"] = latest_input.get("goal") or latest_input.get("goals")
+        if latest_input.get("activity_level"):
+            data["activity_level"] = latest_input.get("activity_level")
         
         return jsonify(data), 200
         

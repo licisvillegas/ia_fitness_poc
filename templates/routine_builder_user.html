@@ -1,0 +1,1690 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Constructor Rutinas{% endblock %}
+
+{% block sidebar %}
+{% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Mobile View Navigation -->
+    <div class="d-lg-none mb-3">
+        <ul class="nav nav-pills nav-fill bg-dark rounded p-1 border border-secondary" id="mobileBuilderNav">
+            <li class="nav-item">
+                <button class="nav-link active text-white" onclick="switchMobileView('details')"
+                    id="mobile-tab-details">
+                    <i class="fas fa-edit me-2"></i>Detalles
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-secondary" onclick="switchMobileView('exercises')"
+                    id="mobile-tab-exercises">
+                    <i class="fas fa-dumbbell me-2"></i>Ejercicios
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Left: Builder Form -->
+    <div class="col-lg-8 mobile-view-pane active" id="builderFormCol">
+        <div class="card bg-panel border-0 shadow text-white mb-4">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="toggleAdvancedBtn" type="button">
+                        Opciones avanzadas
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="cancelRoutineBtn" onclick="cancelRoutine()" type="button" disabled>
+                        Cancelar
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="saveRoutine()">
+                        <i class="fas fa-save me-1"></i> Guardar Rutina
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <input type="hidden" id="routineId">
+                <div class="mb-3">
+                    <label class="text-secondary small">Nombre de la Rutina</label>
+                    <input type="text" id="routineName"
+                        class="form-control bg-dark text-white border-secondary fs-4 fw-bold"
+                        placeholder="E.g. Pierna Hipertrofia">
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Descripción (Tags)</label>
+                    <input type="text" id="routineDesc" class="form-control bg-dark text-white border-secondary"
+                        placeholder="E.g. Enfoque cuádriceps, RPE 8-9">
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Grupos Musculares de la Rutina</label>
+                    <div class="d-flex flex-wrap gap-2" id="routineBodyPartsContainer">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Día de la Rutina</label>
+                    <select id="routineDay" class="form-select bg-dark text-white border-secondary">
+                        <option value="">Seleccionar día</option>
+                        <option value="Monday">Lunes</option>
+                        <option value="Tuesday">Martes</option>
+                        <option value="Wednesday">Miércoles</option>
+                        <option value="Thursday">Jueves</option>
+                        <option value="Friday">Viernes</option>
+                        <option value="Saturday">Sábado</option>
+                        <option value="Sunday">Domingo</option>
+                    </select>
+                </div>
+
+                <hr class="border-secondary">
+
+                <h6 class="text-cyber-green mb-3">Ejercicios Seleccionados</h6>
+                <div id="routineItemsList" class="d-flex flex-column gap-3">
+                    <div id="routineItemsContainer" class="d-flex flex-column gap-3"></div>
+                    <div class="text-center text-muted py-5" id="emptyState">
+                        <i class="fas fa-dumbbell fa-3x mb-3 opacity-25"></i>
+                        <p>Selecciona ejercicios del panel derecho para agregarlos.</p>
+                        <button class="btn btn-outline-cyber-blue d-lg-none mt-3"
+                            onclick="switchMobileView('exercises')">
+                            <i class="fas fa-plus me-1"></i> Agregar Ejercicios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Exercise Picker -->
+    <div class="col-lg-4 mobile-view-pane" id="builderSidebarCol">
+        <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card"
+            style="top: 80px; max-height: 85vh;">
+            <div class="card-header border-secondary pb-0">
+                <ul class="nav nav-tabs border-0" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-exercises" data-bs-toggle="tab"
+                            data-bs-target="#panel-exercises" type="button" role="tab" aria-controls="panel-exercises"
+                            aria-selected="true" title="Ejercicios Disponibles">
+                            <i class="fas fa-dumbbell"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-routines" data-bs-toggle="tab" data-bs-target="#panel-routines"
+                            type="button" role="tab" aria-controls="panel-routines" aria-selected="false"
+                            title="Mis Rutinas">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="panel-exercises" role="tabpanel"
+                    aria-labelledby="tab-exercises">
+                    <div class="px-3 pt-2">
+                        <div class="d-inline-flex align-items-center gap-2 text-cyber-green small mb-2">
+                            <i class="fas fa-dumbbell"></i>
+                            <span>Ejercicios Disponibles</span>
+                        </div>
+                        <input type="text" id="searchEx"
+                            class="form-control form-control-sm bg-dark text-white border-secondary mt-2"
+                            placeholder="Buscar por nombre, grupo, equipo o tipo...">
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                id="filterBodyPart">
+                                <!-- Loaded JS -->
+                            </select>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                id="filterEquipment">
+                                <option value="">Equipo</option>
+                                <option value="barbell">Barra</option>
+                                <option value="dumbbell">Mancuernas</option>
+                                <option value="machine">M&#225;quina</option>
+                                <option value="cable">Polea / Cable</option>
+                                <option value="bodyweight">Peso Corporal</option>
+                                <option value="other">Otro</option>
+                            </select>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                id="filterType">
+                                <option value="">Tipo</option>
+                                <option value="weight">Peso</option>
+                                <option value="time">Tiempo</option>
+                                <option value="cardio">Cardio</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+                                <i class="fas fa-undo me-1"></i> Restablecer
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2 advanced-only">
+                            <button class="btn btn-sm btn-outline-info" onclick="addGroupBlock()">
+                                <i class="fas fa-layer-group me-1"></i> Agregar Grupo
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="addRestBlock()">
+                                <i class="fas fa-pause me-1"></i> Agregar Descanso
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 overflow-auto" id="exercisePicker" style="height: 60vh;">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="panel-routines" role="tabpanel" aria-labelledby="tab-routines">
+                    <div class="px-3 pt-2">
+                        <div class="d-inline-flex align-items-center gap-2 text-cyber-green small mb-2">
+                            <i class="fas fa-folder-open"></i>
+                            <span>Mis Rutinas</span>
+                        </div>
+                        <input type="text" id="routineSearch"
+                            class="form-control form-control-sm bg-dark text-white border-secondary mt-2"
+                            placeholder="Buscar rutina por nombre...">
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                id="routineFilterBodyPart">
+                                <!-- Loaded JS -->
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                onclick="resetRoutineFilters()">
+                                <i class="fas fa-undo me-1"></i> Restablecer
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-warning" type="button" onclick="clearRoutineForm()">
+                                <i class="fas fa-eraser me-1"></i> Nueva
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Moved routineList outside the header padding div -->
+                    <div id="routineList" class="card-body p-0 overflow-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nombre Grupo -->
+<div class="modal fade" id="groupNameModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Nombre de Grupo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="small text-secondary">Tipo</label>
+                <select id="groupTypeSelect" class="form-select bg-dark text-white border-secondary">
+                    <option value="biserie">Biserie</option>
+                    <option value="superset">Superset</option>
+                    <option value="circuito">Circuito</option>
+                </select>
+                <label class="small text-secondary mt-3">Nombre</label>
+                <input type="text" id="groupNameInput" class="form-control bg-dark text-white border-secondary"
+                    placeholder="Ej. Biserie">
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="groupNameCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="groupNameSave">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Descanso -->
+<div class="modal fade" id="restModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Agregar Descanso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="small text-secondary">Grupo</label>
+                    <select id="restGroupSelect" class="form-select bg-dark text-white border-secondary"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-secondary">Tiempo de Descanso</label>
+                    <select id="restSecondsSelect" class="form-select bg-dark text-white border-secondary"></select>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="restCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="restSave">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mensajes -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary d-flex align-items-center gap-2">
+                <div id="messageModalIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    <i class="fas fa-info"></i>
+                </div>
+                <h5 class="modal-title mb-0" id="messageModalTitle">Aviso</h5>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="messageModalBody" class="text-secondary"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="messageModalCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageModalConfirm">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green {
+        color: #00ff9d;
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .bg-dark-elem {
+        background-color: #1a1d21;
+    }
+
+    .routine-item {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.2s;
+        border-left: 3px solid #00d2ff;
+    }
+
+    .routine-item.group-item {
+        border-left-color: #0dcaf0;
+    }
+
+    .routine-item.rest-item {
+        border-left-color: #ffc107;
+    }
+
+        .routine-item:hover {
+            transform: translateX(5px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        body.user-builder .advanced-only {
+            display: none !important;
+        }
+
+        body.user-builder.show-advanced .advanced-only {
+            display: block !important;
+        }
+
+        body.user-builder .advanced-only-inline {
+            display: none !important;
+        }
+
+        body.user-builder.show-advanced .advanced-only-inline {
+            display: inline-flex !important;
+        }
+
+    .builder-sidebar-card {
+        display: flex;
+        flex-direction: column;
+        /* Remove overflow from parent so header stays put */
+        overflow: hidden;
+    }
+
+    .builder-sidebar-card .tab-content {
+        flex: 1;
+        overflow: hidden;
+        /* Prevent parent scroll */
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        /* Flexbox scrolling fix */
+    }
+
+    .builder-sidebar-card .tab-pane.active {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #exercisePicker,
+    #routinePicker,
+    #routineList {
+        /* Added routineList */
+        flex: 1;
+        overflow-y: auto;
+        height: auto !important;
+        /* Override inline styles */
+    }
+
+    /* Keep transition icon logic */
+    .collapsed .transition-icon,
+    [aria-expanded="false"] .transition-icon {
+        transform: rotate(180deg);
+    }
+
+    @media (max-width: 991.98px) {
+
+        /* Hide all panes by default on mobile */
+        .mobile-view-pane {
+            display: none !important;
+        }
+
+        /* Show only the active pane */
+        .mobile-view-pane.active {
+            display: block !important;
+        }
+
+        /* Sticky nav top */
+        #mobileBuilderNav {
+            position: sticky;
+            top: 60px;
+            /* Adjust based on navbar height */
+            z-index: 1020;
+            background-color: rgba(33, 37, 41, 0.95);
+            backdrop-filter: blur(5px);
+        }
+
+        .builder-sidebar-card {
+            position: static !important;
+            /* Let it flow naturally in its tab */
+            max-height: none !important;
+            /* Full height */
+            height: auto !important;
+        }
+
+        /* Ensure internal tabs in sidebar still scroll if needed inside the pane */
+        .builder-sidebar-card .tab-content {
+            max-height: 70vh !important;
+            overflow-y: auto !important;
+        }
+
+        .card-header .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            /* Smooth scroll */
+        }
+    }
+</style>
+
+<script>
+    let availableExercises = [];
+    let availableRoutines = [];
+    let currentRoutineItems = [];
+    const collapsedGroupIds = new Set();
+    let activeGroupId = "";
+    const collapsedBodyParts = new Set();
+    let selectedRoutineId = "";
+    let advancedMode = false;
+    const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
+    const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP", "Reps fijas"];
+    const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180];
+    const TIME_OPTIONS = [300, 600, 900, 1200, 1800];
+    const EQUIPMENT_MAP = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
+        machine: { label: "Maquina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
+
+    let bodyPartMap = {};
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        document.body.classList.add("user-builder");
+        const toggleBtn = document.getElementById("toggleAdvancedBtn");
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", () => setAdvancedMode(!advancedMode));
+        }
+        await loadBodyPartsConfig();
+        await loadExercises();
+        await loadRoutines();
+
+        const searchInput = document.getElementById("searchEx");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+        const picker = document.getElementById("exercisePicker");
+        // Re-select inputs after dynamic load
+        const routineBodyPartInputs = document.querySelectorAll(".routine-bodypart");
+        const routineItemsContainer = document.getElementById("routineItemsContainer");
+        const routineSearch = document.getElementById("routineSearch");
+        const routineFilterBodyPart = document.getElementById("routineFilterBodyPart");
+        const routineName = document.getElementById("routineName");
+        const routineDesc = document.getElementById("routineDesc");
+        const routineDay = document.getElementById("routineDay");
+
+
+        if (searchInput) searchInput.addEventListener("input", filterExercises);
+        if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
+        if (filterEquipment) filterEquipment.addEventListener("change", filterExercises);
+        if (filterType) filterType.addEventListener("change", filterExercises);
+        routineBodyPartInputs.forEach(input => {
+            input.addEventListener("change", filterExercises);
+            input.addEventListener("change", updateCancelState);
+        });
+        if (routineName) routineName.addEventListener("input", updateCancelState);
+        if (routineDesc) routineDesc.addEventListener("input", updateCancelState);
+        if (routineDay) routineDay.addEventListener("change", updateCancelState);
+        if (routineSearch) routineSearch.addEventListener("input", renderRoutineOptions);
+        if (routineFilterBodyPart) routineFilterBodyPart.addEventListener("change", renderRoutineOptions);
+        if (picker) {
+            picker.addEventListener("click", event => {
+                const target = event.target.closest("[data-ex-id]");
+                if (!target) return;
+                addExerciseToRoutine(target.dataset.exId);
+            });
+            // Removed picker collapse listener, handled by bootstrap events now if possible, 
+            // or we keep the simple toggle but remove the destructive re-render logic if needed.
+            // For body parts in picker, we might still need a manual toggle if we generated them manually.
+            picker.addEventListener("click", event => {
+                const header = event.target.closest("[data-bodypart-toggle]");
+                if (!header) return;
+                const bp = header.dataset.bodypartToggle;
+                const targetId = `bp-collapse-${bp.replace(/\s+/g, '-')}`;
+                const collapseEl = document.getElementById(targetId);
+                if (collapseEl) {
+                    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                    bsCollapse.toggle();
+
+                    // Update icon manually since this is one large generated HTML block
+                    const icon = header.querySelector("i");
+                    if (collapseEl.classList.contains("show")) {
+                        // It is currently showing, so it will hide
+                        if (icon) icon.className = "fas fa-chevron-down text-secondary transition-icon";
+                        collapsedBodyParts.add(bp);
+                    } else {
+                        // It is currently hidden, so it will show
+                        if (icon) icon.className = "fas fa-chevron-up text-secondary transition-icon";
+                        collapsedBodyParts.delete(bp);
+                    }
+                }
+            });
+        }
+
+        // GLOBAL DELEGATION FOR SYNCING COLLAPSED STATE OF GROUPS
+        document.addEventListener('shown.bs.collapse', function (e) {
+            if (e.target.classList.contains('group-collapse-content')) {
+                const groupId = e.target.getAttribute('data-group-id');
+                collapsedGroupIds.delete(groupId);
+                const btn = document.querySelector(`[data-bs-target="#${e.target.id}"] i`);
+                if (btn) btn.className = "fas fa-chevron-up";
+            }
+        });
+        document.addEventListener('hidden.bs.collapse', function (e) {
+            if (e.target.classList.contains('group-collapse-content')) {
+                const groupId = e.target.getAttribute('data-group-id');
+                collapsedGroupIds.add(groupId);
+                const btn = document.querySelector(`[data-bs-target="#${e.target.id}"] i`);
+                if (btn) btn.className = "fas fa-chevron-down";
+            }
+        });
+
+        if (routineItemsContainer) {
+            routineItemsContainer.addEventListener("click", event => {
+                const insideGroup = event.target.closest(".group-item");
+                if (!insideGroup && activeGroupId) {
+                    setActiveGroup("");
+                }
+            });
+        }
+        updateCancelState();
+    });
+
+    async function loadExercises() {
+        const res = await fetch("/workout/api/exercises");
+        if (!res.ok) {
+            console.error("Error loading exercises", res.status);
+            availableExercises = [];
+            renderExercisePicker([]);
+            return;
+        }
+        availableExercises = await res.json();
+        collapsedBodyParts.clear();
+        availableExercises.forEach(ex => {
+            if (ex.body_part) collapsedBodyParts.add(ex.body_part);
+        });
+        filterExercises();
+    }
+
+    async function loadRoutines() {
+        const res = await fetch("/workout/api/my-routines");
+        availableRoutines = await res.json();
+        renderRoutineOptions();
+    }
+
+    function renderRoutineOptions() {
+        const routineSearch = document.getElementById("routineSearch");
+        const routineList = document.getElementById("routineList");
+        const routineFilterBodyPart = document.getElementById("routineFilterBodyPart");
+        if (!routineList) return;
+        const term = routineSearch ? routineSearch.value.trim().toLowerCase() : "";
+        const bodyPart = routineFilterBodyPart ? routineFilterBodyPart.value : "";
+        const list = availableRoutines.filter(r => {
+            const nameMatch = !term || (r.name || "").toLowerCase().includes(term);
+            const routineBodyParts = Array.isArray(r.routine_body_parts) ? r.routine_body_parts : [];
+            const bodyMatch = !bodyPart || routineBodyParts.includes(bodyPart);
+            return nameMatch && bodyMatch;
+        });
+        routineList.innerHTML = list.map(r => `
+            <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg ${selectedRoutineId === r._id ? 'border-info' : ''}">
+                <div>
+                    <div class="fw-bold text-white">${r.name || "Sin nombre"}</div>
+                    ${r.description ? `<div class="small text-secondary">${r.description}</div>` : ""}
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-info" type="button" onclick="selectRoutine('${r._id}'); loadSelectedRoutine()">
+                        <i class="fas fa-folder-open"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="selectRoutine('${r._id}'); duplicateSelectedRoutine()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        `).join("") || '<div class="p-3 text-muted">Sin resultados.</div>';
+    }
+
+    function resetRoutineFilters() {
+        const routineSearch = document.getElementById("routineSearch");
+        const routineFilterBodyPart = document.getElementById("routineFilterBodyPart");
+        if (routineSearch) routineSearch.value = "";
+        if (routineFilterBodyPart) routineFilterBodyPart.value = "";
+        renderRoutineOptions();
+    }
+
+    // --- Mobile View Switching ---
+    function switchMobileView(viewName) {
+        // viewName: 'details' or 'exercises'
+        const formCol = document.getElementById('builderFormCol');
+        const sidebarCol = document.getElementById('builderSidebarCol');
+        const tabDetails = document.getElementById('mobile-tab-details');
+        const tabExercises = document.getElementById('mobile-tab-exercises');
+
+        if (viewName === 'details') {
+            formCol.classList.add('active');
+            sidebarCol.classList.remove('active');
+
+            tabDetails.classList.add('active', 'text-white');
+            tabDetails.classList.remove('text-secondary');
+
+            tabExercises.classList.remove('active', 'text-white');
+            tabExercises.classList.add('text-secondary');
+
+            // Scroll to top to see form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            formCol.classList.remove('active');
+            sidebarCol.classList.add('active');
+
+            tabDetails.classList.remove('active', 'text-white');
+            tabDetails.classList.add('text-secondary');
+
+            tabExercises.classList.add('active', 'text-white');
+            tabExercises.classList.remove('text-secondary');
+
+            // Scroll to top to see picker
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    async function loadSelectedRoutine() {
+        if (!selectedRoutineId) return;
+        await loadRoutineById(selectedRoutineId);
+    }
+
+    async function duplicateSelectedRoutine() {
+        if (!selectedRoutineId) return;
+        await loadRoutineById(selectedRoutineId, { duplicate: true });
+    }
+
+    function clearRoutineForm() {
+        document.getElementById("routineId").value = "";
+        document.getElementById("routineName").value = "";
+        document.getElementById("routineDesc").value = "";
+        document.getElementById("routineDay").value = "";
+        document.querySelectorAll(".routine-bodypart").forEach(input => input.checked = false);
+        activeGroupId = "";
+        selectedRoutineId = "";
+        currentRoutineItems = [];
+        setAdvancedMode(false);
+        renderRoutineItems();
+        filterExercises();
+        renderRoutineOptions();
+        updateCancelState();
+    }
+
+    async function cancelRoutine() {
+        if (!hasRoutineChanges()) return;
+        const confirmed = await showConfirmModal(
+            "Cancelar edición",
+            "¿Cancelar la edición actual? Se perderán los cambios no guardados.",
+            "warning"
+        );
+        if (confirmed) clearRoutineForm();
+    }
+
+    function hasRoutineChanges() {
+        const routineId = document.getElementById("routineId")?.value || "";
+        const name = document.getElementById("routineName")?.value.trim() || "";
+        const desc = document.getElementById("routineDesc")?.value.trim() || "";
+        const day = document.getElementById("routineDay")?.value || "";
+        const selectedBodyParts = document.querySelectorAll(".routine-bodypart:checked").length > 0;
+        const hasItems = currentRoutineItems.length > 0;
+        return Boolean(routineId || name || desc || day || selectedBodyParts || hasItems);
+    }
+
+    function updateCancelState() {
+        const btn = document.getElementById("cancelRoutineBtn");
+        if (!btn) return;
+        btn.disabled = !hasRoutineChanges();
+    }
+
+    function setAdvancedMode(enabled) {
+        advancedMode = Boolean(enabled);
+        document.body.classList.toggle("show-advanced", advancedMode);
+        const toggleBtn = document.getElementById("toggleAdvancedBtn");
+        if (toggleBtn) {
+            toggleBtn.textContent = advancedMode ? "Ocultar avanzadas" : "Opciones avanzadas";
+        }
+    }
+
+    function ensureAdvancedForItems(items) {
+        const hasAdvanced = items.some(item =>
+            item.item_type === "group" || item.item_type === "rest" || item.group_id
+        );
+        if (hasAdvanced && !advancedMode) {
+            setAdvancedMode(true);
+        }
+    }
+
+    function selectRoutine(routineId) {
+        selectedRoutineId = routineId;
+        renderRoutineOptions();
+    }
+
+    async function loadRoutineById(routineId, options = {}) {
+        const res = await fetch(`/workout/api/my-routines/${routineId}`);
+        if (!res.ok) return;
+        const routine = await res.json();
+        const isDuplicate = options.duplicate === true;
+        document.getElementById("routineId").value = isDuplicate ? "" : routine._id;
+        document.getElementById("routineName").value = isDuplicate
+            ? `${routine.name || "Rutina"} (Copia)`
+            : (routine.name || "");
+        document.getElementById("routineDesc").value = routine.description || "";
+        document.getElementById("routineDay").value = routine.routine_day || "";
+        const selectedBodyParts = new Set(routine.routine_body_parts || []);
+        document.querySelectorAll(".routine-bodypart").forEach(input => {
+            input.checked = selectedBodyParts.has(input.value);
+        });
+        activeGroupId = "";
+        currentRoutineItems = normalizeRoutineItems(routine.items || []);
+        ensureAdvancedForItems(currentRoutineItems);
+        renderRoutineItems();
+        filterExercises();
+        updateCancelState();
+    }
+
+    function normalizeRoutineItems(items) {
+        return items.map(item => {
+            if (item.item_type === "group") {
+                return {
+                    item_type: "group",
+                    _id: item._id || `group_${Date.now()}`,
+                    group_name: item.group_name || "Grupo",
+                    group_type: item.group_type || "biserie",
+                    note: item.note || ""
+                };
+            }
+            if (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null)) {
+                return {
+                    item_type: "rest",
+                    _id: item._id || `rest_${Date.now()}`,
+                    rest_seconds: item.rest_seconds || 60,
+                    note: item.note || "Descanso",
+                    group_id: item.group_id || ""
+                };
+            }
+            const ex = getExerciseById(item.exercise_id) || {};
+            return {
+                item_type: "exercise",
+                _id: item._id || `temp_${Date.now()}`,
+                exercise_id: item.exercise_id,
+                exercise_name: item.exercise_name || ex.name || "Ejercicio",
+                exercise_type: item.exercise_type || ex.type || "weight",
+                equipment: item.equipment || "",
+                video_url: item.video_url || ex.video_url || "",
+                body_part: item.body_part || ex.body_part || "",
+                substitutes: item.substitutes || ex.substitutes || [],
+                target_sets: item.target_sets || 3,
+                target_reps: item.target_reps || "8-12",
+                rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
+                target_time_seconds: item.target_time_seconds || 600,
+                group_id: item.group_id || "",
+                comment: ""
+            };
+        });
+    }
+
+    function renderExercisePicker(list) {
+        const container = document.getElementById("exercisePicker");
+        window.__lastFilteredExercises = list;
+        const strength = list.filter(ex => ex.type !== "cardio");
+        const cardio = list.filter(ex => ex.type === "cardio");
+
+        const strengthHtml = renderByBodyPart(strength);
+        const cardioHtml = renderByBodyPart(cardio);
+
+        container.innerHTML = `
+        <div class="px-3 py-2 border-bottom border-secondary">
+            <span class="text-cyber-green fw-bold">Fuerza</span>
+        </div>
+        ${strengthHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
+        <div class="px-3 py-2 border-bottom border-secondary mt-2">
+            <span class="text-danger fw-bold">Cardio</span>
+        </div>
+        ${cardioHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
+        `;
+    }
+
+    function renderByBodyPart(items) {
+        if (!items.length) return "";
+        const grouped = items.reduce((acc, ex) => {
+            const key = ex.body_part || "Other";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(ex);
+            return acc;
+        }, {});
+
+        return Object.keys(grouped).map(bodyPart => {
+            const list = grouped[bodyPart];
+            const isCollapsed = collapsedBodyParts.has(bodyPart);
+            const collapseId = `bp-collapse-${bodyPart.replace(/\s+/g, '-')}`;
+            const rows = list.map(ex => `
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg" data-ex-id="${ex._id}">
+            <div>
+                <div class="fw-bold text-white">${ex.name}</div>
+                <small class="text-secondary">${translateBodyPart(ex.body_part)} | ${ex.equipment || 'N/A'} | ${ex.type || 'N/A'}</small>
+            </div>
+            <button class="btn btn-sm btn-outline-success" type="button" data-ex-id="${ex._id}">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `).join("");
+            return `
+        <div class="px-3 py-2 border-bottom border-secondary d-flex align-items-center justify-content-between cursor-pointer" data-bodypart-toggle="${bodyPart}">
+            <span class="text-secondary fw-bold">${translateBodyPart(bodyPart)}</span>
+            <i class="fas ${isCollapsed ? "fa-chevron-down" : "fa-chevron-up"} text-secondary transition-icon"></i>
+        </div>
+        <div class="collapse ${isCollapsed ? "" : "show"}" id="${collapseId}">
+            ${rows}
+        </div>
+    `;
+        }).join("");
+    }
+
+    function translateBodyPart(bp) {
+        return bodyPartMap[bp] || bp;
+    }
+
+    async function loadBodyPartsConfig() {
+        try {
+            const res = await fetch("/workout/api/body-parts");
+            const parts = await res.json();
+
+            const container = document.getElementById("routineBodyPartsContainer");
+            const filter1 = document.getElementById("filterBodyPart");
+            const filter2 = document.getElementById("routineFilterBodyPart");
+
+            if (container) container.innerHTML = '';
+            if (filter1) filter1.innerHTML = '<option value="">Grupo muscular</option>';
+            if (filter2) filter2.innerHTML = '<option value="">Grupo muscular</option>';
+
+            parts.forEach(p => {
+                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
+
+                // Checkboxes
+                if (container) {
+                    const label = document.createElement("label");
+                    label.className = "badge bg-dark border border-secondary px-3 py-2";
+                    label.innerHTML = `<input class="form-check-input me-2 routine-bodypart" type="checkbox" value="${p.key}">${bodyPartMap[p.key]}`;
+                    container.appendChild(label);
+                }
+
+                // Filters
+                [filter1, filter2].forEach(sel => {
+                    if (sel) {
+                        const opt = document.createElement("option");
+                        opt.value = p.key;
+                        opt.textContent = bodyPartMap[p.key];
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+
+            // Re-attach listeners to new checkboxes
+            document.querySelectorAll(".routine-bodypart").forEach(input => {
+                input.addEventListener("change", filterExercises);
+            });
+
+        } catch (e) { console.error("Error loading body parts config", e); }
+    }
+
+    function getRoutineBodyParts() {
+        return Array.from(document.querySelectorAll(".routine-bodypart:checked")).map(input => input.value);
+    }
+
+    function ensureRoutineBodyPart(bodyPart) {
+        const selected = getRoutineBodyParts();
+        if (selected.length > 0) return;
+        const checkbox = document.querySelector(`.routine-bodypart[value="${bodyPart}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            filterExercises();
+        }
+    }
+
+    function filterExercises() {
+        const term = document.getElementById("searchEx").value.trim().toLowerCase();
+        const bodyPart = document.getElementById("filterBodyPart").value;
+        const equipment = document.getElementById("filterEquipment").value;
+        const type = document.getElementById("filterType").value;
+        const routineBodyParts = getRoutineBodyParts();
+
+        const filtered = availableExercises.filter(ex => {
+            const name = (ex.name || "").toLowerCase();
+            const body = (ex.body_part || "").toLowerCase();
+            const equip = (ex.equipment || "").toLowerCase();
+            const exType = (ex.type || "").toLowerCase();
+            const termMatch = !term || name.includes(term) || body.includes(term) || equip.includes(term) || exType.includes(term);
+            const bodyMatch = !bodyPart || ex.body_part === bodyPart;
+            const equipMatch = !equipment || ex.equipment === equipment;
+            const typeMatch = !type || ex.type === type;
+            const routineMatch = routineBodyParts.length === 0 || routineBodyParts.includes(ex.body_part);
+            return termMatch && bodyMatch && equipMatch && typeMatch && routineMatch;
+        });
+        renderExercisePicker(filtered);
+    }
+
+    function resetFilters() {
+        const searchInput = document.getElementById("searchEx");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        if (searchInput) searchInput.value = "";
+        if (filterBodyPart) filterBodyPart.value = "";
+        if (filterEquipment) filterEquipment.value = "";
+        if (filterType) filterType.value = "";
+
+        renderExercisePicker(availableExercises);
+    }
+
+    function addExerciseToRoutine(exId) {
+        const ex = availableExercises.find(e => e._id === exId);
+        if (!ex) return;
+        const targetGroup = activeGroupId;
+        const defaultRest = targetGroup ? 30 : 60;
+        ensureRoutineBodyPart(ex.body_part);
+
+        currentRoutineItems.push({
+            item_type: "exercise",
+            _id: 'temp_' + Date.now(),
+            exercise_id: exId,
+            exercise_name: ex.name,
+            exercise_type: ex.type || "weight",
+            equipment: ex.equipment || "",
+            video_url: ex.video_url || "",
+            body_part: ex.body_part || "",
+            substitutes: ex.substitutes || [],
+            target_sets: 3,
+            target_reps: "8-12",
+            rest_seconds: defaultRest,
+            target_time_seconds: 600,
+            group_id: targetGroup || "",
+            comment: ""
+        });
+        renderRoutineItems();
+    }
+
+    function addGroupBlock() {
+        setAdvancedMode(true);
+        showGroupModal("Nuevo Grupo", { name: "Biserie", type: "biserie" }).then(result => {
+            if (!result) return;
+            const uniqueName = getUniqueGroupName(result.name);
+            const groupId = `group_${Date.now()}`;
+            currentRoutineItems.push({
+                item_type: "group",
+                _id: groupId,
+                group_name: uniqueName,
+                group_type: result.type || "biserie",
+                note: ""
+            });
+            activeGroupId = groupId;
+            renderRoutineItems();
+        });
+    }
+
+    function addRestBlock() {
+        setAdvancedMode(true);
+        const targetGroup = activeGroupId || getLastGroupId();
+        const defaultGroup = targetGroup || "";
+        const defaultRest = targetGroup ? 30 : 60;
+        showRestModal(defaultGroup, defaultRest).then(result => {
+            if (!result) return;
+            currentRoutineItems.push({
+                item_type: "rest",
+                _id: 'rest_' + Date.now(),
+                rest_seconds: Number(result.restSeconds),
+                note: "Descanso",
+                group_id: result.groupId || ""
+            });
+            renderRoutineItems();
+        });
+    }
+
+    function removeRoutineItem(index) {
+        currentRoutineItems.splice(index, 1);
+        renderRoutineItems();
+    }
+
+    function moveRoutineItem(index, direction) {
+        const target = index + direction;
+        if (target < 0 || target >= currentRoutineItems.length) return;
+        const item = currentRoutineItems.splice(index, 1)[0];
+        currentRoutineItems.splice(target, 0, item);
+        renderRoutineItems();
+    }
+
+    function updateItem(index, field, value) {
+        const numericFields = ["target_sets", "rest_seconds", "target_time_seconds"];
+        currentRoutineItems[index][field] = numericFields.includes(field) ? Number(value) : value;
+        if (currentRoutineItems[index].item_type === "group" && (field === "group_name" || field === "group_type")) {
+            if (field === "group_name") {
+                currentRoutineItems[index].group_name = getUniqueGroupName(value, currentRoutineItems[index]._id);
+            }
+            renderRoutineItems();
+        }
+        updateCancelState();
+    }
+
+    function renderSelectOptions(currentValue, options, formatter) {
+        return options.map(optionValue => {
+            const label = formatter ? formatter(optionValue) : optionValue;
+            const selected = String(optionValue) === String(currentValue) ? "selected" : "";
+            return `<option value="${optionValue}" ${selected}>${label}</option>`;
+        }).join("");
+    }
+
+    function isExactRepsValue(value) {
+        return value !== null && value !== undefined && /^\d+$/.test(String(value));
+    }
+
+    function getRepsSelectValue(value) {
+        return isExactRepsValue(value) ? "Reps fijas" : (value || "8-12");
+    }
+
+    function getExactRepsValue(value) {
+        return isExactRepsValue(value) ? value : "";
+    }
+
+    function handleRepsSelectChange(index, value) {
+        if (value === "Reps fijas") {
+            const input = document.getElementById(`reps_exact_${index}`);
+            const exactValue = input && input.value ? input.value : 10;
+            updateItem(index, "target_reps", exactValue);
+        } else {
+            updateItem(index, "target_reps", value);
+        }
+        renderRoutineItems();
+    }
+
+    function formatSeconds(value) {
+        return `${value} s`;
+    }
+
+    function formatMinutes(value) {
+        return `${Math.floor(value / 60)} min`;
+    }
+
+    function getGroupOptionsHtml(selectedId) {
+        const groups = currentRoutineItems.filter(item => item.item_type === "group");
+        return ['<option value="">Sin grupo</option>']
+            .concat(groups.map(group => {
+                const selected = group._id === selectedId ? "selected" : "";
+                return `<option value="${group._id}" ${selected}>${group.group_name}</option>`;
+            }))
+            .join("");
+    }
+
+    function getLastGroupId() {
+        for (let i = currentRoutineItems.length - 1; i >= 0; i -= 1) {
+            if (currentRoutineItems[i].item_type === "group") return currentRoutineItems[i]._id;
+        }
+        return "";
+    }
+
+    function getGroupName(groupId) {
+        const group = currentRoutineItems.find(item => item.item_type === "group" && item._id === groupId);
+        return group ? group.group_name : "";
+    }
+
+    function getExerciseById(exId) {
+        return availableExercises.find(ex => ex._id === exId);
+    }
+
+    function getSubstituteDetails(substituteIds) {
+        if (!substituteIds || substituteIds.length === 0) return [];
+        return substituteIds
+            .map(id => getExerciseById(id))
+            .filter(Boolean);
+    }
+
+    function renderEquipment(equipmentKey) {
+        const data = EQUIPMENT_MAP[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+        return `<i class="${data.icon} me-1"></i>${data.label}`;
+    }
+
+    function toEmbedUrl(url) {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        return trimmed;
+    }
+
+    function openVideoModal(url) {
+        const modalEl = document.getElementById("videoModal");
+        const iframe = document.getElementById("videoFrame");
+        const embedUrl = toEmbedUrl(url);
+        iframe.src = embedUrl;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            iframe.src = "";
+        }, { once: true });
+    }
+
+    function setActiveGroup(groupId) {
+        activeGroupId = groupId || "";
+        renderRoutineItems();
+    }
+
+    function getUniqueGroupName(baseName, excludeId = "") {
+        const trimmed = (baseName || "").trim() || "Grupo";
+        const existing = currentRoutineItems
+            .filter(item => item.item_type === "group" && item._id !== excludeId)
+            .map(item => item.group_name);
+        if (!existing.includes(trimmed)) return trimmed;
+        let counter = 2;
+        let candidate = `${trimmed} ${counter}`;
+        while (existing.includes(candidate)) {
+            counter += 1;
+            candidate = `${trimmed} ${counter}`;
+        }
+        return candidate;
+    }
+
+    function showGroupModal(title, initialValues) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("groupNameModal");
+            const modalTitle = modalEl.querySelector(".modal-title");
+            const input = modalEl.querySelector("#groupNameInput");
+            const typeSelect = modalEl.querySelector("#groupTypeSelect");
+            const saveBtn = modalEl.querySelector("#groupNameSave");
+            const cancelBtn = modalEl.querySelector("#groupNameCancel");
+            const typeLabelMap = {
+                biserie: "Biserie",
+                superset: "Superset",
+                circuito: "Circuito"
+            };
+
+            modalTitle.textContent = title;
+            typeSelect.value = (initialValues && initialValues.type) || "biserie";
+            input.value = (initialValues && initialValues.name) || typeLabelMap[typeSelect.value] || "";
+            input.focus();
+
+            let resolved = false;
+            let nameEdited = false;
+            const onTypeChange = () => {
+                if (nameEdited) return;
+                input.value = typeLabelMap[typeSelect.value] || input.value;
+            };
+            const onNameInput = () => {
+                nameEdited = true;
+            };
+            const onSave = () => {
+                resolved = true;
+                bootstrap.Modal.getInstance(modalEl).hide();
+                resolve({
+                    name: input.value.trim(),
+                    type: typeSelect.value
+                });
+            };
+            const onCancel = () => {
+                resolved = true;
+                resolve(null);
+            };
+            const onHidden = () => {
+                typeSelect.removeEventListener("change", onTypeChange);
+                input.removeEventListener("input", onNameInput);
+                if (!resolved) resolve(null);
+            };
+
+            typeSelect.addEventListener("change", onTypeChange);
+            input.addEventListener("input", onNameInput);
+            saveBtn.addEventListener("click", onSave, { once: true });
+            cancelBtn.addEventListener("click", onCancel, { once: true });
+            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+
+    function showRestModal(defaultGroupId, defaultRest) {
+        return new Promise(resolve => {
+            const modalEl = document.getElementById("restModal");
+            const groupSelect = modalEl.querySelector("#restGroupSelect");
+            const restSelect = modalEl.querySelector("#restSecondsSelect");
+            const saveBtn = modalEl.querySelector("#restSave");
+            const cancelBtn = modalEl.querySelector("#restCancel");
+
+            groupSelect.innerHTML = getGroupOptionsHtml(defaultGroupId);
+            restSelect.innerHTML = renderSelectOptions(defaultRest, REST_OPTIONS, formatSeconds);
+
+            let resolved = false;
+            const onSave = () => {
+                resolved = true;
+                bootstrap.Modal.getInstance(modalEl).hide();
+                resolve({
+                    groupId: groupSelect.value,
+                    restSeconds: restSelect.value
+                });
+            };
+            const onCancel = () => {
+                resolved = true;
+                resolve(null);
+            };
+            const onHidden = () => {
+                if (!resolved) resolve(null);
+            };
+
+            saveBtn.addEventListener("click", onSave, { once: true });
+            cancelBtn.addEventListener("click", onCancel, { once: true });
+            modalEl.addEventListener("hidden.bs.modal", onHidden, { once: true });
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+
+    function setMessageModalTone(tone) {
+        const iconWrap = document.getElementById("messageModalIcon");
+        const titleEl = document.getElementById("messageModalTitle");
+        const iconEl = iconWrap ? iconWrap.querySelector("i") : null;
+        if (!iconWrap || !titleEl || !iconEl) return;
+
+        const map = {
+            success: { icon: "fas fa-check", bg: "bg-success", text: "text-white" },
+            warning: { icon: "fas fa-exclamation-triangle", bg: "bg-warning", text: "text-dark" },
+            danger: { icon: "fas fa-times", bg: "bg-danger", text: "text-white" },
+            info: { icon: "fas fa-info", bg: "bg-info", text: "text-dark" }
+        };
+        const cfg = map[tone] || map.info;
+        iconWrap.className = `rounded-circle d-flex align-items-center justify-content-center ${cfg.bg} ${cfg.text}`;
+        iconEl.className = cfg.icon;
+    }
+
+    const getLocalMessageModal = () => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return null;
+        return bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+
+    const showAlertModal = (message, tone = "info", title = "Aviso") => {
+        if (window.showAlertModal && window.showAlertModal !== showAlertModal) {
+            return window.showAlertModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        const bodyEl = document.getElementById("messageModalBody");
+        const titleEl = document.getElementById("messageModalTitle");
+        const cancelBtn = document.getElementById("messageModalCancel");
+        const confirmBtn = document.getElementById("messageModalConfirm");
+        if (!modalEl || !bodyEl || !titleEl || !confirmBtn) {
+            alert(message);
+            return Promise.resolve(true);
+        }
+        setMessageModalTone(tone);
+        titleEl.textContent = title;
+        bodyEl.textContent = message;
+        if (cancelBtn) cancelBtn.style.display = "none";
+        confirmBtn.textContent = "Cerrar";
+        confirmBtn.className = "btn btn-outline-light";
+        return new Promise(resolve => {
+            confirmBtn.onclick = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(true), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
+
+    const showConfirmModal = (title, message, tone = "warning") => {
+        if (window.showConfirmModal && window.showConfirmModal !== showConfirmModal) {
+            return window.showConfirmModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        const bodyEl = document.getElementById("messageModalBody");
+        const titleEl = document.getElementById("messageModalTitle");
+        const cancelBtn = document.getElementById("messageModalCancel");
+        const confirmBtn = document.getElementById("messageModalConfirm");
+        if (!modalEl || !bodyEl || !titleEl || !confirmBtn) {
+            return Promise.resolve(confirm(message || title || "Confirmar"));
+        }
+        setMessageModalTone(tone);
+        titleEl.textContent = title || "Confirmar";
+        bodyEl.textContent = message || "";
+        if (cancelBtn) cancelBtn.style.display = "inline-block";
+        confirmBtn.textContent = "Confirmar";
+        confirmBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-success";
+        return new Promise(resolve => {
+            const onCancel = () => {
+                resolve(false);
+            };
+            const onConfirm = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            confirmBtn.onclick = onConfirm;
+            if (cancelBtn) cancelBtn.onclick = onCancel;
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(false), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
+
+    // function toggleSectionIcon removed - handled by CSS and bootstrap events/data-attributes
+
+
+    function getGroupsWithoutExercises() {
+        const groups = currentRoutineItems.filter(item => item.item_type === "group");
+        if (groups.length === 0) return [];
+        const exercisesByGroup = new Set(
+            currentRoutineItems
+                .filter(item => item.item_type === "exercise" && item.group_id)
+                .map(item => item.group_id)
+        );
+        return groups.filter(group => !exercisesByGroup.has(group._id));
+    }
+
+    function getGroupItemCount(groupId) {
+        return currentRoutineItems.filter(item => item.group_id === groupId).length;
+    }
+
+    function toggleGroupCollapse(groupId) {
+        // Just trigger the bootstrap collapse toggle, do NOT re-render
+        const el = document.getElementById(`collapse_${groupId}`);
+        if (el) {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el);
+            bsCollapse.toggle();
+        }
+    }
+
+    function renderRoutineItems() {
+        const container = document.getElementById("routineItemsContainer");
+        const empty = document.getElementById("emptyState");
+
+        if (currentRoutineItems.length === 0) {
+            if (container) container.innerHTML = "";
+            if (empty) empty.style.display = "block";
+            return;
+        }
+        if (empty) empty.style.display = "none";
+
+        if (!container) return;
+
+        const groupItemsMap = new Map();
+        currentRoutineItems.forEach((item, idx) => {
+            if (item.item_type === "group") return;
+            if (!item.group_id) return;
+            if (!groupItemsMap.has(item.group_id)) groupItemsMap.set(item.group_id, []);
+            groupItemsMap.get(item.group_id).push({ item, idx });
+        });
+
+        let groupCount = 0;
+        let ungroupedExerciseCount = 0;
+
+        const renderExerciseCard = (entry, numberLabel, groupName) => {
+            const { item, idx } = entry;
+            const isTimeBased = item.exercise_type === "time" || item.exercise_type === "cardio";
+            const substitutes = getSubstituteDetails(item.substitutes || []);
+            const subsId = `subs_${item._id}`;
+            return `
+        <div class="routine-item p-3 bg-dark-elem rounded position-relative">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="text-white mb-0 fw-bold">${numberLabel} ${item.exercise_name} ${groupName ? `- ${groupName}` : ""}</h6>
+                <div class="d-flex gap-1">
+                    ${item.video_url ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : ""}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="small text-secondary mb-2">${translateBodyPart(item.body_part)} | ${renderEquipment(item.equipment)}</div>
+            ${substitutes.length ? `
+            <div class="advanced-only">
+            <button class="btn btn-sm btn-outline-info mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
+                Sustitutos (${substitutes.length})
+            </button>
+            <div class="collapse" id="${subsId}">
+                <div class="d-flex flex-column gap-2">
+                    ${substitutes.map(sub => `
+                        <div class="d-flex align-items-center justify-content-between border border-secondary rounded px-2 py-2">
+                            <div>
+                                <div class="fw-bold text-white">${sub.name}</div>
+                                <div class="small text-secondary">${renderEquipment(sub.equipment || "other")}</div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                ${sub.video_url ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : ""}
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+            </div>
+            ` : ""}
+            <div class="row g-2">
+                <div class="col-4">
+                    <label class="small text-secondary">Series</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'target_sets', this.value)">
+                        ${renderSelectOptions(item.target_sets, SETS_OPTIONS)}
+                    </select>
+                </div>
+                ${isTimeBased ? `
+                <div class="col-4">
+                    <label class="small text-secondary">Tiempo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'target_time_seconds', this.value)">
+                        ${renderSelectOptions(item.target_time_seconds, TIME_OPTIONS, formatMinutes)}
+                    </select>
+                </div>
+                ` : `
+                <div class="col-4">
+                    <label class="small text-secondary">Reps Objetivo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="handleRepsSelectChange(${idx}, this.value)">
+                        ${renderSelectOptions(getRepsSelectValue(item.target_reps), REPS_OPTIONS)}
+                    </select>
+                    <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1"
+                        id="reps_exact_${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}"
+                        style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};"
+                        ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}
+                        onchange="updateItem(${idx}, 'target_reps', this.value)">
+                </div>
+                `}
+                <div class="col-4">
+                    <label class="small text-secondary">Descanso</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'rest_seconds', this.value)">
+                        ${renderSelectOptions(item.rest_seconds, REST_OPTIONS, formatSeconds)}
+                    </select>
+                </div>
+                <div class="col-6 advanced-only">
+                    <label class="small text-secondary">Grupo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_id', this.value)">
+                        ${getGroupOptionsHtml(item.group_id)}
+                    </select>
+                </div>
+                <div class="col-6 advanced-only">
+                    <label class="small text-secondary">Comentario</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'comment', this.value)">${item.comment || ''}</textarea>
+                </div>
+            </div>
+        </div>
+    `;
+        };
+
+        const renderRestCard = (entry, groupName) => {
+            const { item, idx } = entry;
+            return `
+        <div class="routine-item rest-item p-3 bg-dark-elem rounded position-relative border-warning">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="text-warning mb-0 fw-bold">Descanso ${groupName ? `- ${groupName}` : ""}</h6>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-4">
+                    <label class="small text-secondary">Descanso</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'rest_seconds', this.value)">
+                        ${renderSelectOptions(item.rest_seconds, REST_OPTIONS, formatSeconds)}
+                    </select>
+                </div>
+                <div class="col-4 advanced-only">
+                    <label class="small text-secondary">Grupo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_id', this.value)">
+                        ${getGroupOptionsHtml(item.group_id)}
+                    </select>
+                </div>
+                <div class="col-4 advanced-only">
+                    <label class="small text-secondary">Nota</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'note', this.value)">${item.note || ''}</textarea>
+                </div>
+            </div>
+        </div>
+    `;
+        };
+
+        const renderGroupBlock = (groupEntry, groupIndex, groupItems) => {
+            const { item, idx } = groupEntry;
+            const groupName = item.group_name || "Grupo";
+            const isCollapsed = collapsedGroupIds.has(item._id);
+            const count = groupItems.length;
+            const isActive = activeGroupId === item._id;
+            let groupExerciseCount = 0;
+            const groupItemsHtml = groupItems.map(entry => {
+                if (entry.item.item_type === "rest") {
+                    return renderRestCard(entry, groupName);
+                }
+                if (entry.item.item_type === "exercise") {
+                    groupExerciseCount += 1;
+                    return renderExerciseCard(entry, `${groupIndex}.${groupExerciseCount}`, groupName);
+                }
+                return "";
+            }).join("");
+
+            return `
+        <div class="routine-item group-item p-3 bg-dark-elem rounded position-relative ${isActive ? "border-info" : ""}">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-2" onclick="event.stopPropagation(); removeRoutineItem(${idx})">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="text-info mb-0 fw-bold">Grupo ${groupIndex}: ${groupName}</h6>
+                    <span class="badge bg-dark border border-secondary">${count} items</span>
+                    ${isActive ? '<span class="badge bg-info text-dark">Activo</span>' : ''}
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-info" onclick="setActiveGroup('${item._id}')" title="Activar Grupo">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); showGroupModal('Editar Grupo', { name: '${groupName}', type: '${item.group_type || "biserie"}' }).then(result => { if (!result) return; updateItem(${idx}, 'group_name', result.name); updateItem(${idx}, 'group_type', result.type); })" title="Editar Grupo">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_${item._id}" onclick="event.stopPropagation()">
+                        <i class="fas ${isCollapsed ? "fa-chevron-down" : "fa-chevron-up"}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); moveRoutineItem(${idx}, -1)" title="Subir">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); moveRoutineItem(${idx}, 1)" title="Bajar">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-4 advanced-only">
+                    <label class="small text-secondary">Tipo</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                        onchange="updateItem(${idx}, 'group_type', this.value)">
+                        <option value="biserie" ${item.group_type === "biserie" ? "selected" : ""}>Biserie</option>
+                        <option value="superset" ${item.group_type === "superset" ? "selected" : ""}>Superset</option>
+                        <option value="circuito" ${item.group_type === "circuito" ? "selected" : ""}>Circuito</option>
+                    </select>
+                </div>
+                <div class="col-4 advanced-only">
+                    <label class="small text-secondary">Nombre</label>
+                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" 
+                        value="${groupName}" onchange="updateItem(${idx}, 'group_name', this.value)">
+                </div>
+                <div class="col-4 advanced-only">
+                    <label class="small text-secondary">Comentario</label>
+                    <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"
+                        onchange="updateItem(${idx}, 'note', this.value)">${item.note || ''}</textarea>
+                </div>
+            </div>
+            <div class="collapse group-collapse-content ${isCollapsed ? "" : "show"}" id="collapse_${item._id}" data-group-id="${item._id}">
+                ${groupItemsHtml || '<div class="text-muted">No hay ejercicios en este grupo.</div>'}
+            </div>
+        </div>
+    `;
+        };
+
+        const renderedGroupIds = new Set();
+        let html = "";
+        if (activeGroupId) {
+            html += `
+            <div class="px-2 py-2">
+                <span class="badge bg-info text-dark">Grupo activo: ${getGroupName(activeGroupId)}</span>
+            </div>
+            `;
+        }
+
+        currentRoutineItems.forEach((item, idx) => {
+            if (item.item_type === "group") {
+                groupCount += 1;
+                renderedGroupIds.add(item._id);
+                html += renderGroupBlock({ item, idx }, groupCount, groupItemsMap.get(item._id) || []);
+                return;
+            }
+            if (item.group_id) {
+                if (!renderedGroupIds.has(item.group_id)) {
+                    return;
+                }
+                return;
+            }
+            if (item.item_type === "rest") {
+                html += renderRestCard({ item, idx }, "");
+                return;
+            }
+            if (item.item_type === "exercise") {
+                ungroupedExerciseCount += 1;
+                html += renderExerciseCard({ item, idx }, `${ungroupedExerciseCount} `, "");
+            }
+        });
+
+        container.innerHTML = html;
+        updateCancelState();
+    }
+
+    async function saveRoutine() {
+        const name = document.getElementById("routineName").value;
+        const desc = document.getElementById("routineDesc").value;
+        const routineDay = document.getElementById("routineDay").value;
+        const routineId = document.getElementById("routineId").value;
+
+        if (!name) return showAlertModal("Ponle un nombre a tu rutina", "warning");
+        if (currentRoutineItems.length === 0) return showAlertModal("Agrega al menos un ejercicio", "warning");
+        const emptyGroups = getGroupsWithoutExercises();
+        if (emptyGroups.length > 0) {
+            const names = emptyGroups.map(group => group.group_name || "Grupo").join(", ");
+            showAlertModal(`Hay grupos sin ejercicios asignados: ${names}. Agrega ejercicios o elimina el grupo.`);
+            return;
+        }
+
+        const payload = {
+            id: routineId || undefined,
+            name,
+            description: desc,
+            items: currentRoutineItems,
+            routine_body_parts: getRoutineBodyParts(),
+            routine_day: routineDay
+        };
+
+        try {
+            const res = await fetch("/workout/api/my-routines/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showAlertModal("Rutina guardada!", "success");
+                const data = await res.json().catch(() => ({}));
+                if (!routineId && data && data.id) {
+                    document.getElementById("routineId").value = data.id;
+                }
+                await loadRoutines();
+                renderRoutineOptions();
+            } else {
+                showAlertModal("Error guardando rutina", "danger");
+            }
+        } catch (e) {
+            console.error(e);
+            showAlertModal("Error de red", "danger");
+        }
+    }
+</script>
+{% endblock %}

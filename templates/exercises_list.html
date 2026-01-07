@@ -66,6 +66,31 @@
         .back-link:hover {
             color: var(--primary);
         }
+
+        .exercise-modal-hero {
+            background: #0f172a;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .exercise-modal-hero img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .exercise-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            background: rgba(15, 23, 42, 0.7);
+            color: #dbeafe;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
     </style>
 </head>
 
@@ -164,6 +189,48 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Detalle Ejercicio -->
+        <div class="modal fade" id="exerciseDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content bg-panel text-white border-cyber">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title text-cyber-green" id="exerciseDetailsTitle">Ejercicio</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="exercise-modal-hero mb-3">
+                                    <img id="exerciseDetailsImage" src="" alt="Ejercicio">
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mb-3" id="exerciseDetailsBadges"></div>
+                                <div class="d-grid">
+                                    <button id="exerciseDetailsVideoBtn" type="button" class="btn btn-outline-danger d-none">
+                                        <i class="fab fa-youtube me-1"></i> Ver Video
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-0">
+                                    <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
+                                    <div class="form-control bg-dark text-white border-secondary" style="min-height: 90px;" id="exerciseDetailsDesc"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label text-secondary">Sustitutos / Equivalentes</label>
+                                    <div class="bg-dark border border-secondary rounded p-2" style="min-height: 80px;">
+                                        <ul class="list-unstyled mb-0" id="exerciseDetailsSubs"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -172,6 +239,17 @@
         let currentMuscles = "all";
         let currentQ = "";
         let currentEquipment = "";
+        let bodyPartMap = {};
+        let exerciseLookup = {};
+        let exerciseLookupByName = {};
+        const EQUIPMENT_META = {
+            barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+            dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
+            machine: { label: "Maquina", icon: "fas fa-cogs" },
+            cable: { label: "Polea", icon: "fas fa-wave-square" },
+            bodyweight: { label: "Corporal", icon: "fas fa-running" },
+            other: { label: "Otro", icon: "fas fa-toolbox" }
+        };
 
         document.addEventListener("DOMContentLoaded", async () => {
             const params = new URLSearchParams(window.location.search);
@@ -193,6 +271,7 @@
                 const parts = await bpRes.json();
 
                 parts.forEach(p => {
+                    bodyPartMap[p.key] = p.label_es || p.label || p.key;
                     const li = document.createElement("li");
                     li.innerHTML = `
                         <div class="form-check">
@@ -246,6 +325,7 @@
                 });
             });
 
+            await loadAllExercises();
             updateTitle();
             fetchExercises();
         });
@@ -329,6 +409,25 @@
             }
         }
 
+        async function loadAllExercises() {
+            try {
+                const res = await fetch("/workout/api/exercises");
+                const data = await res.json();
+                if (!Array.isArray(data)) return;
+                data.forEach(ex => addToLookup(ex));
+            } catch (e) {
+                console.error("Error loading full exercises", e);
+            }
+        }
+
+        function addToLookup(ex) {
+            if (!ex) return;
+            if (ex._id) exerciseLookup[ex._id] = ex;
+            if (ex.exercise_id) exerciseLookup[String(ex.exercise_id)] = ex;
+            const nameKey = (ex.name || ex.exercise_name || "").trim().toLowerCase();
+            if (nameKey) exerciseLookupByName[nameKey] = ex;
+        }
+
         async function fetchExercises() {
             const container = document.getElementById("exercisesContainer");
             const loader = document.getElementById("loader");
@@ -341,6 +440,9 @@
             try {
                 const resp = await fetch(`/workout/api/exercises/filter?muscles=${encodeURIComponent(currentMuscles)}&equipment=${encodeURIComponent(currentEquipment)}&q=${encodeURIComponent(currentQ)}`);
                 const exercises = await resp.json();
+                if (Array.isArray(exercises)) {
+                    exercises.forEach(ex => addToLookup(ex));
+                }
 
                 loader.style.display = "none";
 
@@ -378,23 +480,25 @@
                         const hasVideo = ex.video_url && ex.video_url.trim() !== "";
                         const videoBtn = hasVideo ?
                             `<button class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-2 shadow" 
-                                    onclick="openVideoModal('${ex.video_url}')" title="Ver Video">
+                                    onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver Video">
                                 <i class="fas fa-play"></i>
                              </button>` : '';
 
                         // Formatted tags similar to mobile admin view
                         const equipLabel = equipmentMap[ex.equipment] || ex.equipment || 'N/A';
 
+                        const imageSrc = resolveExerciseImage(ex);
                         return `
                         <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="exercise-card position-relative h-100">
+                            <div class="exercise-card position-relative h-100" role="button" tabindex="0"
+                                onclick="openExerciseModal('${ex._id}')">
                                 ${videoBtn}
-                                <img src="${ex.image_url || '/static/images/placeholder_exercise.jpg'}" class="exercise-img" alt="${ex.name}">
+                                <img src="${imageSrc}" class="exercise-img" alt="${ex.name}">
                                 <div class="card-body p-3">
                                     <h5 class="card-title text-light mb-1">${ex.name}</h5>
                                     
                                     <div class="d-flex flex-wrap gap-1 mb-2">
-                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">${ex.body_part}</span>
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">${bodyPartMap[ex.body_part] || ex.body_part}</span>
                                         <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipLabel}</span>
                                     </div>
 
@@ -452,10 +556,117 @@
             const embedUrl = toEmbedUrl(url);
             iframe.src = embedUrl;
             const modal = new bootstrap.Modal(modalEl);
+            modalEl.style.zIndex = "4000";
+            modalEl.addEventListener("shown.bs.modal", () => {
+                const backdrops = document.querySelectorAll(".modal-backdrop");
+                const backdrop = backdrops[backdrops.length - 1];
+                if (backdrop) backdrop.style.zIndex = "3900";
+            }, { once: true });
             modal.show();
             modalEl.addEventListener("hidden.bs.modal", () => {
                 iframe.src = "";
+                modalEl.style.zIndex = "";
             }, { once: true });
+        }
+
+        function openExerciseModal(id) {
+            const ex = exerciseLookup[id];
+            if (!ex) return;
+            const titleEl = document.getElementById("exerciseDetailsTitle");
+            const imgEl = document.getElementById("exerciseDetailsImage");
+            const badgesEl = document.getElementById("exerciseDetailsBadges");
+            const descEl = document.getElementById("exerciseDetailsDesc");
+            const subsEl = document.getElementById("exerciseDetailsSubs");
+            const videoBtn = document.getElementById("exerciseDetailsVideoBtn");
+
+            const equipMeta = EQUIPMENT_META[ex.equipment] || { label: ex.equipment || "N/A", icon: "fas fa-dumbbell" };
+            titleEl.textContent = ex.name || "Ejercicio";
+            imgEl.src = resolveExerciseImage(ex);
+            imgEl.alt = ex.name || "Ejercicio";
+            if (descEl) descEl.textContent = ex.description || "Sin descripción disponible.";
+
+            if (badgesEl) {
+                badgesEl.innerHTML = `
+                    <span class="exercise-meta-pill"><i class="fas fa-dumbbell"></i>${bodyPartMap[ex.body_part] || ex.body_part || "General"}</span>
+                    <span class="exercise-meta-pill"><i class="${equipMeta.icon}"></i>${equipMeta.label}</span>
+                    <span class="exercise-meta-pill"><i class="fas fa-clipboard"></i>${ex.type || "N/A"}</span>
+                `;
+            }
+
+            if (subsEl) {
+                const rawSubs = ex.substitutes || ex.equivalents || ex.equivalent_exercises || [];
+                const subs = Array.isArray(rawSubs) ? rawSubs : [];
+                const resolved = subs
+                    .map(sub => {
+                        if (typeof sub === "string" || typeof sub === "number") {
+                            const key = String(sub);
+                            return exerciseLookup[key] || exerciseLookupByName[key.toLowerCase()] || null;
+                        }
+                        if (sub && typeof sub === "object") {
+                            const subId = sub._id || sub.exercise_id || sub.id;
+                            if (subId != null) {
+                                const key = String(subId);
+                                return exerciseLookup[key] || sub;
+                            }
+                            const subName = (sub.name || sub.exercise_name || "").trim().toLowerCase();
+                            return subName ? exerciseLookupByName[subName] || sub : sub;
+                        }
+                        return null;
+                    })
+                    .filter(Boolean);
+                if (resolved.length === 0) {
+                    subsEl.innerHTML = `<li class="text-secondary small">Sin sustitutos disponibles.</li>`;
+                } else {
+                    subsEl.innerHTML = resolved.map(sub => {
+                        const subName = sub.name || sub.exercise_name || "Ejercicio";
+                        const subBody = bodyPartMap[sub.body_part] || sub.body_part || "General";
+                        const subEquipMeta = EQUIPMENT_META[sub.equipment] || { label: sub.equipment || "N/A", icon: "fas fa-dumbbell" };
+                        const subHasVideo = sub.video_url && sub.video_url.trim() !== "";
+                        const videoBtn = subHasVideo
+                            ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>`
+                            : "";
+                        return `
+                            <li class="border border-secondary rounded px-2 py-2 bg-dark mb-2">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="text-white fw-bold">${subName}</div>
+                                        <div class="d-flex flex-wrap gap-2 mt-1">
+                                            <span class="badge bg-secondary">${subBody}</span>
+                                            <span class="badge bg-dark border border-secondary text-info">
+                                                <i class="${subEquipMeta.icon} me-1"></i>${subEquipMeta.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    ${videoBtn}
+                                </div>
+                            </li>
+                        `;
+                    }).join("");
+                }
+            }
+
+            if (ex.video_url && ex.video_url.trim() !== "") {
+                videoBtn.classList.remove("d-none");
+                videoBtn.onclick = () => openVideoModal(ex.video_url);
+            } else {
+                videoBtn.classList.add("d-none");
+                videoBtn.onclick = null;
+            }
+
+            new bootstrap.Modal(document.getElementById("exerciseDetailsModal")).show();
+        }
+
+        function resolveExerciseImage(ex) {
+            if (!ex) return "/static/images/gym.png";
+            const candidates = [
+                ex.image_url,
+                ex.image,
+                ex.thumbnail,
+                ex.thumbnail_url,
+                ex.img
+            ];
+            const found = candidates.find(src => typeof src === "string" && src.trim() !== "");
+            return found || "/static/images/gym.png";
         }
     </script>
 </body>

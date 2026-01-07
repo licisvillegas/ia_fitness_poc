@@ -466,9 +466,16 @@
         if (!embedUrl) return;
         iframe.src = embedUrl;
         const modal = new bootstrap.Modal(modalEl);
+        modalEl.style.zIndex = "4000";
+        modalEl.addEventListener("shown.bs.modal", () => {
+            const backdrops = document.querySelectorAll(".modal-backdrop");
+            const backdrop = backdrops[backdrops.length - 1];
+            if (backdrop) backdrop.style.zIndex = "3900";
+        }, { once: true });
         modal.show();
         modalEl.addEventListener("hidden.bs.modal", () => {
             iframe.src = "";
+            modalEl.style.zIndex = "";
         }, { once: true });
     };
 
@@ -481,6 +488,24 @@
                 return null;
             })
             .filter(Boolean);
+    };
+
+    const getExerciseId = (exercise) => {
+        if (!exercise) return null;
+        return exercise.exercise_id || exercise._id || exercise.id || null;
+    };
+
+    const mergeExerciseForSwap = (original, substitute) => {
+        if (!substitute) return original;
+        const merged = { ...original, ...substitute };
+        const substituteId = getExerciseId(substitute);
+        if (substituteId) {
+            merged.exercise_id = substituteId;
+            merged._id = substitute._id || substituteId;
+        }
+        merged.exercise_name = substitute.exercise_name || substitute.name || original.exercise_name || original.name;
+        merged.name = substitute.exercise_name || substitute.name || original.name || original.exercise_name;
+        return merged;
     };
 
     const getRestSeconds = (item) => {
@@ -712,6 +737,7 @@
         const [isPaused, setIsPaused] = useState(false);
         const [message, setMessage] = useState(null);
         const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, type: "danger" }); // type: danger | warning | info
+        const [substituteModal, setSubstituteModal] = useState({ isOpen: false, stepIndex: null });
 
 
         // Timers
@@ -996,7 +1022,7 @@
                     });
                     if (res.ok) window.location.href = getReturnUrl();
                 } catch (e) {
-                    alert("Error saving: " + e.message);
+                    showAlertModal("Error", "Error saving: " + e.message, "danger");
                 }
             }, "success");
         };
@@ -1015,6 +1041,48 @@
         const showMessage = (text, tone = "info") => {
             setMessage({ text, tone });
             setTimeout(() => setMessage(null), 3000);
+        };
+
+        const openSubstituteModal = (stepIndex = cursor) => {
+            const step = queue[stepIndex];
+            if (!step || step.type !== 'work') return;
+            setSubstituteModal({ isOpen: true, stepIndex });
+        };
+
+        const closeSubstituteModal = () => {
+            setSubstituteModal({ isOpen: false, stepIndex: null });
+        };
+
+        const applySubstitute = (subExercise, scope = "current", stepIndex = null) => {
+            if (!subExercise) return;
+            const targetIndex = stepIndex != null ? stepIndex : cursor;
+            setQueue(prevQueue => {
+                const targetStep = prevQueue[targetIndex];
+                if (!targetStep || targetStep.type !== 'work') return prevQueue;
+                const targetId = getExerciseId(targetStep.exercise);
+                const replaceStep = (step) => ({
+                    ...step,
+                    exercise: mergeExerciseForSwap(step.exercise, subExercise)
+                });
+
+                return prevQueue.map((step, idx) => {
+                    if (step.type !== 'work') return step;
+                    if (scope === "current") {
+                        return idx === targetIndex ? replaceStep(step) : step;
+                    }
+                    if (idx < targetIndex) return step;
+                    const stepId = getExerciseId(step.exercise);
+                    if (!targetId) {
+                        return idx === targetIndex ? replaceStep(step) : step;
+                    }
+                    if (stepId && targetId && stepId === targetId) {
+                        return replaceStep(step);
+                    }
+                    return step;
+                });
+            });
+            showMessage("Sustituto aplicado", "success");
+            closeSubstituteModal();
         };
 
         const togglePause = () => {
@@ -1096,7 +1164,11 @@
             confirmModal,
             showConfirm,
             closeConfirm,
-            handleConfirmAction
+            handleConfirmAction,
+            substituteModal,
+            openSubstituteModal,
+            closeSubstituteModal,
+            applySubstitute
         };
 
 
@@ -1378,6 +1450,113 @@
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const SubstitutesModal = () => {
+        const { substituteModal, closeSubstituteModal, applySubstitute, exerciseLookup, queue } = useWorkout();
+        const [scope, setScope] = useState("remaining");
+
+        useEffect(() => {
+            if (substituteModal.isOpen) setScope("remaining");
+        }, [substituteModal.isOpen]);
+
+        if (!substituteModal.isOpen) return null;
+        const step = queue[substituteModal.stepIndex];
+        if (!step || step.type !== 'work') return null;
+
+        const ex = step.exercise || {};
+        const substitutes = resolveSubstitutes(
+            ex.substitutes || ex.equivalents || ex.equivalent_exercises || [],
+            exerciseLookup
+        );
+
+        return (
+            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-black-trans animate-slide-up" style={{ zIndex: 2800 }}>
+                <div className="card bg-black border border-secondary shadow-lg p-3" style={{ maxWidth: '95%', width: '420px', borderRadius: '16px' }}>
+                    <div className="card-body text-white">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h5 className="fw-bold text-cyber-green m-0">Sustitutos</h5>
+                            <button className="btn btn-sm btn-outline-secondary" onClick={closeSubstituteModal}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="text-secondary small mb-3">Quick swap: elige un sustituto y aplica el cambio.</div>
+
+                        <div className="mb-3">
+                            <div className="text-uppercase text-secondary small mb-2">Aplicar a</div>
+                            <div className="d-flex gap-3 flex-wrap">
+                                <label className="form-check d-flex align-items-center gap-2">
+                                    <input
+                                        className="form-check-input"
+                                        type="radio"
+                                        name="swapScope"
+                                        checked={scope === "current"}
+                                        onChange={() => setScope("current")}
+                                    />
+                                    <span className="form-check-label">Solo esta serie</span>
+                                </label>
+                                <label className="form-check d-flex align-items-center gap-2">
+                                    <input
+                                        className="form-check-input"
+                                        type="radio"
+                                        name="swapScope"
+                                        checked={scope === "remaining"}
+                                        onChange={() => setScope("remaining")}
+                                    />
+                                    <span className="form-check-label">Series restantes</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {substitutes.length === 0 && (
+                            <div className="text-secondary small">No hay sustitutos disponibles.</div>
+                        )}
+
+                        <div className="d-flex flex-column gap-2">
+                            {substitutes.map((sub, idx) => {
+                                const name = sub.exercise_name || sub.name || "Ejercicio";
+                                const bodyPartLabel = translateBodyPart(sub.body_part);
+                                const equipmentMeta = getEquipmentMeta(sub.equipment);
+                                const hasVideo = sub.video_url && sub.video_url.trim() !== "";
+                                return (
+                                    <div key={`${sub._id || sub.id || idx}`} className="border border-secondary rounded p-2 bg-black-trans">
+                                        <div className="d-flex justify-content-between align-items-start gap-2">
+                                            <div>
+                                                <div className="fw-bold text-white">{name}</div>
+                                                <div className="text-secondary small d-flex flex-wrap gap-2 mt-1">
+                                                    <span className="badge bg-secondary">{bodyPartLabel}</span>
+                                                    <span className="badge bg-dark border border-secondary text-info">
+                                                        <i className={`${equipmentMeta.icon} me-1`}></i>{equipmentMeta.label}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="d-flex flex-column gap-2">
+                                                {hasVideo && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        onClick={() => openVideoModal(sub.video_url)}
+                                                    >
+                                                        <i className="fab fa-youtube"></i>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-success"
+                                                    onClick={() => applySubstitute(sub, scope, substituteModal.stepIndex)}
+                                                >
+                                                    Usar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1674,13 +1853,17 @@
     };
 
     const ActiveExercise = ({ focusMode }) => {
-        const { currentStep } = useWorkout();
+        const { currentStep, exerciseLookup, openSubstituteModal } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
         const ex = currentStep.exercise || {};
         const name = ex.exercise_name || ex.name || 'Ejercicio';
         const bodyPart = translateBodyPart(ex.body_part);
         const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+        const substitutes = resolveSubstitutes(
+            ex.substitutes || ex.equivalents || ex.equivalent_exercises || [],
+            exerciseLookup
+        );
         const exerciseComment = ex.comment || ex.note || ex.description || "";
         const groupComment = currentStep.groupComment || "";
 
@@ -1727,16 +1910,28 @@
 
                         <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                             <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
-                            {hasVideo && (
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-danger rounded-pill px-3 py-0"
-                                    style={{ fontSize: '0.75rem' }}
-                                    onClick={() => openVideoModal(ex.video_url)}
-                                >
-                                    <i className="fab fa-youtube me-1"></i> Tutorial
-                                </button>
-                            )}
+                            <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                                {hasVideo && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-danger rounded-pill px-3 py-0"
+                                        style={{ fontSize: '0.75rem' }}
+                                        onClick={() => openVideoModal(ex.video_url)}
+                                    >
+                                        <i className="fab fa-youtube me-1"></i> Tutorial
+                                    </button>
+                                )}
+                                {substitutes.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-info rounded-pill px-3 py-0"
+                                        style={{ fontSize: '0.75rem' }}
+                                        onClick={() => openSubstituteModal()}
+                                    >
+                                        <i className="fas fa-exchange-alt me-1"></i> Sustitutos
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="mt-1 text-info fs-6">
                             Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
@@ -2003,6 +2198,7 @@
                 )}
 
                 <RestOverlay nextStep={nextStep} />
+                <SubstitutesModal />
                 <ConfirmModal />
             </div>
         );

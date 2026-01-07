@@ -2,7 +2,7 @@
 Blueprint de Smart Workout
 Maneja dashboard, runner, sesiones y estadísticas de entrenamiento
 """
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, redirect
 from bson import ObjectId
 from datetime import datetime
 import extensions
@@ -123,6 +123,21 @@ def api_filter_exercises():
         return jsonify({"error": str(e)}), 500
 
 
+@workout_bp.get("/api/exercises")
+def api_list_exercises():
+    """Listado publico de ejercicios para el builder del usuario."""
+    try:
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+        docs = list(db.exercises.find({}))
+        for d in docs:
+            d["_id"] = str(d["_id"])
+        return jsonify(docs), 200
+    except Exception as e:
+        logger.error(f"Error listing exercises (workout): {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+
 @workout_bp.get("/api/body-parts")
 def api_get_body_parts():
     """Retorna la lista de partes del cuerpo disponibles (Dynamic Collection)."""
@@ -218,6 +233,97 @@ def api_get_user_routines():
         logger.error(f"Error fetching routines: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
+@workout_bp.route("/routines/builder")
+def user_routine_builder_page():
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return redirect("/")
+    return render_template("routine_builder_user.html")
+
+@workout_bp.get("/api/my-routines")
+def api_list_my_routines():
+    """Lista las rutinas creadas por el usuario."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        cursor = db.routines.find({"user_id": user_id}).sort("created_at", -1)
+        results = []
+        for r in cursor:
+            r["_id"] = str(r["_id"])
+            results.append(r)
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error listing user routines: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.get("/api/my-routines/<routine_id>")
+def api_get_my_routine_detail(routine_id):
+    """Obtiene detalle de una rutina propia."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        if not ObjectId.is_valid(routine_id):
+            return jsonify({"error": "ID invalido"}), 400
+
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        r = db.routines.find_one({"_id": ObjectId(routine_id), "user_id": user_id})
+        if not r:
+            return jsonify({"error": "Rutina no encontrada"}), 404
+        r["_id"] = str(r["_id"])
+        return jsonify(r), 200
+    except Exception as e:
+        logger.error(f"Error getting user routine {routine_id}: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.post("/api/my-routines/save")
+def api_save_my_routine():
+    """Guarda o actualiza una rutina del usuario."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.get_json() or {}
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        rid = data.get("id")
+        doc = {
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "routine_day": data.get("routine_day"),
+            "routine_body_parts": data.get("routine_body_parts", []),
+            "items": data.get("items", []),
+            "updated_at": datetime.utcnow(),
+            "user_id": user_id
+        }
+
+        if rid:
+            if not ObjectId.is_valid(rid):
+                return jsonify({"error": "ID invalido"}), 400
+            res = db.routines.update_one(
+                {"_id": ObjectId(rid), "user_id": user_id},
+                {"$set": doc}
+            )
+            if res.matched_count == 0:
+                return jsonify({"error": "Rutina no encontrada"}), 404
+            return jsonify({"message": "Rutina actualizada", "id": rid}), 200
+        else:
+            doc["created_at"] = datetime.utcnow()
+            res = db.routines.insert_one(doc)
+            return jsonify({"message": "Rutina creada", "id": str(res.inserted_id)}), 200
+    except Exception as e:
+        logger.error(f"Error saving user routine: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
 @workout_bp.get("/api/stats/volume")
 def api_stats_volume():
     """Returns volume progress over time."""
@@ -291,6 +397,39 @@ def api_get_sessions():
         return jsonify(sessions), 200
     except Exception as e:
         logger.error(f"Error fetching sessions: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.delete("/api/sessions/<session_id>")
+def api_delete_session(session_id):
+    """Deletes a workout session."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        if not ObjectId.is_valid(session_id):
+            return jsonify({"error": "Invalid session id"}), 400
+
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        role_doc = db.user_roles.find_one({"user_id": user_id})
+        is_admin = role_doc and role_doc.get("role") == "admin"
+
+        session_doc = db.workout_sessions.find_one({"_id": ObjectId(session_id)})
+        if not session_doc:
+            return jsonify({"error": "Session not found"}), 404
+
+        if not is_admin and session_doc.get("user_id") != user_id:
+            return jsonify({"error": "Forbidden"}), 403
+
+        res = db.workout_sessions.delete_one({"_id": ObjectId(session_id)})
+        if res.deleted_count == 0:
+            return jsonify({"error": "Session not found"}), 404
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error(f"Error deleting session {session_id}: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
 @workout_bp.get("/run/<routine_id>")

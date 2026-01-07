@@ -156,6 +156,10 @@ def admin_body_assessments_page():
 def admin_exercises_page():
     return render_template("exercises_catalog.html")
 
+@admin_bp.route("/admin/routines")
+def admin_routines_catalog_page():
+    return render_template("routines_catalog.html")
+
 @admin_bp.route("/admin/routines/builder")
 def admin_routine_builder_page():
     return render_template("routine_builder.html")
@@ -733,6 +737,27 @@ def get_routine_detail(routine_id):
         return jsonify(r), 200
     except Exception as e:
         logger.error(f"Error get routine {routine_id}: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.route("/api/routines/<routine_id>", methods=["DELETE"])
+def delete_routine_detail(routine_id):
+    """Elimina una rutina y sus asignaciones."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        if not ObjectId.is_valid(routine_id):
+            return jsonify({"error": "ID invalido"}), 400
+
+        res = extensions.db.routines.delete_one({"_id": ObjectId(routine_id)})
+        extensions.db.routine_assignments.delete_many({"routine_id": routine_id})
+
+        if res.deleted_count == 0:
+            return jsonify({"error": "Rutina no encontrada"}), 404
+
+        return jsonify({"message": "Rutina eliminada"}), 200
+    except Exception as e:
+        logger.error(f"Error deleting routine {routine_id}: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/routines/save")

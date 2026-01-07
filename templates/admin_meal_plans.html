@@ -506,7 +506,8 @@
           if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
           const token = document.getElementById('adminToken').value.trim();
           if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          if (!confirm('¿Seguro que deseas borrar este meal_plan?')) return;
+          const confirmed = await showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este meal_plan?", "danger");
+          if (!confirmed) return;
           msg.textContent = 'Borrando...';
           try {
             const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });

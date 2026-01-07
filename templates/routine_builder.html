@@ -27,9 +27,14 @@
         <div class="card bg-panel border-0 shadow text-white mb-4">
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
-                <button class="btn btn-sm btn-success" onclick="saveRoutine()">
-                    <i class="fas fa-save me-1"></i> Guardar Rutina
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="cancelRoutineBtn" onclick="cancelRoutine()" type="button" disabled>
+                        Cancelar
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="saveRoutine()">
+                        <i class="fas fa-save me-1"></i> Guardar Rutina
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <input type="hidden" id="routineId">
@@ -242,17 +247,23 @@
     </div>
 </div>
 
-<!-- Modal Alerta -->
-<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Mensajes -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title text-cyber-green">Aviso</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header border-secondary d-flex align-items-center gap-2">
+                <div id="messageModalIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    <i class="fas fa-info"></i>
+                </div>
+                <h5 class="modal-title mb-0" id="messageModalTitle">Aviso</h5>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="alertModalBody"></div>
+            <div class="modal-body">
+                <div id="messageModalBody" class="text-secondary"></div>
+            </div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" id="messageModalCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageModalConfirm">Aceptar</button>
             </div>
         </div>
     </div>
@@ -435,6 +446,9 @@
         const routineItemsContainer = document.getElementById("routineItemsContainer");
         const routineSearch = document.getElementById("routineSearch");
         const routineFilterBodyPart = document.getElementById("routineFilterBodyPart");
+        const routineName = document.getElementById("routineName");
+        const routineDesc = document.getElementById("routineDesc");
+        const routineDay = document.getElementById("routineDay");
 
 
         if (searchInput) searchInput.addEventListener("input", filterExercises);
@@ -443,7 +457,11 @@
         if (filterType) filterType.addEventListener("change", filterExercises);
         routineBodyPartInputs.forEach(input => {
             input.addEventListener("change", filterExercises);
+            input.addEventListener("change", updateCancelState);
         });
+        if (routineName) routineName.addEventListener("input", updateCancelState);
+        if (routineDesc) routineDesc.addEventListener("input", updateCancelState);
+        if (routineDay) routineDay.addEventListener("change", updateCancelState);
         if (routineSearch) routineSearch.addEventListener("input", renderRoutineOptions);
         if (routineFilterBodyPart) routineFilterBodyPart.addEventListener("change", renderRoutineOptions);
         if (picker) {
@@ -506,6 +524,7 @@
                 }
             });
         }
+        updateCancelState();
     });
 
     async function loadExercises() {
@@ -550,6 +569,9 @@
                     <button class="btn btn-sm btn-outline-secondary" type="button" onclick="selectRoutine('${r._id}'); duplicateSelectedRoutine()">
                         <i class="fas fa-copy"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" onclick="deleteRoutine('${r._id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `).join("") || '<div class="p-3 text-muted">Sin resultados.</div>';
@@ -561,6 +583,58 @@
         if (routineSearch) routineSearch.value = "";
         if (routineFilterBodyPart) routineFilterBodyPart.value = "";
         renderRoutineOptions();
+    }
+
+    async function cancelRoutine() {
+        if (!hasRoutineChanges()) return;
+        const confirmed = await showConfirmModal(
+            "Cancelar edición",
+            "¿Cancelar la edición actual? Se perderán los cambios no guardados.",
+            "warning"
+        );
+        if (confirmed) clearRoutineForm();
+    }
+
+    async function deleteRoutine(routineId) {
+        if (!routineId) return;
+        const confirmed = await showConfirmModal(
+            "Eliminar rutina",
+            "¿Eliminar esta rutina? Esta acción no se puede deshacer.",
+            "danger"
+        );
+        if (!confirmed) return;
+        try {
+            const res = await fetch(`/api/routines/${routineId}`, { method: "DELETE" });
+            const data = await res.json();
+            if (!res.ok) {
+                showAlertModal(data.error || "Error al eliminar", "danger");
+                return;
+            }
+
+            if (selectedRoutineId === routineId) {
+                clearRoutineForm();
+            }
+            await loadRoutines();
+        } catch (e) {
+            console.error(e);
+            showAlertModal("Error de conexión", "danger");
+        }
+    }
+
+    function hasRoutineChanges() {
+        const routineId = document.getElementById("routineId")?.value || "";
+        const name = document.getElementById("routineName")?.value.trim() || "";
+        const desc = document.getElementById("routineDesc")?.value.trim() || "";
+        const day = document.getElementById("routineDay")?.value || "";
+        const selectedBodyParts = document.querySelectorAll(".routine-bodypart:checked").length > 0;
+        const hasItems = currentRoutineItems.length > 0;
+        return Boolean(routineId || name || desc || day || selectedBodyParts || hasItems);
+    }
+
+    function updateCancelState() {
+        const btn = document.getElementById("cancelRoutineBtn");
+        if (!btn) return;
+        btn.disabled = !hasRoutineChanges();
     }
 
     // --- Mobile View Switching ---
@@ -620,6 +694,7 @@
         renderRoutineItems();
         filterExercises();
         renderRoutineOptions();
+        updateCancelState();
     }
 
     function selectRoutine(routineId) {
@@ -646,6 +721,7 @@
         currentRoutineItems = normalizeRoutineItems(routine.items || []);
         renderRoutineItems();
         filterExercises();
+        updateCancelState();
     }
 
     function normalizeRoutineItems(items) {
@@ -926,6 +1002,7 @@
             }
             renderRoutineItems();
         }
+        updateCancelState();
     }
 
     function renderSelectOptions(currentValue, options, formatter) {
@@ -1145,17 +1222,90 @@
         });
     }
 
-    function showAlertModal(message) {
-        const modalEl = document.getElementById("alertModal");
-        const bodyEl = document.getElementById("alertModalBody");
-        if (!modalEl || !bodyEl) {
-            alert(message);
-            return;
-        }
-        bodyEl.textContent = message;
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
+    function setMessageModalTone(tone) {
+        const iconWrap = document.getElementById("messageModalIcon");
+        const titleEl = document.getElementById("messageModalTitle");
+        const iconEl = iconWrap ? iconWrap.querySelector("i") : null;
+        if (!iconWrap || !titleEl || !iconEl) return;
+
+        const map = {
+            success: { icon: "fas fa-check", bg: "bg-success", text: "text-white" },
+            warning: { icon: "fas fa-exclamation-triangle", bg: "bg-warning", text: "text-dark" },
+            danger: { icon: "fas fa-times", bg: "bg-danger", text: "text-white" },
+            info: { icon: "fas fa-info", bg: "bg-info", text: "text-dark" }
+        };
+        const cfg = map[tone] || map.info;
+        iconWrap.className = `rounded-circle d-flex align-items-center justify-content-center ${cfg.bg} ${cfg.text}`;
+        iconEl.className = cfg.icon;
     }
+
+    const getLocalMessageModal = () => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return null;
+        return bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+
+    const showAlertModal = (message, tone = "info", title = "Aviso") => {
+        if (window.showAlertModal && window.showAlertModal !== showAlertModal) {
+            return window.showAlertModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        const bodyEl = document.getElementById("messageModalBody");
+        const titleEl = document.getElementById("messageModalTitle");
+        const cancelBtn = document.getElementById("messageModalCancel");
+        const confirmBtn = document.getElementById("messageModalConfirm");
+        if (!modalEl || !bodyEl || !titleEl || !confirmBtn) {
+            alert(message);
+            return Promise.resolve(true);
+        }
+        setMessageModalTone(tone);
+        titleEl.textContent = title;
+        bodyEl.textContent = message;
+        if (cancelBtn) cancelBtn.style.display = "none";
+        confirmBtn.textContent = "Cerrar";
+        confirmBtn.className = "btn btn-outline-light";
+        return new Promise(resolve => {
+            confirmBtn.onclick = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(true), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
+
+    const showConfirmModal = (title, message, tone = "warning") => {
+        if (window.showConfirmModal && window.showConfirmModal !== showConfirmModal) {
+            return window.showConfirmModal(title, message, tone);
+        }
+        const modalEl = document.getElementById("messageModal");
+        const bodyEl = document.getElementById("messageModalBody");
+        const titleEl = document.getElementById("messageModalTitle");
+        const cancelBtn = document.getElementById("messageModalCancel");
+        const confirmBtn = document.getElementById("messageModalConfirm");
+        if (!modalEl || !bodyEl || !titleEl || !confirmBtn) {
+            return Promise.resolve(confirm(message || title || "Confirmar"));
+        }
+        setMessageModalTone(tone);
+        titleEl.textContent = title || "Confirmar";
+        bodyEl.textContent = message || "";
+        if (cancelBtn) cancelBtn.style.display = "inline-block";
+        confirmBtn.textContent = "Confirmar";
+        confirmBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-success";
+        return new Promise(resolve => {
+            const onCancel = () => {
+                resolve(false);
+            };
+            const onConfirm = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            confirmBtn.onclick = onConfirm;
+            if (cancelBtn) cancelBtn.onclick = onCancel;
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(false), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
 
     // function toggleSectionIcon removed - handled by CSS and bootstrap events/data-attributes
 
@@ -1457,6 +1607,7 @@
         });
 
         container.innerHTML = html;
+        updateCancelState();
     }
 
     async function saveRoutine() {
@@ -1465,8 +1616,8 @@
         const routineDay = document.getElementById("routineDay").value;
         const routineId = document.getElementById("routineId").value;
 
-        if (!name) return alert("Ponle un nombre a tu rutina");
-        if (currentRoutineItems.length === 0) return alert("Agrega al menos un ejercicio");
+        if (!name) return showAlertModal("Ponle un nombre a tu rutina", "warning");
+        if (currentRoutineItems.length === 0) return showAlertModal("Agrega al menos un ejercicio", "warning");
         const emptyGroups = getGroupsWithoutExercises();
         if (emptyGroups.length > 0) {
             const names = emptyGroups.map(group => group.group_name || "Grupo").join(", ");
@@ -1490,14 +1641,14 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                alert("Rutina guardada!");
+                showAlertModal("Rutina guardada!", "success");
                 window.location.href = "/workout/dashboard";
             } else {
-                alert("Error guardando rutina");
+                showAlertModal("Error guardando rutina", "danger");
             }
         } catch (e) {
             console.error(e);
-            alert("Error de red");
+            showAlertModal("Error de red", "danger");
         }
     }
 </script>

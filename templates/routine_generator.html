@@ -131,11 +131,11 @@
             if (response.ok) {
                 renderRoutine(result);
             } else {
-                alert('Error: ' + (result.error || 'Unknown error'));
+                showAlertModal("Error", result.error || "Unknown error", "danger");
             }
         } catch (err) {
             console.error(err);
-            alert('Error conectando con el servidor');
+            showAlertModal("Error", "Error conectando con el servidor", "danger");
         } finally {
             document.getElementById('loadingState').classList.add('d-none');
         }
@@ -200,7 +200,7 @@
 
     function copyToClipboard() {
         // Logic to copy JSON if needed, or just text summary
-        alert('Función de copiar JSON pendiente de implementación completa.');
+        showAlertModal("Pendiente", "Función de copiar JSON pendiente de implementación completa.", "warning");
     }
 </script>
 

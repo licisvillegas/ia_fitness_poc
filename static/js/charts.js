@@ -33,6 +33,10 @@ function toggleMealDetails(element) {
 }
 
 function addNewMeal() {
+    if (window.showAlertModal) {
+        window.showAlertModal("Pronto", "Feature to add a new meal coming soon!", "warning");
+        return;
+    }
     alert("Feature to add a new meal coming soon!");
     // Implement functionality to add new meal
 }

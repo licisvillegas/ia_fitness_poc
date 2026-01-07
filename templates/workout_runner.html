@@ -483,8 +483,16 @@
         if (!substitutes || substitutes.length === 0) return [];
         return substitutes
             .map(sub => {
-                if (typeof sub === "string") return exerciseLookup[sub];
-                if (sub && typeof sub === "object") return sub;
+                if (typeof sub === "string" || typeof sub === "number") {
+                    return exerciseLookup[String(sub)];
+                }
+                if (sub && typeof sub === "object") {
+                    const oid = sub.$oid || sub.oid;
+                    if (oid) return exerciseLookup[String(oid)] || null;
+                    const subId = sub._id || sub.exercise_id || sub.id;
+                    if (subId != null) return exerciseLookup[String(subId)] || sub;
+                    return sub;
+                }
                 return null;
             })
             .filter(Boolean);
@@ -777,6 +785,7 @@
                     if (!isMounted || !Array.isArray(data)) return;
                     const lookup = data.reduce((acc, ex) => {
                         if (ex && ex._id) acc[ex._id] = ex;
+                        if (ex && ex.exercise_id) acc[String(ex.exercise_id)] = ex;
                         return acc;
                     }, {});
                     setExerciseLookup(lookup);

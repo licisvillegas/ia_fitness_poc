@@ -369,6 +369,27 @@
       </div>
     </section>
 
+    <section id="my-created-routines" class="container mt-4" style="display:none;">
+      <div class="card bg-panel border-0 shadow">
+        <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+          <div><i class="fas fa-user-edit text-cyber-blue me-2"></i>Rutinas creadas</div>
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#createdRoutinesCollapse" aria-expanded="false" aria-controls="createdRoutinesCollapse">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+        <div id="createdRoutinesCollapse" class="collapse">
+          <div class="card-body">
+            <div id="created-routines-list" class="row g-3">
+              <div class="col-12 text-center py-3">
+                <div class="spinner-border text-primary" role="status"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- GrÃ¡ficos -->
     <section id="charts" class="container mt-5">
       <!-- 4 grÃ¡ficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
@@ -518,8 +539,27 @@
         loadProgress(targetId);
         loadActivePlanIndicator(targetId);
         loadRoutines(targetId);
+        loadCreatedRoutines();
         loadHeatmap(targetId);
       });
+
+      const countExercises = (routine) => {
+        const items = Array.isArray(routine.items) ? routine.items : [];
+        const hasInlineGroups = items.some(item => Array.isArray(item.items));
+        if (hasInlineGroups) {
+          let total = 0;
+          items.forEach(item => {
+            if (item.item_type === "group" || Array.isArray(item.items)) {
+              const groupItems = Array.isArray(item.items) ? item.items : [];
+              total += groupItems.filter(entry => entry && entry.item_type !== "rest").length;
+            } else if (item.item_type === "exercise") {
+              total += 1;
+            }
+          });
+          return total;
+        }
+        return items.filter(item => item && item.item_type === "exercise").length;
+      };
 
       // --- New Function: Load Routines ---
       async function loadRoutines(userId) {
@@ -571,6 +611,51 @@
         } catch (e) {
           console.error(e);
           listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas.</div>`;
+        }
+      }
+
+      async function loadCreatedRoutines() {
+        const listEl = document.getElementById('created-routines-list');
+        const sectionEl = document.getElementById('my-created-routines');
+        if (!listEl || !sectionEl) return;
+
+        listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+        sectionEl.style.display = 'block';
+
+        try {
+          const res = await fetch('/workout/api/my-routines');
+          const routines = await res.json();
+          listEl.innerHTML = '';
+
+          if (!routines || routines.length === 0) {
+            listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas.</div>`;
+            return;
+          }
+
+          routines.forEach(r => {
+            const cardCol = document.createElement('div');
+            cardCol.className = 'col-md-6 col-lg-4';
+            const name = r.name || 'Rutina sin nombre';
+            const exCount = countExercises(r);
+            const id = r._id;
+            cardCol.innerHTML = `
+              <div class="card h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                <div class="card-body">
+                  <h5 class="card-title text-primary mb-2 text-truncate" title="${name}">${name}</h5>
+                  <p class="card-text text-muted small mb-3">
+                    <i class="fas fa-dumbbell me-1"></i> ${exCount} ejercicios
+                  </p>
+                  <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="fas fa-play me-1"></i> Iniciar
+                  </a>
+                </div>
+              </div>
+            `;
+            listEl.appendChild(cardCol);
+          });
+        } catch (e) {
+          console.error(e);
+          listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>`;
         }
       }
 
@@ -835,7 +920,10 @@
           loadProgress(loadId);
           loadActivePlanIndicator(loadId);
           loadRoutines(loadId);
+          loadCreatedRoutines();
           loadHeatmap(loadId);
+        } else {
+          loadCreatedRoutines();
         }
       });
     </script>

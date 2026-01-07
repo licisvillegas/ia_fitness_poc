@@ -149,6 +149,25 @@
     </div>
 </div>
 
+<div class="card bg-panel border-0 shadow mt-4">
+    <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+        <div><i class="fas fa-user-edit text-cyber-blue me-2"></i>Rutinas creadas</div>
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#createdRoutinesCollapse" aria-expanded="false" aria-controls="createdRoutinesCollapse">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+    <div id="createdRoutinesCollapse" class="collapse">
+        <div class="card-body">
+            <div class="row g-3" id="createdRoutinesList">
+                <div class="col-12 text-center py-4">
+                    <div class="spinner-border text-secondary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mt-4">
     <div class="col-12">
         <div class="card bg-panel border-0 shadow h-100">
@@ -298,9 +317,28 @@
 
     function refreshDashboard() {
         loadRoutines();
+        loadCreatedRoutines();
         loadStats();
         loadSessions();
     }
+
+    const countExercises = (routine) => {
+        const items = Array.isArray(routine.items) ? routine.items : [];
+        const hasInlineGroups = items.some(item => Array.isArray(item.items));
+        if (hasInlineGroups) {
+            let total = 0;
+            items.forEach(item => {
+                if (item.item_type === "group" || Array.isArray(item.items)) {
+                    const groupItems = Array.isArray(item.items) ? item.items : [];
+                    total += groupItems.filter(entry => entry && entry.item_type !== "rest").length;
+                } else if (item.item_type === "exercise") {
+                    total += 1;
+                }
+            });
+            return total;
+        }
+        return items.filter(item => item && item.item_type === "exercise").length;
+    };
 
     async function loadRoutines() {
         const uid = getActiveUserId();
@@ -313,24 +351,6 @@
             return;
         }
 
-
-        const countExercises = (routine) => {
-            const items = Array.isArray(routine.items) ? routine.items : [];
-            const hasInlineGroups = items.some(item => Array.isArray(item.items));
-            if (hasInlineGroups) {
-                let total = 0;
-                items.forEach(item => {
-                    if (item.item_type === "group" || Array.isArray(item.items)) {
-                        const groupItems = Array.isArray(item.items) ? item.items : [];
-                        total += groupItems.filter(entry => entry && entry.item_type !== "rest").length;
-                    } else if (item.item_type === "exercise") {
-                        total += 1;
-                    }
-                });
-                return total;
-            }
-            return items.filter(item => item && item.item_type === "exercise").length;
-        };
 
         container.innerHTML = data.map(r => `
         <div class="col-md-6 col-lg-4">
@@ -349,6 +369,38 @@
             </div>
         </div>
     `).join("");
+    }
+
+    async function loadCreatedRoutines() {
+        const container = document.getElementById("createdRoutinesList");
+        if (!container) return;
+        try {
+            const res = await fetch("/workout/api/my-routines");
+            const data = await res.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                container.innerHTML = `<p class="text-muted col-12 text-center m-0">No tienes rutinas creadas.</p>`;
+                return;
+            }
+            container.innerHTML = data.map(r => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card bg-dark border border-secondary text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-cyber-blue fw-bold">${r.name || "Rutina"}</h5>
+                            <p class="card-text small text-secondary">${r.description || "Sin descripción"}</p>
+                            <span class="badge bg-secondary mb-3">${countExercises(r)} Ejercicios</span>
+                            <div class="d-grid">
+                                <a href="/workout/run/${r._id}?return_to=/workout/dashboard" class="btn btn-cyber-success btn-lg w-100 py-3 fw-bold shadow-lg text-uppercase" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                                    <i class="fas fa-play me-2"></i> INICIAR
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+        } catch (e) {
+            console.error("Error loading created routines:", e);
+            container.innerHTML = `<p class="text-danger col-12 text-center m-0">Error cargando rutinas creadas.</p>`;
+        }
     }
 
     async function loadStats() {

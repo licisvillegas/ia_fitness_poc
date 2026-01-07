@@ -243,6 +243,7 @@
         opacity: 0;
         transform: translateY(10px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -479,7 +480,7 @@
 
     <footer>
       <p id="footer-text">© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria</p>
-      <small class="text-secondary d-block">ver.beta 1.0.1</small>
+      <small class="text-secondary d-block">v. beta 1.0.1</small>
     </footer>
     <script src="/static/js/lang.js"></script>
 
@@ -612,7 +613,7 @@
           const targetTotal = out.total_kcal;
           const totalEl = document.createElement('div');
           totalEl.className = 'mb-3 text-white h5';
-          totalEl.innerHTML = `Total del día (Plan): <strong>${dailySumKcal} kcal</strong> <span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
+          totalEl.innerHTML = `Total del día (Plan): <strong>${dailySumKcal} kcal</strong><br><span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
           container.appendChild(totalEl);
 
           // Append all cards

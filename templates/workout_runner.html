@@ -1235,11 +1235,9 @@
         const { exerciseLookup } = useWorkout();
         // Collapsed by default: We track EXPANDED groups.
         const [expandedGroups, setExpandedGroups] = useState(new Set());
+        const [blocks, setBlocks] = useState([]);
 
-        console.log("RoutineDetails Rendering:", routine);
-
-        if (!routine) return <div className="text-white text-center">No routine data</div>;
-
+        // Toggles group expansion
         const toggleGroup = (groupId) => {
             const next = new Set(expandedGroups);
             if (next.has(groupId)) {
@@ -1250,62 +1248,114 @@
             setExpandedGroups(next);
         };
 
-        const items = Array.isArray(routine.items) ? routine.items : [];
-        const isRestItem = (item) => item && (item.item_type === 'rest' || (!item.exercise_id && item.rest_seconds != null));
-        const isExerciseItem = (item) => item && item.item_type === 'exercise';
-        const buildEntry = (item) => (isRestItem(item) ? { type: 'rest', data: item } : { type: 'exercise', data: item });
-        const hasInlineGroups = items.some(item => Array.isArray(item.items));
+        // Build View Model: Clustered Blocks (Matches buildQueue execution logic)
+        useEffect(() => {
+            if (!routine || !routine.items) {
+                setBlocks([]);
+                return;
+            }
 
-        const displayData = hasInlineGroups
-            ? (() => {
-                const groups = [];
-                const ungrouped = [];
-                items.forEach((item, idx) => {
-                    if (item.item_type === 'group' || Array.isArray(item.items)) {
-                        const entries = (item.items || [])
-                            .filter(entry => entry && (entry.item_type === 'exercise' || isRestItem(entry)))
+            const items = Array.isArray(routine.items) ? routine.items : [];
+            const isRestItem = (item) => item && (item.item_type === 'rest' || (!item.exercise_id && item.rest_seconds != null));
+            const isExerciseItem = (item) => item && item.item_type === 'exercise';
+            const isGroupHeader = (item) => item && item.item_type === 'group';
+            const buildEntry = (item) => (isRestItem(item) ? { type: 'rest', data: item } : { type: 'exercise', data: item });
+
+            // 1. Map Group Metadata
+            const groupMetaMap = new Map();
+            items.forEach(item => {
+                if (isGroupHeader(item)) {
+                    groupMetaMap.set(item._id || item.id, {
+                        name: item.group_name || item.name || "Circuito",
+                        note: item.note || item.description || ""
+                    });
+                }
+            });
+
+            // 2. Cluster
+            const newBlocks = [];
+            const blockIds = new Set();
+            const groupEntries = new Map();
+
+            const ensureGroupBlock = (groupId) => {
+                if (!groupId || blockIds.has(groupId)) return;
+                blockIds.add(groupId);
+                newBlocks.push({ type: 'group', id: groupId });
+            };
+
+            items.forEach((item, idx) => {
+                // Inline groups handling
+                if (item.item_type === 'group' || Array.isArray(item.items)) {
+                    if (Array.isArray(item.items) && item.items.length > 0) {
+                        const entries = item.items
+                            .filter(sub => isExerciseItem(sub) || isRestItem(sub))
                             .map(buildEntry);
-                        groups.push({
-                            id: item._id || item.id || `group_${idx}`,
-                            name: item.name || item.group_name || "Circuito",
-                            note: item.note || item.description || "",
-                            entries
-                        });
+                        if (entries.length > 0) {
+                            newBlocks.push({
+                                type: 'inline_group',
+                                item: item,
+                                entries: entries
+                            });
+                        }
                         return;
                     }
-                    if (isExerciseItem(item) || isRestItem(item)) {
-                        ungrouped.push(buildEntry(item));
-                    }
-                });
-                return { groups, ungrouped };
-            })()
-            : (() => {
-                const groups = items.filter(item => item.item_type === 'group');
-                const groupMap = new Map();
-                groups.forEach(group => {
-                    groupMap.set(group._id, {
-                        id: group._id,
-                        name: group.group_name || "Grupo",
-                        note: group.note || group.description || "",
-                        entries: []
-                    });
-                });
-                const ungrouped = [];
-                items.forEach(item => {
-                    if (item.item_type === 'group') return;
-                    if (!isExerciseItem(item) && !isRestItem(item)) return;
-                    if (item.group_id && groupMap.has(item.group_id)) {
-                        groupMap.get(item.group_id).entries.push(buildEntry(item));
+                    ensureGroupBlock(item._id || item.id);
+                    return;
+                }
+
+                if (isExerciseItem(item) || isRestItem(item)) {
+                    const gid = item.group_id;
+                    if (gid) {
+                        ensureGroupBlock(gid);
+                        if (!groupEntries.has(gid)) groupEntries.set(gid, []);
+                        groupEntries.get(gid).push(buildEntry(item));
                     } else {
-                        ungrouped.push(buildEntry(item));
+                        newBlocks.push({ type: 'ungrouped', entry: buildEntry(item) });
                     }
-                });
-                return { groups: Array.from(groupMap.values()).filter(group => group.entries.length), ungrouped };
-            })();
+                }
+            });
 
-        const totalExercises = displayData.groups.reduce((acc, group) => acc + group.entries.filter(entry => entry.type === 'exercise').length, 0)
-            + displayData.ungrouped.filter(entry => entry.type === 'exercise').length;
+            // Post-process to attach entries to blocks for easier rendering
+            const validBlocks = newBlocks.map(block => {
+                if (block.type === 'group') {
+                    const entries = groupEntries.get(block.id) || [];
+                    const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
+                    if (entries.length === 0) return null; // Skip empty groups
+                    return { ...block, entries, name: meta.name, note: meta.note };
+                }
+                return block;
+            }).filter(Boolean);
 
+            // Consolidate consecutive ungrouped blocks for UI
+            const consolidatedBlocks = [];
+            let currentUngroupedRequest = null;
+
+            validBlocks.forEach(block => {
+                if (block.type === 'ungrouped') {
+                    if (!currentUngroupedRequest) {
+                        currentUngroupedRequest = { type: 'ungrouped_chunk', entries: [] };
+                        consolidatedBlocks.push(currentUngroupedRequest);
+                    }
+                    currentUngroupedRequest.entries.push(block.entry);
+                } else {
+                    currentUngroupedRequest = null;
+                    consolidatedBlocks.push(block);
+                }
+            });
+
+            setBlocks(consolidatedBlocks);
+
+        }, [routine]);
+
+        // Helper to count Exercises (total)
+        const totalExercises = blocks.reduce((acc, block) => {
+            if (block.entries) {
+                return acc + block.entries.filter(e => e.type === 'exercise').length;
+            }
+            return acc;
+        }, 0);
+
+        // Helper to render an individual entry
         const renderEntry = (entry, key) => {
             if (entry.type === 'rest') {
                 const restSeconds = getRestSeconds(entry.data);
@@ -1316,7 +1366,7 @@
                             <div className="text-white fw-bold">{restLabel}</div>
                             <div className="text-secondary small">Pausa</div>
                         </div>
-                        <div className="text-end text-secondary small">
+                        <div class="text-end text-secondary small">
                             <div>{restSeconds}s</div>
                         </div>
                     </div>
@@ -1335,6 +1385,7 @@
             const reps = ex.target_reps || ex.reps;
             const time = ex.target_time_seconds || ex.time_seconds;
             const rest = getRestSeconds(ex);
+
             return (
                 <div key={key} className="d-flex justify-content-between align-items-start gap-3">
                     <div>
@@ -1413,6 +1464,8 @@
             );
         };
 
+        if (!routine) return <div className="text-white text-center">No routine data</div>;
+
         return (
             <div className="card mx-3" style={{ background: 'rgba(30,30,30,0.95)', border: '1px solid #444', borderRadius: '20px', minHeight: '300px', opacity: 1 }}>
                 <div className="card-body">
@@ -1421,44 +1474,49 @@
                         <p className="text-secondary m-0">{totalExercises} ejercicios -  Revisa los detalles antes de iniciar</p>
                     </div>
 
-                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll"
-                        style={{ maxHeight: '240px' }}>
-                        {displayData.groups.map((group, idx) => {
-                            const isExpanded = expandedGroups.has(group.id);
-                            return (
-                                <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
-                                    <div
-                                        className="d-flex justify-content-between align-items-center cursor-pointer"
-                                        onClick={() => toggleGroup(group.id)}
-                                    >
-                                        <div>
-                                            <div className="text-cyber-orange text-uppercase small fw-bold">
-                                                {group.name || "Circuito"} ({group.entries.length} items)
-                                            </div>
-                                            {group.note && <div className="text-white small mt-1 fst-italic">"{group.note}"</div>}
-                                        </div>
-                                        <i className={`fas fa-chevron-down text-secondary transition-icon ${isExpanded ? 'rotate-180' : ''}`}></i>
-                                    </div>
+                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll" style={{ maxHeight: '240px' }}>
+                        {blocks.map((block, idx) => {
+                            // Render Group Block
+                            if (block.type === 'group' || block.type === 'inline_group') {
+                                const blockId = block.id || (block.item && (block.item._id || block.item.id)) || `grp_${idx}`;
+                                const blockName = block.name || (block.item && (block.item.group_name || block.item.name)) || "Circuito";
+                                const blockNote = block.note || (block.item && (block.item.note || block.item.description)) || "";
+                                const isExpanded = expandedGroups.has(blockId);
 
-                                    {isExpanded && (
-                                        <div className="d-flex flex-column gap-2 mt-3 animate-fade-in">
-                                            {group.entries.map((entry, entryIdx) => (
-                                                renderEntry(entry, `group_${idx}_${entryIdx}`)
-                                            ))}
+                                return (
+                                    <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
+                                        <div
+                                            className="d-flex justify-content-between align-items-center cursor-pointer"
+                                            onClick={() => toggleGroup(blockId)}
+                                        >
+                                            <div>
+                                                <div className="text-cyber-orange text-uppercase small fw-bold">
+                                                    {blockName} ({block.entries.length} items)
+                                                </div>
+                                                {blockNote && <div className="text-white small mt-1 fst-italic">"{blockNote}"</div>}
+                                            </div>
+                                            <i className={`fas fa-chevron-down text-secondary transition-icon ${isExpanded ? 'rotate-180' : ''}`}></i>
                                         </div>
-                                    )}
-                                </div>
-                            );
+                                        {isExpanded && (
+                                            <div className="d-flex flex-column gap-2 mt-3 animate-fade-in">
+                                                {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            } else if (block.type === 'ungrouped_chunk') {
+                                // Render Ungrouped Block Header + Entries
+                                return (
+                                    <div key={`routine_block_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
+                                        <div className="text-cyber-blue fw-bold mb-2">Sin grupo</div>
+                                        <div className="d-flex flex-column gap-2">
+                                            {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
                         })}
-                        {displayData.ungrouped.length > 0 && (
-                            <div className="p-3 border border-secondary rounded-3 bg-black-trans">
-                                <div className="d-flex flex-column gap-2">
-                                    {displayData.ungrouped.map((entry, entryIdx) => (
-                                        renderEntry(entry, `ungrouped_${entryIdx}`)
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

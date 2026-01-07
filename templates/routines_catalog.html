@@ -9,9 +9,11 @@
             <i class="fas fa-clipboard-list me-2"></i>Catálogo de Rutinas
         </h2>
 
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-end w-100 w-md-auto">
+        <div
+            class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-end w-100 w-md-auto">
             <div class="input-group" style="min-width: 200px; flex-grow: 1; max-width: 100%;">
-                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-search"></i></span>
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                        class="fas fa-search"></i></span>
                 <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
                     placeholder="Buscar rutina...">
             </div>
@@ -35,11 +37,11 @@
             </div>
 
             <div class="d-flex gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
-                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0" onclick="resetFilters()">
+                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0"
+                    onclick="resetFilters()">
                     <i class="fas fa-undo me-1"></i> <span class="d-none d-md-inline">Restablecer</span>
                 </button>
-                <button class="btn btn-cyber-primary text-nowrap flex-grow-1 flex-md-grow-0"
-                    onclick="goToBuilder()">
+                <button class="btn btn-cyber-primary text-nowrap flex-grow-1 flex-md-grow-0" onclick="goToBuilder()">
                     <i class="fas fa-plus me-1"></i> Nueva <span class="d-none d-md-inline">Rutina</span>
                 </button>
             </div>
@@ -106,7 +108,8 @@
                 <div id="messageModalBody" class="text-secondary"></div>
             </div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" id="messageModalCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" id="messageModalCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-cyber-primary" id="messageModalConfirm">Aceptar</button>
             </div>
         </div>
@@ -477,54 +480,58 @@
         const items = Array.isArray(routine.items) ? routine.items : [];
         const isRestItem = (item) => item && (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null));
         const isExerciseItem = (item) => item && item.item_type === "exercise";
+        const isGroupHeader = (item) => item && item.item_type === "group";
         const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
 
-        const hasInlineGroups = items.some(item => Array.isArray(item.items));
-        const displayData = hasInlineGroups
-            ? (() => {
-                const groups = [];
-                const ungrouped = [];
-                items.forEach((item, idx) => {
-                    if (item.item_type === "group" || Array.isArray(item.items)) {
-                        const entries = (item.items || [])
-                            .filter(entry => entry && (entry.item_type === "exercise" || isRestItem(entry)));
-                        groups.push({
-                            id: item._id || item.id || `group_${idx}`,
-                            name: item.name || item.group_name || "Circuito",
-                            note: item.note || item.description || "",
-                            entries
-                        });
-                        return;
-                    }
-                    if (isExerciseItem(item) || isRestItem(item)) {
-                        ungrouped.push(item);
-                    }
+        // 1. Pre-scan for Group Metadata
+        const groupMetaMap = new Map();
+        items.forEach(item => {
+            if (isGroupHeader(item)) {
+                groupMetaMap.set(item._id || item.id, {
+                    name: item.group_name || item.name || "Circuito",
+                    note: item.note || item.description || ""
                 });
-                return { groups, ungrouped };
-            })()
-            : (() => {
-                const groups = items.filter(item => item.item_type === "group");
-                const groupMap = new Map();
-                groups.forEach(group => {
-                    groupMap.set(group._id, {
-                        id: group._id,
-                        name: group.group_name || "Grupo",
-                        note: group.note || group.description || "",
-                        entries: []
-                    });
-                });
-                const ungrouped = [];
-                items.forEach(item => {
-                    if (item.item_type === "group") return;
-                    if (!isExerciseItem(item) && !isRestItem(item)) return;
-                    if (item.group_id && groupMap.has(item.group_id)) {
-                        groupMap.get(item.group_id).entries.push(item);
-                    } else {
-                        ungrouped.push(item);
-                    }
-                });
-                return { groups: Array.from(groupMap.values()).filter(group => group.entries.length), ungrouped };
-            })();
+            }
+        });
+
+        // 2. Cluster items (Match buildQueue logic)
+        const blocks = [];
+        const blockIds = new Set();
+        const groupEntries = new Map();
+
+        const ensureGroupBlock = (groupId) => {
+            if (!groupId || blockIds.has(groupId)) return;
+            blockIds.add(groupId);
+            blocks.push({ type: 'group', id: groupId });
+        };
+
+        items.forEach((item, idx) => {
+            // Inline groups (legacy/recursive structure handling)
+            if (item.item_type === "group" || Array.isArray(item.items)) {
+                if (Array.isArray(item.items) && item.items.length > 0) {
+                    // It's a fully contained group. Treat as atomic block.
+                    blocks.push({ type: 'inline_group', item: item });
+                    return;
+                }
+                // Just a header
+                ensureGroupBlock(item._id || item.id);
+                return;
+            }
+
+            if (isExerciseItem(item) || isRestItem(item)) {
+                const gid = item.group_id;
+                if (gid) {
+                    ensureGroupBlock(gid);
+                    if (!groupEntries.has(gid)) groupEntries.set(gid, []);
+                    groupEntries.get(gid).push(item);
+                } else {
+                    blocks.push({ type: 'ungrouped', entry: item });
+                }
+            }
+        });
+
+        // 3. Render Blocks
+        const htmlParts = [];
 
         const renderEntry = (item, idxKey) => {
             if (isRestItem(item)) {
@@ -552,6 +559,7 @@
             const hasVideo = item.video_url && item.video_url.trim() !== "";
             const substitutes = resolveSubstitutes(item.substitutes || []);
             const subsId = `subs_${safeId(routine._id)}_${idxKey}`;
+
             return `
                 <div class="routine-preview-item d-flex justify-content-between align-items-start">
                     <div>
@@ -569,7 +577,7 @@
                                 <i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}
                             </span>
                         </div>
-                        ${substitutes.length ? `
+                         ${substitutes.length ? `
                             <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
                                 Sustitutos (${substitutes.length})
                             </button>
@@ -602,34 +610,61 @@
             `;
         };
 
-        const blocks = [];
-        displayData.groups.forEach(group => {
-            blocks.push(`
-                <div class="routine-preview-group">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="text-cyber-orange fw-bold">${group.name}</div>
-                        <div class="text-secondary small">${group.entries.length} items</div>
-                    </div>
-                    ${group.note ? `<div class="text-secondary small mt-1">"${group.note}"</div>` : ""}
-                </div>
-            `);
-            group.entries.forEach((entry, entryIdx) => {
-                blocks.push(renderEntry(entry, `g_${group.id}_${entryIdx}`));
-            });
+        let lastBlockWasUngrouped = false;
+
+        blocks.forEach((block, bIdx) => {
+            if (block.type === 'ungrouped') {
+                if (!lastBlockWasUngrouped) {
+                    htmlParts.push(`
+                        <div class="routine-preview-group">
+                            <div class="text-cyber-blue fw-bold">Sin grupo</div>
+                        </div>
+                    `);
+                    lastBlockWasUngrouped = true;
+                }
+                htmlParts.push(renderEntry(block.entry, `u_${bIdx}`));
+            } else if (block.type === 'group') {
+                lastBlockWasUngrouped = false;
+                const entries = groupEntries.get(block.id) || [];
+                const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
+
+                if (entries.length > 0) {
+                    htmlParts.push(`
+                        <div class="routine-preview-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-cyber-orange fw-bold">${meta.name}</div>
+                                <div class="text-secondary small">${entries.length} items</div>
+                            </div>
+                            ${meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""}
+                        </div>
+                    `);
+                    entries.forEach((entry, eIdx) => {
+                        htmlParts.push(renderEntry(entry, `g_${block.id}_${eIdx}`));
+                    });
+                }
+            } else if (block.type === 'inline_group') {
+                // Legacy inline group structure
+                lastBlockWasUngrouped = false;
+                const item = block.item;
+                const entries = (item.items || []).filter(sub => isExerciseItem(sub) || isRestItem(sub));
+                if (entries.length > 0) {
+                    htmlParts.push(`
+                        <div class="routine-preview-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-cyber-orange fw-bold">${item.group_name || item.name || "Circuito"}</div>
+                                <div class="text-secondary small">${entries.length} items</div>
+                            </div>
+                            ${(item.note || item.description) ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""}
+                        </div>
+                    `);
+                    entries.forEach((entry, eIdx) => {
+                        htmlParts.push(renderEntry(entry, `ig_${bIdx}_${eIdx}`));
+                    });
+                }
+            }
         });
 
-        if (displayData.ungrouped.length > 0) {
-            blocks.push(`
-                <div class="routine-preview-group">
-                    <div class="text-cyber-blue fw-bold">Sin grupo</div>
-                </div>
-            `);
-            displayData.ungrouped.forEach((entry, entryIdx) => {
-                blocks.push(renderEntry(entry, `u_${entryIdx}`));
-            });
-        }
-
-        return blocks.join("");
+        return htmlParts.join("");
     }
 
     function resolveSubstitutes(substitutes) {

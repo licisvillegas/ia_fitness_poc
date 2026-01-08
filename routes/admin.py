@@ -407,10 +407,11 @@ def list_profiles():
         for p in cursor:
             # Join with user table to get name/email
             user_id = p.get("user_id")
-            u_doc = extensions.db.users.find_one({"user_id": user_id}, {"name": 1, "email": 1}) or {}
+            u_doc = extensions.db.users.find_one({"user_id": user_id}, {"name": 1, "email": 1, "username": 1}) or {}
             
             p_out = {
                 "user_id": user_id,
+                "username": u_doc.get("username"),
                 "name": u_doc.get("name"),
                 "email": u_doc.get("email"),
                 "sex": p.get("sex"),

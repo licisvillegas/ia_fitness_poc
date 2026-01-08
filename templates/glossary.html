@@ -466,6 +466,13 @@
             allDetails.forEach(details => {
                 details.addEventListener('toggle', (e) => {
                     if (details.open) {
+                        // Reset scroll to top
+                        const content = details.querySelector('.details-content');
+                        if (content) {
+                            content.scrollTop = 0;
+                        }
+
+                        // Close others
                         allDetails.forEach(other => {
                             if (other !== details && other.open) {
                                 other.open = false;

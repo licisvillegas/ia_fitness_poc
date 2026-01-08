@@ -281,11 +281,8 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
                                     <h1 class="h3 mb-1">Evaluación Corporal</h1>
-                                    <p class="mb-0 text-secondary">
-                                        Introduce tus datos y fotos para generar un informe AI.
-                                    </p>
+                                    <p class="text-secondary small mb-0">Completa el formulario para tu análisis AI</p>
                                 </div>
-                                <span class="badge-category"><i class="fas fa-robot"></i></span>
                             </div>
 
                             <!-- Admin Search Removed in User Template -->
@@ -469,6 +466,12 @@
                                     style="width: auto; max-width: 150px; font-size: 0.8rem; display:none;">
                                     <option value="new">Nuevo Análisis</option>
                                 </select>
+                            </div>
+                            <!-- History Button placed below selector as requested -->
+                            <div class="mb-3 text-end">
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="goToHistory()">
+                                    <i class="fas fa-history me-2"></i>Ver Historial Completo
+                                </button>
                             </div>
 
                             <!-- Placeholder State -->
@@ -1157,6 +1160,22 @@
 
             window.showAlertModal = showAlertModal;
             window.showConfirmModal = showConfirmModal;
+            window.showAlertModal = showAlertModal;
+            window.showConfirmModal = showConfirmModal;
+
+            // History Button Logic matches sidebar behaviour
+            window.goToHistory = function () {
+                try {
+                    const u = JSON.parse(localStorage.getItem('ai_fitness_user') || '{}');
+                    if (u.user_id) {
+                        window.location.href = '/ai/body_assessment/history/view/' + u.user_id;
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Error parsing user from storage", e);
+                }
+                alert('Debes iniciar sesión para ver el historial.');
+            };
         </script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </div>

@@ -36,22 +36,61 @@
                     <i class="fas fa-id-card me-2"></i> Perfil
                 </a>
             </li>
-            {% if current_user_role == 'admin' %}
+            <!-- Revert Impersonation (Visible if impersonating) -->
+            {% if is_impersonating %}
+            <li id="revert-impersonation-li">
+                <a href="#" id="revert-impersonation-btn"
+                    class="d-flex align-items-center text-info text-decoration-none py-1 hover-white">
+                    <i class="fas fa-undo me-2"></i> Volver a Admin
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- Admin Token / Lock Logic -->
+            {% if current_user_role == 'admin' and not is_impersonating %}
             <li>
+                {% if has_admin_token %}
+                <a href="#" id="sidebar-lock-btn"
+                    class="d-flex align-items-center text-danger text-decoration-none py-1 hover-white"
+                    title="Bloquear sesión de admin">
+                    <i class="fas fa-lock me-2"></i> Bloquear Admin
+                </a>
+                {% else %}
                 <a href="#" id="sidebar-token-btn"
                     class="d-flex align-items-center text-warning text-decoration-none py-1 hover-white"
                     data-bs-toggle="modal" data-bs-target="#adminTokenModal">
                     <i class="fas fa-key me-2"></i> Token Admin
                 </a>
+                {% endif %}
             </li>
             {% endif %}
+
             <li>
                 <a href="#" id="sidebar-logout"
                     class="d-flex align-items-center text-secondary text-decoration-none py-1 hover-white">
                     <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
                 </a>
             </li>
+            </li>
         </ul>
+
+        <!-- Admin User Search (Visible if admin unlocked AND NOT impersonating) -->
+        {% if not is_impersonating %}
+        <div id="admin-user-search-container" class="mt-2 px-3 pb-3 d-none border-top border-secondary pt-2"
+            data-impersonating="{{ 'true' if is_impersonating else 'false' }}">
+            <label class="text-secondary small fw-bold mb-1" style="font-size: 0.7rem;">CHANGE USER</label>
+            <div class="position-relative">
+                <input type="text" id="sidebar-user-search"
+                    class="form-control form-control-sm bg-dark text-light border-secondary"
+                    placeholder="Buscar usuario...">
+                <div id="sidebar-search-results"
+                    class="position-absolute w-100 bg-dark border border-secondary rounded mt-1 d-none"
+                    style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                    <!-- Results here -->
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
 
@@ -148,7 +187,7 @@
         {% endif %}
     </ul>
 
-    <hr style="border-color: #374151; margin: 1rem 0;">
+
 
     {% if current_user_role != 'admin' %}
     <div class="mb-4">
@@ -177,10 +216,10 @@
     </div>
 </div>
 
-<!-- Admin Token Modal (Moved outside fixed sidebar) -->
+<!-- Admin Token Modal -->
 <div class="modal fade" id="adminTokenModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-start">
+        <div class="modal-content text-start bg-dark border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title text-warning">Autenticación Admin</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
@@ -204,7 +243,30 @@
     </div>
 </div>
 
+<!-- Impersonation Confirm Modal -->
+<div class="modal fade" id="impersonateConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-start bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-warning">Cambiar de Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white mb-1">¿Estás seguro de iniciar sesión como <strong id="impersonateTargetName"
+                        class="text-info"></strong>?</p>
+                <p class="text-secondary small">Podrás volver a tu usuario administrador desde el menú de usuario.</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmImpersonateBtn" class="btn btn-warning btn-sm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // 1. Admin Token Logic
     document.addEventListener('DOMContentLoaded', () => {
         const verifyBtn = document.getElementById('verifyTokenBtn');
         const tokenInput = document.getElementById('adminTokenInput');
@@ -213,6 +275,13 @@
         let bootstrapModal = null;
 
         if (verifyBtn && tokenInput) {
+            tokenInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    verifyBtn.click();
+                }
+            });
+
             verifyBtn.addEventListener('click', async () => {
                 const val = tokenInput.value.trim();
                 if (!val) return;
@@ -237,7 +306,7 @@
                         setTimeout(() => {
                             if (!bootstrapModal && modalEl) bootstrapModal = bootstrap.Modal.getInstance(modalEl);
                             if (bootstrapModal) bootstrapModal.hide();
-                            location.reload(); // Reload to apply changes (e.g. show dashboard controls)
+                            location.reload();
                         }, 800);
                     } else {
                         msg.textContent = 'Token incorrecto';
@@ -245,14 +314,187 @@
                 } catch (e) {
                     msg.textContent = 'Error de conexión';
                 } finally {
-                    verifyBtn.disabled = false;
                     verifyBtn.textContent = 'Verificar';
+                    verifyBtn.disabled = false;
                 }
             });
         }
     });
-</script>
 
+
+
+
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const sInput = document.getElementById('sidebar-user-search');
+        const sResults = document.getElementById('sidebar-search-results');
+        const revertLi = document.getElementById('revert-impersonation-li');
+        const revertBtn = document.getElementById('revert-impersonation-btn');
+
+        // Modal Elements
+        const modalEl = document.getElementById('impersonateConfirmModal');
+        const confirmBtn = document.getElementById('confirmImpersonateBtn');
+        const targetNameEl = document.getElementById('impersonateTargetName');
+        let pendingUser = null;
+        let impModal = null;
+
+        // Check if admin unlocked
+        if (sessionStorage.getItem('admin_unlocked') === 'true') {
+            const cont = document.getElementById('admin-user-search-container');
+        // Only show if available and not impersonating
+        if (cont && cont.dataset.impersonating !== 'true') {
+            cont.classList.remove('d-none');
+            }
+        }
+
+        // Lock Admin Logic
+        const lockBtn = document.getElementById('sidebar-lock-btn');
+        const lockModalEl = document.getElementById('adminLockConfirmModal');
+        const confirmLockBtn = document.getElementById('confirmLockAdminBtn');
+        let lockModal = null;
+
+        if (lockBtn) {
+            lockBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!lockModal && lockModalEl) lockModal = new bootstrap.Modal(lockModalEl);
+                if (lockModal) lockModal.show();
+            });
+        }
+
+        if (confirmLockBtn) {
+            confirmLockBtn.addEventListener('click', async () => {
+                confirmLockBtn.disabled = true;
+
+                try {
+                    await fetch('/admin/api/lock', { method: 'POST' });
+                } catch (e) { console.error(e); }
+
+                sessionStorage.removeItem('admin_unlocked');
+                window.location.reload();
+            });
+        }
+
+        // Search Logic
+        let sTimeout = null;
+        if (sInput && sResults) {
+            sInput.addEventListener('input', (e) => {
+                const term = e.target.value.trim();
+                clearTimeout(sTimeout);
+                if (term.length < 2) { sResults.classList.add('d-none'); return; } sTimeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
+                        if (res.ok) {
+                            const users = await res.json();
+                            renderSearchResults(users);
+                        }
+                    } catch (e) { console.error(e); }
+                }, 300);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!sInput.contains(e.target) && !sResults.contains(e.target)) {
+            sResults.classList.add('d-none');
+                }
+            });
+        }
+
+        function renderSearchResults(users) {
+            sResults.innerHTML = '';
+        if (users.length === 0) {
+            sResults.innerHTML = '<div class="p-2 text-muted small">Sin resultados</div>';
+            } else {
+            users.forEach(u => {
+                const div = document.createElement('div');
+                div.className = "p-2 border-bottom border-secondary text-white small cursor-pointer hover-bg-secondary";
+                div.style.cursor = "pointer";
+                div.innerHTML = `<div>${u.name || u.username}</div>
+    <div class="text-muted" style="font-size:0.7em">${u.email}</div>`;
+                div.onclick = () => openConfirmModal(u); // Changed to open Modal
+                sResults.appendChild(div);
+            });
+            }
+        sResults.classList.remove('d-none');
+        }
+
+        function openConfirmModal(u) {
+            pendingUser = u;
+        targetNameEl.textContent = u.name || u.username;
+        if (!impModal && modalEl) impModal = new bootstrap.Modal(modalEl);
+        if (impModal) impModal.show();
+        }
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                if (!pendingUser) return;
+
+                confirmBtn.disabled = true;
+                await impersonateUserAPI(pendingUser);
+                confirmBtn.disabled = false;
+                if (impModal) impModal.hide();
+            });
+        }
+
+        async function impersonateUserAPI(u) {
+            try {
+                const res = await fetch('/admin/api/impersonate', {
+            method: 'POST',
+        headers: {'Content-Type': 'application/json' },
+        body: JSON.stringify({user_id: u.user_id })
+                });
+
+        if (res.ok) {
+                    const userData = {
+            user_id: u.user_id,
+        name: u.name,
+        username: u.username,
+        email: u.email
+                    };
+        localStorage.setItem('ai_fitness_user', JSON.stringify(userData));
+        localStorage.setItem('ai_fitness_uid', u.user_id);
+        window.location.reload();
+                } else {
+            alert("Error al cambiar de usuario");
+                }
+            } catch (e) {
+            console.error(e);
+        alert("Error de conexión");
+            }
+        }
+
+        // Revert Logic
+        const revertModalEl = document.getElementById('revertConfirmModal');
+        const confirmRevertBtn = document.getElementById('confirmRevertBtn');
+        let revertModal = null;
+
+        if (revertBtn) {
+            revertBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!revertModal && revertModalEl) revertModal = new bootstrap.Modal(revertModalEl);
+                if (revertModal) revertModal.show();
+            });
+        }
+
+        if (confirmRevertBtn) {
+            confirmRevertBtn.addEventListener('click', async () => {
+                confirmRevertBtn.disabled = true;
+
+                try {
+                    const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
+                        localStorage.setItem('ai_fitness_uid', data.user.user_id);
+                        window.location.reload();
+                    } else {
+                        alert(data.error || "No se pudo volver a la sesión original.");
+                    }
+                } catch (e) { console.error(e); }
+            });
+        }
+    });
+</script>
 
 <!-- Mobile Toggle Button (Visible only on mobile) -->
 <!-- Mobile Fixed Navbar (Visible only on mobile) -->
@@ -273,178 +515,179 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const body = document.body;
-        const sidebarToggle = document.getElementById("sidebar-toggle");
-        const toggleIcon = sidebarToggle.querySelector("i");
-        const posButtons = document.querySelectorAll("#pos-toggle-group .pos-toggle-btn");
+    const sidebarToggle = document.getElementById("sidebar-toggle");
+    const toggleIcon = sidebarToggle ? sidebarToggle.querySelector("i") : null;
+    const posButtons = document.querySelectorAll("#pos-toggle-group .pos-toggle-btn");
 
-        // 1. Cargar preferencias
-        const savedCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
-        const savedRight = localStorage.getItem("sidebar_right") === "true";
+    // 1. Cargar preferencias
+    const savedCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
+    const savedRight = localStorage.getItem("sidebar_right") === "true";
 
-        function updateToggleIcon() {
-            if (body.classList.contains("sb-collapsed")) {
-                toggleIcon.className = "fas fa-bars";
+    function updateToggleIcon() {
+            if (!toggleIcon) return;
+    if (body.classList.contains("sb-collapsed")) {
+        toggleIcon.className = "fas fa-bars";
             } else {
-                toggleIcon.className = "fas fa-arrow-left transition-icon";
-                if (body.classList.contains("sb-right")) {
-                    toggleIcon.className = "fas fa-arrow-right transition-icon";
+        toggleIcon.className = "fas fa-arrow-left transition-icon";
+    if (body.classList.contains("sb-right")) {
+        toggleIcon.className = "fas fa-arrow-right transition-icon";
                 }
             }
         }
 
-        function updatePosButtons(isRight) {
-            posButtons.forEach(btn => {
-                const isBtnRight = btn.dataset.pos === "right";
-                if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
-                }
-            });
+    function updatePosButtons(isRight) {
+        posButtons.forEach(btn => {
+            const isBtnRight = btn.dataset.pos === "right";
+            if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
         }
 
-        if (savedCollapsed) body.classList.add("sb-collapsed");
+    if (savedCollapsed) body.classList.add("sb-collapsed");
 
-        if (savedRight) {
-            body.classList.add("sb-right");
-            updatePosButtons(true);
+    if (savedRight) {
+        body.classList.add("sb-right");
+    updatePosButtons(true);
         } else {
-            updatePosButtons(false);
+        updatePosButtons(false);
         }
-        updateToggleIcon();
+    updateToggleIcon();
 
 
-        // 2. Toggle Sidebar
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener("click", () => {
-                body.classList.toggle("sb-collapsed");
-                const isCollapsed = body.classList.contains("sb-collapsed");
-                localStorage.setItem("sidebar_collapsed", isCollapsed);
-                updateToggleIcon();
-            });
+    // 2. Toggle Sidebar
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", () => {
+            body.classList.toggle("sb-collapsed");
+            const isCollapsed = body.classList.contains("sb-collapsed");
+            localStorage.setItem("sidebar_collapsed", isCollapsed);
+            updateToggleIcon();
+        });
         }
 
         // 3. Toggle Position via Buttons
         posButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                const targetPos = btn.dataset.pos; // 'left' or 'right'
-                if (targetPos === "right") {
-                    body.classList.add("sb-right");
-                    localStorage.setItem("sidebar_right", "true");
-                    updatePosButtons(true);
-                } else {
-                    body.classList.remove("sb-right");
-                    localStorage.setItem("sidebar_right", "false");
-                    updatePosButtons(false);
-                }
-                updateToggleIcon();
-            });
+        btn.addEventListener("click", () => {
+            const targetPos = btn.dataset.pos; // 'left' or 'right'
+            if (targetPos === "right") {
+                body.classList.add("sb-right");
+                localStorage.setItem("sidebar_right", "true");
+                updatePosButtons(true);
+            } else {
+                body.classList.remove("sb-right");
+                localStorage.setItem("sidebar_right", "false");
+                updatePosButtons(false);
+            }
+            updateToggleIcon();
+        });
         });
 
 
-        // Mobile Sidebar Logic
-        const mobileToggle = document.getElementById("mobile-sidebar-toggle");
-        const sidebarFixed = document.querySelector(".sidebar-fixed");
-        const sidebarOverlay = document.getElementById("sidebar-overlay");
+    // Mobile Sidebar Logic
+    const mobileToggle = document.getElementById("mobile-sidebar-toggle");
+    const sidebarFixed = document.querySelector(".sidebar-fixed");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
 
-        function closeMobileSidebar() {
+    function closeMobileSidebar() {
             if (sidebarFixed) sidebarFixed.classList.remove("show-mobile");
-            if (sidebarOverlay) sidebarOverlay.classList.remove("show");
+    if (sidebarOverlay) sidebarOverlay.classList.remove("show");
         }
 
-        if (mobileToggle) {
-            mobileToggle.addEventListener("click", function () {
-                if (sidebarFixed) sidebarFixed.classList.toggle("show-mobile");
-                if (sidebarOverlay) sidebarOverlay.classList.toggle("show");
-            });
+    if (mobileToggle) {
+        mobileToggle.addEventListener("click", function () {
+            if (sidebarFixed) sidebarFixed.classList.toggle("show-mobile");
+            if (sidebarOverlay) sidebarOverlay.classList.toggle("show");
+        });
         }
 
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener("click", closeMobileSidebar);
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeMobileSidebar);
         }
 
-        // Close sidebar when clicking a link on mobile
-        const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
+    // Close sidebar when clicking a link on mobile
+    const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
         navLinks.forEach(link => {
-            link.addEventListener("click", () => {
-                if (window.innerWidth < 992) {
-                    closeMobileSidebar();
-                }
-            });
+        link.addEventListener("click", () => {
+            if (window.innerWidth < 992) {
+                closeMobileSidebar();
+            }
+        });
         });
 
 
-        // 4. Mostrar nombre de usuario
-        const userJson = localStorage.getItem('ai_fitness_user');
-        if (userJson) {
+    // 4. Mostrar nombre de usuario
+    const userJson = localStorage.getItem('ai_fitness_user');
+    if (userJson) {
             try {
                 const user = JSON.parse(userJson);
-                const displayName = user.name || user.username || 'Usuario';
-                const userEl = document.getElementById('sidebar-username');
-                if (userEl) userEl.textContent = displayName;
-            } catch (e) { console.error(e); }
+    const displayName = user.name || user.username || 'Usuario';
+    const userEl = document.getElementById('sidebar-username');
+    if (userEl) userEl.textContent = displayName;
+            } catch (e) {console.error(e); }
         }
 
-        // 5. Logout
-        const logoutBtn = document.getElementById('sidebar-logout');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                localStorage.removeItem('ai_fitness_user');
-                localStorage.removeItem('ai_fitness_uid');
-                sessionStorage.removeItem('admin_unlocked');
-                window.location.href = '/';
-            });
+    // 5. Logout
+    const logoutBtn = document.getElementById('sidebar-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            localStorage.removeItem('ai_fitness_user');
+            localStorage.removeItem('ai_fitness_uid');
+            sessionStorage.removeItem('admin_unlocked');
+            window.location.href = '/';
+        });
         }
         // 6. Redirect Home/Brand logic if logged in
         const redirectIfLogged = (e) => {
             try {
                 if (localStorage.getItem('ai_fitness_user')) {
-                    e.preventDefault();
-                    window.location.href = '/dashboard';
+        e.preventDefault();
+    window.location.href = '/dashboard';
                 }
             } catch (ex) { }
         };
 
-        const brandLink = document.querySelector('.brand-text')?.closest('a');
-        const homeLink = document.querySelector('a[href="/"][title="Inicio"]');
+    const brandLink = document.querySelector('.brand-text')?.closest('a');
+    const homeLink = document.querySelector('a[href="/"][title="Inicio"]');
 
-        if (brandLink) brandLink.addEventListener('click', redirectIfLogged);
-        if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
+    if (brandLink) brandLink.addEventListener('click', redirectIfLogged);
+    if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
 
-        // 7. Theme Toggle Logic (Added Fix)
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
+    // 7. Theme Toggle Logic (Added Fix)
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
             const icon = themeToggle.querySelector('i');
-            const html = document.documentElement;
+    const html = document.documentElement;
 
-            // Load saved theme
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {
-                html.setAttribute('data-theme', 'light');
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        html.setAttribute('data-theme', 'light');
+    icon.classList.remove('fa-moon');
+    icon.classList.add('fa-sun');
             } else {
-                // Ensure default is dark if cleared
-                html.removeAttribute('data-theme');
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
+        // Ensure default is dark if cleared
+        html.removeAttribute('data-theme');
+    icon.classList.remove('fa-sun');
+    icon.classList.add('fa-moon');
             }
 
             themeToggle.addEventListener('click', () => {
                 const currentTheme = html.getAttribute('data-theme');
-                if (currentTheme === 'light') {
-                    // Switch to Dark
-                    html.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'dark');
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
+    if (currentTheme === 'light') {
+        // Switch to Dark
+        html.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+    icon.classList.remove('fa-sun');
+    icon.classList.add('fa-moon');
                 } else {
-                    // Switch to Light
-                    html.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
+        // Switch to Light
+        html.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+    icon.classList.remove('fa-moon');
+    icon.classList.add('fa-sun');
                 }
             });
         }

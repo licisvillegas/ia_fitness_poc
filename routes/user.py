@@ -214,14 +214,83 @@ def get_progress(user_id):
     try:
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        records = list(extensions.db.progress.find({"user_id": user_id}).sort("date", 1))
-        for r in records:
+            
+        # 1. Fetch Legacy Progress
+        progress_records = list(extensions.db.progress.find({"user_id": user_id}))
+        
+        # 2. Fetch Body Assessments
+        # We project only needed fields to match progress structure
+        assess_cursor = extensions.db.body_assessments.find(
+            {"user_id": user_id},
+            {"created_at": 1, "input": 1, "output": 1}
+        )
+        assess_records = []
+        for a in assess_cursor:
+            # Normalize assessment to progress format
+            
+            # Date
+            created = a.get("created_at")
+            if not created: continue
+            
+            # Weight
+            inp = a.get("input") or {}
+            meas = inp.get("measurements") or {}
+            w = meas.get("weight_kg")
+            if not w: w = inp.get("weight")
+            
+            # Body Fat (Same priority logic as latest_metrics)
+            bf = None
+            out = a.get("output") or {}
+            bc = out.get("body_composition") or {}
+            
+            if bc.get("body_fat_percent"):
+                bf = bc.get("body_fat_percent")
+            elif out.get("body_fat_percent"):
+                bf = out.get("body_fat_percent")
+            elif meas.get("body_fat_percent"):
+                bf = meas.get("body_fat_percent")
+            elif meas.get("body_fat"):
+                bf = meas.get("body_fat")
+                
+            # Only add if we have at least weight or body_fat, or it's a valid record we want to show
+            # It's better to show it if it has date
+            assess_records.append({
+                "_id": str(a["_id"]),
+                "user_id": user_id,
+                "date": created, # Keep as object for sorting first
+                "weight_kg": w,
+                "body_fat": bf,
+                "performance": None, # Assessments don't usually have this
+                "nutrition_adherence": None 
+            })
+            
+        # 3. Merge and Normalize Dates
+        all_records = progress_records + assess_records
+        
+        # Helper to get datetime for sorting
+        def get_dt(r):
+            d = r.get("date")
+            if isinstance(d, datetime): return d
+            if isinstance(d, str):
+                try: return datetime.fromisoformat(d.replace("Z", "+00:00"))
+                except: pass
+                try: return datetime.strptime(d, "%Y-%m-%d")
+                except: pass
+            return datetime.min
+
+        all_records.sort(key=get_dt)
+        
+        # Final formatting for JSON
+        for r in all_records:
             r["_id"] = str(r["_id"])
             if r.get("date") and isinstance(r["date"], datetime):
-                r["date"] = r["date"].isoformat()
-        if not records:
+                r["date"] = r["date"].strftime("%Y-%m-%d") # Use consistent YYYY-MM-DD for charts
+            
+        if not all_records:
             return jsonify({"error": "No hay registros de progreso para este usuario"}), 404
-        return jsonify(records), 200
+            
+        return jsonify(all_records), 200
+        
     except Exception as e:
         logger.error(f"Error al obtener progreso de {user_id}: {str(e)}", exc_info=True)
         return jsonify({"error": "Error interno al obtener progreso"}), 500
@@ -290,3 +359,54 @@ def get_my_profile_aggregated():
     except Exception as e:
         logger.error(f"Error fetching my_profile for {user_id}: {e}", exc_info=True)
         return jsonify({"error": "Error interno fetching profile"}), 500
+
+@user_bp.get("/api/user/<user_id>/latest_metrics")
+def api_get_user_latest_metrics(user_id):
+    """
+    Obtiene las métricas más recientes (peso, grasa) desde body_assessments.
+    Prioridad: body_assessments > progress (legacy)
+    """
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        # Buscar última evaluación corporal
+        last_assess = extensions.db.body_assessments.find_one(
+            {"user_id": user_id}, 
+            sort=[("created_at", -1)]
+        )
+        
+        metrics = {}
+        
+        if last_assess:
+            # Intentar extraer de input.measurements (formato normalizado)
+            inp = last_assess.get("input", {})
+            meas = inp.get("measurements", {})
+            
+            # Peso
+            if meas.get("weight_kg"):
+                metrics["weight_kg"] = meas.get("weight_kg")
+            elif inp.get("weight"): # Fallback estructura antigua
+                metrics["weight_kg"] = inp.get("weight")
+                
+            # Grasa (body_fat_percent)
+            # Prioridad 1: Output del Agente (body_composition.body_fat_percent)
+            out = last_assess.get("output", {})
+            body_comp = out.get("body_composition", {})
+            
+            if body_comp.get("body_fat_percent"):
+                 metrics["body_fat"] = body_comp.get("body_fat_percent")
+            elif out.get("body_fat_percent"):
+                 metrics["body_fat"] = out.get("body_fat_percent")
+            # Prioridad 2: Input del Usuario (Normalizado)
+            elif meas.get("body_fat_percent"):
+                 metrics["body_fat"] = meas.get("body_fat_percent")
+            # Prioridad 3: Legacy fields
+            elif meas.get("body_fat"):
+                 metrics["body_fat"] = meas.get("body_fat")
+        
+        return jsonify(metrics), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching latest metrics for {user_id}: {e}")
+        return jsonify({"error": "Internal Error"}), 500

@@ -208,7 +208,97 @@ def list_users():
     except Exception as e:
         logger.error(f"Error listing users: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.post("/admin/api/impersonate")
+def impersonate_user():
+    """Permite al admin iniciar sesión como otro usuario."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    
+    try:
+        data = request.get_json() or {}
+        user_id = data.get("user_id")
         
+        if not user_id:
+             return jsonify({"error": "User ID requerido"}), 400
+             
+        # Verify user exists
+        u = extensions.db.users.find_one({"user_id": user_id}) or extensions.db.users.find_one({"_id": ObjectId(user_id)})
+        if not u:
+             return jsonify({"error": "Usuario no encontrado"}), 404
+             
+        target_uid = str(u.get("user_id") or u["_id"])
+        
+        resp = jsonify({"message": "Switching user context", "user_id": target_uid})
+        
+        # Save original session if not already saved
+        current_session = request.cookies.get("user_session")
+        origin_session = request.cookies.get("admin_origin_session")
+        
+        print(f"DEBUG IMPERSONATE: Current={current_session}, Origin={origin_session}, Target={target_uid}")
+        
+        if current_session and not origin_session:
+            print(f"DEBUG IMPERSONATE: Setting admin_origin_session to {current_session}")
+            resp.set_cookie("admin_origin_session", current_session, httponly=True, samesite="Lax", max_age=86400*7)
+        else:
+            print("DEBUG IMPERSONATE: Skipping origin set (already set or no current session)")
+            
+        # Set the HttpOnly session cookie
+        resp.set_cookie("user_session", target_uid, httponly=True, samesite="Lax", max_age=86400*30)
+        return resp, 200
+        
+    except Exception as e:
+        logger.error(f"Error impersonating: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.post("/admin/api/revert_impersonation")
+def revert_impersonation():
+    """Regresa a la sesión original del admin."""
+    # No llamamos check_admin_access() aqui porque el usuario actual
+    # es el impersonado (sin rol admin).
+    # La seguridad recae en @admin_bp.before_request que verifica la cookie 'admin_token'.
+    
+    try:
+        origin_uid = request.cookies.get("admin_origin_session")
+        print(f"DEBUG REVERT: Origin Cookie={origin_uid}")
+        
+        if not origin_uid:
+            return jsonify({"error": "No hay sesión original para restaurar"}), 400
+            
+        # Get user details for frontend update
+        u = extensions.db.users.find_one({"user_id": origin_uid})
+        if not u:
+             return jsonify({"error": "Usuario original no encontrado"}), 404
+             
+        user_data = {
+            "user_id": origin_uid,
+            "name": u.get("name"),
+            "username": u.get("username"),
+            "email": u.get("email")
+        }
+            
+        resp = jsonify({"message": "Session restored", "user": user_data})
+        resp.set_cookie("user_session", origin_uid, httponly=True, samesite="Lax", max_age=86400*30)
+        resp.delete_cookie("admin_origin_session")
+        
+        return resp, 200
+    except Exception as e:
+        logger.error(f"Error reverting impersonation: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+        
+@admin_bp.post("/admin/api/lock")
+def lock_admin_session():
+    """Bloquea la sesión de admin eliminando el token."""
+    try:
+        resp = jsonify({"message": "Admin session locked"})
+        resp.delete_cookie("admin_token")
+        resp.delete_cookie("admin_last_active")
+        return resp, 200
+    except Exception as e:
+        logger.error(f"Error locking admin: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
 # Alias para admin_users.html que a veces llama user_profiles/lookup o users_roles
 @admin_bp.get("/admin/api/users_roles")
 def list_users_roles_alias():

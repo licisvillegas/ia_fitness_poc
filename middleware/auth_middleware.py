@@ -66,4 +66,15 @@ def inject_user_role():
     elif extensions.db is None:
         logger.warning("DEBUG ROLE: DB is None in inject_user_role")
     
-    return dict(current_user_role=user_role)
+    # Check admin context
+    is_impersonating = bool(request.cookies.get("admin_origin_session"))
+    from utils.auth_helpers import get_admin_token
+    real_token = get_admin_token()
+    token_cookie = request.cookies.get("admin_token")
+    has_admin_token = bool(token_cookie and token_cookie == real_token)
+
+    return dict(
+        current_user_role=user_role,
+        is_impersonating=is_impersonating,
+        has_admin_token=has_admin_token
+    )

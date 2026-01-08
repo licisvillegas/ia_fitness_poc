@@ -411,7 +411,7 @@
 
     <footer>
       <p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
-      <small class="text-secondary d-block">v. beta 1.0.3</small>
+      <small class="text-secondary d-block">v. beta 1.0.4</small>
     </footer>
 
     <script>
@@ -457,6 +457,20 @@
         document.getElementById("bar-performance").style.width = `${last.performance}%`;
         document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
         document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
+
+        // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS (Override Weight/Fat) ---
+        try {
+          const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
+          if (mRes.ok) {
+            const mData = await mRes.json();
+            if (mData.weight_kg) {
+              document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
+            }
+            if (mData.body_fat) {
+              document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
+            }
+          }
+        } catch (e) { console.error("Error fetching latest metrics", e); }
 
         // Limpiar grÃ¡ficos previos antes de volver a dibujar
         charts.forEach(c => c.destroy());

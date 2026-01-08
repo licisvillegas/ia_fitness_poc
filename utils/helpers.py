@@ -118,6 +118,7 @@ def normalize_measurements(raw: dict) -> Dict[str, Optional[float]]:
         "neck": ["neck", "cuello"],
         "height_cm": ["height_cm", "altura_cm", "altura"],
         "weight_kg": ["weight_kg", "peso", "peso_kg"],
+        "body_fat_percent": ["body_fat", "body_fat_percent", "grasa", "grasa_corporal", "porcentaje_grasa"],
     }
 
     def to_float(value: Any) -> Optional[float]:

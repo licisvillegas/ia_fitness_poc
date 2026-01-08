@@ -187,10 +187,31 @@ def verify_admin_token_endpoint():
             return jsonify({"ok": False, "error": "Token no configurado"}), 503
             
         if token == expected:
-            return jsonify({"ok": True}), 200
+            resp = jsonify({"ok": True})
+            resp.set_cookie("admin_token", token, httponly=True, samesite="Lax", max_age=86400*7)
+            from config import Config
+            import time
+            resp.set_cookie("admin_last_active", str(int(time.time())), httponly=True, samesite="Lax", max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS)
+            return resp, 200
         else:
             return jsonify({"ok": False, "error": "Token inválido"}), 403
             
     except Exception as e:
         logger.error(f"Error verificando token admin: {e}")
         return jsonify({"ok": False, "error": "Error interno"}), 500
+@auth_bp.post("/logout")
+def auth_logout():
+    """Cierra sesión eliminando todas las cookies de autenticación."""
+    try:
+        resp = jsonify({"message": "Sesión cerrada correctamente"})
+        
+        # Eliminar todas las cookies posibles
+        resp.delete_cookie("user_session")
+        resp.delete_cookie("admin_token")
+        resp.delete_cookie("admin_last_active")
+        resp.delete_cookie("admin_origin_session")
+        
+        return resp, 200
+    except Exception as e:
+        logger.error(f"Error en logout: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al cerrar sesión"}), 500

@@ -40,15 +40,17 @@
                 </select>
             </div>
 
-            <div class="d-flex gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
-                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0"
-                    onclick="resetFilters()">
-                    <i class="fas fa-undo me-1"></i> <span class="d-none d-md-inline">Restablecer</span>
-                </button>
-                <button class="btn btn-cyber-primary text-nowrap flex-grow-1 flex-md-grow-0" onclick="goToBuilder()">
-                    <i class="fas fa-plus me-1"></i> Nueva <span class="d-none d-md-inline">Rutina</span>
-                </button>
-            </div>
+
+            <button id="btnPrintPreview" class="btn btn-outline-info text-nowrap flex-grow-1 flex-md-grow-0"
+                style="display:none;" onclick="openPrintPreview()">
+                <i class="fas fa-print me-1"></i> <span class="d-none d-md-inline">Vista de Impresión</span>
+            </button>
+            <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0" onclick="resetFilters()">
+                <i class="fas fa-undo me-1"></i> <span class="d-none d-md-inline">Restablecer</span>
+            </button>
+            <button class="btn btn-cyber-primary text-nowrap flex-grow-1 flex-md-grow-0" onclick="goToBuilder()">
+                <i class="fas fa-plus me-1"></i> Nueva <span class="d-none d-md-inline">Rutina</span>
+            </button>
         </div>
     </div>
 </div>
@@ -94,6 +96,8 @@
 <div id="mobileRoutinesList" class="d-md-none d-flex flex-column gap-3">
     <!-- Populated by JS -->
 </div>
+
+
 
 <!-- Modal Detalle Rutina -->
 <div class="modal fade" id="routineModal" tabindex="-1" aria-hidden="true">
@@ -152,6 +156,27 @@
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Vista Previa Impresión -->
+<div class="modal fade" id="printPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Vista de Impresión (Rutinas Asignadas)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="printPreviewBody">
+                <!-- Populated by JS -->
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="printModalContent()">
+                    <i class="fas fa-print me-2"></i>Imprimir
+                </button>
             </div>
         </div>
     </div>
@@ -228,6 +253,130 @@
         color: #00d2ff !important;
         border-bottom: 2px solid #00d2ff;
         font-weight: bold;
+    }
+
+    @media print {
+
+        /* Hide everything by default */
+        /* Reset body and containers for full page printing */
+        body,
+        html,
+        .modal-open {
+            overflow: visible !important;
+            height: auto !important;
+        }
+
+        /* Unhide the print modal content */
+        #printPreviewModal,
+        #printPreviewModal * {
+            visibility: visible;
+        }
+
+        /* Position the modal content naturally */
+        #printPreviewModal {
+            position: absolute !important;
+            left: 0;
+            top: 0;
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            width: 100%;
+            height: auto !important;
+            overflow: visible !important;
+            background: white;
+            color: black;
+            z-index: 9999 !important;
+        }
+
+        .modal-dialog,
+        .modal-content,
+        .modal-body {
+            overflow: visible !important;
+            height: auto !important;
+            width: 100% !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .modal-body {
+            padding: 20px !important;
+        }
+
+        .modal-header,
+        .modal-footer,
+        .btn-close {
+            display: none !important;
+        }
+
+        /* Ensure cards look good on print */
+        .print-preview-card {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            padding: 15px;
+            page-break-inside: avoid;
+            color: black;
+            background: white;
+        }
+
+        .text-muted {
+            color: #666 !important;
+        }
+
+        .fw-bold {
+            font-weight: bold !important;
+        }
+
+        /* Force Accordion Expansion on Print */
+        /* Force Accordion Expansion on Print */
+        .accordion-collapse {
+            display: block !important;
+            height: auto !important;
+            visibility: visible !important;
+        }
+
+        .accordion-button::after {
+            display: none !important;
+        }
+
+        /* Invert Dark Mode Styles for Print */
+        .routine-preview-card,
+        .routine-preview-item,
+        .routine-preview-group,
+        .accordion-body,
+        .modal-content,
+        .card {
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+
+        .text-white,
+        .text-cyber-green,
+        .text-cyber-blue,
+        .text-cyber-orange {
+            color: black !important;
+            text-shadow: none !important;
+        }
+
+        .text-secondary,
+        .text-muted {
+            color: #555 !important;
+        }
+
+        .badge {
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #000 !important;
+        }
+
+        .btn {
+            display: none !important;
+        }
     }
 </style>
 
@@ -310,7 +459,100 @@
             activeBtn.classList.remove('text-theme');
         }
 
+        // Toggle Print Preview Button
+        const btnPreview = document.getElementById('btnPrintPreview');
+        if (btnPreview) {
+            btnPreview.style.display = (mode === 'assigned') ? 'block' : 'none';
+        }
+
         filterRoutines();
+    }
+
+    function openPrintPreview_deprecated() {
+        const modalEl = document.getElementById('printPreviewModal');
+        const modalBody = document.getElementById('printPreviewBody');
+        if (!modalEl || !modalBody) return;
+
+        // Filter and Sort
+        const assignedRoutines = routines.filter(r => r.assigned_expires_at);
+        const dayOrder = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 7 };
+
+        assignedRoutines.sort((a, b) => {
+            const dA = dayOrder[a.routine_day] || 8;
+            const dB = dayOrder[b.routine_day] || 8;
+            if (dA !== dB) return dA - dB;
+            return (a.name || "").localeCompare(b.name || "");
+        });
+
+        if (assignedRoutines.length === 0) {
+            modalBody.innerHTML = '<div class="text-center text-muted p-4">No hay rutinas asignadas para mostrar.</div>';
+        } else {
+            let html = '<div class="accordion" id="printPreviewAccordion">';
+
+            assignedRoutines.forEach((r, idx) => {
+                const dayLabel = r.routine_day ? translateDay(r.routine_day) : 'Sin día asignado';
+                const expires = r.assigned_expires_at ? new Date(r.assigned_expires_at).toLocaleDateString() : 'N/A';
+                const routineId = `previewRoutine${idx}`;
+
+                html += `
+                <div class="accordion-item border mb-2">
+                    <h2 class="accordion-header" id="heading${routineId}">
+                        <button class="accordion-button collapsed text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${routineId}" aria-expanded="false" aria-controls="collapse${routineId}">
+                            <div class="d-flex w-100 justify-content-between align-items-center me-3">
+                                <span class="fw-bold">${r.name || 'Rutina'}</span>
+                                <span class="badge bg-secondary text-white ms-2 text-nowrap">${dayLabel}</span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse${routineId}" class="accordion-collapse collapse" aria-labelledby="heading${routineId}" data-bs-parent="#printPreviewAccordion">
+                        <div class="accordion-body text-dark bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="small text-muted">${r.description || ''}</div>
+                                <div class="small text-muted fw-bold">Vence: ${expires}</div>
+                            </div>
+                            
+                            <div class="exercises-list">`;
+
+                if (r.exercises && r.exercises.length > 0) {
+                    html += '<ul class="list-group list-group-flush">';
+                    r.exercises.forEach((exItem, idxEx) => {
+                        const exName = exerciseLookup[exItem.exercise_id]?.name || 'Ejercicio Desconocido';
+                        const sets = exItem.sets || [];
+                        const setsText = sets.length > 0 ? `${sets.length} series` : '';
+                        const repsText = sets.map(s => s.reps || s.time || '-').join(', ');
+
+                        html += `
+                         <li class="list-group-item px-0 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">${idxEx + 1}. ${exName}</span>
+                                <span class="small border px-2 rounded">${setsText}</span>
+                            </div>
+                            <div class="small text-muted">Reps/Tiempo: ${repsText}</div>
+                            ${exItem.note ? `<div class="small fst-italic text-muted mt-1">Nota: ${exItem.note}</div>` : ''}
+                         </li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<div class="text-muted fst-italic">Sin ejercicios.</div>';
+                }
+
+                html += `</div></div></div></div>`;
+            });
+            html += '</div>';
+            modalBody.innerHTML = html;
+        }
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function printModalContent() {
+        window.print();
+    }
+
+    function translateDay(eng) {
+        const map = { "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo" };
+        return map[eng] || eng;
     }
 
     async function loadRoutines() {
@@ -787,6 +1029,71 @@
         modalEl.addEventListener("hidden.bs.modal", () => {
             iframe.src = "";
         }, { once: true });
+    }
+
+    function openPrintPreview() {
+        const modalEl = document.getElementById('printPreviewModal');
+        const modalBody = document.getElementById('printPreviewBody');
+        if (!modalEl || !modalBody) return;
+
+        // Filter and Sort
+        const assignedRoutines = routines.filter(r => r.assigned_expires_at);
+        const dayOrder = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 7 };
+
+        assignedRoutines.sort((a, b) => {
+            const dA = dayOrder[a.routine_day] || 8;
+            const dB = dayOrder[b.routine_day] || 8;
+            if (dA !== dB) return dA - dB;
+            return (a.name || "").localeCompare(b.name || "");
+        });
+
+        if (assignedRoutines.length === 0) {
+            modalBody.innerHTML = '<div class="text-center text-muted p-4">No hay rutinas asignadas para mostrar.</div>';
+        } else {
+            let html = '<div class="accordion" id="printPreviewAccordion">';
+
+            assignedRoutines.forEach((r, idx) => {
+                const dayLabel = r.routine_day ? translateDay(r.routine_day) : 'Sin día asignado';
+                const expires = r.assigned_expires_at ? new Date(r.assigned_expires_at).toLocaleDateString() : 'N/A';
+                const partsLabel = getRoutineBodyPartsLabel(r);
+                const exercisesCount = getExerciseCount(r);
+                const routineId = `previewRoutine${idx}`;
+
+                // Generate rich details using the same function as the Detail Modal
+                const detailsHtml = buildRoutinePreviewHtml(r);
+
+                html += `
+                <div class="accordion-item border mb-2">
+                    <h2 class="accordion-header" id="heading${routineId}">
+                        <button class="accordion-button collapsed text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${routineId}" aria-expanded="false" aria-controls="collapse${routineId}">
+                            <div class="d-flex w-100 flex-column flex-sm-row justify-content-between align-items-sm-center me-3 gap-2">
+                                <div>
+                                    <span class="fw-bold d-block">${r.name || 'Rutina'}</span>
+                                    <div class="small text-muted fw-normal">${partsLabel} • ${exercisesCount} ejercicios</div>
+                                </div>
+                                <div class="text-start text-sm-end">
+                                    <span class="badge bg-secondary text-white">${dayLabel}</span>
+                                    <div class="small text-muted mt-1">Vence: ${expires}</div>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse${routineId}" class="accordion-collapse collapse" aria-labelledby="heading${routineId}" data-bs-parent="#printPreviewAccordion">
+                        <div class="accordion-body bg-panel text-white">
+                            <div class="small text-secondary mb-3">${r.description || ''}</div>
+                             <div class="routine-preview-scroll d-flex flex-column gap-2" style="max-height: none;">
+                                ${detailsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            modalBody.innerHTML = html;
+        }
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
     }
 
     function goToBuilder() {

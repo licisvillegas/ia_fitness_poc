@@ -356,18 +356,17 @@
         const savedUser = localStorage.getItem('ai_fitness_user');
         if (savedUser) {
           JSON.parse(savedUser); // Verify it's valid JSON
-          window.location.href = '/dashboard';
+          // User requested default landing page instead of dashboard
+          window.location.href = '/landing';
           return; // Stop execution of auth logic
         }
       } catch (e) {
         // Invalid session data, ignore and let user login
         localStorage.removeItem('ai_fitness_user');
       }
-
       const alertBox = document.getElementById('authAlert');
       const registerForm = document.getElementById('registerForm');
       const loginForm = document.getElementById('loginForm');
-      // (Eliminado: elementos de token administrador)
 
       const showAlert = (variant, message) => {
         if (!alertBox) {
@@ -522,9 +521,9 @@
             loginForm.reset();
             loginForm.classList.remove('was-validated');
 
-            // Redirección estándar al dashboard
+            // Redirección al landing page como solicitado
             setTimeout(() => {
-              window.location.href = '/dashboard';
+              window.location.href = '/landing';
             }, 800);
           } catch (error) {
             showAlert('danger', 'Error de conexion con el servidor. Intenta nuevamente.');

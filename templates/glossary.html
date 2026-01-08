@@ -440,6 +440,20 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Accordion Logic: Ensure only one section is open at a time
+            const allDetails = document.querySelectorAll('details');
+            allDetails.forEach(details => {
+                details.addEventListener('toggle', (e) => {
+                    if (details.open) {
+                        allDetails.forEach(other => {
+                            if (other !== details && other.open) {
+                                other.open = false;
+                            }
+                        });
+                    }
+                });
+            });
+
             // Select both muscle cards and reference cards
             const clickableCards = document.querySelectorAll('.muscle-card, .ref-card');
             const modalElement = document.getElementById('imageModal');

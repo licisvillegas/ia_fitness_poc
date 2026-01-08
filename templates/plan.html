@@ -153,6 +153,108 @@
       </div>
     </section>
 
+    <!-- Sección de Mis Rutinas (Copiado de Dashboard) -->
+    <section id="my-routines" class="container mt-5" style="display:none;">
+      <h4 class="mb-3 text-primary">Mis Rutinas Asignadas</h4>
+      <div id="routines-list" class="row g-3">
+        <!-- Routines injected here -->
+      </div>
+    </section>
+
+    <!-- Sección de Entrenamientos -->
+    <section class="workouts">
+      <div class="container">
+        <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular
+        </h2>
+
+        <!-- Primera fila -->
+        <div class="row g-4">
+          <!-- Pecho y Tríceps -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=Pecho,Tríceps" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/IMG_1612.JPG" class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
+                <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
+                <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr" class="text-muted">Fortalece
+                  tu tren superior con
+                  ejercicios compuestos como press de banca, fondos y flexiones.
+                  Desarrolla masa muscular y potencia en tus empujes.</p>
+              </div>
+            </a>
+          </div>
+
+          <!-- Espalda y Bíceps -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=Espalda,Bíceps" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/IMG_1614.JPG" class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
+                <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
+                <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la" class="text-muted">Rutinas
+                  centradas en
+                  dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
+              </div>
+            </a>
+          </div>
+
+          <!-- Piernas y Glúteos -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=Piernas,Glúteos,Cuádriceps,Isquiosurales" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/IMG_1615.JPG" class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
+                <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
+                <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas" class="text-muted">
+                  Ejercicios de fuerza como
+                  sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="row g-4 mt-4">
+          <!-- Hombros y Core -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=Hombros,Core,Abdominales" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/IMG_1616.JPG" class="img-fluid" alt="Entrenamiento de Hombros y Core">
+                <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
+                <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para" class="text-muted">
+                  Desarrolla equilibrio y fuerza
+                  funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
+              </div>
+            </a>
+          </div>
+
+          <!-- Cardio -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=Cardio" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/TAFT2576.JPEG" class="img-fluid" alt="Entrenamiento de Cardio">
+                <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
+                <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion" class="text-muted">Ejercicios de cardio
+                  como caminadora,
+                  elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
+              </div>
+            </a>
+          </div>
+
+          <!-- Full Body -->
+          <div class="col-md-4">
+            <a href="/exercises/list?muscles=all" class="text-decoration-none">
+              <div class="workout-card text-center">
+                <img src="/static/images/IMG_1617.JPG" class="img-fluid" alt="Entrenamiento Full Body">
+                <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
+                <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p" class="text-muted">Sesiones
+                  completas que activan
+                  todos los grupos musculares.
+                  Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Plan Activo -->
     <section class="container mt-5" id="active-plan">
       <div class="card" style="background:var(--bg-card);border-radius:12px;border:1px solid var(--border-color);">
@@ -263,108 +365,6 @@
           <div class="col-md-6 text-center">
             <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80"
               alt="Comida Saludable" class="img-fluid">
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Sección de Mis Rutinas (Copiado de Dashboard) -->
-    <section id="my-routines" class="container mt-5" style="display:none;">
-      <h4 class="mb-3 text-primary">Mis Rutinas Asignadas</h4>
-      <div id="routines-list" class="row g-3">
-        <!-- Routines injected here -->
-      </div>
-    </section>
-
-    <!-- Sección de Entrenamientos -->
-    <section class="workouts">
-      <div class="container">
-        <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular
-        </h2>
-
-        <!-- Primera fila -->
-        <div class="row g-4">
-          <!-- Pecho y Tríceps -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=Pecho,Tríceps" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/IMG_1612.JPG" class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
-                <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
-                <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr" class="text-muted">Fortalece
-                  tu tren superior con
-                  ejercicios compuestos como press de banca, fondos y flexiones.
-                  Desarrolla masa muscular y potencia en tus empujes.</p>
-              </div>
-            </a>
-          </div>
-
-          <!-- Espalda y Bíceps -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=Espalda,Bíceps" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/IMG_1614.JPG" class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
-                <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
-                <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la" class="text-muted">Rutinas
-                  centradas en
-                  dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
-              </div>
-            </a>
-          </div>
-
-          <!-- Piernas y Glúteos -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=Piernas,Glúteos,Cuádriceps,Isquiosurales" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/IMG_1615.JPG" class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
-                <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
-                <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas" class="text-muted">
-                  Ejercicios de fuerza como
-                  sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        <!-- Segunda fila -->
-        <div class="row g-4 mt-4">
-          <!-- Hombros y Core -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=Hombros,Core,Abdominales" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/IMG_1616.JPG" class="img-fluid" alt="Entrenamiento de Hombros y Core">
-                <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
-                <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para" class="text-muted">
-                  Desarrolla equilibrio y fuerza
-                  funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
-              </div>
-            </a>
-          </div>
-
-          <!-- Cardio -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=Cardio" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/TAFT2576.JPEG" class="img-fluid" alt="Entrenamiento de Cardio">
-                <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
-                <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion" class="text-muted">Ejercicios de cardio
-                  como caminadora,
-                  elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
-              </div>
-            </a>
-          </div>
-
-          <!-- Full Body -->
-          <div class="col-md-4">
-            <a href="/exercises/list?muscles=all" class="text-decoration-none">
-              <div class="workout-card text-center">
-                <img src="/static/images/IMG_1617.JPG" class="img-fluid" alt="Entrenamiento Full Body">
-                <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
-                <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p" class="text-muted">Sesiones
-                  completas que activan
-                  todos los grupos musculares.
-                  Perfecto para mantenerte en forma cuando dispones de poco tiempo.</p>
-              </div>
-            </a>
           </div>
         </div>
       </div>

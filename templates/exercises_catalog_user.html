@@ -1,0 +1,495 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Ver Ejercicios{% endblock %}
+
+{% block sidebar %}
+{% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <h2 class="fw-bold text-cyber-green mb-0 text-center text-md-start"><i
+                class="fas fa-book-medical me-2"></i>Catálogo de Ejercicios</h2>
+
+        <div
+            class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-end w-100 w-md-auto">
+            <div class="input-group" style="min-width: 200px; flex-grow: 1; max-width: 100%;">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                        class="fas fa-search"></i></span>
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
+                    placeholder="Buscar ejercicio...">
+            </div>
+
+            <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
+                <!-- Scrollable filters on tiny screens -->
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterBodyPart" style="min-width: 130px;">
+                    <option value="">Grupo</option>
+                    <!-- Options loaded via JS -->
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterEquipment" style="min-width: 130px;">
+                    <option value="">Equipo</option>
+                    <option value="barbell">Barra</option>
+                    <option value="dumbbell">Mancuernas</option>
+                    <option value="machine">M&#225;quina</option>
+                    <option value="cable">Polea / Cable</option>
+                    <option value="bodyweight">Peso Corporal</option>
+                    <option value="other">Otro</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterType" style="min-width: 100px;">
+                    <option value="">Tipo</option>
+                    <option value="weight">Peso</option>
+                    <option value="time">Tiempo</option>
+                    <option value="cardio">Cardio</option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
+                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0"
+                    onclick="resetFilters()">
+                    <i class="fas fa-undo me-1"></i> <span class="d-none d-md-inline">Restablecer</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Muscle Icons Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-3 overflow-auto py-2 px-1" id="muscleIconsContainer"
+            style="scrollbar-width: none; -ms-overflow-style: none;">
+            <!-- Icons injected by JS -->
+        </div>
+    </div>
+</div>
+
+<div class="card bg-panel border-0 shadow-lg d-none d-md-block">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle" id="exercisesTable">
+                <thead>
+                    <tr class="text-cyber-blue">
+                        <th>Nombre</th>
+                        <th>Grupo Muscular</th>
+                        <th>Equipo</th>
+                        <th>Tipo</th>
+                        <th>Video</th>
+                        <th>Origen</th>
+                    </tr>
+                </thead>
+                <tbody id="exercisesList">
+                    <!-- Completado por JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile List View -->
+<div id="mobileExercisesList" class="d-md-none d-flex flex-column gap-3">
+    <!-- Populated by JS -->
+</div>
+
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green {
+        color: #00ff9d;
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .btn-cyber-primary {
+        background: linear-gradient(45deg, #00d2ff, #007bff);
+        color: white;
+        border: none;
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    }
+
+    .btn-cyber-primary:hover {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+        color: white;
+    }
+
+    .border-cyber {
+        border: 1px solid rgba(0, 210, 255, 0.3);
+    }
+
+    /* Muscle Icons */
+    .muscle-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 2px solid #444;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s;
+        flex-shrink: 0;
+        position: relative;
+        background: #222;
+    }
+
+    .muscle-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .muscle-icon.active {
+        border-color: #00ff9d;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        transform: scale(1.1);
+    }
+
+    .muscle-icon:hover {
+        border-color: #00d2ff;
+        transform: translateY(-2px);
+    }
+
+    .muscle-label {
+        font-size: 0.75rem;
+        text-align: center;
+        color: #aaa;
+        margin-top: 5px;
+        transition: color 0.3s;
+    }
+
+    .muscle-item:hover .muscle-label,
+    .muscle-icon.active+.muscle-label {
+        color: #fff;
+    }
+</style>
+
+<script>
+    let allExercises = [];
+    let bodyPartMap = {}; // Will hold key -> label
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadBodyParts().then(() => {
+            mapIconsToKeys();
+            renderMuscleIcons();
+            loadExercises();
+        });
+
+        // Listeners
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        if (mainSearch) mainSearch.addEventListener("input", filterExercises);
+        if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
+        if (filterEquipment) filterEquipment.addEventListener("change", filterExercises);
+        if (filterType) filterType.addEventListener("change", filterExercises);
+    });
+
+    async function loadBodyParts() {
+        try {
+            const res = await fetch("/workout/api/body-parts");
+            const parts = await res.json();
+            const filterSel = document.getElementById("filterBodyPart");
+
+            if (filterSel) filterSel.innerHTML = '<option value="">Grupo</option>';
+
+            parts.forEach(p => {
+                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
+
+                if (filterSel) {
+                    const opt1 = document.createElement("option");
+                    opt1.value = p.key;
+                    opt1.textContent = bodyPartMap[p.key];
+                    filterSel.appendChild(opt1);
+                }
+            });
+        } catch (e) {
+            console.error("Error loading body parts", e);
+        }
+    }
+
+    async function loadExercises() {
+        try {
+            const res = await fetch("/workout/api/exercises");
+            allExercises = await res.json();
+            filterExercises();
+        } catch (e) { console.error(e); }
+    }
+
+    function renderExercises(exercises) {
+        const tbody = document.getElementById("exercisesList");
+        const mobileContainer = document.getElementById("mobileExercisesList");
+
+        tbody.innerHTML = "";
+        mobileContainer.innerHTML = "";
+
+        const equipmentMap = {
+            'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
+            'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
+            'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
+            'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
+            'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
+            'other': 'Otro'
+        };
+
+        if (exercises.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No se encontraron ejercicios</td></tr>';
+            mobileContainer.innerHTML = '<div class="text-center text-muted py-5">No se encontraron ejercicios con los filtros seleccionados.</div>';
+            return;
+        }
+
+        exercises.forEach(ex => {
+            const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+
+            // Desktop Table Row
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>
+                <div class="fw-bold">${ex.name}</div>
+                <small class="text-secondary text-truncate d-block" style="max-width: 200px;">${ex.description || ''}</small>
+            </td>
+            <td><span class="badge bg-secondary">${translateBodyPart(ex.body_part)}</span></td>
+            <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
+            <td>${ex.type}</td>
+            <td>
+                ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
+            </td>
+            <td>${ex.is_custom ? '<span class="text-info">Custom</span>' : '<span class="text-secondary">Global</span>'}</td>
+        `;
+            tbody.appendChild(tr);
+
+            // Mobile Card
+            const card = document.createElement("div");
+            card.className = "card bg-panel border-secondary shadow-sm";
+            const videoBtn = hasVideo ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '';
+
+            card.innerHTML = `
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title text-white fw-bold mb-1 d-flex align-items-center">
+                                ${ex.name}
+                                ${videoBtn}
+                            </h5>
+                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                <span class="badge bg-secondary" style="font-size: 0.7rem;">${translateBodyPart(ex.body_part)}</span>
+                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <span class="badge ${ex.is_custom ? 'bg-info text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.65rem;">
+                            ${ex.is_custom ? 'CUSTOM' : 'GLOBAL'}
+                        </span>
+                    </div>
+                    <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripción'}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
+                            <i class="fas fa-dumbbell me-1"></i> ${ex.type}
+                        </small>
+                    </div>
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        });
+    }
+
+    function translateBodyPart(bp) {
+        return bodyPartMap[bp] || bp;
+    }
+
+    function toEmbedUrl(url) {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        return trimmed;
+    }
+
+    function openVideoModal(url) {
+        const modalEl = document.getElementById("videoModal");
+        const iframe = document.getElementById("videoFrame");
+        const embedUrl = toEmbedUrl(url);
+        iframe.src = embedUrl;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => {
+            iframe.src = "";
+        }, { once: true });
+    }
+
+    function filterExercises() {
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        const term = (mainSearch ? mainSearch.value : "").trim().toLowerCase();
+        const bodyPart = filterBodyPart ? filterBodyPart.value : "";
+        const equipment = filterEquipment ? filterEquipment.value : "";
+        const type = filterType ? filterType.value : "";
+
+        const filtered = allExercises.filter(ex => {
+            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term);
+            const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
+            const equipmentMatch = !equipment || ex.equipment === equipment;
+            const typeMatch = !type || ex.type === type;
+            return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
+        });
+
+        // Sync Icon State
+        document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+        if (bodyPart) {
+            const activeIcon = document.getElementById(`icon-${bodyPart}`);
+            if (activeIcon) activeIcon.classList.add('active');
+        }
+
+        renderExercises(filtered);
+    }
+
+    function resetFilters() {
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        if (mainSearch) mainSearch.value = "";
+        if (filterBodyPart) filterBodyPart.value = "";
+        if (filterEquipment) filterEquipment.value = "";
+        if (filterType) filterType.value = "";
+
+        // Reset icons
+        document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+
+        renderExercises(allExercises);
+    }
+
+    // Muscle Icons Data
+    const muscleIcons = [
+        { key: 'chest', img: 'pec.png', label: 'Pecho' },
+        { key: 'back', img: 'esp.png', label: 'Espalda' },
+        { key: 'shoulders', img: 'hom.png', label: 'Hombro' },
+        { key: 'biceps', img: 'bic.png', label: 'Bíceps' },
+        { key: 'triceps', img: 'tri.png', label: 'Tríceps' },
+        { key: 'quadriceps', img: 'cua.png', label: 'Cuádriceps' },
+        { key: 'hamstrings', img: 'isq.png', label: 'Femoral' },
+        { key: 'glutes', img: 'glu.png', label: 'Glúteos' },
+        { key: 'calves', img: 'gem.png', label: 'Gemelos' },
+        { key: 'abs', img: 'abs.png', label: 'Abdomen' },
+        { key: 'forearms', img: 'ant.png', label: 'Antebrazo' }
+    ];
+
+    function renderMuscleIcons() {
+        const container = document.getElementById("muscleIconsContainer");
+        if (!container) return;
+
+        container.innerHTML = muscleIcons.map(m => `
+            <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
+                <div class="muscle-icon" id="icon-${m.key}">
+                    <img src="/static/images/muscles/${m.img}" alt="${m.label}">
+                </div>
+                <!-- Show mapped label if available, otherwise default -->
+                <span class="muscle-label">${m.mappedLabel || m.label}</span>
+            </div>
+        `).join("");
+    }
+
+    function mapIconsToKeys() {
+        const select = document.getElementById("filterBodyPart");
+        if (!select) return;
+
+        // Map of Lowercase Label -> [Option Value, Original Label]
+        const labelMap = {};
+        Array.from(select.options).forEach(opt => {
+            if (opt.value) {
+                const txt = opt.text.trim().toLowerCase();
+                labelMap[txt] = { val: opt.value, label: opt.text };
+
+                // Handle plurals/singulars basic cases
+                if (txt.endsWith('s')) labelMap[txt.slice(0, -1)] = { val: opt.value, label: opt.text };
+            }
+        });
+
+        // Manual alias map for common mismatches
+        const aliasMap = {
+            'femoral': 'isquiotibiales',
+            'hombro': 'hombros',
+            'abdomen': 'abdominales',
+            'gemelo': 'gemelos',
+            'gemelos': 'pantorrilla'
+        };
+
+        muscleIcons.forEach(icon => {
+            let search = icon.label.toLowerCase();
+            let match = labelMap[search];
+
+            // Try alias
+            if (!match && aliasMap[search]) {
+                match = labelMap[aliasMap[search]];
+            }
+            // Try plural
+            if (!match && !search.endsWith('s')) {
+                match = labelMap[search + 's'];
+            }
+
+            if (match) {
+                icon.key = match.val; // OVERWRITE key with DB key
+                // icon.mappedLabel = match.label; // Optional: use DB label
+            } else {
+                console.warn(`No DB match found for icon: ${icon.label}`);
+            }
+        });
+    }
+
+    function filterByIcon(key) {
+        const filterSel = document.getElementById("filterBodyPart");
+        if (!filterSel) return;
+
+        if (filterSel.value === key) {
+            filterSel.value = "";
+        } else {
+            filterSel.value = key;
+        }
+
+        // Sync UI
+        document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+        if (filterSel.value === key) {
+            const activeIcon = document.getElementById(`icon-${key}`);
+            if (activeIcon) activeIcon.classList.add('active');
+        }
+
+        filterExercises();
+    }
+</script>
+{% endblock %}

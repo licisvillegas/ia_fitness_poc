@@ -17,8 +17,6 @@ print("LOADING WORKOUT_PY MODULE...", flush=True)
 def get_db():
     return extensions.db
 
-# ...
-
 @workout_bp.route("/dashboard")
 def dashboard():
     """Render the Workout Dashboard."""
@@ -48,6 +46,28 @@ def dashboard():
                            current_user_id=user_id, 
                            is_admin=is_admin, 
                            all_users=all_users)
+
+@workout_bp.route("/exercises")
+def exercises_page():
+    """Catalog of exercises for users (read-only)."""
+    return render_template("exercises_catalog_user.html")
+
+@workout_bp.get("/api/exercises")
+def list_public_exercises():
+    """Listado público de ejercicios para el catálogo de usuario."""
+    db = get_db()
+    if db is None: return jsonify({"error": "DB not ready"}), 503
+    try:
+        # Fetch all exercises
+        # Optionally filter or hide internal fields?
+        # For now, return same structure as admin but read-only usage
+        docs = list(db.exercises.find({}))
+        for d in docs:
+            d["_id"] = str(d["_id"])
+        return jsonify(docs), 200
+    except Exception as e:
+        logger.error(f"Error listing public exercises: {e}")
+        return jsonify({"error": "Error interno"}), 500
 
 @workout_bp.get("/api/exercises/filter")
 def api_filter_exercises():

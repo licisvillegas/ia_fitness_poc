@@ -12,6 +12,7 @@ class Config:
     """Configuración base de la aplicación"""
     
     # Flask
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
     DEBUG = os.getenv("FLASK_DEBUG", "True").lower() == "true"
     

@@ -25,6 +25,8 @@ def dashboard_page():
 def nutrition_page():
     return render_template("nutrition.html")
 
+
+
 @user_bp.route("/about")
 def about_page():
     return render_template("about.html")
@@ -219,6 +221,7 @@ def get_progress(user_id):
     except Exception as e:
         logger.error(f"Error al obtener progreso de {user_id}: {str(e)}", exc_info=True)
         return jsonify({"error": "Error interno al obtener progreso"}), 500
+
 @user_bp.get("/api/user/my_profile")
 def get_my_profile_aggregated():
     """Endpoint agregado para precargar formularios del usuario."""

@@ -74,6 +74,13 @@
             </a>
         </li>
         <li>
+            <a href="/workout/exercises" class="nav-link {% if request.path == '/workout/exercises' %}active{% endif %}"
+                title="Ejercicios">
+                <i class="fas fa-book me-2" style="width: 24px; text-align: center;"></i>
+                <span>Ejercicios</span>
+            </a>
+        </li>
+        <li>
             <a href="/ai/body_assessment/user"
                 class="nav-link {% if request.path == '/ai/body_assessment/user' %}active{% endif %}"
                 title="Evaluación Corporal">
@@ -117,6 +124,8 @@
                 <span>Nutrición</span>
             </a>
         </li>
+
+
         <li>
             <a href="/about" class="nav-link {% if request.path == '/about' %}active{% endif %}" title="Acerca de">
                 <i class="fas fa-info-circle me-2" style="width: 24px; text-align: center;"></i>

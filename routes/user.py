@@ -39,6 +39,10 @@ def plan_page():
 def exercises_list_page():
     return render_template("exercises_list.html")
 
+@user_bp.route("/glossary")
+def glossary_page():
+    return render_template("glossary.html")
+
 @user_bp.route("/profile")
 def profile_page():
     user_id = request.cookies.get("user_session")

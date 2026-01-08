@@ -420,6 +420,51 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Modal for Fullscreen Image -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-white" id="imageModalLabel"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                    <img src="" id="modalImage" class="img-fluid"
+                        style="max-height: 90vh; max-width: 90vw; object-fit: contain;" alt="Fullscreen Image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Select both muscle cards and reference cards
+            const clickableCards = document.querySelectorAll('.muscle-card, .ref-card');
+            const modalElement = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('imageModalLabel');
+            const modal = new bootstrap.Modal(modalElement);
+
+            clickableCards.forEach(card => {
+                card.style.cursor = 'pointer'; // Ensure cursor indicates clickability
+                card.addEventListener('click', function () {
+                    const img = this.querySelector('img');
+                    // title might be in .muscle-name or .ref-caption
+                    const titleEl = this.querySelector('.muscle-name') || this.querySelector('.ref-caption');
+                    const name = titleEl ? titleEl.textContent : '';
+
+                    if (img) {
+                        modalImage.src = img.src;
+                        modalImage.alt = img.alt;
+                        modalTitle.textContent = name;
+                        modal.show();
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

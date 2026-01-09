@@ -191,6 +191,51 @@
       background-color: #39d353;
       box-shadow: 0 0 5px #39d353;
     }
+
+    /* New Routine Card Styles */
+    .text-cyber-green {
+      color: #00ff9d;
+      text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+    }
+
+    .text-cyber-blue {
+      color: #00d2ff;
+    }
+
+    .text-cyber-orange {
+      color: #ff9d00;
+    }
+
+    .routine-preview-card {
+      background: #141a26;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .routine-preview-scroll {
+      max-height: 450px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .routine-preview-group {
+      background: #1b2434;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .routine-preview-item {
+      background: #1a2230;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .border-cyber {
+      border: 1px solid rgba(0, 210, 255, 0.3);
+    }
   </style>
 </head>
 
@@ -390,9 +435,9 @@
       </div>
     </section>
 
-    <!-- GrÃ¡ficos -->
+    <!-- Gráficos -->
     <section id="charts" class="container mt-5">
-      <!-- 4 grÃ¡ficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
+      <!-- 4 gráficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
       <div class="row g-4">
         <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas>
           <div class="chart-overlay" id="msg-weight">Sin datos disponibles</div>
@@ -409,311 +454,550 @@
       </div>
     </section>
 
-    <footer>
-      <p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
-      <small class="text-secondary d-block">v. beta 1.0.4</small>
-    </footer>
+  </div>
+  </section>
 
-    <script>
-      // JS del dashboard: maneja carga de progreso, actualizaciÃ³n de tarjetas y grÃ¡ficos
-      // Endpoint: GET /get_progress/{userId}
-      // Respuesta: Array de { date, weight_kg, body_fat, performance, nutrition_adherence }
-      const btn = document.getElementById("loadDataBtn");
-      const userIdInput = document.getElementById("userIdInput");
-      const message = document.getElementById("message");
-      const loading = document.getElementById("loading");
-      let charts = [];
+  <!-- Modals for Routine Detail and Video -->
+  <div class="modal fade" id="routineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-panel text-white border-cyber">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title text-cyber-green" id="routineModalTitle">Rutina</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="routineModalBody"></div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      async function loadProgress(userId) {
-        if (!userId) return;
-        message.textContent = "";
-        loading.style.display = "block";
+  <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-panel text-white border-cyber">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title text-cyber-green">Video</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="ratio ratio-16x9">
+            <iframe id="videoFrame" src="" title="Video ejercicio"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // PeticiÃ³n al backend para obtener el historial de progreso del usuario
-        const res = await fetch(`/get_progress/${userId}`);
+  <footer>
+    <p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
+    <small class="text-secondary d-block">v. beta 1.0.4</small>
+  </footer>
+
+  <script>
+    // JS del dashboard: maneja carga de progreso, actualizaciÃ³n de tarjetas y grÃ¡ficos
+    // Endpoint: GET /get_progress/{userId}
+    // Respuesta: Array de { date, weight_kg, body_fat, performance, nutrition_adherence }
+    const btn = document.getElementById("loadDataBtn");
+    const userIdInput = document.getElementById("userIdInput");
+    const message = document.getElementById("message");
+    const loading = document.getElementById("loading");
+    let charts = [];
+    let routinesMap = new Map();
+    let bodyPartMap = {};
+    let exerciseLookup = {};
+
+    async function loadBodyParts() {
+      try {
+        const res = await fetch("/workout/api/body-parts");
+        const parts = await res.json();
+        parts.forEach(p => { bodyPartMap[p.key] = p.label_es || p.label_en || p.key; });
+      } catch (e) { console.error("Error loading body parts", e); }
+    }
+
+    async function loadExercises() {
+      try {
+        const res = await fetch("/workout/api/exercises");
         const data = await res.json();
-        loading.style.display = "none";
+        if (Array.isArray(data)) {
+          exerciseLookup = data.reduce((acc, ex) => {
+            if (ex && ex._id) acc[ex._id] = ex;
+            return acc;
+          }, {});
+        }
+      } catch (e) { console.error("Error loading exercises", e); }
+    }
 
-        // Oculta overlays de "Sin datos" antes de validar la respuesta
-        const overlays = ["weight", "fat", "performance", "nutrition"];
-        overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "hidden");
+    function translateDay(eng) {
+      const map = { "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo" };
+      return map[eng] || eng;
+    }
 
-        // Manejo de error o falta de datos: limpiar UI y mostrar overlays
-        if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
-          message.textContent = data.error || "â No se encontraron registros de progreso.";
-          clearDashboard();
-          overlays.forEach(id => document.getElementById(`msg-${id}`).style.visibility = "visible");
+    function translateBodyPart(bp) { return bodyPartMap[bp] || bp; }
+
+    function getRoutineBodyPartsLabel(routine) {
+      const parts = Array.isArray(routine.routine_body_parts) ? routine.routine_body_parts : [];
+      if (parts.length === 0) return "N/A";
+      return parts.map(p => translateBodyPart(p)).join(", ");
+    }
+
+    async function loadProgress(userId) {
+      if (!userId) return;
+      message.textContent = "";
+      loading.style.display = "block";
+
+      // PeticiÃ³n al backend para obtener el historial de progreso del usuario
+      const res = await fetch(`/get_progress/${userId}`);
+      const data = await res.json();
+      loading.style.display = "none";
+
+      // Oculta overlays de "Sin datos" antes de validar la respuesta
+      const overlays = ["weight", "fat", "performance", "nutrition"];
+      overlays.forEach(id => {
+        const el = document.getElementById(`msg-${id}`);
+        if (el) el.style.visibility = "hidden";
+      });
+
+      // Manejo de error o falta de datos: limpiar UI y mostrar overlays
+      if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
+        message.textContent = data.error || "â No se encontraron registros de progreso.";
+        clearDashboard();
+        overlays.forEach(id => {
+          const el = document.getElementById(`msg-${id}`);
+          if (el) el.style.visibility = "visible";
+        });
+        return;
+      }
+
+      message.textContent = t('data_loaded');
+      // Guardar el Ãºltimo usuario consultado en localStorage para precargarlo la prÃ³xima vez
+      localStorage.setItem("ai_fitness_uid", userId);
+
+      const last = data[data.length - 1];
+      document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
+      document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
+      // document.getElementById("stat-performance").innerText = `${last.performance}%`;
+      // document.getElementById("bar-performance").style.width = `${last.performance}%`;
+      // document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
+      // document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
+
+      // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS (Override Weight/Fat) ---
+      try {
+        const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          if (mData.weight_kg) {
+            document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
+          }
+          if (mData.body_fat) {
+            document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
+          }
+          if (mData.tmb) {
+            document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
+          }
+          if (mData.tdee) {
+            document.getElementById("stat-diet").innerText = `${mData.tdee}`;
+          }
+        }
+      } catch (e) { console.error("Error fetching latest metrics", e); }
+
+      // Limpiar grÃ¡ficos previos antes de volver a dibujar
+      charts.forEach(c => c.destroy());
+      charts = [];
+
+      // Preparar series para Chart.js
+      const labels = data.map(d => d.date);
+      const weights = data.map(d => d.weight_kg);
+      const fats = data.map(d => d.body_fat);
+      const performance = data.map(d => d.performance);
+      const nutrition = data.map(d => d.nutrition_adherence);
+
+      // Paleta y opciones de tema para Chart.js
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const textColor = isLight ? '#374151' : '#e5e7eb';
+      const gridColor = isLight ? '#e5e7eb' : '#374151';
+
+      const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
+      const opts = {
+        plugins: { legend: { labels: { color: textColor } } },
+        scales: {
+          x: { ticks: { color: textColor }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } }
+        }
+      };
+
+      // Gráfico de peso (línea)
+      if (document.getElementById("weightChart")) {
+        charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+      }
+      // Gráfico de grasa corporal (línea)
+      if (document.getElementById("fatChart")) {
+        charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+      }
+      // Gráfico de rendimiento (barras)
+      if (document.getElementById("performanceChart")) {
+        charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
+      }
+      // Gráfico de TMB (barras)
+      if (document.getElementById("nutritionChart")) {
+        charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+      }
+
+      // Expose a helper to update chart labels when language changes
+      window.updateChartLabels = function () {
+        try {
+          // Update dataset labels
+          if (!charts) return;
+          if (charts[0] && charts[0].data && charts[0].data.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
+          if (charts[1] && charts[1].data && charts[1].data.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
+          if (charts[2] && charts[2].data && charts[2].data.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
+          if (charts[3] && charts[3].data && charts[3].data.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
+          charts.forEach(c => c.update());
+        } catch (e) {/* ignore */ }
+      };
+    }
+
+    // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
+    function clearDashboard() {
+      document.getElementById("stat-weight").innerText = "?";
+      document.getElementById("stat-fat").innerText = "?";
+      document.getElementById("stat-tmb").innerText = "--";
+      document.getElementById("stat-diet").innerText = "--";
+      charts.forEach(c => c.destroy());
+      charts = [];
+    }
+
+    // Click: valida el input y dispara la carga de datos
+    btn.addEventListener("click", () => {
+      const typed = userIdInput.value.trim();
+      let targetId = typed;
+      try {
+        const raw = localStorage.getItem('ai_fitness_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          const loggedId = String(u.user_id || u._id || '').trim();
+          const uname = (u.username || '').trim();
+          const email = (u.email || '').trim().toLowerCase();
+          // If the user typed their username/email (or left empty), use the logged-in id
+          if (!typed || typed === uname || typed.toLowerCase() === email) {
+            targetId = loggedId || typed;
+          }
+        }
+      } catch (e) { /* ignore */ }
+      if (!targetId) { message.textContent = "â ï¸ Ingresa un ID de usuario."; return; }
+      loadProgress(targetId);
+      loadActivePlanIndicator(targetId);
+      loadRoutines(targetId);
+      loadCreatedRoutines();
+      loadHeatmap(targetId);
+    });
+
+    const countExercises = (routine) => {
+      const items = Array.isArray(routine.items) ? routine.items : [];
+      const hasInlineGroups = items.some(item => Array.isArray(item.items));
+      if (hasInlineGroups) {
+        let total = 0;
+        items.forEach(item => {
+          if (item.item_type === "group" || Array.isArray(item.items)) {
+            const groupItems = Array.isArray(item.items) ? item.items : [];
+            total += groupItems.filter(entry => entry && entry.item_type !== "rest").length;
+          } else if (item.item_type === "exercise") {
+            total += 1;
+          }
+        });
+        return total;
+      }
+      return items.filter(item => item && item.item_type === "exercise").length;
+    };
+
+    // --- New Function: Load Routines ---
+    async function loadRoutines(userId) {
+      const listEl = document.getElementById('routines-list');
+      const sectionEl = document.getElementById('my-routines');
+
+      if (!listEl || !sectionEl) return;
+
+      // Clear current
+      listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+      sectionEl.style.display = 'block';
+
+      try {
+        const res = await fetch(`/workout/api/routines?user_id=${encodeURIComponent(userId)}`);
+        const routines = await res.json();
+        const assignedList = Array.isArray(routines) ? routines : [];
+
+        listEl.innerHTML = '';
+
+        if (assignedList.length === 0) {
+          listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No hay rutinas asignadas para este usuario.</div>`;
           return;
         }
 
-        message.textContent = t('data_loaded');
-        // Guardar el Ãºltimo usuario consultado en localStorage para precargarlo la prÃ³xima vez
-        localStorage.setItem("ai_fitness_uid", userId);
+        // SORTING: Day of week (Mon->Sun)
+        const dayOrder = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 7 };
+        assignedList.sort((a, b) => {
+          const da = dayOrder[a.routine_day] || 99;
+          const db = dayOrder[b.routine_day] || 99;
+          if (da !== db) return da - db;
+          return (a.name || "").localeCompare(b.name || "");
+        });
 
-        const last = data[data.length - 1];
-        document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
-        document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
-        // document.getElementById("stat-performance").innerText = `${last.performance}%`;
-        // document.getElementById("bar-performance").style.width = `${last.performance}%`;
-        // document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
-        // document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
+        assignedList.forEach(r => {
+          if (r && r._id) routinesMap.set(r._id, r);
+          const cardCol = document.createElement('div');
+          cardCol.className = 'col-md-6 col-lg-4';
 
-        // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS (Override Weight/Fat) ---
-        try {
-          const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
-          if (mRes.ok) {
-            const mData = await mRes.json();
-            if (mData.weight_kg) {
-              document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
-            }
-            if (mData.body_fat) {
-              document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
-            }
-            if (mData.tmb) {
-              document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
-            }
-            if (mData.tdee) {
-              document.getElementById("stat-diet").innerText = `${mData.tdee}`;
-            }
-          }
-        } catch (e) { console.error("Error fetching latest metrics", e); }
+          const name = r.name || 'Rutina sin nombre';
+          const exCount = countExercises(r);
+          const id = r._id;
+          const partsLabel = getRoutineBodyPartsLabel(r);
+          const dayLabel = r.routine_day ? translateDay(r.routine_day) : "Sin día";
+          const validity = r.assigned_expires_at ? formatDate(r.assigned_expires_at) : null;
 
-        // Limpiar grÃ¡ficos previos antes de volver a dibujar
-        charts.forEach(c => c.destroy());
-        charts = [];
-
-        // Preparar series para Chart.js
-        const labels = data.map(d => d.date);
-        const weights = data.map(d => d.weight_kg);
-        const fats = data.map(d => d.body_fat);
-        const performance = data.map(d => d.performance);
-        const nutrition = data.map(d => d.nutrition_adherence);
-
-        // Paleta y opciones de tema para Chart.js
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const textColor = isLight ? '#374151' : '#e5e7eb';
-        const gridColor = isLight ? '#e5e7eb' : '#374151';
-
-        const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
-        const opts = {
-          plugins: { legend: { labels: { color: textColor } } },
-          scales: {
-            x: { ticks: { color: textColor }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { color: gridColor } }
-          }
-        };
-
-        // Gráfico de peso (línea)
-        charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        // Gráfico de grasa corporal (línea)
-        charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        // Gráfico de rendimiento (barras)
-        charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
-        // Gráfico de TMB (barras)
-        charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
-
-        // Expose a helper to update chart labels when language changes
-        window.updateChartLabels = function () {
-          try {
-            // Update dataset labels
-            if (!charts) return;
-            if (charts[0] && charts[0].data && charts[0].data.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
-            if (charts[1] && charts[1].data && charts[1].data.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
-            if (charts[2] && charts[2].data && charts[2].data.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
-            if (charts[3] && charts[3].data && charts[3].data.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
-            charts.forEach(c => c.update());
-          } catch (e) {/* ignore */ }
-        };
-      }
-
-      // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
-      function clearDashboard() {
-        document.getElementById("stat-weight").innerText = "?";
-        document.getElementById("stat-fat").innerText = "?";
-        document.getElementById("stat-tmb").innerText = "--";
-        document.getElementById("stat-diet").innerText = "--";
-        charts.forEach(c => c.destroy());
-        charts = [];
-      }
-
-      // Click: valida el input y dispara la carga de datos
-      btn.addEventListener("click", () => {
-        const typed = userIdInput.value.trim();
-        let targetId = typed;
-        try {
-          const raw = localStorage.getItem('ai_fitness_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            const loggedId = String(u.user_id || u._id || '').trim();
-            const uname = (u.username || '').trim();
-            const email = (u.email || '').trim().toLowerCase();
-            // If the user typed their username/email (or left empty), use the logged-in id
-            if (!typed || typed === uname || typed.toLowerCase() === email) {
-              targetId = loggedId || typed;
-            }
-          }
-        } catch (e) { /* ignore */ }
-        if (!targetId) { message.textContent = "â ï¸ Ingresa un ID de usuario."; return; }
-        loadProgress(targetId);
-        loadActivePlanIndicator(targetId);
-        loadRoutines(targetId);
-        loadCreatedRoutines();
-        loadHeatmap(targetId);
-      });
-
-      const countExercises = (routine) => {
-        const items = Array.isArray(routine.items) ? routine.items : [];
-        const hasInlineGroups = items.some(item => Array.isArray(item.items));
-        if (hasInlineGroups) {
-          let total = 0;
-          items.forEach(item => {
-            if (item.item_type === "group" || Array.isArray(item.items)) {
-              const groupItems = Array.isArray(item.items) ? item.items : [];
-              total += groupItems.filter(entry => entry && entry.item_type !== "rest").length;
-            } else if (item.item_type === "exercise") {
-              total += 1;
-            }
-          });
-          return total;
-        }
-        return items.filter(item => item && item.item_type === "exercise").length;
-      };
-
-      // --- New Function: Load Routines ---
-      async function loadRoutines(userId) {
-        const listEl = document.getElementById('routines-list');
-        const sectionEl = document.getElementById('my-routines');
-
-        if (!listEl || !sectionEl) return;
-
-        // Clear current
-        listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
-        sectionEl.style.display = 'block';
-
-        try {
-          const res = await fetch(`/workout/api/routines?user_id=${encodeURIComponent(userId)}`);
-          const routines = await res.json();
-
-          listEl.innerHTML = '';
-
-          if (!routines || routines.length === 0) {
-            listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No hay rutinas asignadas para este usuario.</div>`;
-            return;
-          }
-
-          routines.forEach(r => {
-            const cardCol = document.createElement('div');
-            cardCol.className = 'col-md-6 col-lg-4';
-
-            // Safe checks
-            const name = r.name || 'Rutina sin nombre';
-            const exCount = (r.items ? r.items.length : 0);
-            const id = r._id;
-
-            cardCol.innerHTML = `
-                    <div class="card h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary mb-2 text-truncate" title="${name}">${name}</h5>
-                            <p class="card-text text-muted small mb-3">
-                                <i class="fas fa-dumbbell me-1"></i> ${exCount} ejercicios
-                            </p>
-                            <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-sm btn-outline-primary w-100">
-                                <i class="fas fa-play me-1"></i> Iniciar
-                            </a>
+          cardCol.innerHTML = `
+                    <div class="card h-100 bg-panel border-secondary shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                                    <div class="d-flex flex-wrap gap-1 mb-1">
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
+                                        <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>
+                                    </div>
+                                </div>
+                                <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
+                                    ${exCount} ej.
+                                </span>
+                            </div>
+                            <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
+                            <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                                <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">
+                                    ${validity ? `Vence: ${validity}` : "Vence: -"}
+                                </small>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-outline-primary" title="Iniciar">
+                                        <i class="fas fa-play"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                   `;
-            listEl.appendChild(cardCol);
-          });
+          listEl.appendChild(cardCol);
+        });
 
-        } catch (e) {
-          console.error(e);
-          listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas.</div>`;
+      } catch (e) {
+        console.error(e);
+        listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas.</div>`;
+      }
+    }
+
+    async function loadCreatedRoutines() {
+      const listEl = document.getElementById('created-routines-list');
+      const sectionEl = document.getElementById('my-created-routines');
+      if (!listEl || !sectionEl) return;
+
+      listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+      sectionEl.style.display = 'block';
+
+      try {
+        const res = await fetch('/workout/api/my-routines');
+        const routines = await res.json();
+        listEl.innerHTML = '';
+
+        if (!routines || routines.length === 0) {
+          listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas.</div>`;
+          return;
         }
+
+        routines.forEach(r => {
+          if (r && r._id) routinesMap.set(r._id, r);
+          const cardCol = document.createElement('div');
+          cardCol.className = 'col-md-6 col-lg-4';
+          const name = r.name || 'Rutina sin nombre';
+          const exCount = countExercises(r);
+          const id = r._id;
+          const partsLabel = getRoutineBodyPartsLabel(r);
+          const dayLabel = r.routine_day ? translateDay(r.routine_day) : null;
+
+          cardCol.innerHTML = `
+                      <div class="card h-100 bg-panel border-secondary shadow-sm">
+                          <div class="card-body p-3">
+                              <div class="d-flex justify-content-between align-items-start mb-2">
+                                  <div class="flex-grow-1">
+                                      <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                                      <div class="d-flex flex-wrap gap-1 mb-1">
+                                          <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
+                                          ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
+                                      </div>
+                                  </div>
+                                  <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
+                                      ${exCount} ej.
+                                  </span>
+                              </div>
+                              <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
+                              <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                                  <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">
+                                      Mí rutina
+                                  </small>
+                                  <div class="btn-group btn-group-sm">
+                                      <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
+                                          <i class="fas fa-eye"></i>
+                                      </button>
+                                      <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-outline-primary" title="Iniciar">
+                                          <i class="fas fa-play"></i>
+                                      </a>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                    `;
+          listEl.appendChild(cardCol);
+        });
+      } catch (e) {
+        console.error(e);
+        listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>`;
       }
+    }
 
-      async function loadCreatedRoutines() {
-        const listEl = document.getElementById('created-routines-list');
-        const sectionEl = document.getElementById('my-created-routines');
-        if (!listEl || !sectionEl) return;
+    // --- New Function: Load Heatmap ---
+    async function loadHeatmap(userId) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}&timezone=${encodeURIComponent(tz)}`);
+        const hMap = await hRes.json();
+        const grid = document.getElementById("heatmapGrid");
 
-        listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
-        sectionEl.style.display = 'block';
+        // Generate last 60 days
+        grid.innerHTML = "";
+        grid.style.gridTemplateColumns = `repeat(10, 1fr)`;
 
-        try {
-          const res = await fetch('/workout/api/my-routines');
-          const routines = await res.json();
-          listEl.innerHTML = '';
+        const today = new Date();
+        for (let i = 59; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(today.getDate() - i);
+          // Use local date string (YYYY-MM-DD)
+          const key = d.toLocaleDateString('en-CA');
+          const count = hMap[key] || 0;
 
-          if (!routines || routines.length === 0) {
-            listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas.</div>`;
-            return;
-          }
+          const cell = document.createElement("div");
+          cell.className = `heatmap-cell level-${Math.min(count * 2, 4)}`;
+          if (count === 0) cell.className = "heatmap-cell";
+          else if (count >= 2) cell.className = "heatmap-cell level-4";
+          else cell.className = "heatmap-cell level-2";
 
-          routines.forEach(r => {
-            const cardCol = document.createElement('div');
-            cardCol.className = 'col-md-6 col-lg-4';
-            const name = r.name || 'Rutina sin nombre';
-            const exCount = countExercises(r);
-            const id = r._id;
-            cardCol.innerHTML = `
-              <div class="card h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
-                <div class="card-body">
-                  <h5 class="card-title text-primary mb-2 text-truncate" title="${name}">${name}</h5>
-                  <p class="card-text text-muted small mb-3">
-                    <i class="fas fa-dumbbell me-1"></i> ${exCount} ejercicios
-                  </p>
-                  <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="fas fa-play me-1"></i> Iniciar
-                  </a>
-                </div>
-              </div>
-            `;
-            listEl.appendChild(cardCol);
-          });
-        } catch (e) {
-          console.error(e);
-          listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>`;
+          cell.title = `${key}: ${count} workouts`;
+          grid.appendChild(cell);
         }
-      }
+      } catch (e) { console.error("Heatmap error", e); }
+    }
 
-      // --- New Function: Load Heatmap ---
-      async function loadHeatmap(userId) {
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}&timezone=${encodeURIComponent(tz)}`);
-          const hMap = await hRes.json();
-          const grid = document.getElementById("heatmapGrid");
-
-          // Generate last 60 days
-          grid.innerHTML = "";
-          grid.style.gridTemplateColumns = `repeat(10, 1fr)`;
-
-          const today = new Date();
-          for (let i = 59; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(today.getDate() - i);
-            // Use local date string (YYYY-MM-DD)
-            const key = d.toLocaleDateString('en-CA');
-            const count = hMap[key] || 0;
-
-            const cell = document.createElement("div");
-            cell.className = `heatmap-cell level-${Math.min(count * 2, 4)}`;
-            if (count === 0) cell.className = "heatmap-cell";
-            else if (count >= 2) cell.className = "heatmap-cell level-4";
-            else cell.className = "heatmap-cell level-2";
-
-            cell.title = `${key}: ${count} workouts`;
-            grid.appendChild(cell);
+    // BotÃ³n: solicitar ajustes AI y mostrar resumen en el mensaje
+    const aiBtn = document.getElementById("aiSuggestBtn");
+    aiBtn.addEventListener("click", async () => {
+      const typed = userIdInput.value.trim();
+      let targetId = typed;
+      try {
+        const raw = localStorage.getItem('ai_fitness_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          const loggedId = String(u.user_id || u._id || '').trim();
+          const uname = (u.username || '').trim();
+          const email = (u.email || '').trim().toLowerCase();
+          if (!typed || typed === uname || typed.toLowerCase() === email) {
+            targetId = loggedId || typed;
           }
-        } catch (e) { console.error("Heatmap error", e); }
-      }
+        }
+      } catch (e) { /* ignore */ }
+      if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
+      return loadAiAdjustments(targetId);
+    });
 
-      // BotÃ³n: solicitar ajustes AI y mostrar resumen en el mensaje
-      const aiBtn = document.getElementById("aiSuggestBtn");
-      aiBtn.addEventListener("click", async () => {
-        const typed = userIdInput.value.trim();
-        let targetId = typed;
+    // Click: cargar histórico del agente
+    const aiHistoryBtn = document.getElementById('aiHistoryBtn');
+    aiHistoryBtn.addEventListener('click', async () => {
+      const typed = userIdInput.value.trim();
+      let targetId = typed;
+      try {
+        const raw = localStorage.getItem('ai_fitness_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          const loggedId = String(u.user_id || u._id || '').trim();
+          const uname = (u.username || '').trim();
+          const email = (u.email || '').trim().toLowerCase();
+          if (!typed || typed === uname || typed.toLowerCase() === email) {
+            targetId = loggedId || typed;
+          }
+        }
+      } catch (e) { /* ignore */ }
+      if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
+      return loadAiHistory(targetId);
+    });
+
+    // Al cargar la pÃ¡gina, recupera el Ãºltimo usuario desde localStorage
+    async function loadAiAdjustments(userId) {
+      const section = document.getElementById('ai-section');
+      const loadEl = document.getElementById('ai-loading');
+      const errEl = document.getElementById('ai-error');
+      const content = document.getElementById('ai-content');
+      const kcalEl = document.getElementById('ai-kcal');
+      const macrosEl = document.getElementById('ai-macros');
+      const trainEl = document.getElementById('ai-train');
+      const reasonEl = document.getElementById('ai-reason');
+      const nextEl = document.getElementById('ai-next');
+      const btnSave = document.getElementById('btnSaveAgentPlan');
+      const saveMsg = document.getElementById('ai-save-msg');
+
+      if (section) section.style.display = 'block';
+      if (loadEl) loadEl.style.display = 'block';
+      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+      if (content) content.style.display = 'none';
+      if (btnSave) { btnSave.style.display = 'none'; btnSave.dataset.userId = userId; }
+      if (saveMsg) { saveMsg.textContent = ''; }
+      try {
+        const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+          throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        const out = data.output || {};
+        const adj = out.ajustes || {};
+        const food = adj.plan_alimentacion || {};
+        const macros = food.macros || {};
+        const train = adj.plan_entrenamiento || {};
+
+        if (kcalEl) kcalEl.textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
+        if (macrosEl) macrosEl.textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
+        if (trainEl) trainEl.textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
+        if (reasonEl) reasonEl.textContent = out.razonamiento_resumido || '';
+        if (nextEl) nextEl.textContent = (out.proxima_revision_dias != null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
+
+        if (content) content.style.display = 'block';
+        if (btnSave) btnSave.style.display = 'inline-block';
+      } catch (e) {
+        if (errEl) { errEl.textContent = `No se pudieron obtener los ajustes: ${e.message}`; errEl.style.display = 'block'; }
+      } finally {
+        if (loadEl) loadEl.style.display = 'none';
+      }
+    }
+
+    // Guardar y activar plan desde el último ajuste AI
+    (function () {
+      const btn = document.getElementById('btnSaveAgentPlan');
+      const msg = document.getElementById('ai-save-msg');
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        const input = document.getElementById('userIdInput');
+        let targetId = btn.dataset.userId || (input ? input.value.trim() : '');
         try {
           const raw = localStorage.getItem('ai_fitness_user');
           if (raw) {
@@ -721,272 +1005,401 @@
             const loggedId = String(u.user_id || u._id || '').trim();
             const uname = (u.username || '').trim();
             const email = (u.email || '').trim().toLowerCase();
-            if (!typed || typed === uname || typed.toLowerCase() === email) {
-              targetId = loggedId || typed;
+            if (!targetId || targetId === uname || targetId.toLowerCase() === email) {
+              targetId = loggedId || targetId;
             }
           }
         } catch (e) { /* ignore */ }
-        if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
-        return loadAiAdjustments(targetId);
-      });
-
-      // Click: cargar histórico del agente
-      const aiHistoryBtn = document.getElementById('aiHistoryBtn');
-      aiHistoryBtn.addEventListener('click', async () => {
-        const typed = userIdInput.value.trim();
-        let targetId = typed;
+        if (!targetId) { if (msg) msg.textContent = 'Ingresa un ID de usuario.'; return; }
+        if (msg) msg.textContent = 'Guardando y activando plan...';
         try {
-          const raw = localStorage.getItem('ai_fitness_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            const loggedId = String(u.user_id || u._id || '').trim();
-            const uname = (u.username || '').trim();
-            const email = (u.email || '').trim().toLowerCase();
-            if (!typed || typed === uname || typed.toLowerCase() === email) {
-              targetId = loggedId || typed;
-            }
-          }
-        } catch (e) { /* ignore */ }
-        if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
-        return loadAiHistory(targetId);
-      });
-
-      // Al cargar la pÃ¡gina, recupera el Ãºltimo usuario desde localStorage
-      async function loadAiAdjustments(userId) {
-        const section = document.getElementById('ai-section');
-        const loadEl = document.getElementById('ai-loading');
-        const errEl = document.getElementById('ai-error');
-        const content = document.getElementById('ai-content');
-        const kcalEl = document.getElementById('ai-kcal');
-        const macrosEl = document.getElementById('ai-macros');
-        const trainEl = document.getElementById('ai-train');
-        const reasonEl = document.getElementById('ai-reason');
-        const nextEl = document.getElementById('ai-next');
-        const btnSave = document.getElementById('btnSaveAgentPlan');
-        const saveMsg = document.getElementById('ai-save-msg');
-
-        if (section) section.style.display = 'block';
-        if (loadEl) loadEl.style.display = 'block';
-        if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-        if (content) content.style.display = 'none';
-        if (btnSave) { btnSave.style.display = 'none'; btnSave.dataset.userId = userId; }
-        if (saveMsg) { saveMsg.textContent = ''; }
-        try {
-          const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
+          const resp = await fetch(`/ai/adjustments/${encodeURIComponent(targetId)}/apply_latest`, { method: 'POST' });
           if (!resp.ok) {
             const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
             throw new Error(err.error || `HTTP ${resp.status}`);
           }
           const data = await resp.json();
-          const out = data.output || {};
-          const adj = out.ajustes || {};
-          const food = adj.plan_alimentacion || {};
-          const macros = food.macros || {};
-          const train = adj.plan_entrenamiento || {};
+          if (msg) msg.textContent = 'Plan guardado y activado';
+          btn.style.display = 'none';
+          try { loadActivePlanIndicator(targetId); } catch (_) { }
+        } catch (e) { if (msg) msg.textContent = `No se pudo guardar: ${e.message}`; }
+      });
+    })();
 
-          if (kcalEl) kcalEl.textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
-          if (macrosEl) macrosEl.textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-          if (trainEl) trainEl.textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
-          if (reasonEl) reasonEl.textContent = out.razonamiento_resumido || '';
-          if (nextEl) nextEl.textContent = (out.proxima_revision_dias != null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
-
-          if (content) content.style.display = 'block';
-          if (btnSave) btnSave.style.display = 'inline-block';
-        } catch (e) {
-          if (errEl) { errEl.textContent = `No se pudieron obtener los ajustes: ${e.message}`; errEl.style.display = 'block'; }
-        } finally {
-          if (loadEl) loadEl.style.display = 'none';
+    async function loadAiHistory(userId) {
+      const section = document.getElementById('ai-section');
+      const loadEl = document.getElementById('ai-history-loading');
+      const errEl = document.getElementById('ai-history-error');
+      const listEl = document.getElementById('ai-history-list');
+      if (section) section.style.display = 'block';
+      if (loadEl) loadEl.style.display = 'block';
+      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+      if (listEl) listEl.innerHTML = '';
+      try {
+        const resp = await fetch(`/ai/adjustments/${encodeURIComponent(userId)}?limit=10`);
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+          throw new Error(err.error || `HTTP ${resp.status}`);
         }
-      }
+        const rows = await resp.json();
+        if (!Array.isArray(rows)) throw new Error('Formato inválido');
+        const frag = document.createDocumentFragment();
+        rows.forEach((r, idx) => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item list-group-item-theme d-flex justify-content-between align-items-start';
+          // li.style.background = '#111827'; li.style.color = '#e5e7eb'; // REMOVED hardcoded styles
+          const title = document.createElement('div');
+          const ts = (r.created_at || '').replace('T', ' ').replace('Z', '');
+          title.innerHTML = `<div><strong>#${idx + 1}</strong> · ${ts || 'sin-fecha'}</div>`;
+          const small = document.createElement('small');
+          const aj = (r.output && r.output.ajustes) || {};
+          const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
+          small.textContent = `kcal: ${food.kcal_obj ?? '-'} (? ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
+          title.appendChild(small);
+          li.appendChild(title);
 
-      // Guardar y activar plan desde el último ajuste AI
-      (function () {
-        const btn = document.getElementById('btnSaveAgentPlan');
-        const msg = document.getElementById('ai-save-msg');
-        if (!btn) return;
-        btn.addEventListener('click', async () => {
-          const input = document.getElementById('userIdInput');
-          let targetId = btn.dataset.userId || (input ? input.value.trim() : '');
-          try {
-            const raw = localStorage.getItem('ai_fitness_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              const loggedId = String(u.user_id || u._id || '').trim();
-              const uname = (u.username || '').trim();
-              const email = (u.email || '').trim().toLowerCase();
-              if (!targetId || targetId === uname || targetId.toLowerCase() === email) {
-                targetId = loggedId || targetId;
+          const actions = document.createElement('div');
+          const saveBtn = document.createElement('button');
+          saveBtn.className = 'btn btn-sm btn-outline-light';
+          saveBtn.textContent = 'Guardar como plan';
+          saveBtn.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            try {
+              const resp = await fetch(`/ai/adjustments/${encodeURIComponent(r._id)}/save_plan`, { method: 'POST' });
+              if (!resp.ok) {
+                const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+                throw new Error(err.error || `HTTP ${resp.status}`);
               }
+              const out = await resp.json();
+              const msg = document.getElementById('message');
+              if (msg) msg.textContent = 'Plan guardado correctamente';
+            } catch (e) {
+              const msg = document.getElementById('message');
+              if (msg) msg.textContent = `No se pudo guardar el plan: ${e.message}`;
             }
-          } catch (e) { /* ignore */ }
-          if (!targetId) { if (msg) msg.textContent = 'Ingresa un ID de usuario.'; return; }
-          if (msg) msg.textContent = 'Guardando y activando plan...';
-          try {
-            const resp = await fetch(`/ai/adjustments/${encodeURIComponent(targetId)}/apply_latest`, { method: 'POST' });
-            if (!resp.ok) {
-              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-              throw new Error(err.error || `HTTP ${resp.status}`);
-            }
-            const data = await resp.json();
-            if (msg) msg.textContent = 'Plan guardado y activado';
-            btn.style.display = 'none';
-            try { loadActivePlanIndicator(targetId); } catch (_) { }
-          } catch (e) { if (msg) msg.textContent = `No se pudo guardar: ${e.message}`; }
-        });
-      })();
-
-      async function loadAiHistory(userId) {
-        const section = document.getElementById('ai-section');
-        const loadEl = document.getElementById('ai-history-loading');
-        const errEl = document.getElementById('ai-history-error');
-        const listEl = document.getElementById('ai-history-list');
-        if (section) section.style.display = 'block';
-        if (loadEl) loadEl.style.display = 'block';
-        if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-        if (listEl) listEl.innerHTML = '';
-        try {
-          const resp = await fetch(`/ai/adjustments/${encodeURIComponent(userId)}?limit=10`);
-          if (!resp.ok) {
-            const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-            throw new Error(err.error || `HTTP ${resp.status}`);
-          }
-          const rows = await resp.json();
-          if (!Array.isArray(rows)) throw new Error('Formato inválido');
-          const frag = document.createDocumentFragment();
-          rows.forEach((r, idx) => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item list-group-item-theme d-flex justify-content-between align-items-start';
-            // li.style.background = '#111827'; li.style.color = '#e5e7eb'; // REMOVED hardcoded styles
-            const title = document.createElement('div');
-            const ts = (r.created_at || '').replace('T', ' ').replace('Z', '');
-            title.innerHTML = `<div><strong>#${idx + 1}</strong> · ${ts || 'sin-fecha'}</div>`;
-            const small = document.createElement('small');
-            const aj = (r.output && r.output.ajustes) || {};
-            const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
-            small.textContent = `kcal: ${food.kcal_obj ?? '-'} (? ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
-            title.appendChild(small);
-            li.appendChild(title);
-
-            const actions = document.createElement('div');
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn btn-sm btn-outline-light';
-            saveBtn.textContent = 'Guardar como plan';
-            saveBtn.addEventListener('click', async (ev) => {
-              ev.stopPropagation();
-              try {
-                const resp = await fetch(`/ai/adjustments/${encodeURIComponent(r._id)}/save_plan`, { method: 'POST' });
-                if (!resp.ok) {
-                  const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-                  throw new Error(err.error || `HTTP ${resp.status}`);
-                }
-                const out = await resp.json();
-                const msg = document.getElementById('message');
-                if (msg) msg.textContent = 'Plan guardado correctamente';
-              } catch (e) {
-                const msg = document.getElementById('message');
-                if (msg) msg.textContent = `No se pudo guardar el plan: ${e.message}`;
-              }
-            });
-            actions.appendChild(saveBtn);
-            li.appendChild(actions);
-            li.addEventListener('click', () => {
-              // Al hacer click, cargar detalle en la tarjeta superior
-              if (r.output) {
-                const macros = (r.output.ajustes && r.output.ajustes.plan_alimentacion && r.output.ajustes.plan_alimentacion.macros) || {};
-                const food2 = (r.output.ajustes && r.output.ajustes.plan_alimentacion) || {};
-                const train2 = (r.output.ajustes && r.output.ajustes.plan_entrenamiento) || {};
-                document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food2.kcal_obj ?? '-'} (delta: ${food2.kcal_delta ?? 0})`;
-                document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-                document.getElementById('ai-train').textContent = `Volumen ?: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
-                document.getElementById('ai-reason').textContent = r.output.razonamiento_resumido || '';
-                document.getElementById('ai-next').textContent = (r.output.proxima_revision_dias != null) ? `Próxima revisión: ${r.output.proxima_revision_dias} días` : '';
-                document.getElementById('ai-section').style.display = 'block';
-                document.getElementById('ai-content').style.display = 'block';
-              }
-            });
-            frag.appendChild(li);
           });
-          if (listEl) listEl.appendChild(frag);
-        } catch (e) {
-          if (errEl) { errEl.textContent = `No se pudo cargar el histórico: ${e.message}`; errEl.style.display = 'block'; }
-        } finally {
-          if (loadEl) loadEl.style.display = 'none';
-        }
+          actions.appendChild(saveBtn);
+          li.appendChild(actions);
+          li.addEventListener('click', () => {
+            // Al hacer click, cargar detalle en la tarjeta superior
+            if (r.output) {
+              const macros = (r.output.ajustes && r.output.ajustes.plan_alimentacion && r.output.ajustes.plan_alimentacion.macros) || {};
+              const food2 = (r.output.ajustes && r.output.ajustes.plan_alimentacion) || {};
+              const train2 = (r.output.ajustes && r.output.ajustes.plan_entrenamiento) || {};
+              document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food2.kcal_obj ?? '-'} (delta: ${food2.kcal_delta ?? 0})`;
+              document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
+              document.getElementById('ai-train').textContent = `Volumen ?: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
+              document.getElementById('ai-reason').textContent = r.output.razonamiento_resumido || '';
+              document.getElementById('ai-next').textContent = (r.output.proxima_revision_dias != null) ? `Próxima revisión: ${r.output.proxima_revision_dias} días` : '';
+              document.getElementById('ai-section').style.display = 'block';
+              document.getElementById('ai-content').style.display = 'block';
+            }
+          });
+          frag.appendChild(li);
+        });
+        if (listEl) listEl.appendChild(frag);
+      } catch (e) {
+        if (errEl) { errEl.textContent = `No se pudo cargar el histórico: ${e.message}`; errEl.style.display = 'block'; }
+      } finally {
+        if (loadEl) loadEl.style.display = 'none';
       }
+    }
 
-      window.addEventListener("DOMContentLoaded", () => {
-        // Prefer the logged-in user's id for loading, but show their username in the input
-        let loadId = null;
-        let displayLabel = null;
-        try {
-          const raw = localStorage.getItem('ai_fitness_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            loadId = String(u.user_id || u._id || '').trim() || null;
-            displayLabel = (u.username || '').trim() || null;
-          }
-        } catch (e) { /* ignore */ }
-        const lastUser = localStorage.getItem("ai_fitness_uid");
-        if (!loadId && lastUser) {
-          loadId = lastUser;
-          displayLabel = lastUser;
-        }
-        if (displayLabel) {
-          userIdInput.value = displayLabel;
-        }
-        if (loadId) {
-          loadProgress(loadId);
-          loadActivePlanIndicator(loadId);
-          loadRoutines(loadId);
-          loadCreatedRoutines();
-          loadHeatmap(loadId);
-        } else {
-          loadCreatedRoutines();
+    async function openRoutineModal(id) {
+      const routine = routinesMap.get(id);
+      if (!routine) return;
+
+      const modalTitle = document.getElementById("routineModalTitle");
+      const modalBody = document.getElementById("routineModalBody");
+
+      const partsLabel = getRoutineBodyPartsLabel(routine);
+      const exercises = countExercises(routine);
+      const day = routine.routine_day ? translateDay(routine.routine_day) : "-";
+      const validity = routine.assigned_expires_at ? formatDate(routine.assigned_expires_at) : "";
+
+      modalTitle.textContent = routine.name || "Rutina";
+      const previewHtml = buildRoutinePreviewHtml(routine);
+      modalBody.innerHTML = `
+            <div class="routine-preview-card">
+                <div class="text-center mb-3">
+                    <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
+                    <div class="text-secondary">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="text-secondary small">Grupos</div>
+                        <div class="text-white">${partsLabel}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-secondary small">Día</div>
+                        <div class="text-white">${day}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-secondary small">Ejercicios</div>
+                        <div class="text-white">${exercises}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-secondary small">Disponible hasta</div>
+                        <div class="text-white">${validity || "-"}</div>
+                    </div>
+                </div>
+                <div class="routine-preview-scroll d-flex flex-column gap-2">${previewHtml}</div>
+            </div>
+        `;
+
+      new bootstrap.Modal(document.getElementById("routineModal")).show();
+    }
+
+    function buildRoutinePreviewHtml(routine) {
+      const items = Array.isArray(routine.items) ? routine.items : [];
+      const isRestItem = (item) => item && (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null));
+      const isExerciseItem = (item) => item && item.item_type === "exercise";
+      const isGroupHeader = (item) => item && item.item_type === "group";
+      const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
+
+      const groupMetaMap = new Map();
+      items.forEach(item => {
+        if (isGroupHeader(item)) {
+          groupMetaMap.set(item._id || item.id, {
+            name: item.group_name || item.name || "Circuito",
+            note: item.note || item.description || ""
+          });
         }
       });
-    </script>
-    <script>
-      async function loadActivePlanIndicator(userId) {
-        const el = document.getElementById('active-plan-indicator');
-        try {
-          if (!userId) { if (el) el.style.display = 'none'; return; }
-          const resp = await fetch(`/plans/${encodeURIComponent(userId)}/active`);
-          if (resp.ok) {
-            const data = await resp.json();
-            const ts = data.activated_at || data.created_at || '';
-            let label = '';
-            try {
-              const d = new Date(ts);
-              if (!isNaN(d.getTime())) {
-                const dd = String(d.getDate()).padStart(2, '0');
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const yyyy = d.getFullYear();
-                label = `${dd}/${mm}/${yyyy}`;
-              } else {
-                label = ts.toString().split('T')[0];
-                if (label && label.includes('-')) {
-                  const parts = label.split('-');
-                  if (parts.length === 3) { label = `${parts[2]}/${parts[1]}/${parts[0]}`; }
-                }
-              }
-            } catch (_) { label = ts; }
-            if (el) {
-              el.innerHTML = `Plan activo desde ${label} · <a href="/plan" class="link-info">ver en Mi Plan</a>`;
-              el.style.display = 'block';
-            }
-          } else {
-            if (el) el.style.display = 'none';
+
+      const blocks = [];
+      const blockIds = new Set();
+      const groupEntries = new Map();
+
+      const ensureGroupBlock = (groupId) => {
+        if (!groupId || blockIds.has(groupId)) return;
+        blockIds.add(groupId);
+        blocks.push({ type: 'group', id: groupId });
+      };
+
+      items.forEach((item, idx) => {
+        if (item.item_type === "group" || Array.isArray(item.items)) {
+          if (Array.isArray(item.items) && item.items.length > 0) {
+            blocks.push({ type: 'inline_group', item: item });
+            return;
           }
-        } catch (e) {
+          ensureGroupBlock(item._id || item.id);
+          return;
+        }
+        if (isExerciseItem(item) || isRestItem(item)) {
+          const gid = item.group_id;
+          if (gid) {
+            ensureGroupBlock(gid);
+            if (!groupEntries.has(gid)) groupEntries.set(gid, []);
+            groupEntries.get(gid).push(item);
+          } else {
+            blocks.push({ type: 'ungrouped', entry: item });
+          }
+        }
+      });
+
+      const htmlParts = [];
+      const renderEntry = (item, idxKey) => {
+        if (isRestItem(item)) {
+          const restLabel = item.note || "Descanso";
+          const restSeconds = getRestSeconds(item);
+          return `<div class="routine-preview-item d-flex justify-content-between align-items-center">
+                      <div><div class="text-white fw-bold">${restLabel}</div><div class="text-secondary small">Pausa</div></div>
+                      <div class="text-end text-secondary small">${restSeconds}s</div>
+                    </div>`;
+        }
+        const name = item.exercise_name || item.name || "Ejercicio";
+        const bodyPartLabel = translateBodyPart(item.body_part);
+        const sets = item.target_sets || item.sets || 1;
+        const reps = item.target_reps || item.reps || "-";
+        const time = item.target_time_seconds || item.time_seconds || 60;
+        const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
+        const rest = getRestSeconds(item);
+        const equipmentMeta = getEquipmentMeta(item.equipment);
+        const hasVideo = item.video_url && item.video_url.trim() !== "";
+        const substitutes = resolveSubstitutes(item.substitutes || []);
+        const subsId = `subs_${safeId(routine._id)}_${idxKey}`;
+
+        return `<div class="routine-preview-item d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="text-white fw-bold">${name}</div>
+                            ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')"><i class="fab fa-youtube"></i></button>` : ""}
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            <span class="badge bg-secondary">${bodyPartLabel}</span>
+                            <span class="badge bg-dark border border-secondary text-info"><i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}</span>
+                        </div>
+                         ${substitutes.length ? `
+                            <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">Sustitutos (${substitutes.length})</button>
+                            <div class="collapse mt-2" id="${subsId}"><div class="d-flex flex-column gap-2">
+                                ${substitutes.map(sub => `<div class="routine-preview-item d-flex align-items-center justify-content-between">
+                                    <div><div class="fw-bold text-white">${sub.name || "Ejercicio"}</div><div class="text-secondary small"><i class="${getEquipmentMeta(sub.equipment).icon} me-1"></i>${getEquipmentMeta(sub.equipment).label}</div></div>
+                                    ${sub.video_url ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>` : ""}
+                                </div>`).join("")}
+                            </div></div>` : ""}
+                    </div>
+                    <div class="text-end text-secondary small"><div>${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}</div><div>Descanso ${rest}s</div></div>
+                </div>`;
+      };
+
+      let lastBlockWasUngrouped = false;
+      blocks.forEach((block, bIdx) => {
+        if (block.type === 'ungrouped') {
+          if (!lastBlockWasUngrouped) {
+            htmlParts.push(`<div class="routine-preview-group"><div class="text-cyber-blue fw-bold">Sin grupo</div></div>`);
+            lastBlockWasUngrouped = true;
+          }
+          htmlParts.push(renderEntry(block.entry, `u_${bIdx}`));
+        } else if (block.type === 'group') {
+          lastBlockWasUngrouped = false;
+          const entries = groupEntries.get(block.id) || [];
+          const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
+          if (entries.length > 0) {
+            htmlParts.push(`<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${meta.name}</div><div class="text-secondary small">${entries.length} items</div></div>${meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""}</div>`);
+            entries.forEach((entry, eIdx) => { htmlParts.push(renderEntry(entry, `g_${block.id}_${eIdx}`)); });
+          }
+        } else if (block.type === 'inline_group') {
+          lastBlockWasUngrouped = false;
+          const item = block.item;
+          const entries = (item.items || []).filter(sub => isExerciseItem(sub) || isRestItem(sub));
+          if (entries.length > 0) {
+            htmlParts.push(`<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${item.group_name || item.name || "Circuito"}</div><div class="text-secondary small">${entries.length} items</div></div>${(item.note || item.description) ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""}</div>`);
+            entries.forEach((entry, eIdx) => { htmlParts.push(renderEntry(entry, `ig_${bIdx}_${eIdx}`)); });
+          }
+        }
+      });
+      return htmlParts.join("");
+    }
+
+    function resolveSubstitutes(substitutes) {
+      if (!Array.isArray(substitutes) || substitutes.length === 0) return [];
+      return substitutes.map(sub => {
+        if (typeof sub === "string") return exerciseLookup[sub];
+        if (sub && typeof sub === "object") return sub;
+        return null;
+      }).filter(Boolean);
+    }
+
+    function getEquipmentMeta(equipmentKey) {
+      const map = { barbell: { label: "Barra", icon: "fas fa-grip-lines" }, dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" }, machine: { label: "Máquina", icon: "fas fa-cogs" }, cable: { label: "Polea", icon: "fas fa-wave-square" }, bodyweight: { label: "Corporal", icon: "fas fa-running" }, other: { label: "Otro", icon: "fas fa-toolbox" } };
+      return map[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+    }
+
+    function toEmbedUrl(url) {
+      const trimmed = (url || "").trim();
+      if (!trimmed) return "";
+      if (trimmed.includes("youtube.com/watch")) {
+        const match = trimmed.match(/[?&]v=([^&]+)/);
+        if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+      }
+      if (trimmed.includes("youtu.be/")) {
+        const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+        if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+      }
+      return trimmed;
+    }
+
+    function openVideoModal(url) {
+      const modalEl = document.getElementById("videoModal");
+      const iframe = document.getElementById("videoFrame");
+      const embedUrl = toEmbedUrl(url);
+      if (!embedUrl) return;
+      iframe.src = embedUrl;
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+      modalEl.addEventListener("hidden.bs.modal", () => { iframe.src = ""; }, { once: true });
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return value;
+      return dt.toLocaleDateString();
+    }
+
+    function getRestSeconds(item) {
+      if (!item) return 60;
+      if (item.rest_seconds != null) return item.rest_seconds;
+      return 60;
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      // Load dependencies for routines
+      await loadBodyParts();
+      await loadExercises();
+      // Prefer the logged-in user's id for loading, but show their username in the input
+      let loadId = null;
+      let displayLabel = null;
+      try {
+        const raw = localStorage.getItem('ai_fitness_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          loadId = String(u.user_id || u._id || '').trim() || null;
+          displayLabel = (u.username || '').trim() || null;
+        }
+      } catch (e) { /* ignore */ }
+      const lastUser = localStorage.getItem("ai_fitness_uid");
+      if (!loadId && lastUser) {
+        loadId = lastUser;
+        displayLabel = lastUser;
+      }
+      if (displayLabel) {
+        userIdInput.value = displayLabel;
+      }
+      if (loadId) {
+        loadProgress(loadId);
+        loadActivePlanIndicator(loadId);
+        loadRoutines(loadId);
+        loadCreatedRoutines();
+        loadHeatmap(loadId);
+      } else {
+        loadCreatedRoutines();
+      }
+    });
+  </script>
+  <script>
+    async function loadActivePlanIndicator(userId) {
+      const el = document.getElementById('active-plan-indicator');
+      try {
+        if (!userId) { if (el) el.style.display = 'none'; return; }
+        const resp = await fetch(`/plans/${encodeURIComponent(userId)}/active`);
+        if (resp.ok) {
+          const data = await resp.json();
+          const ts = data.activated_at || data.created_at || '';
+          let label = '';
+          try {
+            const d = new Date(ts);
+            if (!isNaN(d.getTime())) {
+              const dd = String(d.getDate()).padStart(2, '0');
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const yyyy = d.getFullYear();
+              label = `${dd}/${mm}/${yyyy}`;
+            } else {
+              label = ts.toString().split('T')[0];
+              if (label && label.includes('-')) {
+                const parts = label.split('-');
+                if (parts.length === 3) { label = `${parts[2]}/${parts[1]}/${parts[0]}`; }
+              }
+            }
+          } catch (_) { label = ts; }
+          if (el) {
+            el.innerHTML = `Plan activo desde ${label} · <a href="/plan" class="link-info">ver en Mi Plan</a>`;
+            el.style.display = 'block';
+          }
+        } else {
           if (el) el.style.display = 'none';
         }
+      } catch (e) {
+        if (el) el.style.display = 'none';
       }
-    </script>
+    }
+  </script>
 
-    <!-- Ajustes del Agente (secciÃ³n visual) -->
+  <!-- Ajustes del Agente (secciÃ³n visual) -->
 
-    <!-- Language selector script: guarda la preferencia en localStorage y actualiza document.lang -->
-    <!-- centralized language script -->
+  <!-- Language selector script: guarda la preferencia en localStorage y actualiza document.lang -->
+  <!-- centralized language script -->
   </div> <!-- End main-content -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/lang.js"></script>

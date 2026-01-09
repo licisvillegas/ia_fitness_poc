@@ -353,7 +353,7 @@
     }
 
     .plate-tile {
-        background: #2b74bd;
+        background: #033e53;
         /* Light background */
         border: 1px solid #dee2e6;
         border-radius: 12px;
@@ -364,8 +364,8 @@
     }
 
     .plate-tile img {
-        width: 54px;
-        height: 54px;
+        width: 40px;
+        height: 40px;
         object-fit: contain;
         margin-bottom: 6px;
     }
@@ -977,16 +977,20 @@
                     parts.forEach(p => {
                         BODY_PART_MAP[p.key] = p.label_es || p.label_en || p.key;
                     });
-                    // Trigger re-render if needed? 
-                    // Since BODY_PART_MAP is external, components using translateBodyPart during render might need a forceUpdate, 
-                    // but usually this loads fast specificly. UseState would be better but requires passing map everywhere.
-                    // For MVP let's force a re-render by setting a dummy state or relying on exercise load which happens parallel.
                     setExerciseLookup(prev => ({ ...prev }));
                 } catch (e) { console.error("Error loading body parts", e); }
             };
 
-            loadExercises();
-            loadBodyParts();
+            const init = async () => {
+                if (window.showLoader) window.showLoader("Cargando motor...");
+                try {
+                    await Promise.all([loadExercises(), loadBodyParts()]);
+                } finally {
+                    if (window.hideLoader) window.hideLoader();
+                }
+            };
+
+            init();
 
             return () => { isMounted = false; };
         }, []);
@@ -997,6 +1001,7 @@
             if (!CURRENT_USER_ID || !routineId) return;
 
             const loadHistoryMax = async () => {
+                if (window.showLoader) window.showLoader("Sincronizando historial...");
                 try {
                     const res = await fetch(`/workout/api/sessions?user_id=${encodeURIComponent(CURRENT_USER_ID)}&limit=50`);
                     if (!res.ok) return;
@@ -1021,6 +1026,8 @@
                     setHistoryMaxByExercise(maxByExercise);
                 } catch (e) {
                     console.error("Error loading session history", e);
+                } finally {
+                    if (window.hideLoader) window.hideLoader();
                 }
             };
 
@@ -1284,6 +1291,7 @@
         const finishWorkout = async () => {
             showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
                 setStatus('FINISHED');
+                if (window.showLoader) window.showLoader("Guardando sesión...");
                 // Save logic
                 try {
                     const payload = {
@@ -1300,6 +1308,8 @@
                     if (res.ok) window.location.href = getReturnUrl();
                 } catch (e) {
                     showAlertModal("Error", "Error saving: " + e.message, "danger");
+                } finally {
+                    if (window.hideLoader) window.hideLoader();
                 }
             }, "success");
         };

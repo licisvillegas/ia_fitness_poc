@@ -435,9 +435,18 @@
     let bodyPartMap = {};
 
     document.addEventListener("DOMContentLoaded", async () => {
-        await loadBodyPartsConfig();
-        await loadExercises();
-        await loadRoutines();
+        if (window.showLoader) window.showLoader("Inicializando constructor...");
+        try {
+            await Promise.all([
+                loadBodyPartsConfig(),
+                loadExercises(),
+                loadRoutines()
+            ]);
+        } catch (e) {
+            console.error("Error inicializando constructor", e);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
+        }
 
         const searchInput = document.getElementById("searchEx");
         const filterBodyPart = document.getElementById("filterBodyPart");
@@ -606,6 +615,7 @@
             "danger"
         );
         if (!confirmed) return;
+        if (window.showLoader) window.showLoader("Eliminando rutina...");
         try {
             const res = await fetch(`/api/routines/${routineId}`, { method: "DELETE" });
             const data = await res.json();
@@ -621,6 +631,8 @@
         } catch (e) {
             console.error(e);
             showAlertModal("Error de conexión", "danger");
+        } finally {
+            if (window.hideLoader) window.hideLoader();
         }
     }
 
@@ -706,26 +718,33 @@
     }
 
     async function loadRoutineById(routineId, options = {}) {
-        const res = await fetch(`/api/routines/${routineId}`);
-        if (!res.ok) return;
-        const routine = await res.json();
-        const isDuplicate = options.duplicate === true;
-        document.getElementById("routineId").value = isDuplicate ? "" : routine._id;
-        document.getElementById("routineName").value = isDuplicate
-            ? `${routine.name || "Rutina"} (Copia)`
-            : (routine.name || "");
-        document.getElementById("routineDesc").value = routine.description || "";
-        document.getElementById("routineDay").value = routine.routine_day || "";
-        const selectedBodyParts = new Set(routine.routine_body_parts || []);
-        document.querySelectorAll(".routine-bodypart").forEach(input => {
-            input.checked = selectedBodyParts.has(input.value);
-        });
-        activeGroupId = "";
-        currentRoutineItems = normalizeRoutineItems(routine.items || []);
-        renderRoutineItems();
-        filterExercises();
-        updateCancelState();
-        switchMobileView('details');
+        if (window.showLoader) window.showLoader("Cargando rutina...");
+        try {
+            const res = await fetch(`/api/routines/${routineId}`);
+            if (!res.ok) return;
+            const routine = await res.json();
+            const isDuplicate = options.duplicate === true;
+            document.getElementById("routineId").value = isDuplicate ? "" : routine._id;
+            document.getElementById("routineName").value = isDuplicate
+                ? `${routine.name || "Rutina"} (Copia)`
+                : (routine.name || "");
+            document.getElementById("routineDesc").value = routine.description || "";
+            document.getElementById("routineDay").value = routine.routine_day || "";
+            const selectedBodyParts = new Set(routine.routine_body_parts || []);
+            document.querySelectorAll(".routine-bodypart").forEach(input => {
+                input.checked = selectedBodyParts.has(input.value);
+            });
+            activeGroupId = "";
+            currentRoutineItems = normalizeRoutineItems(routine.items || []);
+            renderRoutineItems();
+            filterExercises();
+            updateCancelState();
+            switchMobileView('details');
+        } catch (e) {
+            console.error("Error cargando rutina", e);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
+        }
     }
 
     function normalizeRoutineItems(items) {
@@ -1668,6 +1687,7 @@
             routine_day: routineDay
         };
 
+        if (window.showLoader) window.showLoader("Guardando rutina...");
         try {
             const res = await fetch("/api/routines/save", {
                 method: "POST",
@@ -1683,7 +1703,10 @@
         } catch (e) {
             console.error(e);
             showAlertModal("Error de red", "danger");
+        } finally {
+            if (window.hideLoader) window.hideLoader();
         }
     }
 </script>
+<script src="/static/js/loader.js"></script>
 {% endblock %}

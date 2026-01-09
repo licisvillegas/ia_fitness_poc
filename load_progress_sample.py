@@ -30,7 +30,7 @@ for doc in progress_data:
     except ValueError:
         raise ValueError(f"⚠️ Fecha inválida en documento: {doc}")
 
-print(f"✅ {len(progress_data)} registros listos para insertar.")
+print(f"✔  {len(progress_data)} registros listos para insertar.")
 
 # === CONEXIÓN A MONGODB === #
 try:
@@ -56,4 +56,4 @@ print(f"📊 Total actual de documentos en la colección: {count}")
 
 # === CIERRE DE CONEXIÓN === #
 client.close()
-print("✅ Carga finalizada correctamente.")
+print("✔  Carga finalizada correctamente.")

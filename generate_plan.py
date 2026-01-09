@@ -23,7 +23,7 @@ logger = logging.getLogger("ai_fitness")
 try:
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client[os.getenv("MONGO_DB")]
-    logger.info("✅ Conexión exitosa con MongoDB Atlas")
+    logger.info("✔  Conexión exitosa con MongoDB Atlas")
 except Exception as e:
     logger.error(f"❌ Error al conectar con MongoDB: {str(e)}", exc_info=True)
 
@@ -89,7 +89,7 @@ def generate_plan():
         }
 
         result = db.plans.insert_one(plan)
-        logger.info(f"✅ Plan insertado correctamente con timestamp {plan['created_at']}")
+        logger.info(f"✔  Plan insertado correctamente con timestamp {plan['created_at']}")
 
         plan["plan_id"] = str(result.inserted_id)
         return jsonify(plan), 201

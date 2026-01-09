@@ -12,7 +12,8 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
-<link href="/static/css/assigned_routines.css" rel="stylesheet">
+  <link href="/static/css/assigned_routines.css" rel="stylesheet">
+  <link href="/static/css/loader.css" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -152,7 +153,7 @@
         <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus
           resultados físicos.</p>
       </div>
-    </section>    <!-- Seccion de Mis Rutinas (reutilizable) -->
+    </section> <!-- Seccion de Mis Rutinas (reutilizable) -->
     {% include 'components/assigned_routines.html' %}
 
     <!-- Sección de Entrenamientos -->
@@ -418,7 +419,7 @@
           const input = document.getElementById('planUserId');
           const uid = resolveUserId(input.value);
           if (!uid) { msgEl.textContent = 'Ingresa un user_id'; return; }
-          msgEl.textContent = 'Cargando planes...';
+          showLoader("Cargando planes...");
           listEl.innerHTML = '';
           try {
             const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=20`);
@@ -451,6 +452,8 @@
             if (rows[0] && !currentPlanId) renderPlan(rows[0]);
           } catch (e) {
             msgEl.textContent = `Error al cargar planes: ${e.message}`;
+          } finally {
+            hideLoader();
           }
         }
 
@@ -575,7 +578,7 @@
           const input = document.getElementById('planUserId');
           const uid = resolveUserId(input.value);
           if (!uid) { aMeta.textContent = ''; aKcal.textContent = ''; aMacros.textContent = ''; aTrain.textContent = ''; aBox.style.display = 'none'; return; }
-          aMeta.textContent = 'Cargando plan activo...';
+          showLoader("Cargando plan activo...");
           try {
             const resp = await fetch(`/plans/${encodeURIComponent(uid)}/active`);
             if (!resp.ok) {
@@ -609,11 +612,14 @@
           } catch (e) {
             aMeta.textContent = `Error cargando plan activo: ${e.message}`;
             aKcal.textContent = ''; aMacros.textContent = ''; aTrain.textContent = ''; aBox.style.display = 'none';
+          } finally {
+            hideLoader();
           }
         }
 
         activateBtn.addEventListener('click', async () => {
           if (!currentPlanId) { return; }
+          showLoader("Activando plan...");
           try {
             const resp = await fetch(`/plans/${encodeURIComponent(currentPlanId)}/activate`, { method: 'POST' });
             if (!resp.ok) {
@@ -625,6 +631,8 @@
             loadActive();
           } catch (e) {
             msgEl.textContent = `No se pudo activar el plan: ${e.message}`;
+          } finally {
+            hideLoader();
           }
         });
 
@@ -632,6 +640,7 @@
           const input = document.getElementById('planUserId');
           const uid = resolveUserId(input.value);
           if (!uid) { msgEl.textContent = 'Ingresa un user_id'; return; }
+          showLoader("Aplicando último ajuste AI...");
           try {
             const resp = await fetch(`/ai/adjustments/${encodeURIComponent(uid)}/apply_latest`, { method: 'POST' });
             if (!resp.ok) {
@@ -643,6 +652,8 @@
             loadActive();
           } catch (e) {
             msgEl.textContent = `No se pudo aplicar el último ajuste: ${e.message}`;
+          } finally {
+            hideLoader();
           }
         });
 
@@ -678,6 +689,8 @@
         });
       })();
     </script>
+    {% include 'components/loader.html' %}
+    <script src="/static/js/loader.js"></script>
 
   </div><!-- End main-content -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

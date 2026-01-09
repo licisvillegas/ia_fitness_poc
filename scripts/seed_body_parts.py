@@ -44,7 +44,7 @@ def seed_body_parts():
                 upsert=True
             )
         
-        print(f"✅ Body parts seeded successfully into '{MONGO_DB}.body_parts'.")
+        print(f"✔  Body parts seeded successfully into '{MONGO_DB}.body_parts'.")
 
     except Exception as e:
         print(f"❌ Error seeding body parts: {e}")

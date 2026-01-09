@@ -25,7 +25,7 @@
     'opt_maintain': { es: 'Mantener', en: 'Maintain' },
     'btn_generate': { es: 'Generar Plan', en: 'Generate Plan' },
     'loading_plan': { es: 'Generando tu plan personalizado...', en: 'Generating your personalized plan...' },
-    'plan_ok': { es: '✅ Plan generado con éxito', en: '✅ Plan generated successfully' },
+    'plan_ok': { es: '✔  Plan generado con éxito', en: '✔  Plan generated successfully' },
     'plan_error': { es: '❌ Ocurrió un error al generar el plan.', en: '❌ An error occurred while generating the plan.' },
     'footer': { es: '© 2025 AI Fitness | Desarrollado por Ismael Villegas', en: '© 2025 AI Fitness | Developed by Ismael Villegas' }
   };
@@ -105,7 +105,7 @@
   dict['no_data'] = { es: 'Sin datos disponibles', en: 'No data available' };
 
   // Mensajes y etiquetas adicionales
-  dict['data_loaded'] = { es: '✅ Datos cargados correctamente.', en: '✅ Data loaded successfully.' };
+  dict['data_loaded'] = { es: '✔  Datos cargados correctamente.', en: '✔  Data loaded successfully.' };
   dict['chart_weight'] = { es: 'Peso (kg)', en: 'Weight (kg)' };
   dict['chart_fat'] = { es: 'Grasa (%)', en: 'Body Fat (%)' };
   dict['chart_performance'] = { es: 'Rendimiento (%)', en: 'Performance (%)' };
@@ -470,7 +470,7 @@
     const messageEl = document.getElementById('message');
     if (messageEl) {
       const txt = (messageEl.textContent || '').trim();
-      if (txt.includes('Datos cargados') || txt.includes('Data loaded') || txt.startsWith('✅')) {
+      if (txt.includes('Datos cargados') || txt.includes('Data loaded') || txt.startsWith('✔ ')) {
         messageEl.textContent = t('data_loaded');
       }
     }

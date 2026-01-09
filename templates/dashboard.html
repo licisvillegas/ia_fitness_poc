@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Fitness | Dashboard de Progreso</title>
 
-  <!-- CDNs: Bootstrap para estilos, Google Fonts (Poppins) y Chart.js para grÃ¡ficos -->
+  <!-- CDNs: Bootstrap para estilos, Google Fonts (Poppins) y Chart.js para gráficos -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,7 +15,8 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
-<link href="/static/css/assigned_routines.css" rel="stylesheet">
+  <link href="/static/css/assigned_routines.css" rel="stylesheet">
+  <link href="/static/css/loader.css" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -128,13 +129,6 @@
       border-top: 1px solid var(--border-color);
     }
 
-    #loading {
-      display: none;
-      text-align: center;
-      color: var(--primary);
-      margin-top: 1rem;
-    }
-
     #message {
       text-align: center;
       margin-top: 1rem;
@@ -203,7 +197,7 @@
     <!-- Hero -->
     <section class="hero">
       <div class="container">
-        <!-- TÃ­tulo principal y subtÃ­tulo del dashboard -->
+        <!-- Título principal y subtítulo del dashboard -->
         <h1 id="dashboard-hero-title">Monitorea tu evolución</h1>
         <p id="dashboard-hero-p" class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en
           tiempo real.</p>
@@ -215,7 +209,7 @@
 
     <!-- Selector de usuario (Visible solo si Token Admin OK) -->
     <div id="admin-controls" class="container text-center mt-5" style="display:none;">
-      <!-- Input del ID de usuario y bootón; el spinner aparece durante la carga -->
+      <!-- Input del ID de usuario y bootón -->
       <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
       <div class="input-group mb-3 justify-content-center" style="max-width: 720px; margin: 0 auto; gap: 8px;">
         <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
@@ -235,15 +229,9 @@
           } catch (e) { }
         })();
       </script>
-      <div id="loading">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p id="loading-text">Cargando datos...</p>
-      </div>
       <p id="message" class="text-light"></p>
       <div id="active-plan-indicator" class="mt-2" style="display:none; color:#10b981;"></div>
     </div>
-
-    <!-- EstadÃ­sticas -->
 
     <!-- Ajustes del Agente -->
     <section id="ai-section" class="container mt-5" style="display:none;">
@@ -291,7 +279,7 @@
     </section>
 
     <section id="stats" class="mt-5 container">
-      <!-- Tarjetas con Ãºltimo registro (peso, grasa, rendimiento, adherencia) -->
+      <!-- Tarjetas con último registro (peso, grasa, rendimiento, adherencia) -->
       <div class="row g-4">
 
         <!-- Admin Card (Visible only if is_admin) -->
@@ -317,7 +305,7 @@
           <div class="stat-card">
             <div class="stat-icon">⚖️</div>
             <h5 id="stat-weight-title">Peso Actual</h5>
-            <h3 id="stat-weight" class="text-theme">â€”</h3>
+            <h3 id="stat-weight" class="text-theme">—</h3>
             <p id="stat-last-0" class="text-secondary">Último registro</p>
           </div>
         </div>
@@ -325,7 +313,7 @@
           <div class="stat-card">
             <div class="stat-icon">💪</div>
             <h5 id="stat-fat-title">Grasa Corporal</h5>
-            <h3 id="stat-fat" class="text-theme">â€”</h3>
+            <h3 id="stat-fat" class="text-theme">—</h3>
             <p id="stat-last-1" class="text-secondary">Último registro</p>
           </div>
         </div>
@@ -406,142 +394,123 @@
     </section>
 
   </div>
-  </section>
 
   <footer>
     <p id="footer-text">© 2025 AI Fitness | Dashboard de Progreso Inteligente</p>
     <small class="text-secondary d-block">v. beta 1.0.4</small>
   </footer>
 
+  {% include 'components/loader.html' %}
+
+  <script src="/static/js/loader.js"></script>
   <script src="/static/js/assigned_routines.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/lang.js"></script>
+
   <script>
-    // JS del dashboard: maneja carga de progreso, actualizaciÃ³n de tarjetas y grÃ¡ficos
-    // Endpoint: GET /get_progress/{userId}
-    // Respuesta: Array de { date, weight_kg, body_fat, performance, nutrition_adherence }
     const btn = document.getElementById("loadDataBtn");
     const userIdInput = document.getElementById("userIdInput");
     const message = document.getElementById("message");
-    const loading = document.getElementById("loading");
     let charts = [];
     const routinesMap = window.routinesMap;
 
     async function loadProgress(userId) {
       if (!userId) return;
       message.textContent = "";
-      loading.style.display = "block";
+      showLoader("Cargando progreso...");
 
-      // PeticiÃ³n al backend para obtener el historial de progreso del usuario
-      const res = await fetch(`/get_progress/${userId}`);
-      const data = await res.json();
-      loading.style.display = "none";
+      try {
+        const res = await fetch(`/get_progress/${userId}`);
+        const data = await res.json();
 
-      // Oculta overlays de "Sin datos" antes de validar la respuesta
-      const overlays = ["weight", "fat", "performance", "nutrition"];
-      overlays.forEach(id => {
-        const el = document.getElementById(`msg-${id}`);
-        if (el) el.style.visibility = "hidden";
-      });
-
-      // Manejo de error o falta de datos: limpiar UI y mostrar overlays
-      if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
-        message.textContent = data.error || "â No se encontraron registros de progreso.";
-        clearDashboard();
+        // Oculta overlays de "Sin datos" antes de validar la respuesta
+        const overlays = ["weight", "fat", "performance", "nutrition"];
         overlays.forEach(id => {
           const el = document.getElementById(`msg-${id}`);
-          if (el) el.style.visibility = "visible";
+          if (el) el.style.visibility = "hidden";
         });
-        return;
-      }
 
-      message.textContent = t('data_loaded');
-      // Guardar el Ãºltimo usuario consultado en localStorage para precargarlo la prÃ³xima vez
-      localStorage.setItem("ai_fitness_uid", userId);
-
-      const last = data[data.length - 1];
-      document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
-      document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
-      // document.getElementById("stat-performance").innerText = `${last.performance}%`;
-      // document.getElementById("bar-performance").style.width = `${last.performance}%`;
-      // document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
-      // document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
-
-      // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS (Override Weight/Fat) ---
-      try {
-        const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
-        if (mRes.ok) {
-          const mData = await mRes.json();
-          if (mData.weight_kg) {
-            document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
-          }
-          if (mData.body_fat) {
-            document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
-          }
-          if (mData.tmb) {
-            document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
-          }
-          if (mData.tdee) {
-            document.getElementById("stat-diet").innerText = `${mData.tdee}`;
-          }
+        // Manejo de error o falta de datos: limpiar UI y mostrar overlays
+        if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
+          message.textContent = data.error || "❌ No se encontraron registros de progreso.";
+          clearDashboard();
+          overlays.forEach(id => {
+            const el = document.getElementById(`msg-${id}`);
+            if (el) el.style.visibility = "visible";
+          });
+          hideLoader();
+          return;
         }
-      } catch (e) { console.error("Error fetching latest metrics", e); }
 
-      // Limpiar grÃ¡ficos previos antes de volver a dibujar
-      charts.forEach(c => c.destroy());
-      charts = [];
+        message.textContent = t('data_loaded');
+        localStorage.setItem("ai_fitness_uid", userId);
 
-      // Preparar series para Chart.js
-      const labels = data.map(d => d.date);
-      const weights = data.map(d => d.weight_kg);
-      const fats = data.map(d => d.body_fat);
-      const performance = data.map(d => d.performance);
-      const nutrition = data.map(d => d.nutrition_adherence);
+        const last = data[data.length - 1];
+        document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
+        document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
 
-      // Paleta y opciones de tema para Chart.js
-      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-      const textColor = isLight ? '#374151' : '#e5e7eb';
-      const gridColor = isLight ? '#e5e7eb' : '#374151';
-
-      const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
-      const opts = {
-        plugins: { legend: { labels: { color: textColor } } },
-        scales: {
-          x: { ticks: { color: textColor }, grid: { color: gridColor } },
-          y: { ticks: { color: textColor }, grid: { color: gridColor } }
-        }
-      };
-
-      // Gráfico de peso (línea)
-      if (document.getElementById("weightChart")) {
-        charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-      }
-      // Gráfico de grasa corporal (línea)
-      if (document.getElementById("fatChart")) {
-        charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-      }
-      // Gráfico de rendimiento (barras)
-      if (document.getElementById("performanceChart")) {
-        charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
-      }
-      // Gráfico de TMB (barras)
-      if (document.getElementById("nutritionChart")) {
-        charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
-      }
-
-      // Expose a helper to update chart labels when language changes
-      window.updateChartLabels = function () {
+        // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS ---
         try {
-          // Update dataset labels
-          if (!charts) return;
-          if (charts[0] && charts[0].data && charts[0].data.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
-          if (charts[1] && charts[1].data && charts[1].data.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
-          if (charts[2] && charts[2].data && charts[2].data.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
-          if (charts[3] && charts[3].data && charts[3].data.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
-          charts.forEach(c => c.update());
-        } catch (e) {/* ignore */ }
-      };
+          const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
+          if (mRes.ok) {
+            const mData = await mRes.json();
+            if (mData.weight_kg) document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
+            if (mData.body_fat) document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
+            if (mData.tmb) document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
+            if (mData.tdee) document.getElementById("stat-diet").innerText = `${mData.tdee}`;
+          }
+        } catch (e) { console.error("Error fetching latest metrics", e); }
+
+        charts.forEach(c => c.destroy());
+        charts = [];
+
+        const labels = data.map(d => d.date);
+        const weights = data.map(d => d.weight_kg);
+        const fats = data.map(d => d.body_fat);
+        const performance = data.map(d => d.performance);
+        const nutrition = data.map(d => d.nutrition_adherence);
+
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const textColor = isLight ? '#374151' : '#e5e7eb';
+        const gridColor = isLight ? '#e5e7eb' : '#374151';
+
+        const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
+        const opts = {
+          plugins: { legend: { labels: { color: textColor } } },
+          scales: {
+            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        };
+
+        if (document.getElementById("weightChart")) {
+          charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+        }
+        if (document.getElementById("fatChart")) {
+          charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
+        }
+        if (document.getElementById("performanceChart")) {
+          charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
+        }
+        if (document.getElementById("nutritionChart")) {
+          charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+        }
+
+        window.updateChartLabels = function () {
+          try {
+            if (!charts) return;
+            if (charts[0]?.data?.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
+            if (charts[1]?.data?.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
+            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
+            if (charts[3]?.data?.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
+            charts.forEach(c => c.update());
+          } catch (e) { }
+        };
+      } finally {
+        hideLoader();
+      }
     }
 
-    // Restablece las tarjetas y limpia los grÃ¡ficos cuando no hay datos
     function clearDashboard() {
       document.getElementById("stat-weight").innerText = "?";
       document.getElementById("stat-fat").innerText = "?";
@@ -551,7 +520,6 @@
       charts = [];
     }
 
-    // Click: valida el input y dispara la carga de datos
     btn.addEventListener("click", () => {
       const typed = userIdInput.value.trim();
       let targetId = typed;
@@ -562,13 +530,12 @@
           const loggedId = String(u.user_id || u._id || '').trim();
           const uname = (u.username || '').trim();
           const email = (u.email || '').trim().toLowerCase();
-          // If the user typed their username/email (or left empty), use the logged-in id
           if (!typed || typed === uname || typed.toLowerCase() === email) {
             targetId = loggedId || typed;
           }
         }
-      } catch (e) { /* ignore */ }
-      if (!targetId) { message.textContent = "â ï¸ Ingresa un ID de usuario."; return; }
+      } catch (e) { }
+      if (!targetId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
       loadProgress(targetId);
       loadActivePlanIndicator(targetId);
       loadRoutines(targetId);
@@ -580,22 +547,18 @@
       const listEl = document.getElementById('created-routines-list');
       const sectionEl = document.getElementById('my-created-routines');
       if (!listEl || !sectionEl) return;
-
       listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
       sectionEl.style.display = 'block';
-
       try {
         const res = await fetch('/workout/api/my-routines');
         const routines = await res.json();
         listEl.innerHTML = '';
-
         if (!routines || routines.length === 0) {
           listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas.</div>`;
           return;
         }
-
         routines.forEach(r => {
-          if (r && r._id) routinesMap.set(r._id, r);
+          if (r?._id) routinesMap.set(r._id, r);
           const cardCol = document.createElement('div');
           cardCol.className = 'col-md-6 col-lg-4';
           const name = r.name || 'Rutina sin nombre';
@@ -603,147 +566,103 @@
           const id = r._id;
           const partsLabel = getRoutineBodyPartsLabel(r);
           const dayLabel = r.routine_day ? translateDay(r.routine_day) : null;
-
           cardCol.innerHTML = `
-                      <div class="card h-100 bg-panel border-secondary shadow-sm">
-                          <div class="card-body p-3">
-                              <div class="d-flex justify-content-between align-items-start mb-2">
-                                  <div class="flex-grow-1">
-                                      <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
-                                      <div class="d-flex flex-wrap gap-1 mb-1">
-                                          <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
-                                          ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
-                                      </div>
-                                  </div>
-                                  <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
-                                      ${exCount} ej.
-                                  </span>
-                              </div>
-                              <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
-                              <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
-                                  <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">
-                                      Mí rutina
-                                  </small>
-                                  <div class="btn-group btn-group-sm">
-                                      <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
-                                          <i class="fas fa-eye"></i>
-                                      </button>
-                                      <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-outline-primary" title="Iniciar">
-                                          <i class="fas fa-play"></i>
-                                      </a>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                    `;
+            <div class="card h-100 bg-panel border-secondary shadow-sm">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
+                                ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
+                            </div>
+                        </div>
+                        <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">${exCount} ej.</span>
+                    </div>
+                    <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
+                    <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">Mí rutina</small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')"><i class="fas fa-eye"></i></button>
+                            <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-outline-primary"><i class="fas fa-play"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
           listEl.appendChild(cardCol);
         });
       } catch (e) {
-        console.error(e);
         listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>`;
       }
     }
 
-    // --- New Function: Load Heatmap ---
     async function loadHeatmap(userId) {
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}&timezone=${encodeURIComponent(tz)}`);
         const hMap = await hRes.json();
         const grid = document.getElementById("heatmapGrid");
-
-        // Generate last 60 days
         grid.innerHTML = "";
         grid.style.gridTemplateColumns = `repeat(10, 1fr)`;
-
         const today = new Date();
         for (let i = 59; i >= 0; i--) {
           const d = new Date();
           d.setDate(today.getDate() - i);
-          // Use local date string (YYYY-MM-DD)
           const key = d.toLocaleDateString('en-CA');
           const count = hMap[key] || 0;
-
           const cell = document.createElement("div");
-          cell.className = `heatmap-cell level-${Math.min(count * 2, 4)}`;
-          if (count === 0) cell.className = "heatmap-cell";
-          else if (count >= 2) cell.className = "heatmap-cell level-4";
-          else cell.className = "heatmap-cell level-2";
-
+          cell.className = "heatmap-cell";
+          if (count > 0) cell.className += (count >= 2) ? " level-4" : " level-2";
           cell.title = `${key}: ${count} workouts`;
           grid.appendChild(cell);
         }
       } catch (e) { console.error("Heatmap error", e); }
     }
 
-    // BotÃ³n: solicitar ajustes AI y mostrar resumen en el mensaje
     const aiBtn = document.getElementById("aiSuggestBtn");
-    aiBtn.addEventListener("click", async () => {
+    aiBtn.addEventListener("click", () => {
       const typed = userIdInput.value.trim();
       let targetId = typed;
       try {
         const raw = localStorage.getItem('ai_fitness_user');
         if (raw) {
           const u = JSON.parse(raw);
-          const loggedId = String(u.user_id || u._id || '').trim();
-          const uname = (u.username || '').trim();
-          const email = (u.email || '').trim().toLowerCase();
-          if (!typed || typed === uname || typed.toLowerCase() === email) {
-            targetId = loggedId || typed;
-          }
+          targetId = String(u.user_id || u._id || '').trim();
         }
-      } catch (e) { /* ignore */ }
-      if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
-      return loadAiAdjustments(targetId);
+      } catch (e) { }
+      if (targetId) loadAiAdjustments(targetId);
+      else message.textContent = "Ingresa un ID de usuario.";
     });
 
-    // Click: cargar histórico del agente
     const aiHistoryBtn = document.getElementById('aiHistoryBtn');
-    aiHistoryBtn.addEventListener('click', async () => {
+    aiHistoryBtn.addEventListener('click', () => {
       const typed = userIdInput.value.trim();
       let targetId = typed;
       try {
         const raw = localStorage.getItem('ai_fitness_user');
         if (raw) {
           const u = JSON.parse(raw);
-          const loggedId = String(u.user_id || u._id || '').trim();
-          const uname = (u.username || '').trim();
-          const email = (u.email || '').trim().toLowerCase();
-          if (!typed || typed === uname || typed.toLowerCase() === email) {
-            targetId = loggedId || typed;
-          }
+          targetId = String(u.user_id || u._id || '').trim();
         }
-      } catch (e) { /* ignore */ }
-      if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
-      return loadAiHistory(targetId);
+      } catch (e) { }
+      if (targetId) loadAiHistory(targetId);
+      else message.textContent = "Ingresa un ID de usuario.";
     });
 
-    // Al cargar la pÃ¡gina, recupera el Ãºltimo usuario desde localStorage
     async function loadAiAdjustments(userId) {
       const section = document.getElementById('ai-section');
       const loadEl = document.getElementById('ai-loading');
       const errEl = document.getElementById('ai-error');
       const content = document.getElementById('ai-content');
-      const kcalEl = document.getElementById('ai-kcal');
-      const macrosEl = document.getElementById('ai-macros');
-      const trainEl = document.getElementById('ai-train');
-      const reasonEl = document.getElementById('ai-reason');
-      const nextEl = document.getElementById('ai-next');
       const btnSave = document.getElementById('btnSaveAgentPlan');
-      const saveMsg = document.getElementById('ai-save-msg');
-
       if (section) section.style.display = 'block';
       if (loadEl) loadEl.style.display = 'block';
-      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+      if (errEl) errEl.style.display = 'none';
       if (content) content.style.display = 'none';
-      if (btnSave) { btnSave.style.display = 'none'; btnSave.dataset.userId = userId; }
-      if (saveMsg) { saveMsg.textContent = ''; }
       try {
+        showLoader("Calculando ajustes AI...");
         const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-          throw new Error(err.error || `HTTP ${resp.status}`);
-        }
+        if (!resp.ok) throw new Error("Error en respuesta");
         const data = await resp.json();
         const out = data.output || {};
         const adj = out.ajustes || {};
@@ -751,170 +670,103 @@
         const macros = food.macros || {};
         const train = adj.plan_entrenamiento || {};
 
-        if (kcalEl) kcalEl.textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
-        if (macrosEl) macrosEl.textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-        if (trainEl) trainEl.textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
-        if (reasonEl) reasonEl.textContent = out.razonamiento_resumido || '';
-        if (nextEl) nextEl.textContent = (out.proxima_revision_dias != null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
+        document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
+        document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
+        document.getElementById('ai-train').textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
+        document.getElementById('ai-reason').textContent = out.razonamiento_resumido || '';
+        document.getElementById('ai-next').textContent = (out.proxima_revision_dias != null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
 
         if (content) content.style.display = 'block';
-        if (btnSave) btnSave.style.display = 'inline-block';
+        if (btnSave) { btnSave.style.display = 'inline-block'; btnSave.dataset.userId = userId; }
       } catch (e) {
-        if (errEl) { errEl.textContent = `No se pudieron obtener los ajustes: ${e.message}`; errEl.style.display = 'block'; }
+        if (errEl) { errEl.textContent = `Error: ${e.message}`; errEl.style.display = 'block'; }
       } finally {
         if (loadEl) loadEl.style.display = 'none';
+        hideLoader();
       }
     }
 
-    // Guardar y activar plan desde el último ajuste AI
     (function () {
       const btn = document.getElementById('btnSaveAgentPlan');
       const msg = document.getElementById('ai-save-msg');
       if (!btn) return;
       btn.addEventListener('click', async () => {
-        const input = document.getElementById('userIdInput');
-        let targetId = btn.dataset.userId || (input ? input.value.trim() : '');
-        try {
-          const raw = localStorage.getItem('ai_fitness_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            const loggedId = String(u.user_id || u._id || '').trim();
-            const uname = (u.username || '').trim();
-            const email = (u.email || '').trim().toLowerCase();
-            if (!targetId || targetId === uname || targetId.toLowerCase() === email) {
-              targetId = loggedId || targetId;
-            }
-          }
-        } catch (e) { /* ignore */ }
-        if (!targetId) { if (msg) msg.textContent = 'Ingresa un ID de usuario.'; return; }
-        if (msg) msg.textContent = 'Guardando y activando plan...';
+        const targetId = btn.dataset.userId;
+        if (!targetId) return;
+        if (msg) msg.textContent = 'Guardando...';
+        showLoader("Guardando plan...");
         try {
           const resp = await fetch(`/ai/adjustments/${encodeURIComponent(targetId)}/apply_latest`, { method: 'POST' });
-          if (!resp.ok) {
-            const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-            throw new Error(err.error || `HTTP ${resp.status}`);
+          if (resp.ok) {
+            if (msg) msg.textContent = 'Plan activado';
+            btn.style.display = 'none';
+            loadActivePlanIndicator(targetId);
           }
-          const data = await resp.json();
-          if (msg) msg.textContent = 'Plan guardado y activado';
-          btn.style.display = 'none';
-          try { loadActivePlanIndicator(targetId); } catch (_) { }
-        } catch (e) { if (msg) msg.textContent = `No se pudo guardar: ${e.message}`; }
+        } catch (e) { } finally { hideLoader(); }
       });
     })();
 
     async function loadAiHistory(userId) {
       const section = document.getElementById('ai-section');
-      const loadEl = document.getElementById('ai-history-loading');
-      const errEl = document.getElementById('ai-history-error');
       const listEl = document.getElementById('ai-history-list');
       if (section) section.style.display = 'block';
-      if (loadEl) loadEl.style.display = 'block';
-      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
       if (listEl) listEl.innerHTML = '';
+      showLoader("Cargando historial AI...");
       try {
         const resp = await fetch(`/ai/adjustments/${encodeURIComponent(userId)}?limit=10`);
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-          throw new Error(err.error || `HTTP ${resp.status}`);
-        }
         const rows = await resp.json();
-        if (!Array.isArray(rows)) throw new Error('Formato inválido');
+        if (!Array.isArray(rows)) return;
         const frag = document.createDocumentFragment();
         rows.forEach((r, idx) => {
           const li = document.createElement('li');
           li.className = 'list-group-item list-group-item-theme d-flex justify-content-between align-items-start';
-          // li.style.background = '#111827'; li.style.color = '#e5e7eb'; // REMOVED hardcoded styles
           const title = document.createElement('div');
           const ts = (r.created_at || '').replace('T', ' ').replace('Z', '');
           title.innerHTML = `<div><strong>#${idx + 1}</strong> · ${ts || 'sin-fecha'}</div>`;
-          const small = document.createElement('small');
           const aj = (r.output && r.output.ajustes) || {};
           const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
-          small.textContent = `kcal: ${food.kcal_obj ?? '-'} (? ${food.kcal_delta ?? 0}), vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
+          const small = document.createElement('small');
+          small.textContent = `kcal: ${food.kcal_obj ?? '-'}, vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
           title.appendChild(small);
           li.appendChild(title);
-
-          const actions = document.createElement('div');
-          const saveBtn = document.createElement('button');
-          saveBtn.className = 'btn btn-sm btn-outline-light';
-          saveBtn.textContent = 'Guardar como plan';
-          saveBtn.addEventListener('click', async (ev) => {
-            ev.stopPropagation();
-            try {
-              const resp = await fetch(`/ai/adjustments/${encodeURIComponent(r._id)}/save_plan`, { method: 'POST' });
-              if (!resp.ok) {
-                const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-                throw new Error(err.error || `HTTP ${resp.status}`);
-              }
-              const out = await resp.json();
-              const msg = document.getElementById('message');
-              if (msg) msg.textContent = 'Plan guardado correctamente';
-            } catch (e) {
-              const msg = document.getElementById('message');
-              if (msg) msg.textContent = `No se pudo guardar el plan: ${e.message}`;
-            }
-          });
-          actions.appendChild(saveBtn);
-          li.appendChild(actions);
-          li.addEventListener('click', () => {
-            // Al hacer click, cargar detalle en la tarjeta superior
-            if (r.output) {
-              const macros = (r.output.ajustes && r.output.ajustes.plan_alimentacion && r.output.ajustes.plan_alimentacion.macros) || {};
-              const food2 = (r.output.ajustes && r.output.ajustes.plan_alimentacion) || {};
-              const train2 = (r.output.ajustes && r.output.ajustes.plan_entrenamiento) || {};
-              document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food2.kcal_obj ?? '-'} (delta: ${food2.kcal_delta ?? 0})`;
-              document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-              document.getElementById('ai-train').textContent = `Volumen ?: ${train2.volumen_delta_ratio ?? 0}, Cardio: ${train2.cardio ?? '-'}`;
-              document.getElementById('ai-reason').textContent = r.output.razonamiento_resumido || '';
-              document.getElementById('ai-next').textContent = (r.output.proxima_revision_dias != null) ? `Próxima revisión: ${r.output.proxima_revision_dias} días` : '';
-              document.getElementById('ai-section').style.display = 'block';
-              document.getElementById('ai-content').style.display = 'block';
-            }
-          });
           frag.appendChild(li);
         });
         if (listEl) listEl.appendChild(frag);
-      } catch (e) {
-        if (errEl) { errEl.textContent = `No se pudo cargar el histórico: ${e.message}`; errEl.style.display = 'block'; }
-      } finally {
-        if (loadEl) loadEl.style.display = 'none';
-      }
+      } catch (e) { } finally { hideLoader(); }
     }
 
     window.addEventListener("DOMContentLoaded", async () => {
-      // Load dependencies for routines
       await ensureRoutineDependencies();
-      // Prefer the logged-in user's id for loading, but show their username in the input
       let loadId = null;
       let displayLabel = null;
       try {
         const raw = localStorage.getItem('ai_fitness_user');
         if (raw) {
           const u = JSON.parse(raw);
-          loadId = String(u.user_id || u._id || '').trim() || null;
-          displayLabel = (u.username || '').trim() || null;
+          loadId = String(u.user_id || u._id || '').trim();
+          displayLabel = (u.username || '').trim();
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) { }
       const lastUser = localStorage.getItem("ai_fitness_uid");
-      if (!loadId && lastUser) {
-        loadId = lastUser;
-        displayLabel = lastUser;
-      }
-      if (displayLabel) {
-        userIdInput.value = displayLabel;
-      }
+      if (!loadId && lastUser) { loadId = lastUser; displayLabel = lastUser; }
+      if (displayLabel) userIdInput.value = displayLabel;
+
       if (loadId) {
-        loadProgress(loadId);
-        loadActivePlanIndicator(loadId);
-        loadRoutines(loadId);
-        loadCreatedRoutines();
-        loadHeatmap(loadId);
+        showLoader("Sincronizando dashboard...");
+        try {
+          await Promise.all([
+            loadProgress(loadId),
+            loadActivePlanIndicator(loadId),
+            loadRoutines(loadId),
+            loadCreatedRoutines(),
+            loadHeatmap(loadId)
+          ]);
+        } catch (e) { } finally { hideLoader(); }
       } else {
         loadCreatedRoutines();
       }
     });
-  </script>
-  <script>
+
     async function loadActivePlanIndicator(userId) {
       const el = document.getElementById('active-plan-indicator');
       try {
@@ -923,42 +775,15 @@
         if (resp.ok) {
           const data = await resp.json();
           const ts = data.activated_at || data.created_at || '';
-          let label = '';
-          try {
-            const d = new Date(ts);
-            if (!isNaN(d.getTime())) {
-              const dd = String(d.getDate()).padStart(2, '0');
-              const mm = String(d.getMonth() + 1).padStart(2, '0');
-              const yyyy = d.getFullYear();
-              label = `${dd}/${mm}/${yyyy}`;
-            } else {
-              label = ts.toString().split('T')[0];
-              if (label && label.includes('-')) {
-                const parts = label.split('-');
-                if (parts.length === 3) { label = `${parts[2]}/${parts[1]}/${parts[0]}`; }
-              }
-            }
-          } catch (_) { label = ts; }
+          let label = ts.split('T')[0];
           if (el) {
             el.innerHTML = `Plan activo desde ${label} · <a href="/plan" class="link-info">ver en Mi Plan</a>`;
             el.style.display = 'block';
           }
-        } else {
-          if (el) el.style.display = 'none';
         }
-      } catch (e) {
-        if (el) el.style.display = 'none';
-      }
+      } catch (e) { }
     }
   </script>
-
-  <!-- Ajustes del Agente (secciÃ³n visual) -->
-
-  <!-- Language selector script: guarda la preferencia en localStorage y actualiza document.lang -->
-  <!-- centralized language script -->
-  </div> <!-- End main-content -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/js/lang.js"></script>
 </body>
 
 </html>

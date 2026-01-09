@@ -14,6 +14,7 @@
     <!-- Custom CSS -->
     <link href="/static/css/theme.css" rel="stylesheet">
     <link href="/static/css/sidebar.css" rel="stylesheet">
+    <link href="/static/css/loader.css" rel="stylesheet">
 
     <style>
         body {
@@ -27,6 +28,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -105,6 +107,8 @@
         </main>
     </div>
 
+    {% include 'components/loader.html' %}
+
     <div id="appAlertModal" class="alert-modal-backdrop">
         <div class="alert-modal-card">
             <div id="appAlertTitle" class="alert-title"></div>
@@ -118,6 +122,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/lang.js"></script>
+    <script src="/static/js/loader.js"></script>
     <script>
         const appAlertModal = document.getElementById("appAlertModal");
         const appAlertTitle = document.getElementById("appAlertTitle");

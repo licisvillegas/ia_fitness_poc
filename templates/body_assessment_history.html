@@ -10,6 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="/static/css/theme.css" rel="stylesheet">
     <link href="/static/css/sidebar.css" rel="stylesheet">
+    <link href="/static/css/loader.css" rel="stylesheet">
     <style>
         body {
             font-family: "Poppins", sans-serif;
@@ -254,9 +255,6 @@
                 <div class="row g-0 h-100">
                     <!-- LISTA LATERAL -->
                     <div class="col-md-3 history-list-col bg-dark" id="history-list">
-                        <div class="p-3 text-center text-secondary">
-                            <i class="fas fa-spinner fa-spin"></i> Cargando historial...
-                        </div>
                     </div>
 
                     <!-- DETALLE PRINCIPAL -->
@@ -446,6 +444,7 @@
         document.addEventListener('DOMContentLoaded', loadHistory);
 
         async function loadHistory() {
+            showLoader("Cargando historial...");
             try {
                 const resp = await fetch(`/ai/body_assessment/history/${userId}`);
                 if (!resp.ok) throw new Error("Error fetching history");
@@ -454,6 +453,8 @@
                 renderList();
             } catch (e) {
                 document.getElementById('history-list').innerHTML = `<div class="p-3 text-danger text-center"><small>${e.message}</small></div>`;
+            } finally {
+                hideLoader();
             }
         }
 
@@ -757,6 +758,8 @@
             window.print();
         }
     </script>
+    {% include 'components/loader.html' %}
+    <script src="/static/js/loader.js"></script>
 </body>
 
 </html>

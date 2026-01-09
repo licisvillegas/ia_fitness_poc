@@ -88,11 +88,11 @@ window.loadRoutines = async function loadRoutines(userId, options) {
   const returnTo = (options && options.returnTo) || "/dashboard";
 
   if (!listEl || !sectionEl) return;
+  if (window.showLoader) window.showLoader("Buscando rutinas...");
 
   await window.ensureRoutineDependencies();
 
-  listEl.innerHTML =
-    '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+  listEl.innerHTML = "";
   sectionEl.style.display = "block";
 
   try {
@@ -173,6 +173,8 @@ window.loadRoutines = async function loadRoutines(userId, options) {
   } catch (e) {
     console.error(e);
     listEl.innerHTML = '<div class="col-12 text-danger text-center">Error cargando rutinas.</div>';
+  } finally {
+    if (window.hideLoader) window.hideLoader();
   }
 };
 
@@ -299,41 +301,38 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
       <div>
         <div class="d-flex align-items-center gap-2">
           <div class="text-white fw-bold">${name}</div>
-          ${
-            hasVideo
-              ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')"><i class="fab fa-youtube"></i></button>`
-              : ""
-          }
+          ${hasVideo
+        ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')"><i class="fab fa-youtube"></i></button>`
+        : ""
+      }
         </div>
         <div class="d-flex flex-wrap gap-2 mt-1">
           <span class="badge bg-secondary">${bodyPartLabel}</span>
           <span class="badge bg-dark border border-secondary text-info"><i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}</span>
         </div>
-        ${
-          substitutes.length
-            ? `
+        ${substitutes.length
+        ? `
             <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">Sustitutos (${substitutes.length})</button>
             <div class="collapse mt-2" id="${subsId}">
               <div class="d-flex flex-column gap-2">
                 ${substitutes
-                  .map(
-                    (sub) => `<div class="routine-preview-item d-flex align-items-center justify-content-between">
+          .map(
+            (sub) => `<div class="routine-preview-item d-flex align-items-center justify-content-between">
                       <div>
                         <div class="fw-bold text-white">${sub.name || "Ejercicio"}</div>
                         <div class="text-secondary small"><i class="${window.getEquipmentMeta(sub.equipment).icon} me-1"></i>${window.getEquipmentMeta(sub.equipment).label}</div>
                       </div>
-                      ${
-                        sub.video_url
-                          ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>`
-                          : ""
-                      }
+                      ${sub.video_url
+                ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>`
+                : ""
+              }
                     </div>`
-                  )
-                  .join("")}
+          )
+          .join("")}
               </div>
             </div>`
-            : ""
-        }
+        : ""
+      }
       </div>
       <div class="text-end text-secondary small">
         <div>${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}</div>
@@ -356,8 +355,7 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
       const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
       if (entries.length > 0) {
         htmlParts.push(
-          `<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${meta.name}</div><div class="text-secondary small">${entries.length} items</div></div>${
-            meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""
+          `<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${meta.name}</div><div class="text-secondary small">${entries.length} items</div></div>${meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""
           }</div>`
         );
         entries.forEach((entry, eIdx) => {
@@ -370,10 +368,8 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
       const entries = (item.items || []).filter((sub) => isExerciseItem(sub) || isRestItem(sub));
       if (entries.length > 0) {
         htmlParts.push(
-          `<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${
-            item.group_name || item.name || "Circuito"
-          }</div><div class="text-secondary small">${entries.length} items</div></div>${
-            item.note || item.description ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""
+          `<div class="routine-preview-group"><div class="d-flex justify-content-between align-items-center"><div class="text-cyber-orange fw-bold">${item.group_name || item.name || "Circuito"
+          }</div><div class="text-secondary small">${entries.length} items</div></div>${item.note || item.description ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""
           }</div>`
         );
         entries.forEach((entry, eIdx) => {

@@ -32,7 +32,8 @@
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-cyber-blue"><i class="fas fa-layer-group me-2"></i>Diseñador de Rutina</h5>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" id="cancelRoutineBtn" onclick="cancelRoutine()" type="button" disabled>
+                    <button class="btn btn-sm btn-outline-secondary" id="cancelRoutineBtn" onclick="cancelRoutine()"
+                        type="button" disabled>
                         Cancelar
                     </button>
                     <button class="btn btn-sm btn-success" onclick="saveRoutine()">
@@ -259,7 +260,8 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">
             <div class="modal-header border-secondary d-flex align-items-center gap-2">
-                <div id="messageModalIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                <div id="messageModalIcon" class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 36px; height: 36px;">
                     <i class="fas fa-info"></i>
                 </div>
                 <h5 class="modal-title mb-0" id="messageModalTitle">Aviso</h5>
@@ -269,7 +271,8 @@
                 <div id="messageModalBody" class="text-secondary"></div>
             </div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" id="messageModalCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" id="messageModalCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-cyber-primary" id="messageModalConfirm">Aceptar</button>
             </div>
         </div>
@@ -325,26 +328,26 @@
         border-left-color: #ffc107;
     }
 
-        .routine-item:hover {
-            transform: translateX(5px);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
+    .routine-item:hover {
+        transform: translateX(5px);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
 
-        body.user-builder .advanced-only {
-            display: none !important;
-        }
+    body.user-builder .advanced-only {
+        display: none !important;
+    }
 
-        body.user-builder.show-advanced .advanced-only {
-            display: block !important;
-        }
+    body.user-builder.show-advanced .advanced-only {
+        display: block !important;
+    }
 
-        body.user-builder .advanced-only-inline {
-            display: none !important;
-        }
+    body.user-builder .advanced-only-inline {
+        display: none !important;
+    }
 
-        body.user-builder.show-advanced .advanced-only-inline {
-            display: inline-flex !important;
-        }
+    body.user-builder.show-advanced .advanced-only-inline {
+        display: inline-flex !important;
+    }
 
     .builder-sidebar-card {
         display: flex;
@@ -456,14 +459,23 @@
     let bodyPartMap = {};
 
     document.addEventListener("DOMContentLoaded", async () => {
-        document.body.classList.add("user-builder");
-        const toggleBtn = document.getElementById("toggleAdvancedBtn");
-        if (toggleBtn) {
-            toggleBtn.addEventListener("click", () => setAdvancedMode(!advancedMode));
+        if (window.showLoader) window.showLoader("Cargando constructor...");
+        try {
+            document.body.classList.add("user-builder");
+            const toggleBtn = document.getElementById("toggleAdvancedBtn");
+            if (toggleBtn) {
+                toggleBtn.addEventListener("click", () => setAdvancedMode(!advancedMode));
+            }
+            await Promise.all([
+                loadBodyPartsConfig(),
+                loadExercises(),
+                loadRoutines()
+            ]);
+        } catch (e) {
+            console.error("Error inicializando constructor", e);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
         }
-        await loadBodyPartsConfig();
-        await loadExercises();
-        await loadRoutines();
 
         const searchInput = document.getElementById("searchEx");
         const filterBodyPart = document.getElementById("filterBodyPart");
@@ -728,27 +740,34 @@
     }
 
     async function loadRoutineById(routineId, options = {}) {
-        const res = await fetch(`/workout/api/my-routines/${routineId}`);
-        if (!res.ok) return;
-        const routine = await res.json();
-        const isDuplicate = options.duplicate === true;
-        document.getElementById("routineId").value = isDuplicate ? "" : routine._id;
-        document.getElementById("routineName").value = isDuplicate
-            ? `${routine.name || "Rutina"} (Copia)`
-            : (routine.name || "");
-        document.getElementById("routineDesc").value = routine.description || "";
-        document.getElementById("routineDay").value = routine.routine_day || "";
-        const selectedBodyParts = new Set(routine.routine_body_parts || []);
-        document.querySelectorAll(".routine-bodypart").forEach(input => {
-            input.checked = selectedBodyParts.has(input.value);
-        });
-        activeGroupId = "";
-        currentRoutineItems = normalizeRoutineItems(routine.items || []);
-        ensureAdvancedForItems(currentRoutineItems);
-        renderRoutineItems();
-        filterExercises();
-        updateCancelState();
-        switchMobileView('details');
+        if (window.showLoader) window.showLoader("Cargando rutina...");
+        try {
+            const res = await fetch(`/workout/api/my-routines/${routineId}`);
+            if (!res.ok) return;
+            const routine = await res.json();
+            const isDuplicate = options.duplicate === true;
+            document.getElementById("routineId").value = isDuplicate ? "" : routine._id;
+            document.getElementById("routineName").value = isDuplicate
+                ? `${routine.name || "Rutina"} (Copia)`
+                : (routine.name || "");
+            document.getElementById("routineDesc").value = routine.description || "";
+            document.getElementById("routineDay").value = routine.routine_day || "";
+            const selectedBodyParts = new Set(routine.routine_body_parts || []);
+            document.querySelectorAll(".routine-bodypart").forEach(input => {
+                input.checked = selectedBodyParts.has(input.value);
+            });
+            activeGroupId = "";
+            currentRoutineItems = normalizeRoutineItems(routine.items || []);
+            ensureAdvancedForItems(currentRoutineItems);
+            renderRoutineItems();
+            filterExercises();
+            updateCancelState();
+            switchMobileView('details');
+        } catch (e) {
+            console.error("Error cargando rutina", e);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
+        }
     }
 
     function normalizeRoutineItems(items) {
@@ -1696,6 +1715,7 @@
         };
 
         try {
+            if (window.showLoader) window.showLoader("Guardando rutina...");
             const res = await fetch("/workout/api/my-routines/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1715,7 +1735,10 @@
         } catch (e) {
             console.error(e);
             showAlertModal("Error de red", "danger");
+        } finally {
+            if (window.hideLoader) window.hideLoader();
         }
     }
 </script>
+<script src="/static/js/loader.js"></script>
 {% endblock %}

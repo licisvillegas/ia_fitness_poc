@@ -388,9 +388,18 @@
     let activeTab = 'all'; // 'all' or 'assigned'
 
     document.addEventListener("DOMContentLoaded", async () => {
-        await loadBodyParts();
-        await loadExercises();
-        await loadRoutines();
+        if (window.showLoader) window.showLoader("Cargando rutinas...");
+        try {
+            await Promise.all([
+                loadBodyParts(),
+                loadExercises(),
+                loadRoutines()
+            ]);
+        } catch (e) {
+            console.error("Error inicializando catálogo", e);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
+        }
 
         const mainSearch = document.getElementById("mainSearch");
         const filterBodyPart = document.getElementById("filterBodyPart");
@@ -1100,4 +1109,5 @@
         window.location.href = "/workout/routines/builder";
     }
 </script>
+<script src="/static/js/loader.js"></script>
 {% endblock %}

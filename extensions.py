@@ -1,17 +1,24 @@
-"""
-Extensiones Flask y objetos compartidos
-"""
+import os
 import logging
 import certifi
 from pymongo import MongoClient
 from config import Config
 
-        # Configurar conexion segura con certificados validos
+# Configuración de logging global
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger("ai_fitness")
+logger.info("✔ Aplicación AI Fitness iniciada correctamente")
+
+# Check OpenAI Key Status
+openai_key = os.getenv("OPENAI_API_KEY")
+if openai_key:
+    masked_key = f"{openai_key[:8]}...{openai_key[-4:]}" if len(openai_key) > 12 else "***"
+    logger.info(f"✔ OPENAI_API_KEY detectada: {masked_key}")
+else:
+    logger.warning("⚠ OPENAI_API_KEY no encontrada en variables de entorno. Los agentes usarán MOCK.")
 
 # MongoDB client y database (se inicializan en init_app)
 mongo_client = None
@@ -47,7 +54,7 @@ def init_db(app):
         )
         
         db = mongo_client[app.config.get('MONGO_DB')]
-        logger.info("✅ Conexión segura con MongoDB Atlas establecida correctamente")
+        logger.info("✔  Conexión segura con MongoDB Atlas establecida correctamente")
         
         return db
         
@@ -102,7 +109,7 @@ def create_indexes(db_instance):
         except Exception:
             pass
         
-        logger.info("✅ Índices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
+        logger.info("✔  Índices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
         
     except Exception as e:
         logger.warning(f"No se pudieron crear índices: {e}")

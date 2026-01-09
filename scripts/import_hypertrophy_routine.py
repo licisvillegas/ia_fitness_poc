@@ -20,7 +20,7 @@ if not MONGO_URI:
 # Connect to DB
 client = MongoClient(MONGO_URI, tls=True, tlsCAFile=certifi.where())
 db = client[MONGO_DB]
-print(f"✅ Connected to {MONGO_DB}")
+print(f"✔  Connected to {MONGO_DB}")
 
 # ==========================================
 # 1. EXERCISES LIST (Upsert Logic)
@@ -244,4 +244,4 @@ new_routine = {
 
 print("--- Inserting Routine ---")
 result = db.routines.insert_one(new_routine)
-print(f"✅ Routine Created! ID: {result.inserted_id}")
+print(f"✔  Routine Created! ID: {result.inserted_id}")

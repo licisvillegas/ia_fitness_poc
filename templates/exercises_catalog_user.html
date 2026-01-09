@@ -235,11 +235,13 @@
     }
 
     async function loadExercises() {
+        showLoader("Sincronizando catálogo...");
         try {
             const res = await fetch("/workout/api/exercises");
             allExercises = await res.json();
             filterExercises();
         } catch (e) { console.error(e); }
+        finally { hideLoader(); }
     }
 
     function renderExercises(exercises) {
@@ -494,4 +496,5 @@
         filterExercises();
     }
 </script>
+<script src="/static/js/loader.js"></script>
 {% endblock %}

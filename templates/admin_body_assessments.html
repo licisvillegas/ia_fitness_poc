@@ -166,6 +166,9 @@
                                 <button class="btn btn-outline-primary" type="button" id="btnLookupUser">
                                     <i class="fas fa-search"></i>
                                 </button>
+                                <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch" title="Limpiar">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
                             <!-- Results Dropdown -->
                             <div id="userSearchResults"
@@ -357,69 +360,37 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/user_search.js"></script>
     <script>
         // --- 1. ADMIN USER SEARCH LOGIC ---
-        const searchInput = document.getElementById('userSearchTerm');
-        const hiddenId = document.getElementById('adminUserId');
-        const resultsConfig = document.getElementById('userSearchResults');
-        const btnLookup = document.getElementById('btnLookupUser');
         const searchMsg = document.getElementById('searchMsg');
 
-        async function performUserLookup() {
-            const term = searchInput.value.trim();
-            if (!term) return;
-
-            try {
-                resultsConfig.innerHTML = '<div class="list-group-item bg-dark text-secondary">Buscando...</div>';
-                resultsConfig.style.display = 'block';
-
-                const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
-                const data = await resp.json();
-                resultsConfig.innerHTML = '';
-
-                let users = [];
-                if (Array.isArray(data)) users = data;
-                else if (data.users) users = data.users;
-
-                if (users.length === 0) {
-                    resultsConfig.innerHTML = '<div class="list-group-item bg-dark text-muted">Sin resultados</div>';
-                } else {
-                    users.forEach(u => {
-                        const el = document.createElement('button');
-                        el.type = 'button';
-                        el.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary text-start';
-                        el.innerHTML = `
-                            <div><strong>${u.name || u.username || 'Usuario'}</strong></div>
-                            <small class="text-secondary">${u.email || ''}</small>
-                            <div class="text-xs text-info opacity-50">ID: ${u.user_id}</div>
-                        `;
-                        el.onclick = () => selectUser(u);
-                        resultsConfig.appendChild(el);
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-                resultsConfig.innerHTML = `<div class="list-group-item bg-dark text-danger">Error: ${e.message}</div>`;
-            }
+        function renderAdminUserResult(u) {
+            return (
+                "<div><strong>" + (u.name || u.username || "Usuario") + "</strong></div>" +
+                "<small class=\"text-secondary\">" + (u.email || "") + "</small>" +
+                "<div class=\"text-xs text-info opacity-50\">ID: " + u.user_id + "</div>"
+            );
         }
 
         function selectUser(u) {
-            hiddenId.value = u.user_id;
-            searchInput.value = u.name || u.username;
-            resultsConfig.style.display = 'none';
-            searchMsg.textContent = `Usuario seleccionado: ${u.name || u.username}`;
-
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username);
             // Trigger Load History
             loadHistory(u.user_id);
         }
 
-        btnLookup.addEventListener('click', performUserLookup);
-        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
-
-        // Hide Dropdown on click outside
-        document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target) && !resultsConfig.contains(e.target)) {
-                resultsConfig.style.display = 'none';
+        initUserSearch({
+            inputId: "userSearchTerm",
+            resultsId: "userSearchResults",
+            hiddenId: "adminUserId",
+            buttonId: "btnLookupUser",
+            clearButtonId: "btnClearUserSearch",
+            storageKey: "admin_working_user",
+            itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+            renderItem: renderAdminUserResult,
+            onSelect: selectUser,
+            onClear: () => {
+                if (searchMsg) searchMsg.textContent = "";
             }
         });
 

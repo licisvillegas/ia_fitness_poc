@@ -14,21 +14,15 @@
     const formatWeightValue = (value) => {
         const weight = Number(value);
         if (!Number.isFinite(weight)) return "-";
-        if (sessionWeightUnit === "lb") {
-            const lb = weight * 2.20462;
-            return lb % 1 === 0 ? lb.toString() : lb.toFixed(1);
-        }
-        return weight % 1 === 0 ? weight.toString() : weight.toFixed(1);
+        const toDisplay = sessionWeightUnit === "lb" ? weight * 2.20462 : weight;
+        return Math.round(toDisplay).toString();
     };
 
     const formatVolumeValue = (value) => {
         const volume = Number(value);
         if (!Number.isFinite(volume)) return "0";
-        if (sessionWeightUnit === "lb") {
-            const lbVol = volume * 2.20462;
-            return lbVol % 1 === 0 ? lbVol.toString() : lbVol.toFixed(1);
-        }
-        return volume % 1 === 0 ? volume.toString() : volume.toFixed(1);
+        const toDisplay = sessionWeightUnit === "lb" ? volume * 2.20462 : volume;
+        return Math.round(toDisplay).toString();
     };
 
     const renderSessions = (data) => {
@@ -43,6 +37,14 @@
         container.innerHTML = data.map((session, index) => {
             const sets = Array.isArray(session.sets) ? session.sets : [];
             const totalSets = sets.length;
+            const avgWeight = (() => {
+                const weights = sets
+                    .map(set => Number(set.weight))
+                    .filter(weight => Number.isFinite(weight) && weight > 0);
+                if (!weights.length) return null;
+                const sum = weights.reduce((acc, value) => acc + value, 0);
+                return sum / weights.length;
+            })();
             const duration = session.duration_seconds
                 ? `${Math.floor(session.duration_seconds / 60)}min`
                 : '-';
@@ -125,7 +127,7 @@
                             <div class="text-secondary small">
                                 <span class="me-3">
                                     <i class="fas fa-weight-hanging text-cyber-blue me-1"></i>
-                                    <span class="text-white">${formatVolumeValue(session.total_volume || 0)}</span> ${sessionWeightUnit}
+                                    <span class="text-white">${avgWeight != null ? formatWeightValue(avgWeight) : '-'}</span> ${sessionWeightUnit}
                                 </span>
                                 <span class="me-3">
                                     <i class="fas fa-list text-cyber-orange me-1"></i>
@@ -294,6 +296,17 @@
         }
     };
 
+    const collapseAllSessionDetails = () => {
+        sessionData.forEach((_, index) => {
+            const details = document.getElementById(`session-details-${index}`);
+            const chevron = document.getElementById(`chevron-${index}`);
+            if (!details || !chevron) return;
+            details.style.display = 'none';
+            chevron.classList.remove('fa-chevron-up');
+            chevron.classList.add('fa-chevron-down');
+        });
+    };
+
     const filterSessionsByRange = (data, range, value) => {
         if (!Array.isArray(data) || !range) return Array.isArray(data) ? data : [];
         if (!value) return data;
@@ -367,6 +380,7 @@
         const weekBtn = document.getElementById("filterWeekBtn");
         const monthBtn = document.getElementById("filterMonthBtn");
         const rangeSelect = document.getElementById("sessionRangeSelect");
+        const collapseBtn = document.getElementById("collapseSessionsBtn");
         if (dayBtn) dayBtn.addEventListener("click", () => window.setSessionFilterRange("day"));
         if (weekdayBtn) weekdayBtn.addEventListener("click", () => window.setSessionFilterRange("weekday"));
         if (weekBtn) weekBtn.addEventListener("click", () => window.setSessionFilterRange("week"));
@@ -375,6 +389,11 @@
             rangeSelect.addEventListener("change", (event) => {
                 sessionFilterValue = event.target.value || "";
                 applySessionFilters();
+            });
+        }
+        if (collapseBtn) {
+            collapseBtn.addEventListener("click", () => {
+                collapseAllSessionDetails();
             });
         }
         window.setSessionFilterRange("month");

@@ -10,15 +10,28 @@
     </div>
     {% if is_admin %}
     <div class="col-md-4 d-flex justify-content-md-end align-items-center">
-        <div class="w-100" style="max-width: 250px;">
+        <div class="w-100" style="max-width: 360px;">
             <label class="text-secondary small fw-bold mb-1">VISUALIZAR COMO:</label>
-            <select id="userSelector" class="form-select form-select-sm bg-dark text-white border-secondary">
-                {% for u in all_users %}
-                <option value="{{ u.user_id }}" {% if u.user_id==current_user_id %}selected{% endif %}>
-                    {{ u.name }}
-                </option>
-                {% endfor %}
-            </select>
+            <div class="d-flex gap-2">
+                <div class="position-relative flex-grow-1">
+                    <div class="input-group">
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="userSearchTerm"
+                            placeholder="Nombre, usuario o email">
+                        <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="userSelector" value="{{ current_user_id }}">
+                    <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
+                        style="z-index: 1000; display: none; width: 90%;"></div>
+                </div>
+                <button id="btnClearUser" class="btn btn-outline-secondary" title="Limpiar">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button id="btnRefreshUser" class="btn btn-dark border-secondary" title="Refrescar">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -31,7 +44,7 @@
             <div class="card-body text-center py-4 py-md-5">
                 <i class="fas fa-plus-circle fa-4x text-cyber-blue mb-3"></i>
                 <h4 class="text-white">Crear Rutina</h4>
-                <p class="text-muted">Diseña un nuevo plan de entrenamiento.</p>
+                <p class="text-muted">Dise?a un nuevo plan de entrenamiento.</p>
             </div>
         </div>
     </div>
@@ -40,8 +53,8 @@
         <div class="card bg-panel border-0 shadow h-100 hover-card" onclick="location.href='/admin/exercises'">
             <div class="card-body text-center py-4 py-md-5">
                 <i class="fas fa-dumbbell fa-4x text-cyber-orange mb-3"></i>
-                <h4 class="text-white">Catálogo Ejercicios</h4>
-                <p class="p-muted">Gestiona tu librería de movimientos.</p>
+                <h4 class="text-white">Cat?logo Ejercicios</h4>
+                <p class="p-muted">Gestiona tu librer?a de movimientos.</p>
             </div>
         </div>
     </div>
@@ -58,7 +71,6 @@
     </div>
     {% endif %}
 </div>
-
 
 <div class="row g-4 mb-4">
     <!-- STATS ROW -->
@@ -79,7 +91,7 @@
             </div>
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <div id="heatmapGrid" class="heatmap-grid mb-3"></div>
-                <small class="text-muted">Últimos 3 meses</small>
+                <small class="text-muted">れltimos 3 meses</small>
             </div>
         </div>
     </div>
@@ -132,6 +144,7 @@
             font-size: 3em;
         }
     }
+
 </style>
 
 {% include 'components/assigned_routines.html' %}
@@ -141,9 +154,12 @@
 
 {% include 'components/session_history.html' %}
 
+
+
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/static/js/assigned_routines.js"></script>
+<script src="/static/js/user_search.js"></script>
 
 
 <style>
@@ -226,8 +242,15 @@
     const userSelector = document.getElementById('userSelector');
 
     function getActiveUserId() {
-        if (userSelector) return userSelector.value;
+        if (userSelector && userSelector.value) return userSelector.value;
         return window.currentUserId;
+    }
+
+    function selectDashboardUser(u) {
+        if (!u || !u.user_id) return;
+        if (userSelector) userSelector.value = u.user_id;
+        try { localStorage.setItem("ai_fitness_uid", u.user_id); } catch (e) { }
+        refreshDashboard();
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -235,21 +258,35 @@
         if (userSelector) {
             const storedUid = localStorage.getItem("ai_fitness_uid");
             if (storedUid) {
-                // Try to select if exists in options
-                const option = userSelector.querySelector(`option[value="${storedUid}"]`);
-                if (option) {
-                    userSelector.value = storedUid;
-                }
+                userSelector.value = storedUid;
+            } else if (window.currentUserId) {
+                userSelector.value = window.currentUserId;
             }
 
-            userSelector.addEventListener('change', () => {
-                localStorage.setItem("ai_fitness_uid", userSelector.value);
-                refreshDashboard();
+            initUserSearch({
+                inputId: "userSearchTerm",
+                resultsId: "userSearchResults",
+                hiddenId: "userSelector",
+                buttonId: "btnLookupUser",
+                clearButtonId: "btnClearUser",
+                storageKey: "admin_working_user",
+                onSelect: selectDashboardUser,
+                onClear: () => {
+                    if (userSelector) userSelector.value = "";
+                    refreshDashboard();
+                }
             });
         } else if (window.currentUserId) {
             try {
                 localStorage.setItem("ai_fitness_uid", window.currentUserId);
             } catch (e) { }
+        }
+
+        const refreshBtn = document.getElementById('btnRefreshUser');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                refreshDashboard();
+            });
         }
 
         // Search Logic

@@ -3,7 +3,12 @@
         <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
             <div><i class="fas fa-history text-cyber-green me-2"></i>Historial de Sesiones</div>
             <div class="d-flex flex-wrap align-items-center gap-3 session-controls">
-                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
+                            <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
+                            <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
+                        </div>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                     data-bs-target="#sessionFiltersCollapse" aria-expanded="false"
                     aria-controls="sessionFiltersCollapse">
                     <i class="fas fa-sliders-h me-1"></i>Filtros
@@ -18,12 +23,7 @@
         <div id="sessionFiltersCollapse" class="collapse">
             <div class="card-body pt-0">
                 <div class="d-flex flex-wrap align-items-center gap-3 session-controls">
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
-                        <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
-                        <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de sesiones">
+                    <div class="d-flex align-items-center gap-2"><div class="btn-group btn-group-sm" role="group" aria-label="Filtro de sesiones">
                             <button class="btn btn-outline-secondary" type="button" id="filterDayBtn">Día</button>
                             <button class="btn btn-outline-secondary" type="button" id="filterWeekdayBtn">Día semana</button>
                             <button class="btn btn-outline-secondary" type="button" id="filterWeekBtn">Semana</button>
@@ -33,6 +33,9 @@
                             aria-label="Seleccionar rango de sesiones" style="min-width: 150px;">
                             <option value="">Todas</option>
                         </select>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="collapseSessionsBtn">
+                            <i class="fas fa-compress-alt me-1"></i>Colapsar
+                        </button>
                     </div>
                 </div>
             </div>

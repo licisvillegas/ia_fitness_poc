@@ -80,12 +80,17 @@
             data-impersonating="{{ 'true' if is_impersonating else 'false' }}">
             <label class="text-secondary small fw-bold mb-1" style="font-size: 0.7rem;">CHANGE USER</label>
             <div class="position-relative">
-                <input type="text" id="sidebar-user-search"
-                    class="form-control form-control-sm bg-dark text-light border-secondary"
-                    placeholder="Buscar usuario...">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="sidebar-user-search"
+                        class="form-control bg-dark text-light border-secondary"
+                        placeholder="Buscar usuario...">
+                    <button id="sidebar-clear-search" class="btn btn-outline-secondary" type="button" title="Limpiar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
                 <div id="sidebar-search-results"
-                    class="position-absolute w-100 bg-dark border border-secondary rounded mt-1 d-none"
-                    style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                    class="position-absolute w-100 bg-dark border border-secondary rounded mt-1"
+                    style="z-index: 1050; max-height: 200px; overflow-y: auto; display: none;">
                     <!-- Results here -->
                 </div>
             </div>
@@ -307,6 +312,7 @@
     </div>
 </div>
 
+<script src="/static/js/user_search.js"></script>
 <script>
     // 1. Admin Token Logic
     document.addEventListener('DOMContentLoaded', () => {
@@ -427,46 +433,23 @@
             });
         }
 
-        // Search Logic
-        let sTimeout = null;
         if (sInput && sResults) {
-            sInput.addEventListener('input', (e) => {
-                const term = e.target.value.trim();
-                clearTimeout(sTimeout);
-                if (term.length < 2) { sResults.classList.add('d-none'); return; } sTimeout = setTimeout(async () => {
-                    try {
-                        const res = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
-                        if (res.ok) {
-                            const users = await res.json();
-                            renderSearchResults(users);
-                        }
-                    } catch (e) { console.error(e); }
-                }, 300);
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!sInput.contains(e.target) && !sResults.contains(e.target)) {
-                    sResults.classList.add('d-none');
-                }
-            });
-        }
-
-        function renderSearchResults(users) {
-            sResults.innerHTML = '';
-            if (users.length === 0) {
-                sResults.innerHTML = '<div class="p-2 text-muted small">Sin resultados</div>';
-            } else {
-                users.forEach(u => {
-                    const div = document.createElement('div');
-                    div.className = "p-2 border-bottom border-secondary text-white small cursor-pointer hover-bg-secondary";
-                    div.style.cursor = "pointer";
-                    div.innerHTML = `<div>${u.name || u.username}</div>
-    <div class="text-muted" style="font-size:0.7em">${u.email}</div>`;
-                    div.onclick = () => openConfirmModal(u); // Changed to open Modal
-                    sResults.appendChild(div);
-                });
+            function renderSidebarUserResult(u) {
+                return "<div>" + (u.name || u.username || "Usuario") + "</div>" +
+                    "<div class=\"text-muted\" style=\"font-size:0.7em\">" + (u.email || "") + "</div>";
             }
-            sResults.classList.remove('d-none');
+
+            initUserSearch({
+                inputId: "sidebar-user-search",
+                resultsId: "sidebar-search-results",
+                minChars: 2,
+                debounceMs: 300,
+                storeSelection: false,
+                itemClass: "p-2 border-bottom border-secondary text-white small cursor-pointer hover-bg-secondary",
+                clearButtonId: "sidebar-clear-search",
+                renderItem: renderSidebarUserResult,
+                onSelect: function (u) { openConfirmModal(u); }
+            });
         }
 
         function openConfirmModal(u) {

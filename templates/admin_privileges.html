@@ -131,6 +131,9 @@
                             <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
                                 style="z-index: 1000; display: none; width: 90%;"></div>
                         </div>
+                        <button id="btnClearUserSearch" class="btn btn-outline-secondary" title="Limpiar">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <button id="btnRefresh" class="btn btn-dark border-secondary"><i
                                 class="fas fa-sync-alt"></i></button>
                     </div>
@@ -198,6 +201,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/user_search.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
             const tableBody = document.getElementById("usersTableBody");
@@ -357,75 +361,28 @@
             });
 
             // --- Standard User Search Logic (Adapted for Table) ---
-            const searchInput = document.getElementById('userSearchTerm');
-            const hiddenId = document.getElementById('adminUserId');
-            const resultsConfig = document.getElementById('userSearchResults');
-
-            async function performUserLookup() {
-                const term = searchInput.value.trim();
-                if (!term) {
-                    renderUsers(allUsers); // Restore
-                    return;
-                }
-                try {
-                    resultsConfig.innerHTML = '<div class="list-group-item">Buscando...</div>';
-                    resultsConfig.style.display = 'block';
-
-                    const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
-                    const data = await resp.json();
-                    resultsConfig.innerHTML = '';
-
-                    let users = [];
-                    if (Array.isArray(data)) users = data;
-                    else if (data.users) users = data.users;
-                    else if (data.user_id) users = [data];
-
-                    if (users.length === 0) {
-                        resultsConfig.innerHTML = '<div class="list-group-item text-muted">Sin resultados</div>';
-                    } else {
-                        users.forEach(u => {
-                            const el = document.createElement('a');
-                            el.href = '#';
-                            el.className = 'list-group-item list-group-item-action';
-                            el.innerHTML = `<div><strong>${u.name || u.username || 'Usuario'}</strong> <small class="text-muted">(${u.email || ''})</small></div><small class="text-xs text-secondary">ID: ${u.user_id}</small>`;
-                            el.onclick = (e) => {
-                                e.preventDefault();
-                                selectUser(u);
-                            };
-                            resultsConfig.appendChild(el);
-                        });
-                    }
-                } catch (e) {
-                    console.error(e);
-                    resultsConfig.innerHTML = `<div class="list-group-item text-danger">Error: ${e.message}</div>`;
-                }
-            }
-
             function selectUser(u) {
-                hiddenId.value = u.user_id;
-                searchInput.value = `${u.name || u.username} (${u.email})`;
-                resultsConfig.style.display = 'none';
-
-                // Save Context
-                try { localStorage.setItem('admin_working_user', JSON.stringify(u)); } catch (e) { }
-
-                // Filter table to show ONLY this user
                 const local = allUsers.find(existing => existing.user_id === u.user_id);
                 renderUsers(local ? [local] : [u]);
             }
 
-            document.getElementById('btnLookupUser').addEventListener('click', performUserLookup);
-            searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
-
-            searchInput.addEventListener('input', (e) => {
-                if (!e.target.value.trim()) renderUsers(allUsers);
+            initUserSearch({
+                inputId: "userSearchTerm",
+                resultsId: "userSearchResults",
+                hiddenId: "adminUserId",
+                buttonId: "btnLookupUser",
+                clearButtonId: "btnClearUserSearch",
+                storageKey: "admin_working_user",
+                onSelect: selectUser,
+                onClear: () => renderUsers(allUsers)
             });
 
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
-                    resultsConfig.style.display = 'none';
-                }
-            });
+            const searchInput = document.getElementById('userSearchTerm');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    if (!e.target.value.trim()) renderUsers(allUsers);
+                });
+            }
             // ----------------------------------
 
             btnRefresh.addEventListener("click", loadUsers);

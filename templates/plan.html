@@ -12,6 +12,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
+<link href="/static/css/assigned_routines.css" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -151,15 +152,8 @@
         <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus
           resultados físicos.</p>
       </div>
-    </section>
-
-    <!-- Sección de Mis Rutinas (Copiado de Dashboard) -->
-    <section id="my-routines" class="container mt-5" style="display:none;">
-      <h4 class="mb-3 text-primary">Mis Rutinas Asignadas</h4>
-      <div id="routines-list" class="row g-3">
-        <!-- Routines injected here -->
-      </div>
-    </section>
+    </section>    <!-- Seccion de Mis Rutinas (reutilizable) -->
+    {% include 'components/assigned_routines.html' %}
 
     <!-- Sección de Entrenamientos -->
     <section class="workouts">
@@ -377,6 +371,7 @@
 
     <!-- centralized language script -->
     <script src="/static/js/lang.js"></script>
+    <script src="/static/js/assigned_routines.js"></script>
     <script>
       (function () {
         const listEl = document.getElementById('plan-list');
@@ -653,67 +648,18 @@
 
         btnReloadActive.addEventListener('click', loadActive);
 
-        async function loadRoutines(userId) {
-          const listEl = document.getElementById('routines-list');
-          const sectionEl = document.getElementById('my-routines');
-
-          if (!listEl || !sectionEl) return;
-
-          // Clear current
-          listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
-          sectionEl.style.display = 'block';
-
-          try {
-            const res = await fetch(`/workout/api/routines?user_id=${encodeURIComponent(userId)}`);
-            const routines = await res.json();
-
-            listEl.innerHTML = '';
-
-            if (!routines || routines.length === 0) {
-              listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No hay rutinas asignadas para este usuario.</div>`;
-              return;
-            }
-
-            routines.forEach(r => {
-              const cardCol = document.createElement('div');
-              cardCol.className = 'col-md-6 col-lg-4';
-
-              // Safe checks
-              const name = r.name || 'Rutina sin nombre';
-              const exCount = (r.items ? r.items.length : 0);
-              const id = r._id;
-
-              cardCol.innerHTML = `
-                    <div class="card h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary mb-2 text-truncate" title="${name}">${name}</h5>
-                            <p class="card-text text-muted small mb-3">
-                                <i class="fas fa-dumbbell me-1"></i> ${exCount} ejercicios
-                            </p>
-                            <a href="/workout/run/${id}?return_to=/plan" class="btn btn-sm btn-outline-primary w-100">
-                                <i class="fas fa-play me-1"></i> Iniciar
-                            </a>
-                        </div>
-                    </div>
-                  `;
-              listEl.appendChild(cardCol);
-            });
-
-          } catch (e) {
-            console.error(e);
-            listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas.</div>`;
-          }
-        }
-
-        document.getElementById('btnLoadPlans').addEventListener('click', () => {
+        document.getElementById('btnLoadPlans').addEventListener('click', async () => {
           loadPlans();
           const input = document.getElementById('planUserId');
           const uid = resolveUserId(input.value);
-          if (uid) loadRoutines(uid);
+          if (uid) {
+            await ensureRoutineDependencies();
+            loadRoutines(uid, { returnTo: '/plan' });
+          }
         });
 
         // Auto-cargar para el usuario logueado
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
           try {
             const raw = localStorage.getItem('ai_fitness_user');
             if (raw) {
@@ -723,7 +669,10 @@
               const uid = resolveUserId(display);
               loadPlans();
               loadActive();
-              if (uid) loadRoutines(uid);
+              if (uid) {
+                await ensureRoutineDependencies();
+                loadRoutines(uid, { returnTo: '/plan' });
+              }
             }
           } catch (e) { }
         });

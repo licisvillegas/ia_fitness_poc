@@ -1,0 +1,43 @@
+<section id="my-routines" class="container mt-5" style="display:none;">
+  <h4 class="mb-3">Mis Rutinas Asignadas</h4>
+  <div id="routines-list" class="row g-3">
+    <!-- Routines injected here -->
+  </div>
+</section>
+
+<!-- Modals for Routine Detail and Video -->
+<div class="modal fade" id="routineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-panel text-white border-cyber">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title text-cyber-green" id="routineModalTitle">Rutina</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="routineModalBody"></div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-panel text-white border-cyber">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title text-cyber-green">Video</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="ratio ratio-16x9">
+          <iframe id="videoFrame" src="" title="Video ejercicio"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

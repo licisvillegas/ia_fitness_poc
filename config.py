@@ -19,6 +19,7 @@ class Config:
     # MongoDB
     MONGO_URI = os.getenv("MONGO_URI")
     MONGO_DB = os.getenv("MONGO_DB")
+    MONGO_ENABLED = os.getenv("MONGO_ENABLED", "true").lower() == "true"
     
     # OpenAI
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

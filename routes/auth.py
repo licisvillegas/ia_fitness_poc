@@ -14,6 +14,9 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.post("/register")
 def auth_register():
     try:
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
         if not request.is_json:
             return jsonify({"error": "El cuerpo debe ser JSON"}), 415
 
@@ -80,6 +83,9 @@ def auth_register():
 @auth_bp.post("/login")
 def auth_login_api():
     try:
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
         if not request.is_json:
             return jsonify({"error": "El cuerpo debe ser JSON"}), 415
         data = request.get_json() or {}

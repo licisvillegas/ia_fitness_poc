@@ -6,7 +6,7 @@ import certifi
 from pymongo import MongoClient
 from config import Config
 
-# Configurar logging
+        # Configurar conexion segura con certificados validos
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -23,11 +23,19 @@ def init_db(app):
     global mongo_client, db
     
     try:
+        mongo_enabled = app.config.get("MONGO_ENABLED", True)
+        if not mongo_enabled:
+            logger.warning("MongoDB disabled via MONGO_ENABLED=false; skipping connection.")
+            db = None
+            return None
+
         mongo_uri = app.config.get('MONGO_URI')
         if not mongo_uri:
-            raise ValueError("❌ No se encontró la variable MONGO_URI en el entorno")
-        
-        # Configurar conexión segura con certificados válidos
+            logger.warning("MONGO_URI not set; skipping MongoDB connection.")
+            db = None
+            return None
+
+        # Configurar conexion segura con certificados validos
         mongo_client = MongoClient(
             mongo_uri,
             tls=True,

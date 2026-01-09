@@ -1,0 +1,43 @@
+.text-cyber-green {
+  color: #00ff9d;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+}
+
+.text-cyber-blue {
+  color: #00d2ff;
+}
+
+.text-cyber-orange {
+  color: #ff9d00;
+}
+
+.routine-preview-card {
+  background: #141a26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.routine-preview-scroll {
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.routine-preview-group {
+  background: #1b2434;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.routine-preview-item {
+  background: #1a2230;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.border-cyber {
+  border: 1px solid rgba(0, 210, 255, 0.3);
+}

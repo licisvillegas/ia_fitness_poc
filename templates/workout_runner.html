@@ -281,7 +281,7 @@
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.6);
-        z-index: 1400;
+        z-index: 2100;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s ease;
@@ -300,7 +300,7 @@
         height: calc(100vh - 70px);
         background: #0b0b0b;
         border-left: 1px solid #222;
-        z-index: 1500;
+        z-index: 2200;
         transform: translateX(100%);
         transition: transform 0.25s ease;
         display: flex;
@@ -587,7 +587,14 @@
             });
         };
 
-        const addStraightSets = (ex, key, groupInfo) => {
+        const hasExplicitRest = (item) => {
+            if (!item) return false;
+            if (item.rest_seconds != null) return true;
+            if (item.rest != null && item.rest !== item.target_time_seconds) return true;
+            return false;
+        };
+
+        const addStraightSets = (ex, key, groupInfo, addPostRest) => {
             const exSets = parseInt(ex.target_sets || ex.sets || 1);
             for (let s = 1; s <= exSets; s++) {
                 pushWorkStep(ex, key, s, exSets, groupInfo);
@@ -595,10 +602,21 @@
                     queue.push({ type: 'rest', duration: parseInt(getRestSeconds(ex)), label: 'Descansar' });
                 }
             }
+            if (addPostRest && hasExplicitRest(ex)) {
+                queue.push({ type: 'rest', duration: parseInt(getRestSeconds(ex)), label: 'Descansar' });
+            }
         };
 
         const hasEmbeddedGroups = items.some(item => Array.isArray(item.items));
         if (hasEmbeddedGroups) {
+            const hasNextWorkAfterIndex = (startIdx) => {
+                return items.slice(startIdx + 1).some(item => {
+                    if (isRestItem(item)) return false;
+                    if (Array.isArray(item.items)) return item.items.some(sub => isExerciseItem(sub));
+                    return isExerciseItem(item);
+                });
+            };
+
             items.forEach((group, gIdx) => {
                 if (isGroupItem(group) && !Array.isArray(group.items)) return;
                 if (isRestItem(group)) {
@@ -621,6 +639,7 @@
                     note: group.note || ''
                 };
 
+                const hasNextWork = hasNextWorkAfterIndex(gIdx);
                 for (let s = 1; s <= maxSets; s++) {
                     entries.forEach((entry, exIdx) => {
                         if (isRestItem(entry)) {
@@ -638,6 +657,8 @@
 
                             if (isCircuit) {
                                 if (isLastInCircuit && !isLastSet) {
+                                    queue.push({ type: 'rest', duration: restTime, label: 'Descansar (Fin de Circuito)' });
+                                } else if (isLastInCircuit && isLastSet && hasNextWork) {
                                     queue.push({ type: 'rest', duration: restTime, label: 'Descansar (Fin de Circuito)' });
                                 }
                             } else if (!isLastSet) {
@@ -676,13 +697,23 @@
             });
 
             const processedGroups = new Set();
-            blocks.forEach((block) => {
+            const hasWorkInBlock = (block) => {
+                if (block.type === 'entry') return isExerciseItem(block.entry);
+                if (block.type === 'group') {
+                    const entries = groupEntries.get(block.id) || [];
+                    return entries.some(isExerciseItem);
+                }
+                return false;
+            };
+            const hasNextWorkBlock = (blockIdx) => blocks.slice(blockIdx + 1).some(hasWorkInBlock);
+
+            blocks.forEach((block, blockIdx) => {
                 if (block.type === 'entry') {
                     const entry = block.entry;
                     if (isRestItem(entry)) {
                         pushRest(entry, block.key);
                     } else if (isExerciseItem(entry)) {
-                        addStraightSets(entry, block.key, null);
+                        addStraightSets(entry, block.key, null, hasNextWorkBlock(blockIdx));
                     }
                     return;
                 }
@@ -705,6 +736,7 @@
                     : { name: 'Grupo', note: '' };
                 const hasTrailingRest = entries.length > 0 && isRestItem(entries[entries.length - 1]);
 
+                const hasNextWork = hasNextWorkBlock(blockIdx);
                 for (let s = 1; s <= maxSets; s++) {
                     entries.forEach((entry, entryIdx) => {
                         if (isRestItem(entry)) {
@@ -719,6 +751,14 @@
                     });
 
                     if (s < maxSets && !hasTrailingRest) {
+                        const lastExercise = exerciseEntries[exerciseEntries.length - 1];
+                        const restTime = parseInt(getRestSeconds(lastExercise));
+                        queue.push({
+                            type: 'rest',
+                            duration: restTime,
+                            label: groupInfo && groupInfo.name ? `Descansar (${groupInfo.name})` : 'Descansar'
+                        });
+                    } else if (s === maxSets && !hasTrailingRest && hasNextWork) {
                         const lastExercise = exerciseEntries[exerciseEntries.length - 1];
                         const restTime = parseInt(getRestSeconds(lastExercise));
                         queue.push({
@@ -741,6 +781,7 @@
         const [cursor, setCursor] = useState(0); // Index in Queue
         const [status, setStatus] = useState('LOADING'); // LOADING | IDLE | WORK | REST | FINISHED
         const [sessionLog, setSessionLog] = useState([]);
+        const [historyMaxByExercise, setHistoryMaxByExercise] = useState({});
         const [exerciseLookup, setExerciseLookup] = useState({});
         const [isPaused, setIsPaused] = useState(false);
         const [message, setMessage] = useState(null);
@@ -820,6 +861,43 @@
 
             return () => { isMounted = false; };
         }, []);
+
+        useEffect(() => {
+            let isMounted = true;
+            const routineId = routine?.id || routine?._id;
+            if (!CURRENT_USER_ID || !routineId) return;
+
+            const loadHistoryMax = async () => {
+                try {
+                    const res = await fetch(`/workout/api/sessions?user_id=${encodeURIComponent(CURRENT_USER_ID)}&limit=50`);
+                    if (!res.ok) return;
+                    const sessions = await res.json();
+                    if (!isMounted || !Array.isArray(sessions)) return;
+
+                    const maxByExercise = {};
+                    sessions.forEach(session => {
+                        if (!session || session.routine_id !== routineId) return;
+                        const sets = Array.isArray(session.sets) ? session.sets : [];
+                        sets.forEach(set => {
+                            const exId = set.exerciseId || set.exercise_id;
+                            if (!exId) return;
+                            const weightVal = parseFloat(set.weight);
+                            if (!Number.isFinite(weightVal) || weightVal <= 0) return;
+                            if (maxByExercise[exId] == null || weightVal > maxByExercise[exId]) {
+                                maxByExercise[exId] = weightVal;
+                            }
+                        });
+                    });
+
+                    setHistoryMaxByExercise(maxByExercise);
+                } catch (e) {
+                    console.error("Error loading session history", e);
+                }
+            };
+
+            loadHistoryMax();
+            return () => { isMounted = false; };
+        }, [routine]);
 
         // Wake Lock Implementation
         useEffect(() => {
@@ -1223,6 +1301,7 @@
             addRestTime,
             logSet,
             sessionLog,
+            historyMaxByExercise,
             finishWorkout,
             startWorkout,
             cancelWorkout,
@@ -1445,7 +1524,7 @@
             const sets = ex.target_sets || ex.sets || 1;
             const reps = ex.target_reps || ex.reps;
             const time = ex.target_time_seconds || ex.time_seconds;
-            const rest = getRestSeconds(ex);
+            const restSeconds = getRestSeconds(ex);
 
             return (
                 <div key={key} className="d-flex justify-content-between align-items-start gap-3">
@@ -1519,7 +1598,7 @@
                     </div>
                     <div className="text-end text-secondary small">
                         <div>{sets} sets {isTime ? `x ${time || 60}s` : `x ${reps || '-'}`}</div>
-                        <div>Descanso {rest || 60}s</div>
+                        <div>Descanso {restSeconds}s</div>
                     </div>
                 </div>
             );
@@ -1709,7 +1788,7 @@
     };
 
     const InputControls = ({ step, compact = false }) => {
-        const { logSet, next, sessionLog } = useWorkout();
+        const { logSet, next, sessionLog, historyMaxByExercise } = useWorkout();
         // Local state for inputs so we can edit before committing
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
@@ -1717,6 +1796,7 @@
         const [unit, setUnit] = useState('lb');
         const weightInputRef = useRef(null);
         const repsInputRef = useRef(null);
+        const rpe8Ref = useRef(null);
 
         // Pre-fill from history and AUTO-FOCUS
         useEffect(() => {
@@ -1726,8 +1806,14 @@
             if (exerciseId) {
                 const lastMatch = [...sessionLog].reverse().find(entry => entry.exerciseId === exerciseId);
                 if (lastMatch) {
-                    if (nextWeight === '' && lastMatch.weight) nextWeight = lastMatch.weight;
+                    if (lastMatch.weight != null && lastMatch.weight !== '') nextWeight = lastMatch.weight;
                     if (lastMatch.reps) nextReps = lastMatch.reps;
+                }
+                if (!lastMatch && step.setNumber === 1) {
+                    const historyMax = historyMaxByExercise[exerciseId];
+                    if (historyMax != null && historyMax !== '') {
+                        nextWeight = String(historyMax);
+                    }
                 }
             }
             if (unit === 'lb' && nextWeight !== '') {
@@ -1745,16 +1831,17 @@
             setReps(nextReps);
             setRpe(8);
 
-            // Auto-focus logic
-            const targetRef = compact ? repsInputRef : weightInputRef;
-            if (targetRef.current) {
-                // Small timeout to ensure DOM is ready and transition is done
-                setTimeout(() => {
-                    targetRef.current.focus();
-                    targetRef.current.select();
-                }, 100);
-            }
-        }, [step, sessionLog]);
+            // Keep focus off the weight input on step change.
+            setTimeout(() => {
+                if (rpe8Ref.current) {
+                    rpe8Ref.current.focus();
+                    return;
+                }
+                if (document.activeElement && typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                }
+            }, 100);
+        }, [step, sessionLog, historyMaxByExercise]);
 
         const adjustReps = (delta) => {
             const current = parseInt(reps, 10);
@@ -1898,6 +1985,8 @@
                         <div className="d-flex justify-content-center gap-1">
                             {[7, 8, 9, 10].map(val => (
                                 <button key={val}
+                                    type="button"
+                                    ref={val === 8 ? rpe8Ref : null}
                                     className={`btn btn-sm btn-rpe-hud d-flex align-items-center justify-content-center ${rpe === val ? 'btn-light' : 'btn-outline-secondary'}`}
                                     onClick={() => setRpe(val)}
                                 >{val}</button>
@@ -1946,7 +2035,7 @@
         );
     };
 
-    const RestOverlay = ({ nextStep }) => {
+    const RestOverlay = ({ nextStep, showPending, onTogglePending }) => {
         const { currentStep, skipRest, stepTimer } = useWorkout();
 
         if (currentStep.type !== 'rest') return null;
@@ -1958,6 +2047,15 @@
 
         return (
             <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark text-white p-4" style={{ zIndex: 2000 }}>
+                <div className="position-absolute top-0 end-0 p-3">
+                    <button
+                        className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                        onClick={onTogglePending}
+                        title="Pendientes"
+                    >
+                        <i className="fas fa-list"></i>
+                    </button>
+                </div>
                 <div className="text-center mb-5">
                     <h2 className="display-1 fw-bold mb-0 text-cyber-green font-monospace">{formatTime(stepTimer)}</h2>
                     <p className="text-secondary text-uppercase letter-spacing-2 mt-2">Descanso</p>
@@ -2325,7 +2423,11 @@
                     <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
                 )}
 
-                <RestOverlay nextStep={nextStep} />
+                <RestOverlay
+                    nextStep={nextStep}
+                    showPending={showPending}
+                    onTogglePending={() => setShowPending(prev => !prev)}
+                />
                 <SubstitutesModal />
                 <ConfirmModal />
             </div>

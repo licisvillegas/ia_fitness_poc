@@ -2,16 +2,39 @@
     <div class="card bg-panel border-0 shadow h-100">
         <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
             <div><i class="fas fa-history text-cyber-green me-2"></i>Historial de Sesiones</div>
-            <div class="d-flex align-items-center gap-3">
-                <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
-                    <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
-                    <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
-                </div>
+            <div class="d-flex flex-wrap align-items-center gap-3 session-controls">
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sessionFiltersCollapse" aria-expanded="false"
+                    aria-controls="sessionFiltersCollapse">
+                    <i class="fas fa-sliders-h me-1"></i>Filtros
+                </button>
                 <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
                     data-bs-target="#sessionHistoryCollapse" aria-expanded="false"
                     aria-controls="sessionHistoryCollapse">
                     <i class="fas fa-chevron-down"></i>
                 </button>
+            </div>
+        </div>
+        <div id="sessionFiltersCollapse" class="collapse">
+            <div class="card-body pt-0">
+                <div class="d-flex flex-wrap align-items-center gap-3 session-controls">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
+                        <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
+                        <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de sesiones">
+                            <button class="btn btn-outline-secondary" type="button" id="filterDayBtn">Día</button>
+                            <button class="btn btn-outline-secondary" type="button" id="filterWeekdayBtn">Día semana</button>
+                            <button class="btn btn-outline-secondary" type="button" id="filterWeekBtn">Semana</button>
+                            <button class="btn btn-outline-secondary" type="button" id="filterMonthBtn">Mes</button>
+                        </div>
+                        <select id="sessionRangeSelect" class="form-select form-select-sm bg-dark text-white border-secondary session-range-select"
+                            aria-label="Seleccionar rango de sesiones" style="min-width: 150px;">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="sessionHistoryCollapse" class="collapse">
@@ -25,6 +48,36 @@
         </div>
     </div>
 </section>
+
+<style>
+    @media (max-width: 576px) {
+        .session-controls {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+        }
+
+        .session-controls .btn-group {
+            width: 100%;
+        }
+
+        .session-controls .btn-group .btn {
+            flex: 1 1 auto;
+        }
+
+        .session-controls .d-flex.align-items-center.gap-2 {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+        }
+
+        .session-range-select {
+            width: 100%;
+            min-width: 0 !important;
+        }
+    }
+</style>
 
 <script src="/static/js/session_history.js"></script>
 <script>

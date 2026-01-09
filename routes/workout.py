@@ -431,17 +431,43 @@ def api_get_sessions():
         ).sort("created_at", -1).limit(limit)
         
         sessions = []
+        routine_ids = set()
         for s in cursor:
             s["_id"] = str(s["_id"])
-            
+
+            rid = s.get("routine_id")
+            if rid:
+                routine_ids.add(rid)
+
             # Normalize start time for frontend
             start_dt = s.get("started_at") or s.get("created_at")
             if isinstance(start_dt, datetime):
                 s["start_time"] = start_dt.isoformat()
             elif isinstance(start_dt, str):
-                 s["start_time"] = start_dt
-            
+                s["start_time"] = start_dt
+
             sessions.append(s)
+
+        routine_map = {}
+        if routine_ids:
+            routine_obj_ids = []
+            routine_str_ids = set()
+            for rid in routine_ids:
+                if isinstance(rid, ObjectId):
+                    routine_obj_ids.append(rid)
+                    routine_str_ids.add(str(rid))
+                elif ObjectId.is_valid(str(rid)):
+                    routine_obj_ids.append(ObjectId(str(rid)))
+                    routine_str_ids.add(str(rid))
+
+            if routine_obj_ids:
+                for r in db.routines.find({"_id": {"$in": routine_obj_ids}}, {"name": 1}):
+                    routine_map[str(r["_id"])] = r.get("name")
+
+        for s in sessions:
+            rid = s.get("routine_id")
+            rid_key = str(rid) if rid is not None else ""
+            s["routine_name"] = routine_map.get(rid_key)
             
         return jsonify(sessions), 200
     except Exception as e:

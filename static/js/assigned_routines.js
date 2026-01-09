@@ -447,3 +447,73 @@ window.getRestSeconds = function getRestSeconds(item) {
   if (item.rest_seconds != null) return item.rest_seconds;
   return 60;
 };
+
+window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
+  const listEl = document.getElementById("created-routines-list");
+  const sectionEl = document.getElementById("my-created-routines");
+  const returnTo = (options && options.returnTo) || "/dashboard";
+
+  if (!listEl || !sectionEl) return;
+
+  listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+  sectionEl.style.display = "block";
+
+  try {
+    await window.ensureRoutineDependencies();
+    const res = await fetch("/workout/api/my-routines");
+    const routines = await res.json();
+    listEl.innerHTML = "";
+
+    if (!Array.isArray(routines) || routines.length === 0) {
+      listEl.innerHTML = '<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas aún.</div>';
+      return;
+    }
+
+    routines.forEach((r) => {
+      if (r && r._id) window.routinesMap.set(r._id, r);
+      const cardCol = document.createElement("div");
+      cardCol.className = "col-md-6 col-lg-4";
+
+      const name = r.name || "Rutina sin nombre";
+      const exCount = window.countExercises(r);
+      const id = r._id;
+      const partsLabel = window.getRoutineBodyPartsLabel(r);
+      const dayLabel = r.routine_day ? window.translateDay(r.routine_day) : null;
+
+      cardCol.innerHTML = `
+          <div class="card h-100 bg-panel border-secondary shadow-sm">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="flex-grow-1">
+                  <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                  <div class="d-flex flex-wrap gap-1 mb-1">
+                    <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
+                    ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
+                  </div>
+                </div>
+                <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
+                  ${exCount} ej.
+                </span>
+              </div>
+              <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
+              <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
+                <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">Mi rutina</small>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <a href="/workout/run/${id}?return_to=${encodeURIComponent(returnTo)}" class="btn btn-outline-primary" title="Iniciar">
+                    <i class="fas fa-play"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      listEl.appendChild(cardCol);
+    });
+  } catch (e) {
+    console.error("Error loading created routines:", e);
+    listEl.innerHTML = '<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>';
+  }
+};

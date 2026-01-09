@@ -1,0 +1,50 @@
+<section class="mt-5" id="session-history-section" style="display:none;">
+    <div class="card bg-panel border-0 shadow h-100">
+        <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            <div><i class="fas fa-history text-cyber-green me-2"></i>Historial de Sesiones</div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
+                    <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
+                    <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#sessionHistoryCollapse" aria-expanded="false"
+                    aria-controls="sessionHistoryCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div id="sessionHistoryCollapse" class="collapse">
+            <div class="card-body">
+                <div id="sessionsList" class="d-flex flex-column gap-3">
+                    <div class="text-center text-muted py-4">
+                        <div class="spinner-border text-secondary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="/static/js/session_history.js"></script>
+<script>
+    (function () {
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.initSessionUnitControls) {
+                window.initSessionUnitControls();
+            }
+
+            const collapseEl = document.getElementById('sessionHistoryCollapse');
+            if (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    const icon = document.querySelector('[data-bs-target="#sessionHistoryCollapse"] i');
+                    if (icon) icon.className = 'fas fa-chevron-up';
+                });
+                collapseEl.addEventListener('hide.bs.collapse', function () {
+                    const icon = document.querySelector('[data-bs-target="#sessionHistoryCollapse"] i');
+                    if (icon) icon.className = 'fas fa-chevron-down';
+                });
+            }
+        });
+    })();
+</script>

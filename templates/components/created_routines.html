@@ -1,0 +1,38 @@
+<section id="my-created-routines" class="mt-5" style="display:none;">
+    <div class="card bg-panel border-0 shadow">
+        <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            <div><i class="fas fa-user-edit text-cyber-blue me-2"></i>Rutinas creadas</div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                data-bs-target="#createdRoutinesCollapse" aria-expanded="false" aria-controls="createdRoutinesCollapse">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div id="createdRoutinesCollapse" class="collapse">
+            <div class="card-body">
+                <div id="created-routines-list" class="row g-3">
+                    <div class="col-12 text-center py-3">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const collapseEl = document.getElementById('createdRoutinesCollapse');
+            if (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    const icon = document.querySelector('[data-bs-target="#createdRoutinesCollapse"] i');
+                    if (icon) icon.className = 'fas fa-chevron-up';
+                });
+                collapseEl.addEventListener('hide.bs.collapse', function () {
+                    const icon = document.querySelector('[data-bs-target="#createdRoutinesCollapse"] i');
+                    if (icon) icon.className = 'fas fa-chevron-down';
+                });
+            }
+        });
+    })();
+</script>

@@ -186,6 +186,10 @@
       background-color: #39d353;
       box-shadow: 0 0 5px #39d353;
     }
+
+    .dashboard-modules section {
+      margin-top: 0 !important;
+    }
   </style>
 </head>
 
@@ -350,26 +354,19 @@
       </div>
     </section>
 
-    <!-- My Routines Section -->
-    {% include 'components/assigned_routines.html' %}
-
-    <section id="my-created-routines" class="container mt-4" style="display:none;">
-      <div class="card bg-panel border-0 shadow">
-        <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
-          <div><i class="fas fa-user-edit text-cyber-blue me-2"></i>Rutinas creadas</div>
-          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#createdRoutinesCollapse" aria-expanded="false" aria-controls="createdRoutinesCollapse">
-            <i class="fas fa-chevron-down"></i>
-          </button>
+    <section id="workout-modules" class="container mt-4">
+      <div class="row g-4 dashboard-modules">
+        <div class="col-12">
+          <!-- My Routines Section -->
+          {% include 'components/assigned_routines.html' %}
         </div>
-        <div id="createdRoutinesCollapse" class="collapse">
-          <div class="card-body">
-            <div id="created-routines-list" class="row g-3">
-              <div class="col-12 text-center py-3">
-                <div class="spinner-border text-primary" role="status"></div>
-              </div>
-            </div>
-          </div>
+        <div class="col-12">
+          <!-- My Created Routines Section -->
+          {% include 'components/created_routines.html' %}
+        </div>
+        <div class="col-12">
+          <!-- Session History Section -->
+          {% include 'components/session_history.html' %}
         </div>
       </div>
     </section>
@@ -538,63 +535,18 @@
       if (!targetId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
       loadProgress(targetId);
       loadActivePlanIndicator(targetId);
-      loadRoutines(targetId);
-      loadCreatedRoutines();
+      if (window.loadCreatedRoutines) {
+        window.loadCreatedRoutines({ returnTo: '/dashboard' });
+      }
+      if (window.loadSessions) {
+        window.loadSessions(targetId);
+      }
+      if (window.loadRoutines) {
+        window.loadRoutines(targetId);
+      }
       loadHeatmap(targetId);
     });
 
-    async function loadCreatedRoutines() {
-      const listEl = document.getElementById('created-routines-list');
-      const sectionEl = document.getElementById('my-created-routines');
-      if (!listEl || !sectionEl) return;
-      listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
-      sectionEl.style.display = 'block';
-      try {
-        const res = await fetch('/workout/api/my-routines');
-        const routines = await res.json();
-        listEl.innerHTML = '';
-        if (!routines || routines.length === 0) {
-          listEl.innerHTML = `<div class="col-12 text-muted text-center py-3">No tienes rutinas creadas.</div>`;
-          return;
-        }
-        routines.forEach(r => {
-          if (r?._id) routinesMap.set(r._id, r);
-          const cardCol = document.createElement('div');
-          cardCol.className = 'col-md-6 col-lg-4';
-          const name = r.name || 'Rutina sin nombre';
-          const exCount = countExercises(r);
-          const id = r._id;
-          const partsLabel = getRoutineBodyPartsLabel(r);
-          const dayLabel = r.routine_day ? translateDay(r.routine_day) : null;
-          cardCol.innerHTML = `
-            <div class="card h-100 bg-panel border-secondary shadow-sm">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="flex-grow-1">
-                            <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
-                            <div class="d-flex flex-wrap gap-1 mb-1">
-                                <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
-                                ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
-                            </div>
-                        </div>
-                        <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">${exCount} ej.</span>
-                    </div>
-                    <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
-                    <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">Mí rutina</small>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')"><i class="fas fa-eye"></i></button>
-                            <a href="/workout/run/${id}?return_to=/dashboard" class="btn btn-outline-primary"><i class="fas fa-play"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-          listEl.appendChild(cardCol);
-        });
-      } catch (e) {
-        listEl.innerHTML = `<div class="col-12 text-danger text-center">Error cargando rutinas creadas.</div>`;
-      }
-    }
 
     async function loadHeatmap(userId) {
       try {
@@ -757,13 +709,14 @@
           await Promise.all([
             loadProgress(loadId),
             loadActivePlanIndicator(loadId),
-            loadRoutines(loadId),
-            loadCreatedRoutines(),
+            window.loadRoutines ? window.loadRoutines(loadId) : Promise.resolve(),
+            window.loadCreatedRoutines ? window.loadCreatedRoutines({ returnTo: '/dashboard' }) : Promise.resolve(),
+            window.loadSessions ? window.loadSessions(loadId) : Promise.resolve(),
             loadHeatmap(loadId)
           ]);
         } catch (e) { } finally { hideLoader(); }
       } else {
-        loadCreatedRoutines();
+        if (window.loadCreatedRoutines) window.loadCreatedRoutines({ returnTo: '/dashboard' });
       }
     });
 

@@ -41,7 +41,7 @@
 
     <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
         <a href="/admin" class="text-decoration-none brand-text">
-            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 42px; width: auto;">
+            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 70px; width: auto;">
         </a>
         <div class="d-flex align-items-center gap-2">
             <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
@@ -123,24 +123,21 @@
             </a>
         </li>
         <li>
-            <a href="/admin/exercises"
-                class="nav-link {% if request.path == '/admin/exercises' %}active{% endif %}"
+            <a href="/admin/exercises" class="nav-link {% if request.path == '/admin/exercises' %}active{% endif %}"
                 title="Catalogo Ejercicios">
                 <i class="fas fa-book-medical me-2" style="width: 24px; text-align: center;"></i>
                 <span>Catalogo Ejercicios</span>
             </a>
         </li>
         <li>
-            <a href="/admin/routines"
-                class="nav-link {% if request.path == '/admin/routines' %}active{% endif %}"
+            <a href="/admin/routines" class="nav-link {% if request.path == '/admin/routines' %}active{% endif %}"
                 title="Catalogo Rutinas">
                 <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
                 <span>Catalogo Rutinas</span>
             </a>
         </li>
         <li>
-            <a href="/workout/dashboard"
-                class="nav-link {% if request.path == '/workout/dashboard' %}active{% endif %}"
+            <a href="/workout/dashboard" class="nav-link {% if request.path == '/workout/dashboard' %}active{% endif %}"
                 title="Runner / Historial">
                 <i class="fas fa-running me-2" style="width: 24px; text-align: center;"></i>
                 <span>Runner / Historial</span>
@@ -213,9 +210,9 @@
         <button id="mobile-sidebar-toggle" class="btn text-white border-0" type="button">
             <i class="fas fa-bars fs-3"></i>
         </button>
-    <span class="navbar-brand me-auto ms-2 fw-bold text-danger">
-        <img src="/static/images/logo.png" alt="AI Fitness" style="height: 36px; width: auto;">
-    </span>
+        <span class="navbar-brand me-auto ms-2 fw-bold text-danger">
+            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 36px; width: auto;">
+        </span>
     </div>
 </nav>
 
@@ -228,7 +225,7 @@
         const sidebarToggle = document.getElementById("sidebar-toggle");
         const toggleIcon = sidebarToggle.querySelector("i");
         const posButtons = document.querySelectorAll(".pos-toggle-btn");
-        
+
 
         // 1. Cargar preferencias
         const savedCollapsed = localStorage.getItem("sidebar_admin_collapsed") === "true";

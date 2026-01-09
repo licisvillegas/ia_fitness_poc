@@ -2,8 +2,8 @@
 <div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
     style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
     <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
-        <a href="/" class="text-decoration-none brand-text">
-            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 42px; width: auto;">
+        <a href="/landing" class="text-decoration-none brand-text">
+            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 70px; width: auto;">
         </a>
         <div class="d-flex align-items-center gap-2">
             <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
@@ -704,7 +704,6 @@
         const brandLink = document.querySelector('.brand-text')?.closest('a');
         const homeLink = document.querySelector('a[href="/"][title="Inicio"]');
 
-        if (brandLink) brandLink.addEventListener('click', redirectIfLogged);
         if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
 
         // 7. Theme Toggle Logic (Added Fix)

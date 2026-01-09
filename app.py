@@ -73,6 +73,17 @@ def server_error(e):
 
 
 # ======================================================
+# CACHE CONTROL
+# ======================================================
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+# ======================================================
 # UTILS DE INICIO
 # ======================================================
 def seed_user_statuses():

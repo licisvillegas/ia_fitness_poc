@@ -398,6 +398,13 @@ def api_get_user_latest_metrics(user_id):
                  metrics["body_fat"] = body_comp.get("body_fat_percent")
             elif out.get("body_fat_percent"):
                  metrics["body_fat"] = out.get("body_fat_percent")
+
+            # TMB (energy_expenditure.tmb) & TDEE (energy_expenditure.selected_tdee)
+            energy = out.get("energy_expenditure", {})
+            if energy.get("tmb"):
+                metrics["tmb"] = energy.get("tmb")
+            if energy.get("selected_tdee"):
+                metrics["tdee"] = energy.get("selected_tdee")
             # Prioridad 2: Input del Usuario (Normalizado)
             elif meas.get("body_fat_percent"):
                  metrics["body_fat"] = meas.get("body_fat_percent")

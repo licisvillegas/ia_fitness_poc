@@ -324,7 +324,7 @@
 
         <div class="col-6 col-md-3">
           <div class="stat-card">
-            <div class="stat-icon">🔥</div>
+            <div class="stat-icon">⚖️</div>
             <h5 id="stat-weight-title">Peso Actual</h5>
             <h3 id="stat-weight" class="text-theme">â€”</h3>
             <p id="stat-last-0" class="text-secondary">Último registro</p>
@@ -341,21 +341,17 @@
         <div class="col-6 col-md-3">
           <div class="stat-card">
             <div class="stat-icon">⚡</div>
-            <h5 id="stat-performance-title">Rendimiento</h5>
-            <h3 id="stat-performance" class="text-theme">â€”</h3>
-            <div class="progress mt-2">
-              <div class="progress-bar" id="bar-performance" style="width:0%"></div>
-            </div>
+            <h5 id="stat-tmb-title">Tasa Metabólica Basal</h5>
+            <h3 id="stat-tmb" class="text-theme">--</h3>
+            <p class="text-secondary small">kcal / día</p>
           </div>
         </div>
         <div class="col-6 col-md-3">
           <div class="stat-card">
             <div class="stat-icon">🥗</div>
-            <h5 id="stat-nutrition-title">Adherencia Nutricional</h5>
-            <h3 id="stat-nutrition" class="text-theme">â€”</h3>
-            <div class="progress mt-2">
-              <div class="progress-bar" id="bar-nutrition" style="width:0%"></div>
-            </div>
+            <h5 id="stat-diet-title">Consumo Energético Total</h5>
+            <h3 id="stat-diet" class="text-theme">--</h3>
+            <p class="text-secondary small">kcal / día</p>
           </div>
         </div>
       </div>
@@ -453,10 +449,10 @@
         const last = data[data.length - 1];
         document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
         document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
-        document.getElementById("stat-performance").innerText = `${last.performance}%`;
-        document.getElementById("bar-performance").style.width = `${last.performance}%`;
-        document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
-        document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
+        // document.getElementById("stat-performance").innerText = `${last.performance}%`;
+        // document.getElementById("bar-performance").style.width = `${last.performance}%`;
+        // document.getElementById("stat-nutrition").innerText = `${last.nutrition_adherence}%`;
+        // document.getElementById("bar-nutrition").style.width = `${last.nutrition_adherence}%`;
 
         // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS (Override Weight/Fat) ---
         try {
@@ -468,6 +464,12 @@
             }
             if (mData.body_fat) {
               document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
+            }
+            if (mData.tmb) {
+              document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
+            }
+            if (mData.tdee) {
+              document.getElementById("stat-diet").innerText = `${mData.tdee}`;
             }
           }
         } catch (e) { console.error("Error fetching latest metrics", e); }
@@ -503,7 +505,7 @@
         charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
         // Gráfico de rendimiento (barras)
         charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
-        // Gráfico de adherencia nutricional (barras)
+        // Gráfico de TMB (barras)
         charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
 
         // Expose a helper to update chart labels when language changes
@@ -524,10 +526,8 @@
       function clearDashboard() {
         document.getElementById("stat-weight").innerText = "?";
         document.getElementById("stat-fat").innerText = "?";
-        document.getElementById("stat-performance").innerText = "?";
-        document.getElementById("bar-performance").style.width = "0%";
-        document.getElementById("stat-nutrition").innerText = "?";
-        document.getElementById("bar-nutrition").style.width = "0%";
+        document.getElementById("stat-tmb").innerText = "--";
+        document.getElementById("stat-diet").innerText = "--";
         charts.forEach(c => c.destroy());
         charts = [];
       }

@@ -98,7 +98,9 @@
   dict['stat_weight_title'] = { es: 'Peso Actual', en: 'Current Weight' };
   dict['stat_fat_title'] = { es: 'Grasa Corporal', en: 'Body Fat' };
   dict['stat_performance_title'] = { es: 'Rendimiento', en: 'Performance' };
-  dict['stat_nutrition_title'] = { es: 'Adherencia Nutricional', en: 'Nutrition Adherence' };
+  dict['stat_tmb_title'] = { es: 'Tasa Metabólica Basal', en: 'Basal Metabolic Rate' };
+  dict['stat_diet_title'] = { es: 'Consumo Energético Total', en: 'Total Energy Expenditure' };
+  dict['stat_nutrition_title'] = { es: 'Nutrición', en: 'Nutrition' };
   dict['stat_last_label'] = { es: 'Último registro', en: 'Latest record' };
   dict['no_data'] = { es: 'Sin datos disponibles', en: 'No data available' };
 
@@ -107,7 +109,7 @@
   dict['chart_weight'] = { es: 'Peso (kg)', en: 'Weight (kg)' };
   dict['chart_fat'] = { es: 'Grasa (%)', en: 'Body Fat (%)' };
   dict['chart_performance'] = { es: 'Rendimiento (%)', en: 'Performance (%)' };
-  dict['chart_nutrition'] = { es: 'Adherencia Nutricional (%)', en: 'Nutrition Adherence (%)' };
+  dict['chart_nutrition'] = { es: 'TMB (%)', en: 'Nutrition Adherence (%)' };
 
   // Página: Nutrition
   dict['nutrition_hero_title'] = { es: 'Nutrición Inteligente para un Rendimiento Óptimo', en: 'Smart Nutrition for Optimal Performance' };
@@ -338,8 +340,8 @@
     if (statHeadings && statHeadings.length >= 4) {
       statHeadings[0].textContent = t('stat_weight_title');
       statHeadings[1].textContent = t('stat_fat_title');
-      statHeadings[2].textContent = t('stat_performance_title');
-      statHeadings[3].textContent = t('stat_nutrition_title');
+      statHeadings[2].textContent = t('stat_tmb_title');
+      statHeadings[3].textContent = t('stat_diet_title');
     }
     // overlays
     const overlays = ['weight', 'fat', 'performance', 'nutrition'];

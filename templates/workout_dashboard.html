@@ -171,8 +171,12 @@
 <div class="row g-4 mt-4">
     <div class="col-12">
         <div class="card bg-panel border-0 shadow h-100">
-            <div class="card-header border-secondary text-white fw-bold">
-                <i class="fas fa-history text-cyber-green me-2"></i>Historial de Sesiones
+            <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+                <div><i class="fas fa-history text-cyber-green me-2"></i>Historial de Sesiones</div>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Unidad de peso">
+                    <button class="btn btn-outline-secondary" type="button" id="unitKgBtn">KG</button>
+                    <button class="btn btn-outline-secondary" type="button" id="unitLbBtn">LB</button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="sessionsList" class="d-flex flex-column gap-3">
@@ -312,6 +316,7 @@
             });
         }
 
+        initSessionUnitControls();
         refreshDashboard();
     });
 
@@ -483,11 +488,33 @@
     }
 
     let sessionData = [];
+    let sessionWeightUnit = "kg";
+    const sessionWeightUnitKey = "ai_fitness_session_unit";
 
     const formatDate = (value) => {
         const d = value ? new Date(value) : null;
         if (!d || Number.isNaN(d.getTime())) return "-";
         return d.toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" });
+    };
+
+    const formatWeightValue = (value) => {
+        const weight = Number(value);
+        if (!Number.isFinite(weight)) return "-";
+        if (sessionWeightUnit === "lb") {
+            const lb = weight * 2.20462;
+            return lb % 1 === 0 ? lb.toString() : lb.toFixed(1);
+        }
+        return weight % 1 === 0 ? weight.toString() : weight.toFixed(1);
+    };
+
+    const formatVolumeValue = (value) => {
+        const volume = Number(value);
+        if (!Number.isFinite(volume)) return "0";
+        if (sessionWeightUnit === "lb") {
+            const lbVol = volume * 2.20462;
+            return lbVol % 1 === 0 ? lbVol.toString() : lbVol.toFixed(1);
+        }
+        return volume % 1 === 0 ? volume.toString() : volume.toFixed(1);
     };
 
     const renderSessions = (data) => {
@@ -524,7 +551,7 @@
                         <tr class="text-center">
                             <td class="text-start">${group.name}</td>
                             <td>${idx + 1}</td>
-                            <td>${set.weight || '-'}</td>
+                            <td>${set.weight != null && set.weight !== '' ? formatWeightValue(set.weight) : '-'}</td>
                             <td>${set.reps || '-'}</td>
                             <td>${timeValue != null ? `${timeValue}s` : '-'}</td>
                             <td>${set.rpe || '-'}</td>
@@ -540,7 +567,7 @@
                             <tr class="text-center">
                                 <th>Ejercicio</th>
                                 <th>Serie</th>
-                                <th>Peso (kg)</th>
+                                <th>Peso (${sessionWeightUnit})</th>
                                 <th>Reps</th>
                                 <th>Tiempo</th>
                                 <th>RPE</th>
@@ -581,7 +608,7 @@
                             <div class="text-secondary small">
                                 <span class="me-3">
                                     <i class="fas fa-weight-hanging text-cyber-blue me-1"></i>
-                                    <span class="text-white">${session.total_volume || 0}</span> kg
+                                    <span class="text-white">${formatVolumeValue(session.total_volume || 0)}</span> ${sessionWeightUnit}
                                 </span>
                                 <span class="me-3">
                                     <i class="fas fa-list text-cyber-orange me-1"></i>
@@ -603,7 +630,7 @@
                         ${session.body_weight ? `
                             <div class="mb-3 text-secondary small">
                                 <i class="fas fa-user text-cyber-orange me-2"></i>
-                                Peso corporal: <span class="text-white">${session.body_weight} kg</span>
+                                Peso corporal: <span class="text-white">${formatWeightValue(session.body_weight)}</span> ${sessionWeightUnit}
                             </div>
                         ` : ''}
                         ${detailsHtml || '<p class="text-muted small">No hay detalles de ejercicios disponibles.</p>'}
@@ -646,6 +673,36 @@
             showAlertModal("Error", "Error eliminando la sesion.", "danger");
         }
     };
+
+    function setSessionWeightUnit(unit) {
+        sessionWeightUnit = unit;
+        try {
+            localStorage.setItem(sessionWeightUnitKey, unit);
+        } catch (e) { }
+        const kgBtn = document.getElementById("unitKgBtn");
+        const lbBtn = document.getElementById("unitLbBtn");
+        if (kgBtn && lbBtn) {
+            kgBtn.classList.toggle("btn-info", unit === "kg");
+            kgBtn.classList.toggle("text-dark", unit === "kg");
+            kgBtn.classList.toggle("btn-outline-secondary", unit !== "kg");
+            lbBtn.classList.toggle("btn-info", unit === "lb");
+            lbBtn.classList.toggle("text-dark", unit === "lb");
+            lbBtn.classList.toggle("btn-outline-secondary", unit !== "lb");
+        }
+        renderSessions(sessionData);
+    }
+
+    function initSessionUnitControls() {
+        const storedUnit = localStorage.getItem(sessionWeightUnitKey);
+        if (storedUnit === "kg" || storedUnit === "lb") {
+            sessionWeightUnit = storedUnit;
+        }
+        const kgBtn = document.getElementById("unitKgBtn");
+        const lbBtn = document.getElementById("unitLbBtn");
+        if (kgBtn) kgBtn.addEventListener("click", () => setSessionWeightUnit("kg"));
+        if (lbBtn) lbBtn.addEventListener("click", () => setSessionWeightUnit("lb"));
+        setSessionWeightUnit(sessionWeightUnit);
+    }
 
     async function loadSessions() {
         const container = document.getElementById("sessionsList");

@@ -270,6 +270,129 @@
         height: 40px;
     }
 
+    .plate-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid #3a3a3a;
+        background: #0e0e0e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .plate-icon-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .plate-icon-img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    .weight-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .reps-column {
+        padding-top: 44px;
+    }
+
+    .plate-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .plate-modal {
+        background: #0f0f0f;
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        width: min(420px, 95vw);
+        color: #fff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .plate-modal-header,
+    .plate-modal-footer {
+        padding: 12px 16px;
+        border-bottom: 1px solid #222;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .plate-modal-footer {
+        border-top: 1px solid #222;
+        border-bottom: none;
+    }
+
+    .plate-modal-body {
+        padding: 12px 16px 4px;
+    }
+
+    .plate-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .plate-tile {
+        background: radial-gradient(circle at top, #1c2636 0%, #141414 60%);
+        border: 1px solid #2c4a7a;
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        box-shadow: inset 0 0 0 1px rgba(0, 210, 255, 0.08), 0 8px 20px rgba(0, 0, 0, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .plate-tile img {
+        width: 54px;
+        height: 54px;
+        object-fit: contain;
+        margin-bottom: 6px;
+    }
+
+    .plate-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: inset 0 0 0 1px rgba(0, 210, 255, 0.2), 0 12px 26px rgba(0, 0, 0, 0.45);
+    }
+
+    .plate-counter {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .plate-counter button {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid #355b8c;
+        background: rgba(10, 20, 35, 0.8);
+        color: #fff;
+    }
+
+    .plate-total {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
     .heading-wrap {
         white-space: normal;
         word-wrap: break-word;
@@ -1794,9 +1917,55 @@
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
         const [unit, setUnit] = useState('lb');
+        const [plateModalOpen, setPlateModalOpen] = useState(false);
+        const [plateCounts, setPlateCounts] = useState({
+            2.5: 0,
+            5: 0,
+            10: 0,
+            25: 0,
+            35: 0,
+            45: 0
+        });
+        const [includeBar, setIncludeBar] = useState(false);
+        const [barWeight, setBarWeight] = useState(20);
         const weightInputRef = useRef(null);
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
+
+        const plateOptions = [
+            { value: 2.5, label: "2.5", src: "/static/images/disc/2_5.png" },
+            { value: 5, label: "5", src: "/static/images/disc/5.png" },
+            { value: 10, label: "10", src: "/static/images/disc/10.png" },
+            { value: 25, label: "25", src: "/static/images/disc/25.png" },
+            { value: 35, label: "35", src: "/static/images/disc/35.png" },
+            { value: 45, label: "45", src: "/static/images/disc/45.png" }
+        ];
+
+        const totalPlatesLb = plateOptions.reduce((acc, plate) => {
+            const count = plateCounts[plate.value] || 0;
+            return acc + (count * plate.value);
+        }, 0);
+        const totalWithBarLb = totalPlatesLb + (includeBar ? (parseFloat(barWeight) || 0) : 0);
+
+        const applyPlateTotal = () => {
+            const total = totalWithBarLb;
+            let nextWeight = total;
+            if (unit === 'kg') {
+                nextWeight = total / 2.20462;
+            }
+            const rounded = Math.round(nextWeight * 10) / 10;
+            setWeight(rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1));
+            setPlateModalOpen(false);
+        };
+
+        const updatePlateCount = (value, delta) => {
+            setPlateCounts(prev => {
+                const next = { ...prev };
+                const nextVal = Math.max(0, (next[value] || 0) + delta);
+                next[value] = nextVal;
+                return next;
+            });
+        };
 
         // Pre-fill from history and AUTO-FOCUS
         useEffect(() => {
@@ -1915,11 +2084,21 @@
                 <div className="row g-2 justify-content-center mb-2">
                     {!compact && (
                         <div className="col-6">
-                            <div className="d-flex align-items-center justify-content-center mb-1 gap-1">
-                                <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
-                                <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
-                                    {unit.toUpperCase()}
+                            <div className="weight-header">
+                                <button
+                                    type="button"
+                                    className="plate-icon-btn"
+                                    title="Calculadora de discos"
+                                    onClick={() => setPlateModalOpen(true)}
+                                >
+                                    <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
                                 </button>
+                                <div className="d-flex align-items-center justify-content-center gap-1">
+                                    <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
+                                    <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
+                                        {unit.toUpperCase()}
+                                    </button>
+                                </div>
                             </div>
                             <div className="d-flex align-items-center justify-content-center gap-1">
                                 <button
@@ -1949,7 +2128,7 @@
                             </div>
                         </div>
                     )}
-                    <div className={compact ? "col-12" : "col-6"}>
+                    <div className={compact ? "col-12" : "col-6 reps-column"}>
                         <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>
                             REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
                         </label>
@@ -2000,6 +2179,78 @@
                         COMPLETAR <i className="fas fa-check ms-2"></i>
                     </button>
                 </div>
+
+                {plateModalOpen && (
+                    <div className="plate-modal-backdrop" onClick={() => setPlateModalOpen(false)}>
+                        <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="plate-modal-header">
+                                <div className="fw-bold">Discos (lb)</div>
+                                <button className="btn btn-sm btn-outline-light" onClick={() => setPlateModalOpen(false)}>
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div className="plate-modal-body">
+                                <div className="plate-grid">
+                                    {plateOptions.map(plate => (
+                                        <div key={plate.value} className="plate-tile">
+                                            <img src={plate.src} alt={`${plate.label} lb`} />
+                                            <div className="text-secondary small">{plate.label} lb</div>
+                                            <div className="plate-counter">
+                                                <button type="button" onClick={() => updatePlateCount(plate.value, -1)}>-</button>
+                                                <div className="text-white fw-bold" style={{ minWidth: '18px' }}>
+                                                    {plateCounts[plate.value] || 0}
+                                                </div>
+                                                <button type="button" onClick={() => updatePlateCount(plate.value, 1)}>+</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-3 d-flex align-items-center justify-content-between">
+                                    <div className="text-secondary small">Total discos</div>
+                                    <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
+                                </div>
+
+                                <div className="mt-3 d-flex align-items-center justify-content-between">
+                                    <div className="text-secondary small">Peso de barra</div>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div className="form-check form-switch m-0">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                checked={includeBar}
+                                                onChange={(e) => setIncludeBar(e.target.checked)}
+                                            />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            className="form-control form-control-sm bg-dark text-white border-secondary"
+                                            style={{ width: '80px' }}
+                                            value={barWeight}
+                                            onChange={(e) => setBarWeight(e.target.value)}
+                                            disabled={!includeBar}
+                                        />
+                                        <span className="text-secondary small">lb</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 d-flex align-items-center justify-content-between">
+                                    <div className="text-secondary small">Total</div>
+                                    <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
+                                </div>
+                            </div>
+                            <div className="plate-modal-footer">
+                                <button className="btn btn-outline-secondary" onClick={() => setPlateModalOpen(false)}>
+                                    Cancelar
+                                </button>
+                                <button className="btn btn-info text-dark fw-bold" onClick={applyPlateTotal}>
+                                    Aplicar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };

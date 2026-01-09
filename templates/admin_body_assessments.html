@@ -2,93 +2,138 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Fitness | Admin · Evaluaciones Corporal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>AI Fitness | Admin · Evaluaciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="/static/css/theme.css" rel="stylesheet">
     <link href="/static/css/sidebar.css" rel="stylesheet">
     <style>
-        /* Theme overrides are handled by theme.css */
-
-        .form-label {
-            color: var(--text-secondary);
-        }
-
-        .list-group-item {
-            background: var(--bg-panel);
-            border-color: var(--border-color);
-            cursor: pointer;
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: var(--bg-body);
             color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            /* Fix layout */
         }
 
-        .list-group-item:hover {
-            background-color: var(--bg-card-hover);
-        }
-
-        .list-group-item.active {
-            background-color: var(--primary);
-            border-color: var(--primary);
-            color: #ffffff;
-            /* Always white on active blue */
-        }
-
-        pre {
-            background: var(--bg-card);
-            padding: 1rem;
-            border-radius: 8px;
-            color: var(--text-main);
-            max-height: 400px;
+        .main-content {
+            height: 100vh;
             overflow-y: auto;
-            border: 1px solid var(--border-color);
+            padding-top: 0 !important;
+            /* Override default/admin padding if needed */
         }
 
+        /* Layout */
+        .history-list-col {
+            border-right: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+        }
+
+        .history-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-item:hover,
+        .history-item.active {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        .card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+            padding-left: 0.5rem;
+        }
+
+        /* Photo Grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .photo-thumb {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            background-color: #000;
+            border-radius: 8px;
+            cursor: zoom-in;
+            border: 2px solid var(--border-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .photo-thumb:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        /* Metrics */
         .metric-card {
-            background-color: var(--bg-card);
+            background-color: var(--bg-input);
             border-radius: 8px;
             padding: 1rem;
             text-align: center;
             height: 100%;
-            border: 1px solid rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--border-color);
         }
 
         .metric-value {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--primary);
         }
 
         .metric-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-main);
-            border-left: 3px solid var(--primary);
-            padding-left: 0.5rem;
-            margin-bottom: 1rem;
+        /* Search Results Overlay */
+        #userSearchResults {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
         }
 
-        .table-dark-custom {
-            background-color: var(--bg-card);
+        .list-group-item.list-group-item-action:hover {
+            background-color: var(--bg-card-hover);
             color: var(--text-main);
         }
 
-        .table-dark-custom th {
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
 
-        .badge-focus {
-            font-size: 0.9em;
-            padding: 0.5em 1em;
+            body,
+            .main-content {
+                height: auto;
+                overflow: visible;
+            }
+
+            .history-list-col {
+                height: auto;
+                max-height: 400px;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .card {
+                height: auto !important;
+            }
         }
     </style>
 </head>
@@ -97,154 +142,197 @@
     {% include 'components/sidebar_admin.html' %}
 
     <div class="main-content">
-        <main class="container py-4">
-            <h2 class="mb-3 text-theme">Evaluaciones Corporales (Admin)</h2>
-            <p class="text-secondary mb-4">Busca historial de evaluaciones IA por ID de usuario.</p>
+        <main class="container-fluid px-0 h-100">
+            <div class="d-flex flex-column h-100">
+                <!-- Header (Hidden on print) -->
+                <div
+                    class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center bg-dark">
+                    <h1 class="h5 mb-0 text-primary fw-bold"><i class="fas fa-chart-line me-2"></i>Evaluaciones
+                        Corporales</h1>
+                    <span class="badge bg-secondary">Vista Administrador</span>
+                </div>
 
-            <div class="row g-4">
-                <!-- Sidebar Lista -->
-                <div class="col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-body p-3">
-                            <label class="form-label small text-uppercase fw-bold text-secondary">Buscar Usuario</label>
+                <!-- Main Work Area -->
+                <div class="row g-0 flex-grow-1 overflow-hidden">
 
-                            <!-- Standard Search Component -->
-                            <div class="input-group mb-3">
-                                <input type="text" class="form-control" id="userSearchTerm"
-                                    placeholder="Buscar: nombre, email o ID...">
-                                <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                    <!-- LEFT COLUMN: SEARCH + LIST -->
+                    <div class="col-md-3 history-list-col d-flex flex-column">
+                        <!-- Search Component -->
+                        <div class="p-3 border-bottom border-secondary bg-dark-subtle position-relative">
+                            <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control bg-dark text-white border-secondary"
+                                    id="userSearchTerm" placeholder="Nombre, Email o ID...">
+                                <button class="btn btn-outline-primary" type="button" id="btnLookupUser">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
-                            <!-- Hidden field for compatibility -->
-                            <input id="adminUserId" type="hidden">
-                            <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
-                                style="z-index: 1000; display: none; width: 90%;"></div>
-                            <!-- End Standard Search Component -->
+                            <!-- Results Dropdown -->
+                            <div id="userSearchResults"
+                                class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+                                style="display: none; z-index: 1050; top: 100%;"></div>
 
-                            <div id="searchMsg" class="text-info small mb-2"></div>
+                            <input type="hidden" id="adminUserId">
+                            <div id="searchMsg" class="text-info small mt-2 fst-italic"></div>
+                        </div>
 
-                            <hr class="border-secondary">
-
-                            <h6 class="text-theme mb-3">Historial</h6>
-                            <div class="list-group list-group-flush" id="assessmentList"
-                                style="max-height: 600px; overflow-y: auto;">
-                                <div class="text-center text-secondary py-3 small">Sin resultados</div>
+                        <!-- History List -->
+                        <div id="history-list" class="flex-grow-1 overflow-auto p-0">
+                            <div class="p-4 text-center text-muted small">
+                                <i class="fas fa-user-clock fa-2x mb-2 opacity-50"></i><br>
+                                Busca y selecciona un usuario para cargar su historial.
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Detalle Visual -->
-                <div class="col-lg-8">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div id="detailView" style="display:none;">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="card-title text-theme mb-0">Informe de Evaluación</h5>
-                                    <div>
-                                        <span class="badge bg-secondary font-monospace me-2" id="detailId"></span>
-                                        <span class="badge bg-primary" id="detailFocusBadge"></span>
+                    <!-- RIGHT COLUMN: DETAIL VIEW -->
+                    <div class="col-md-9 h-100 overflow-auto bg-body position-relative">
+
+                        <!-- Empty State -->
+                        <div id="empty-state"
+                            class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary p-5">
+                            <i class="fas fa-clipboard-check fa-4x mb-3 opacity-25"></i>
+                            <p class="mb-0 fw-light fs-5">Detalle de Evaluación</p>
+                            <small>Selecciona una evaluación de la lista.</small>
+                        </div>
+
+                        <!-- Detail Container -->
+                        <div class="p-4" id="detail-container" style="display:none;">
+
+                            <!-- Header Info -->
+                            <div
+                                class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
+                                <div>
+                                    <h2 class="h4 mb-1 text-white" id="det-date">-</h2>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-primary" id="det-goal">-</span>
+                                        <span class="badge bg-dark border border-secondary text-secondary"
+                                            id="det-backend">-</span>
+                                        <span class="badge bg-info text-dark" id="det-id-badge">ID: -</span>
                                     </div>
                                 </div>
-                                <div class="mb-3 text-secondary small">
-                                    <i class="far fa-clock me-1"></i> <span id="detailDate"></span>
-                                    <span class="mx-2">|</span>
-                                    <span id="detailBackend" class="text-muted fst-italic"></span>
+                            </div>
+
+                            <div class="row g-4">
+                                <!-- Columna Izquierda: Datos Input -->
+                                <div class="col-lg-5">
+                                    <!-- Fotos -->
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Fotografías</h5>
+                                        <div class="photo-grid" id="det-photos"></div>
+                                        <p id="no-photos-msg" class="text-muted small mt-2 d-none">Sin fotos
+                                            registradas.</p>
+                                    </section>
+
+                                    <!-- Datos Generales -->
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Información General</h5>
+                                        <ul class="list-group list-group-flush bg-transparent small" id="det-general">
+                                        </ul>
+                                    </section>
+
+                                    <!-- Medidas -->
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Medidas Corporales</h5>
+                                        <div class="row g-2 small" id="det-measurements"></div>
+                                    </section>
                                 </div>
 
-                                <ul class="nav nav-tabs border-secondary mb-3" id="detailTabs" role="tablist">
-                                    <li class="nav-item">
-                                        <button class="nav-link active text-theme bg-transparent" data-bs-toggle="tab"
-                                            data-bs-target="#tab-visual">Reporte Visual</button>
-                                    </li>
-                                    <li class="nav-item">
-                                        <button class="nav-link text-theme bg-transparent" data-bs-toggle="tab"
-                                            data-bs-target="#tab-json">JSON Raw</button>
-                                    </li>
-                                </ul>
+                                <!-- Columna Derecha: Resultados AI -->
+                                <div class="col-lg-7">
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Resultados del Análisis</h5>
 
-                                <div class="tab-content">
-                                    <!-- TAB VISUAL -->
-                                    <div class="tab-pane fade show active" id="tab-visual">
-
-                                        <!-- Row Metrics -->
-                                        <div class="row g-3 mb-4" id="metricsRow">
-                                            <!-- Injected by JS -->
+                                        <!-- Resumen -->
+                                        <div class="alert alert-dark border-secondary mb-3">
+                                            <p class="mb-0 small" id="det-summary"></p>
                                         </div>
 
-                                        <!-- Row Summary & Proportions -->
-                                        <div class="row g-4 mb-4">
-                                            <div class="col-md-12">
-                                                <h6 class="section-title">Resumen Ejecutivo</h6>
-                                                <p id="summaryText" class="text-secondary small"></p>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <h6 class="section-title">Análisis de Proporciones</h6>
-                                                <div class="p-3 rounded" style="background: rgba(31, 41, 55, 0.5);">
-                                                    <p id="symmetryNotes" class="mb-0 text-info small fst-italic"></p>
-                                                    <div class="d-flex gap-4 mt-2 small text-secondary">
-                                                        <span id="propWaistHeight"></span>
-                                                        <span id="propWaistHip"></span>
-                                                        <span id="propWaistChest"></span>
+                                        <!-- Métricas Clave -->
+                                        <div class="row g-2 mb-4" id="det-metrics"></div>
+
+                                        <!-- Accordion Detalle -->
+                                        <div class="accordion" id="accordionDetail">
+                                            <!-- Gasto Energetico -->
+                                            <div class="accordion-item bg-dark border-secondary">
+                                                <h2 class="accordion-header">
+                                                    <button
+                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseEnergy">
+                                                        <i class="fas fa-fire me-2 text-warning"></i> Gasto Energético
+                                                    </button>
+                                                </h2>
+                                                <div id="collapseEnergy" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordionDetail">
+                                                    <div class="accordion-body">
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span>TMB (Basal)</span>
+                                                            <strong class="text-warning" id="det-tmb">-- kcal</strong>
+                                                        </div>
+                                                        <hr class="border-secondary my-1">
+                                                        <ul class="list-unstyled small mb-0" id="det-tdee"></ul>
                                                     </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Proporciones -->
+                                            <div class="accordion-item bg-dark border-secondary">
+                                                <h2 class="accordion-header">
+                                                    <button
+                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseProps">
+                                                        <i class="fas fa-ruler-combined me-2 text-info"></i>
+                                                        Proporciones
+                                                    </button>
+                                                </h2>
+                                                <div id="collapseProps" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordionDetail">
+                                                    <div class="accordion-body small" id="det-props"></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Recomendaciones -->
+                                            <div class="accordion-item bg-dark border-secondary">
+                                                <h2 class="accordion-header">
+                                                    <button
+                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseRecs">
+                                                        <i class="fas fa-clipboard-list me-2 text-success"></i>
+                                                        Recomendaciones
+                                                    </button>
+                                                </h2>
+                                                <div id="collapseRecs" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordionDetail">
+                                                    <div class="accordion-body p-0">
+                                                        <ul id="det-recs"
+                                                            class="list-group list-group-flush bg-transparent"></ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Feedback Fotos -->
+                                            <div class="accordion-item bg-dark border-secondary">
+                                                <h2 class="accordion-header">
+                                                    <button
+                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapsePhotoFeedback">
+                                                        <i class="fas fa-camera-retro me-2 text-warning"></i> Feedback
+                                                        Fotos
+                                                    </button>
+                                                </h2>
+                                                <div id="collapsePhotoFeedback" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordionDetail">
+                                                    <div class="accordion-body small text-secondary"
+                                                        id="det-photo-feedback"></div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Recommendations -->
-                                        <div class="mb-4">
-                                            <h6 class="section-title">Recomendaciones</h6>
-                                            <ul id="actionsList" class="list-group list-group-flush bg-transparent">
-                                            </ul>
-                                        </div>
-
-                                        <!-- Photo Feedback -->
-                                        <div class="mb-4">
-                                            <h6 class="section-title">Feedback Fotos</h6>
-                                            <ul id="photoFeedbackList"
-                                                class="list-group list-group-flush bg-transparent"></ul>
-                                        </div>
-
-                                        <!-- Input Data Table -->
-                                        <div class="mb-4">
-                                            <h6 class="section-title">Datos de Entrada</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-dark table-sm table-striped small">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Medida</th>
-                                                            <th>Valor</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="inputTableBody"></tbody>
-                                                </table>
-                                            </div>
-                                            <div class="p-2 small text-secondary border border-secondary rounded mt-2">
-                                                <strong>Notas usuario:</strong> <span id="userNotes"></span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    <!-- TAB JSON -->
-                                    <div class="tab-pane fade" id="tab-json">
-                                        <h6 class="text-secondary mb-2">Output</h6>
-                                        <pre id="jsonOutput" class="small"></pre>
-                                        <h6 class="text-secondary mb-2 mt-3">Input</h6>
-                                        <pre id="jsonInput" class="small"></pre>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- Empty State -->
-                            <div id="emptyView"
-                                class="d-flex align-items-center justify-content-center h-100 text-secondary"
-                                style="min-height: 400px;">
-                                <div class="text-center">
-                                    <i class="fas fa-chart-pie fa-3x mb-3 text-theme"></i>
-                                    <p>Selecciona una evaluación para ver el informe</p>
+                                    </section>
                                 </div>
                             </div>
                         </div>
@@ -254,244 +342,305 @@
         </main>
     </div>
 
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-body p-0 text-center position-relative">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3"
+                        data-bs-dismiss="modal" aria-label="Close"
+                        style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding:0.5rem; z-index:10;"></button>
+                    <img id="zoomedImage" src="" class="img-fluid" style="max-height: 90vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. ADMIN USER SEARCH LOGIC ---
+        const searchInput = document.getElementById('userSearchTerm');
+        const hiddenId = document.getElementById('adminUserId');
+        const resultsConfig = document.getElementById('userSearchResults');
+        const btnLookup = document.getElementById('btnLookupUser');
+        const searchMsg = document.getElementById('searchMsg');
 
-            // --- Standard User Search Logic ---
-            const searchInput = document.getElementById('userSearchTerm');
-            const hiddenId = document.getElementById('adminUserId');
-            const resultsConfig = document.getElementById('userSearchResults');
+        async function performUserLookup() {
+            const term = searchInput.value.trim();
+            if (!term) return;
 
-            async function performUserLookup() {
-                const term = searchInput.value.trim();
-                if (!term) return;
-                try {
-                    resultsConfig.innerHTML = '<div class="list-group-item">Buscando...</div>';
-                    resultsConfig.style.display = 'block';
+            try {
+                resultsConfig.innerHTML = '<div class="list-group-item bg-dark text-secondary">Buscando...</div>';
+                resultsConfig.style.display = 'block';
 
-                    const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
-                    const data = await resp.json();
-                    resultsConfig.innerHTML = '';
+                const resp = await fetch(`/admin/api/user_profiles/lookup?term=${encodeURIComponent(term)}&limit=5`);
+                const data = await resp.json();
+                resultsConfig.innerHTML = '';
 
-                    let users = [];
-                    if (Array.isArray(data)) users = data;
-                    else if (data.users) users = data.users;
-                    else if (data.user_id) users = [data];
+                let users = [];
+                if (Array.isArray(data)) users = data;
+                else if (data.users) users = data.users;
 
-                    if (users.length === 0) {
-                        resultsConfig.innerHTML = '<div class="list-group-item text-muted">Sin resultados</div>';
-                    } else {
-                        users.forEach(u => {
-                            const el = document.createElement('a');
-                            el.href = '#';
-                            el.className = 'list-group-item list-group-item-action';
-                            el.innerHTML = `<div><strong>${u.name || u.username || 'Usuario'}</strong> <small class="text-muted">(${u.email || ''})</small></div><small class="text-xs text-secondary">ID: ${u.user_id}</small>`;
-                            el.onclick = (e) => {
-                                e.preventDefault();
-                                selectUser(u);
-                            };
-                            resultsConfig.appendChild(el);
-                        });
-                    }
-                } catch (e) {
-                    console.error(e);
-                    resultsConfig.innerHTML = `<div class="list-group-item text-danger">Error: ${e.message}</div>`;
-                }
-            }
-
-            function selectUser(u) {
-                hiddenId.value = u.user_id;
-                searchInput.value = `${u.name || u.username} (${u.email})`;
-                resultsConfig.style.display = 'none';
-                performSearch(); // Trigger module specific search
-            }
-
-            document.getElementById('btnLookupUser').addEventListener('click', performUserLookup);
-            searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
-
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#userSearchTerm') && !e.target.closest('#userSearchResults')) {
-                    resultsConfig.style.display = 'none';
-                }
-            });
-            // ----------------------------------
-
-            // const btnSearch = document.getElementById('btnSearch'); // Removed old btnSearch element ref
-            // const userInput = document.getElementById('adminUserId');
-            const listContainer = document.getElementById('assessmentList');
-            const msgObj = document.getElementById('searchMsg');
-
-            const detailView = document.getElementById('detailView');
-            const emptyView = document.getElementById('emptyView');
-
-            const savedUser = localStorage.getItem('ai_fitness_last_search_uid');
-            const defaultUser = localStorage.getItem('ai_fitness_uid');
-            if (defaultUser) {
-                hiddenId.value = defaultUser;
-            } else if (savedUser) {
-                hiddenId.value = savedUser;
-            }
-
-            const performSearch = async () => {
-                const uid = hiddenId.value.trim() || searchInput.value.trim();
-                if (!uid) return;
-
-                localStorage.setItem('ai_fitness_last_search_uid', uid);
-                msgObj.textContent = "Buscando...";
-                listContainer.innerHTML = "";
-                emptyView.style.display = 'flex';
-                detailView.style.display = 'none';
-
-                try {
-                    const resp = await fetch(`/body_assessments/${encodeURIComponent(uid)}`);
-                    if (!resp.ok) throw new Error("Error API");
-                    const data = await resp.json();
-                    msgObj.textContent = `${data.length} registros.`;
-
-                    if (data.length === 0) {
-                        listContainer.innerHTML = '<div class="text-center text-secondary py-3 small">Sin registros</div>';
-                        return;
-                    }
-
-                    data.forEach(item => {
+                if (users.length === 0) {
+                    resultsConfig.innerHTML = '<div class="list-group-item bg-dark text-muted">Sin resultados</div>';
+                } else {
+                    users.forEach(u => {
                         const el = document.createElement('button');
-                        el.className = 'list-group-item list-group-item-action py-3';
-                        const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() + ' ' + new Date(item.created_at).toLocaleTimeString().slice(0, 5) : '-';
-                        const goal = (item.input && item.input.goal) ? item.input.goal : 'N/A';
-
+                        el.type = 'button';
+                        el.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary text-start';
                         el.innerHTML = `
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <span class="fw-bold text-theme">#${String(item._id).slice(-4)}</span>
-                                <small class="text-info">${dateStr}</small>
-                            </div>
-                            <small class="text-secondary d-block">Meta: ${goal}</small>
+                            <div><strong>${u.name || u.username || 'Usuario'}</strong></div>
+                            <small class="text-secondary">${u.email || ''}</small>
+                            <div class="text-xs text-info opacity-50">ID: ${u.user_id}</div>
                         `;
-                        el.addEventListener('click', () => showDetail(item, el));
-                        listContainer.appendChild(el);
+                        el.onclick = () => selectUser(u);
+                        resultsConfig.appendChild(el);
                     });
-                } catch (e) {
-                    msgObj.textContent = "Error: " + e.message;
                 }
-            };
-
-            if (defaultUser) {
-                performSearch();
+            } catch (e) {
+                console.error(e);
+                resultsConfig.innerHTML = `<div class="list-group-item bg-dark text-danger">Error: ${e.message}</div>`;
             }
+        }
 
-            // btnSearch.addEventListener('click', performSearch); // Removed
-            // userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); }); // Removed due to rewrite
+        function selectUser(u) {
+            hiddenId.value = u.user_id;
+            searchInput.value = u.name || u.username;
+            resultsConfig.style.display = 'none';
+            searchMsg.textContent = `Usuario seleccionado: ${u.name || u.username}`;
 
-            function showDetail(item, activeEl) {
-                // Active state
-                document.querySelectorAll('.list-group-item').forEach(b => b.classList.remove('active'));
-                activeEl.classList.add('active');
+            // Trigger Load History
+            loadHistory(u.user_id);
+        }
 
-                emptyView.style.display = 'none';
-                detailView.style.display = 'block';
+        btnLookup.addEventListener('click', performUserLookup);
+        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performUserLookup(); });
 
-                // Basic Info
-                document.getElementById('detailId').textContent = 'ID: ' + item._id;
-                document.getElementById('detailDate').textContent = item.created_at ? new Date(item.created_at).toLocaleString() : '-';
-                document.getElementById('detailBackend').textContent = 'Engine: ' + (item.backend || 'unknown');
-
-                const out = item.output || {};
-                const inp = item.input || {};
-
-                // JSON Tabs
-                document.getElementById('jsonOutput').textContent = JSON.stringify(out, null, 2);
-                document.getElementById('jsonInput').textContent = JSON.stringify(inp, null, 2);
-
-                // --- VISUAL REPORT ---
-
-                // 1. Metrics Cards
-                const comp = out.body_composition || {};
-                const metricsRow = document.getElementById('metricsRow');
-                metricsRow.innerHTML = '';
-
-                const metrics = [
-                    { label: '% Grasa', val: comp.body_fat_percent, unit: '%' },
-                    { label: 'Masa Magra', val: comp.lean_mass_kg, unit: 'kg' },
-                    { label: 'Masa Grasa', val: comp.fat_mass_kg, unit: 'kg' },
-                    { label: '% Musc. Esq.', val: comp.muscle_mass_percent, unit: '%' }
-                ];
-
-                metrics.forEach(m => {
-                    const col = document.createElement('div');
-                    col.className = 'col-sm-6 col-md-3';
-                    col.innerHTML = `
-                        <div class="metric-card">
-                            <div class="metric-value">${m.val !== undefined ? m.val : '-'} <small style="font-size:0.5em">${m.unit}</small></div>
-                            <div class="metric-label">${m.label}</div>
-                        </div>
-                    `;
-                    metricsRow.appendChild(col);
-                });
-
-                // 2. Summary & Proportions
-                document.getElementById('summaryText').textContent = out.summary || 'Sin resumen disponible.';
-
-                const prop = out.proportions || {};
-                document.getElementById('symmetryNotes').textContent = prop.symmetry_notes || '';
-                document.getElementById('propWaistHeight').innerHTML = `Cintura/Altura: <strong class="text-theme">${prop.waist_to_height || '-'}</strong>`;
-                document.getElementById('propWaistHip').innerHTML = `Cintura/Cadera: <strong class="text-theme">${prop.waist_to_hip || '-'}</strong>`;
-                document.getElementById('propWaistChest').innerHTML = `Cintura/Pecho: <strong class="text-theme">${prop.waist_to_chest || '-'}</strong>`;
-
-                // 3. Recomendaciones Badge & List
-                const rec = out.recommendations || {};
-                const focus = rec.focus || (inp.goal || 'General');
-                const badge = document.getElementById('detailFocusBadge');
-                badge.textContent = focus.toUpperCase();
-                badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
-
-                const actionsList = document.getElementById('actionsList');
-                actionsList.innerHTML = '';
-                if (rec.actions && rec.actions.length) {
-                    rec.actions.forEach(a => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item bg-transparent text-secondary ps-0';
-                        li.innerHTML = `<i class="fas fa-check-circle text-primary me-2"></i> ${a}`;
-                        actionsList.appendChild(li);
-                    });
-                } else {
-                    actionsList.innerHTML = '<li class="text-muted small">Sin recomendaciones</li>';
-                }
-
-                // 4. Photo Feedback
-                const photoList = document.getElementById('photoFeedbackList');
-                photoList.innerHTML = '';
-                if (out.photo_feedback && out.photo_feedback.length) {
-                    out.photo_feedback.forEach(f => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item bg-transparent text-secondary ps-0 small';
-                        li.innerHTML = `<i class="fas fa-camera text-secondary me-2"></i> ${f}`;
-                        photoList.appendChild(li);
-                    });
-                } else {
-                    photoList.innerHTML = '<li class="text-muted small">Sin feedback de fotos</li>';
-                }
-
-                // 5. Input Table
-                const tbody = document.getElementById('inputTableBody');
-                tbody.innerHTML = '';
-                const meas = inp.measurements || {};
-                for (const [k, v] of Object.entries(meas)) {
-                    if (v !== null && v !== undefined) {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${k}</td><td class="text-theme">${v}</td>`;
-                        tbody.appendChild(tr);
-                    }
-                }
-                const metaFields = { "Edad": inp.age, "Sexo": inp.sex, "Objetivo": inp.goal };
-                for (const [k, v] of Object.entries(metaFields)) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="text-info">${k}</td><td class="text-theme">${v || '-'}</td>`;
-                    tbody.prepend(tr); // Add to top
-                }
-
-                document.getElementById('userNotes').textContent = inp.notes || '-';
+        // Hide Dropdown on click outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !resultsConfig.contains(e.target)) {
+                resultsConfig.style.display = 'none';
             }
         });
+
+        // Restore functionality for existing Search Logic (Last Search)
+        const savedUser = localStorage.getItem('ai_fitness_last_search_uid');
+        if (savedUser) {
+            // Optional: Auto-load functionality could be re-enabled if desired
+            // hiddenId.value = savedUser;
+            // searchInput.value = savedUser; 
+        }
+
+
+        // --- 2. HISTORY LOGIC (Ported) ---
+        let historyData = [];
+
+        async function loadHistory(userId) {
+            const listEl = document.getElementById('history-list');
+            try {
+                listEl.innerHTML = '<div class="p-3 text-center text-secondary"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+                document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+                document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+
+                // Using AI History Endpoint (Available to Admin)
+                const resp = await fetch(`/ai/body_assessment/history/${userId}`);
+                if (!resp.ok) throw new Error("Error fetching history");
+
+                historyData = await resp.json();
+                renderList();
+
+                // Save last search
+                localStorage.setItem('ai_fitness_last_search_uid', userId);
+
+            } catch (e) {
+                listEl.innerHTML = `<div class="p-3 text-danger text-center"><small>${e.message}</small></div>`;
+            }
+        }
+
+        function renderList() {
+            const listEl = document.getElementById('history-list');
+            if (historyData.length === 0) {
+                listEl.innerHTML = '<div class="p-3 text-secondary text-center small">No hay evaluaciones registradas para este usuario.</div>';
+                return;
+            }
+
+            const GOAL_DICT = {
+                "lose_fat": "Perder Grasa",
+                "build_muscle": "Ganar Músculo",
+                "maintain": "Mantener",
+                "maintenance": "Mantenimiento",
+                "general": "General",
+                "recomp": "Recomposición"
+            };
+
+            let html = '<div class="list-group list-group-flush">';
+            historyData.forEach((item, idx) => {
+                const date = item.date || "Fecha desconocida";
+                const rawGoal = (item.input && item.input.goal) ? item.input.goal.toLowerCase() : "N/A";
+                const goal = GOAL_DICT[rawGoal] || rawGoal;
+                const idShort = item.id.substring(item.id.length - 4);
+
+                html += `
+                    <div class="list-group-item list-group-item-action bg-transparent text-white history-item p-3 border-bottom border-secondary" onclick="selectItem(${idx})">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-primary">${date}</small>
+                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size:0.6em">#${idShort}</span>
+                        </div>
+                        <div class="small text-secondary text-uppercase" style="font-size: 0.7rem;">${goal}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listEl.innerHTML = html;
+
+            // Auto-select first
+            if (historyData.length > 0) selectItem(0);
+        }
+
+        function selectItem(idx) {
+            // Highlight list
+            document.querySelectorAll('.history-item').forEach((el, i) => {
+                if (i === idx) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+
+            const data = historyData[idx];
+            showDetail(data);
+        }
+
+        function showDetail(data) {
+            document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
+            document.getElementById('detail-container').style.setProperty('display', 'block', 'important');
+
+            const input = data.input || {};
+            const output = data.output || {};
+
+            // Dictionaries
+            const DICT = {
+                sex: { "male": "Masculino", "female": "Femenino" },
+                activity: { "sedentary": "Sedentario", "light": "Ligero", "moderate": "Moderado", "active": "Activo", "very_active": "Muy Activo", "lightly_active": "Ligero", "moderately_active": "Moderado", "extra_active": "Muy Activo", "strong": "Fuerte", "very_strong": "Muy Fuerte" },
+                goal: { "lose_fat": "Perder Grasa", "build_muscle": "Ganar Músculo", "maintain": "Mantener", "maintenance": "Mantenimiento", "general": "General", "recomp": "Recomposición" },
+                measures: { "weight_kg": "Peso", "height_cm": "Altura", "neck": "Cuello", "shoulders": "Hombros", "chest": "Pecho", "waist": "Cintura", "abdomen": "Abdomen", "hips": "Caderas", "hip": "Cadera", "arm_relaxed": "Brazo (Relajado)", "arm_flexed": "Brazo (Flex)", "biceps_l": "Bíceps (I)", "biceps_r": "Bíceps (D)", "thigh": "Muslo", "thigh_l": "Muslo (I)", "thigh_r": "Muslo (D)", "calf": "Pantorrilla", "calf_l": "Pantorrilla (I)", "calf_r": "Pantorrilla (D)" }
+            };
+
+            // Header
+            document.getElementById('det-date').innerText = data.date || "Sin fecha";
+            const rawGoal = (input.goal || "general").toLowerCase();
+            document.getElementById('det-goal').innerText = (DICT.goal[rawGoal] || rawGoal).toUpperCase();
+            document.getElementById('det-backend').innerText = data.backend || "Backend";
+            document.getElementById('det-id-badge').innerText = `ID: ${data.id}`;
+
+            // Photos
+            const photosContainer = document.getElementById('det-photos');
+            photosContainer.innerHTML = '';
+            const photos = input.photos || [];
+            if (photos.length > 0) {
+                document.getElementById('no-photos-msg').classList.add('d-none');
+                photos.forEach(ph => {
+                    if (ph.url) {
+                        const img = document.createElement('img');
+                        img.src = ph.url;
+                        img.className = 'photo-thumb';
+                        img.onclick = () => openZoom(ph.url);
+                        photosContainer.appendChild(img);
+                    }
+                });
+            } else {
+                document.getElementById('no-photos-msg').classList.remove('d-none');
+            }
+
+            // General Info
+            const sexVal = (input.sex || "").toLowerCase();
+            const actVal = (input.activity_level || "").toLowerCase();
+            document.getElementById('det-general').innerHTML = `
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Sexo:</span> <span class="text-white">${DICT.sex[sexVal] || input.sex || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Edad:</span> <span class="text-white">${input.age || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Nivel Act.:</span> <span class="text-white">${DICT.activity[actVal] || input.activity_level || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1"><span>Notas:</span> <div class="text-white fst-italic mt-1">${input.notes || '--'}</div></li>
+            `;
+
+            // Measurements
+            const measContainer = document.getElementById('det-measurements');
+            measContainer.innerHTML = '';
+            const m = input.measurements || {};
+            for (const [k, v] of Object.entries(m)) {
+                if (v && k !== 'unit_system') {
+                    const label = DICT.measures[k] || k;
+                    let unit = (k.includes('weight') || k === 'peso') ? "kg" : "cm";
+                    measContainer.innerHTML += `
+                        <div class="col-4 col-sm-4 col-md-6 col-lg-4">
+                            <div class="p-2 border border-secondary rounded bg-dark text-center h-100 d-flex flex-column justify-content-center">
+                                <span class="text-secondary small text-uppercase" style="font-size:0.65rem; letter-spacing:0.5px;">${label}</span>
+                                <span class="text-white fw-bold mt-1">${v} <span class="text-secondary fw-normal" style="font-size:0.7rem;">${unit}</span></span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // AI Results
+            document.getElementById('det-summary').innerText = output.summary || "Sin resumen.";
+
+            // Metrics
+            const bc = output.body_composition || {};
+            document.getElementById('det-metrics').innerHTML = `
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.body_fat_percent || '--'}%</div><div class="metric-label">Grasa</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.muscle_mass_percent || '--'}%</div><div class="metric-label">Músculo</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.lean_mass_kg || '--'} kg</div><div class="metric-label">Masa Magra</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.fat_mass_kg || '--'} kg</div><div class="metric-label">Masa Grasa</div></div></div>
+            `;
+
+            // TMB & TDEE
+            const en = output.energy_expenditure || {};
+            document.getElementById('det-tmb').innerText = en.tmb ? `${en.tmb} kcal` : "--";
+            const tdeeList = document.getElementById('det-tdee');
+            tdeeList.innerHTML = '';
+            if (en.tdee) {
+                const tdeeLabels = { "sedentary": "Sedentario", "light": "Ligero (1-3 días)", "moderate": "Moderado (3-5 días)", "strong": "Fuerte (6-7 días)", "very_strong": "Muy fuerte", "active": "Activo", "lightly_active": "Ligeramente Activo", "moderately_active": "Moderadamente Activo", "extra_active": "Extra Activo" };
+                for (const [lvl, cal] of Object.entries(en.tdee)) {
+                    const normLvl = lvl.toLowerCase();
+                    const label = tdeeLabels[normLvl] || DICT.activity[normLvl] || lvl;
+                    const isSelected = en.selected_activity === lvl;
+                    const labelClass = isSelected ? "text-white fw-bold" : "text-secondary";
+                    const valueClass = isSelected ? "text-warning fw-bold" : "text-light";
+                    const bgClass = isSelected ? "bg-dark border border-warning rounded shadow-sm py-2 px-2 my-2" : "py-1 px-2";
+                    const checkIcon = isSelected ? '<i class="fas fa-check-circle text-warning me-2"></i>' : '';
+                    tdeeList.innerHTML += `<li class="d-flex justify-content-between align-items-center ${bgClass}"><span class="${labelClass}">${checkIcon}${label}</span><span class="${valueClass} font-monospace">${cal} kcal</span></li>`;
+                }
+            } else {
+                tdeeList.innerHTML = '<li class="text-muted fst-italic">No disponible</li>';
+            }
+
+            // Props
+            let props = output.body_proportions;
+            if (!props && output.proportions) {
+                props = { symmetry_analysis: output.proportions.symmetry_notes, waist_to_height_ratio: output.proportions.waist_to_height, waist_to_hip_ratio: output.proportions.waist_to_hip };
+            }
+            const pDiv = document.getElementById('det-props');
+            if (props) {
+                pDiv.innerHTML = `<p class="mb-2 fst-italic text-info">${props.symmetry_analysis || ''}</p><div class="d-flex gap-3 text-white"><span>Cintura/Altura: <strong>${props.waist_to_height_ratio || '--'}</strong></span><span>Cintura/Cadera: <strong>${props.waist_to_hip_ratio || '--'}</strong></span></div>`;
+            } else { pDiv.innerHTML = '<span class="text-muted">No disponible</span>'; }
+
+            // Recs
+            const recList = document.getElementById('det-recs');
+            recList.innerHTML = '';
+            const recs = output.recommendations?.actions || [];
+            if (recs.length > 0) { recs.forEach(r => recList.innerHTML += `<li class="list-group-item bg-transparent text-white border-0 px-0 py-1"><i class="fas fa-check text-success me-2"></i>${r}</li>`); }
+            else { recList.innerHTML = '<li class="text-muted small">Sin recomendaciones.</li>'; }
+
+            // Photo Feedback
+            const pf = output.photo_feedback;
+            const pfContainer = document.getElementById('det-photo-feedback');
+            if (!pf) { pfContainer.innerHTML = '<span class="text-muted">No hay feedback específico.</span>'; }
+            else if (Array.isArray(pf)) { let html = '<ul class="list-unstyled mb-0">'; pf.forEach(p => html += `<li class="mb-1"><i class="fas fa-comment-dots text-warning me-2 small"></i>${p}</li>`); html += '</ul>'; pfContainer.innerHTML = html; }
+            else { pfContainer.innerHTML = pf.toString().replace(/\n/g, '<br>'); }
+        }
+
+        const zoomModal = new bootstrap.Modal(document.getElementById('imageZoomModal'));
+        window.openZoom = function (src) {
+            document.getElementById('zoomedImage').src = src;
+            zoomModal.show();
+        }
     </script>
 </body>
 

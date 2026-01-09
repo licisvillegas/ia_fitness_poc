@@ -72,15 +72,7 @@ def server_error(e):
     return jsonify({"error": "Internal Server Error", "message": "Ocurrió un error inesperado."}), 500
 
 
-# ======================================================
-# CACHE CONTROL
-# ======================================================
-@app.after_request
-def add_header(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
+
 
 
 # ======================================================

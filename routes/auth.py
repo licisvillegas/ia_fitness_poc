@@ -183,6 +183,8 @@ def verify_admin_token_endpoint():
         token = data.get("token")
         
         expected = Config.ADMIN_TOKEN
+        logger.info(f"DEBUG: Token check. Received: '{token}', Expected: '{expected}'")
+
         if not expected:
             return jsonify({"ok": False, "error": "Token no configurado"}), 503
             

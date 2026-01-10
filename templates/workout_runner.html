@@ -1240,7 +1240,8 @@
             const resolvedTime = data.time_seconds != null
                 ? data.time_seconds
                 : (currentStep.isTimeBased ? currentStep.target?.time : null);
-            const newLog = [...sessionLog, {
+            const baseLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            const newLog = [...baseLog, {
                 stepId: currentStep.id,
                 exerciseId,
                 exercise_id: exerciseId,
@@ -1281,7 +1282,8 @@
 
             // AUTO-LOG CHECK: If moving away from a WORK step that hasn't been logged, log it now.
             if (currentStep && currentStep.type === 'work') {
-                const alreadyLogged = sessionLog.some(l => l.stepId === currentStep.id);
+                const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+                const alreadyLogged = currentLog.some(l => l.stepId === currentStep.id);
                 if (!alreadyLogged) {
                     console.log("DEBUG: Auto-logging skipped/done work step:", currentStep.id);
                     // Use target time or elapsed time? 
@@ -1310,7 +1312,7 @@
             setIsPaused(false);
 
             // Sync Progress (using current log)
-            syncProgress(nextIdx, sessionLog);
+            syncProgress(nextIdx, (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog);
 
             // Setup next step state
             const upcoming = queue[nextIdx];
@@ -1543,7 +1545,9 @@
             skipRest,
             addRestTime,
             logSet,
+            logSet,
             sessionLog,
+            sessionLogRef,
             historyMaxByExercise,
             finishWorkout,
             startWorkout,
@@ -2031,7 +2035,7 @@
     };
 
     const InputControls = ({ step, compact = false }) => {
-        const { logSet, next, sessionLog, historyMaxByExercise } = useWorkout();
+        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise } = useWorkout();
         // Local state for inputs so we can edit before committing
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
@@ -2046,6 +2050,16 @@
             35: 0,
             45: 0
         });
+
+        // Reset plates when modal opens or step changes
+        useEffect(() => {
+            if (plateModalOpen) {
+                setPlateCounts({
+                    2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0
+                });
+                setIncludeBar(false); // Optional: also reset bar toggle? User asked to "reset to zero"
+            }
+        }, [plateModalOpen]);
         const [includeBar, setIncludeBar] = useState(false);
         const [barWeight, setBarWeight] = useState(20);
         const weightInputRef = useRef(null);
@@ -2092,9 +2106,24 @@
             const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
             let nextWeight = step.target.weight || '';
             let nextReps = step.target.reps || '';
-            if (exerciseId) {
-                const lastMatch = [...sessionLog].reverse().find(entry => entry.exerciseId === exerciseId);
+            if (exerciseId || step.exercise?.name) {
+                // Use Ref for immediate consistency, fallback to state
+                const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+
+                // Debug log
+                console.log("InputControls: Searching log for", { exerciseId, name: step.exercise?.name, logLen: currentLog.length });
+
+                const lastMatch = [...currentLog].reverse().find(entry => {
+                    // Check exerciseId (camelCase) or exercise_id (snake_case)
+                    const entryId = entry.exerciseId || entry.exercise_id;
+                    if (exerciseId && entryId && String(entryId) === String(exerciseId)) return true;
+                    // Fallback to name match if IDs fail
+                    if (step.exercise?.name && entry.name === step.exercise.name) return true;
+                    return false;
+                });
+
                 if (lastMatch) {
+                    console.log("InputControls: Match found", lastMatch);
                     if (lastMatch.weight != null && lastMatch.weight !== '') nextWeight = lastMatch.weight;
                     if (lastMatch.reps) nextReps = lastMatch.reps;
                 }
@@ -2417,15 +2446,24 @@
         const isNextTimeBased = nextStep?.isTimeBased || false; // Or check type
 
         return (
-            <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-body p-4" style={{ zIndex: 2000 }}>
+            <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center p-4" style={{ zIndex: 2000, backgroundColor: 'var(--bg-body)' }}>
                 <div className="position-absolute top-0 end-0 p-3">
-                    <button
-                        className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
-                        onClick={onTogglePending}
-                        title="Pendientes"
-                    >
-                        <i className="fas fa-list"></i>
-                    </button>
+                    <div className="d-flex align-items-center gap-2">
+                        <button
+                            className="btn btn-sm btn-outline-secondary rounded-circle"
+                            onClick={() => window.toggleTheme && window.toggleTheme()}
+                            title="Cambiar Tema"
+                        >
+                            <i className="fas fa-adjust"></i>
+                        </button>
+                        <button
+                            className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                            onClick={onTogglePending}
+                            title="Pendientes"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    </div>
                 </div>
                 <div className="text-center mb-5">
                     <h2 className="display-1 fw-bold mb-0 text-success font-monospace">{formatTime(stepTimer)}</h2>
@@ -2484,7 +2522,7 @@
                             {currentStep.isTimeBased ? (
                                 <TimerControls step={currentStep} />
                             ) : (
-                                <InputControls step={currentStep} compact />
+                                <InputControls key={currentStep.id} step={currentStep} compact />
                             )}
                         </div>
                     </div>
@@ -2540,7 +2578,7 @@
                         {currentStep.isTimeBased ? (
                             <TimerControls step={currentStep} />
                         ) : (
-                            <InputControls step={currentStep} />
+                            <InputControls key={currentStep.id} step={currentStep} />
                         )}
                     </div>
 

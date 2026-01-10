@@ -417,3 +417,41 @@ def api_get_user_latest_metrics(user_id):
     except Exception as e:
         logger.error(f"Error fetching latest metrics for {user_id}: {e}")
         return jsonify({"error": "Internal Error"}), 500
+
+@user_bp.route("/tracking")
+def body_tracking_page():
+    embed = request.args.get("embed") in ("1", "true", "yes")
+    # Mock Data as requested by user
+    user_data = {
+        "measurements": {
+            "cuello": {"value": 38.0, "change": "+1cm"},
+            "torax": {"value": 101.0, "change": "+1cm"},
+            "biceps_izq": {"value": 40.5, "change": "+0.5cm"},
+            "biceps_der": {"value": 40.5, "change": "+0.5cm"},
+            "antebrazo_izq": {"value": 29.3, "change": "-0.6cm"},
+            "antebrazo_der": {"value": 29.3, "change": "-0.6cm"},
+            "cintura": {"value": 80.0, "change": "-2cm"},
+            "cadera": {"value": 96.5, "change": "+1.5cm"},
+            "muslo_izq": {"value": 60.6, "change": "+1.6cm"},
+            "muslo_der": {"value": 60.6, "change": "+2.3cm"},
+            "pantorrilla_izq": {"value": 37.5, "change": "+1.4cm"},
+            "pantorrilla_der": {"value": 37.5, "change": "+1.4cm"},
+        },
+        "stats": {
+            "peso": {"value": 73.7, "unit": "kg", "change": "+2.7kg", "trend": "up"},
+            "musculo": {"value": 39.5, "unit": "%", "change": "+7%", "trend": "up"},
+            "agua": {"value": 39.5, "unit": "%", "change": "-18.9%", "trend": "down"},
+            "grasa": {"value": 20.6, "unit": "%", "change": "+0.1%", "trend": "up"},
+            "imc": {"value": 26.7, "unit": "", "change": "", "trend": "neutral"}
+        }
+    }
+    return render_template("body_tracking.html", data=user_data, embed=embed)
+
+@user_bp.post("/api/user/measurement/save")
+def save_measurement_mock():
+    try:
+        data = request.json
+        # Here we would save to DB
+        return jsonify({"status": "success", "message": f"Medida guardada", "data": data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

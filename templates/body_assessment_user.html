@@ -340,6 +340,12 @@
                                 </section>
 
                                 <section class="mb-4">
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button class="btn btn-outline-info btn-sm" type="button"
+                                            data-bs-toggle="modal" data-bs-target="#bodyTrackingModal">
+                                            Ver seguimiento corporal
+                                        </button>
+                                    </div>
                                     <h2 class="section-title h5 mb-3">Medidas corporales</h2>
                                     <div class="row g-3">
                                         <div class="col-6 col-lg-4">
@@ -643,6 +649,23 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="/static/js/lang.js"></script>
         <script src="/static/js/theme.js"></script>
+
+        <!-- Body Tracking Modal -->
+        <div class="modal fade" id="bodyTrackingModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content bg-dark border-secondary">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title text-white">Seguimiento corporal</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <iframe src="/tracking?embed=1" title="Seguimiento corporal" class="w-100 border-0"
+                            style="height: 80vh; background: var(--bg-body);"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Image Zoom Modal -->
         <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">

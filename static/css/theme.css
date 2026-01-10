@@ -31,6 +31,8 @@
     --table-text: #b1caeb;
     /* Blue-400 (Lighter blue for dark mode) */
     --table-header-bg: #1b2230;
+    --table-row-bg: #1f2633;
+    --table-row-hover-bg: #2a3446;
 
     /* State colors */
     --success: #22c55e;
@@ -57,88 +59,102 @@
     --secondary-hover: #64748b;
     --secondary-bg: #1c2432;
     --secondary-text: #cbd5e1;
+
+    /* Accents and overlays */
+    --text-on-primary: #ffffff;
+    --text-on-media: #ffffff;
+    --accent-cyan: #00d2ff;
+    --accent-cyan-border: rgba(0, 210, 255, 0.3);
+    --accent-cyan-glow: rgba(0, 210, 255, 0.4);
+    --accent-green: #00ff9d;
+    --accent-green-glow: rgba(0, 255, 157, 0.3);
+    --accent-orange: #ff9d00;
+    --overlay-backdrop: rgba(11, 15, 20, 0.8);
+    --overlay-panel: rgba(17, 24, 39, 0.75);
+    --overlay-strong: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] {
-    /* Light Mode - Premium Soft UI */
-    --bg-body: #f1f5f9;
-    /* Slate-100 - Crisp light gray background */
+    /* Light Mode - Premium Soft UI (Improved) */
+    --bg-body: #f4f7fb;
+    /* Cool light gray/blue tint for main background */
+    --bg-panel: #e7eef6;
+    /* Slightly darker panel bg */
+    --bg-card: #ffffff;
+    /* Pure white for cards to pop */
+    --bg-card-hover: #eaf2ff;
+    /* Very subtle blue tint on hover */
+    --bg-input: #ffffff;
+    /* White inputs */
 
-    --bg-panel: #c8def1;
-    --bg-card: #c2eaed;
-    --bg-card-hover: #9cc0e4;
-    /* Slate-50 hover */
+    --border-color: #d6e0ea;
+    /* Soft blue-gray border */
+    --border-light: #edf2f7;
 
-    --bg-input: #f8fafc;
-    /* Slate-50 - Distinct from white card */
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 
-    --border-color: #e2e8f0;
-    /* Slate-200 - Soft border */
-    --border-light: #f1f5f9;
-    /* Slate-100 */
-
-    --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    /* Subtle shadow */
-
-    --text-main: #0f172a;
-    /* Slate-900 - High contrast */
+    --text-main: #0b1220;
+    /* Nearly black for main text */
+    --text-header: #0b1220;
+    /* Dark headers */
     --text-secondary: #334155;
     /* Slate-700 */
-    --text-muted: #64748b;
-    /* Slate-500 */
+    --text-muted: #5b6b7f;
+    /* Slate-600 */
     --text-placeholder: #94a3b8;
-    /* Slate-400 */
 
-    --primary: #2563eb;
-    /* Blue-600 - Validated accessible blue */
-    --primary-hover: #1d4ed8;
-    /* Blue-700 */
+    --primary: #2b6ef2;
+    /* Bright vivid blue */
+    --primary-hover: #1f56c7;
 
     --table-text: #1e293b;
-    /* Slate-800 */
     --table-header-bg: #f8fafc;
-    /* Slate-50 */
+    --table-row-bg: #ffffff;
+    --table-row-hover-bg: #eef2f7;
 
-    /* State colors - Adjusted for light mode contrast */
-    --success: #16a34a;
-    /* Green-600 */
-    --success-hover: #15803d;
-    --success-bg: #dcfce7;
-    /* Green-100 */
-    --success-text: #14532d;
-    /* Green-900 */
+    /* State colors - High legibility on light bg */
+    --success: #22a861;
+    --success-hover: #1a824b;
+    --success-bg: #e6f7ee;
+    --success-text: #135b35;
 
-    --info: #0284c7;
-    /* Sky-600 */
-    --info-hover: #0369a1;
-    --info-bg: #e0f2fe;
-    /* Sky-100 */
-    --info-text: #0c4a6e;
-    /* Sky-900 */
+    --info: #1a8fd6;
+    --info-hover: #126ba3;
+    --info-bg: #e6f4fb;
+    --info-text: #0b4b6f;
 
-    --warning: #d97706;
-    /* Amber-600 */
-    --warning-hover: #b45309;
-    --warning-bg: #fef3c7;
-    /* Amber-100 */
-    --warning-text: #78350f;
-    /* Amber-900 */
+    --warning: #d88600;
+    --warning-hover: #a66700;
+    --warning-bg: #fff3d6;
+    --warning-text: #7a3f00;
 
-    --danger: #dc2626;
-    /* Red-600 */
-    --danger-hover: #b91c1c;
-    --danger-bg: #fee2e2;
-    /* Red-100 */
-    --danger-text: #7f1d1d;
-    /* Red-900 */
+    --danger: #d93838;
+    --danger-hover: #b02a2a;
+    --danger-bg: #fde8e8;
+    --danger-text: #7a1c1c;
 
-    --secondary: #64748b;
-    /* Slate-500 */
-    --secondary-hover: #475569;
-    --secondary-bg: #f1f5f9;
-    /* Slate-100 */
+    --secondary: #6b7a90;
+    --secondary-hover: #4b5563;
+    --secondary-bg: #eef2f7;
     --secondary-text: #334155;
-    /* Slate-700 */
+
+    /* Accents adapted for light mode */
+    --text-on-primary: #ffffff;
+    --text-on-media: #ffffff;
+
+    /* Neons dimmed slightly or shifted for visibility on white */
+    --accent-cyan: #0099cc;
+    --accent-cyan-border: rgba(0, 153, 204, 0.2);
+    --accent-cyan-glow: rgba(0, 153, 204, 0.15);
+
+    --accent-green: #00c060;
+    --accent-green-glow: rgba(0, 192, 96, 0.15);
+
+    --accent-orange: #e68a00;
+
+    --overlay-backdrop: rgba(15, 23, 42, 0.1);
+    --overlay-panel: rgba(255, 255, 255, 0.9);
+    --overlay-strong: rgba(15, 23, 42, 0.2);
 }
 
 body {
@@ -186,6 +202,14 @@ h6 {
     color: var(--text-main) !important;
 }
 
+.text-on-primary {
+    color: var(--text-on-primary) !important;
+}
+
+.text-on-media {
+    color: var(--text-on-media) !important;
+}
+
 /* Form Controls */
 .form-control,
 .form-select,
@@ -230,6 +254,11 @@ textarea::-ms-input-placeholder {
     color: var(--table-text) !important;
 }
 
+.table > :not(caption) > * {
+    background-color: var(--table-row-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
 .table thead th {
     background-color: var(--table-header-bg) !important;
     color: var(--table-text) !important;
@@ -242,7 +271,7 @@ textarea::-ms-input-placeholder {
 }
 
 .table-hover tbody tr:hover {
-    background-color: var(--bg-card-hover) !important;
+    background-color: var(--table-row-hover-bg) !important;
     color: var(--table-text) !important;
 }
 
@@ -288,6 +317,45 @@ textarea::-ms-input-placeholder {
 .navbar {
     background-color: var(--bg-panel) !important;
     border-bottom: 1px solid var(--border-color);
+}
+
+/* Light theme utility overrides for Bootstrap defaults */
+[data-theme="light"] .bg-dark,
+[data-theme="light"] .bg-black {
+    background-color: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="light"] .text-white {
+    color: var(--text-main) !important;
+}
+
+[data-theme="light"] .border-secondary {
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .table-dark {
+    color: var(--table-text) !important;
+}
+
+[data-theme="light"] .table-dark > :not(caption) > * {
+    background-color: var(--table-row-bg) !important;
+    color: var(--table-text) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .table-dark thead th {
+    background-color: var(--table-header-bg) !important;
+    color: var(--table-text) !important;
+}
+
+[data-theme="light"] .table-dark.table-hover tbody tr:hover {
+    background-color: var(--bg-card-hover) !important;
+    color: var(--table-text) !important;
+}
+
+[data-theme="light"] .table-dark.table-hover tbody tr:hover td {
+    color: var(--table-text) !important;
 }
 
 /* Buttons */

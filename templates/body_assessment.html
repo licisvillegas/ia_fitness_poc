@@ -78,7 +78,7 @@
       background: linear-gradient(135deg, var(--primary), var(--primary-hover));
       border: none;
       font-weight: 600;
-      color: white;
+      color: var(--text-main);
     }
 
     .btn-outline-light {
@@ -138,7 +138,7 @@
       width: 80px;
       height: 80px;
       object-fit: contain;
-      background-color: #000;
+      background-color: var(--bg-body);
       border-radius: 8px;
       cursor: zoom-in;
       border: 2px solid var(--primary);
@@ -227,12 +227,12 @@
     .alert-modal-card {
       width: 100%;
       max-width: 420px;
-      background: #0b0b0b;
-      border: 1px solid #2a2a2a;
+      background: var(--bg-body);
+      border: 1px solid var(--border-color);
       border-radius: 18px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
       padding: 1.5rem;
-      color: #fff;
+      color: var(--text-main);
       animation: alertSlideIn 0.25s ease-out;
     }
 
@@ -243,7 +243,7 @@
     }
 
     .alert-modal-card .alert-message {
-      color: #c7c7c7;
+      color: var(--text-muted);
       margin-bottom: 1.25rem;
       line-height: 1.4;
     }
@@ -432,19 +432,19 @@
                         data-male="/static/images/examples/Gemini_Generated_Image_ezkgn3ezkgn3ezkg.png"
                         data-female="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
                         alt="Ejemplo 1" onclick="openZoomModal(this.src)">
                       <img src="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
                         data-male="/static/images/examples/Gemini_Generated_Image_d20pgld20pgld20p.png"
                         data-female="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
                         alt="Ejemplo 2" onclick="openZoomModal(this.src)">
                       <img src="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
                         data-male="/static/images/examples/Gemini_Generated_Image_u62295u62295u622.png"
                         data-female="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #000;"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
                         alt="Ejemplo 3" onclick="openZoomModal(this.src)">
                     </div>
                     <small class="text-muted" style="font-size: 0.75rem;">* Click para ver en pantalla completa.</small>
@@ -910,7 +910,7 @@
                         <div class="flex-grow-1">
                              <input type="file" accept="image/*" class="form-control form-control-sm bg-dark text-secondary border-0 photo-file" data-file-key="${uid}" />
                         </div>
-                        <img src="" class="img-thumbnail-preview" style="width:50px; height:50px; object-fit:cover; display:none; border-radius:4px; border:1px solid #444;" alt="Preview"/>
+                        <img src="" class="img-thumbnail-preview" style="width:50px; height:50px; object-fit:cover; display:none; border-radius:4px; border:1px solid var(--border-color);" alt="Preview"/>
                     </div>
                 </div>
             </div>

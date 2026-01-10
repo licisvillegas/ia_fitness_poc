@@ -80,7 +80,7 @@
 
             const detailsHtml = `
                 <div class="table-responsive">
-                    <table class="table table-sm table-dark table-bordered mb-0">
+                    <table class="table table-sm table-hover mb-0">
                         <thead>
                             <tr class="text-center">
                                 <th>Ejercicio</th>
@@ -104,12 +104,12 @@
 
             const routineLabel = session.routine_name || session.routine_title || session.routine || session.name || "Rutina";
             return `
-                <div class="border border-secondary rounded mb-3 bg-dark-elem">
+                <div class="border border-secondary rounded mb-3 bg-card shadow-sm">
                     <div class="d-flex justify-content-between align-items-center p-3 cursor-pointer" 
                          onclick="window.toggleSessionDetails(${index})" 
                          style="cursor: pointer;">
                         <div>
-                            <div class="text-white fw-bold">
+                            <div class="text-theme fw-bold">
                                 <i class="fas fa-dumbbell text-cyber-green me-2"></i>
                                 ${routineLabel}
                             </div>
@@ -127,15 +127,15 @@
                             <div class="text-secondary small">
                                 <span class="me-3">
                                     <i class="fas fa-weight-hanging text-cyber-blue me-1"></i>
-                                    <span class="text-white">${avgWeight != null ? formatWeightValue(avgWeight) : '-'}</span> ${sessionWeightUnit}
+                                    <span class="text-theme">${avgWeight != null ? formatWeightValue(avgWeight) : '-'}</span> ${sessionWeightUnit}
                                 </span>
                                 <span class="me-3">
                                     <i class="fas fa-list text-cyber-orange me-1"></i>
-                                    <span class="text-white">${totalSets}</span> series
+                                    <span class="text-theme">${totalSets}</span> series
                                 </span>
                                 <span>
                                     <i class="far fa-clock text-cyber-green me-1"></i>
-                                    <span class="text-white">${duration}</span>
+                                    <span class="text-theme">${duration}</span>
                                 </span>
                             </div>
                             <div class="text-secondary small mt-1">
@@ -149,7 +149,7 @@
                         ${session.body_weight ? `
                             <div class="mb-3 text-secondary small">
                                 <i class="fas fa-user text-cyber-orange me-2"></i>
-                                Peso corporal: <span class="text-white">${formatWeightValue(session.body_weight)}</span> ${sessionWeightUnit}
+                                Peso corporal: <span class="text-theme">${formatWeightValue(session.body_weight)}</span> ${sessionWeightUnit}
                             </div>
                         ` : ''}
                         ${detailsHtml || '<p class="text-muted small">No hay detalles de ejercicios disponibles.</p>'}

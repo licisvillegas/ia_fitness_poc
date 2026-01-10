@@ -48,7 +48,7 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      color: white;
+      color: var(--text-main);
       /* Always white over video/image */
       overflow: hidden;
     }
@@ -269,12 +269,12 @@
     .alert-modal-card {
       width: 100%;
       max-width: 420px;
-      background: #0b0b0b;
-      border: 1px solid #2a2a2a;
+      background: var(--bg-body);
+      border: 1px solid var(--border-color);
       border-radius: 18px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
       padding: 1.5rem;
-      color: #fff;
+      color: var(--text-main);
       animation: alertSlideIn 0.25s ease-out;
     }
 
@@ -285,7 +285,7 @@
     }
 
     .alert-modal-card .alert-message {
-      color: #c7c7c7;
+      color: var(--text-muted);
       margin-bottom: 1.25rem;
       line-height: 1.4;
     }
@@ -330,7 +330,7 @@
       .main-content {
         margin: 0 !important;
         padding: 0 !important;
-        background-color: white !important;
+        background-color: var(--text-main) !important;
         color: black !important;
         width: 100% !important;
         height: auto !important;
@@ -360,13 +360,13 @@
         break-inside: avoid;
         border: 1px solid #ccc !important;
         box-shadow: none !important;
-        background-color: white !important;
+        background-color: var(--text-main) !important;
         margin-bottom: 20px !important;
         page-break-inside: avoid;
       }
 
       .meal-header {
-        background-color: #f8f9fa !important;
+        background-color: var(--bg-input) !important;
         color: black !important;
         border-bottom: 1px solid #ddd !important;
       }
@@ -381,7 +381,7 @@
 
       .nutrition-list li {
         color: black !important;
-        border-color: #eee !important;
+        border-color: var(--text-muted) !important;
       }
 
       .nutrition-list li strong {

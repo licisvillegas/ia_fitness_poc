@@ -141,17 +141,17 @@ window.loadRoutines = async function loadRoutines(userId, options) {
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="flex-grow-1">
-                  <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                  <h5 class="card-title text-theme fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
                   <div class="d-flex flex-wrap gap-1 mb-1">
                     <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
-                    <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>
+                    <span class="badge bg-secondary border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>
                   </div>
                 </div>
-                <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
+                <span class="badge bg-secondary border border-secondary text-info ms-2" style="font-size: 0.65rem;">
                   ${exCount} ej.
                 </span>
               </div>
-              <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripcion"}</p>
+              <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
               <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
                 <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">
                   ${validity ? `Vence: ${validity}` : "Vence: -"}
@@ -485,13 +485,13 @@ window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="flex-grow-1">
-                  <h5 class="card-title text-white fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
+                  <h5 class="card-title text-theme fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
                   <div class="d-flex flex-wrap gap-1 mb-1">
                     <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
-                    ${dayLabel ? `<span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
+                    ${dayLabel ? `<span class="badge bg-secondary border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>` : ""}
                   </div>
                 </div>
-                <span class="badge bg-dark border border-secondary text-info ms-2" style="font-size: 0.65rem;">
+                <span class="badge bg-secondary border border-secondary text-info ms-2" style="font-size: 0.65rem;">
                   ${exCount} ej.
                 </span>
               </div>

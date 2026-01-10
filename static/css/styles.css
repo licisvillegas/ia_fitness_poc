@@ -25,7 +25,7 @@ canvas:hover {
 }
 
 canvas {
-  background-color: #111827;
+  background-color: var(--bg-panel);
   border-radius: 10px;
   padding: 10px;
   min-height: 280px; /* 👈 evita que se encoja */
@@ -39,9 +39,9 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 1rem;
-  background: rgba(17, 24, 39, 0.75);
+  background: var(--overlay-panel);
   border-radius: 10px;
   visibility: hidden; /* se muestra solo si no hay data */
 }

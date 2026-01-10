@@ -26,6 +26,10 @@
             background-clip: text;
         }
 
+        .logo-adaptive {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+        }
+
         .hover-elevate:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
@@ -82,7 +86,8 @@
                 <div class="col-12 z-1 position-relative py-5 mt-4">
                     <h1 class="display-3 fw-bold mb-3 text-gradient-primary">Bienvenido a</h1>
                     <div class="text-center mb-3">
-                        <img src="/static/images/logo.png" alt="AI Fitness" style="height: 216px; width: auto;">
+                        <img src="/static/images/logo.png" alt="AI Fitness" class="logo-adaptive"
+                            style="height: 216px; width: auto;">
                     </div>
                     <p class="lead text-secondary mb-4 mx-auto" style="max-width: 600px;">
                         Tu compañero inteligente para alcanzar tu mejor versión. Entrena, come y vive mejor con el poder

@@ -13,19 +13,19 @@
             <div class="input-group" style="min-width: 200px; flex-grow: 1; max-width: 100%;">
                 <span class="input-group-text bg-dark border-secondary text-secondary"><i
                         class="fas fa-search"></i></span>
-                <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
+                <input type="text" class="form-control border-secondary" id="mainSearch"
                     placeholder="Buscar ejercicio...">
             </div>
 
             <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
                 <!-- Scrollable filters on tiny screens -->
-                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
-                    id="filterBodyPart" style="min-width: 130px;">
+                <select class="form-select border-secondary flex-grow-1 flex-md-grow-0" id="filterBodyPart"
+                    style="min-width: 130px;">
                     <option value="">Grupo</option>
                     <!-- Options loaded via JS -->
                 </select>
-                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
-                    id="filterEquipment" style="min-width: 130px;">
+                <select class="form-select border-secondary flex-grow-1 flex-md-grow-0" id="filterEquipment"
+                    style="min-width: 130px;">
                     <option value="">Equipo</option>
                     <option value="barbell">Barra</option>
                     <option value="dumbbell">Mancuernas</option>
@@ -34,8 +34,8 @@
                     <option value="bodyweight">Peso Corporal</option>
                     <option value="other">Otro</option>
                 </select>
-                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
-                    id="filterType" style="min-width: 100px;">
+                <select class="form-select border-secondary flex-grow-1 flex-md-grow-0" id="filterType"
+                    style="min-width: 100px;">
                     <option value="">Tipo</option>
                     <option value="weight">Peso</option>
                     <option value="time">Tiempo</option>
@@ -60,9 +60,9 @@
 <div class="card bg-panel border-0 shadow-lg d-none d-md-block">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle" id="exercisesTable">
+            <table class="table table-hover align-middle" id="exercisesTable">
                 <thead>
-                    <tr class="text-cyber-blue">
+                    <tr class="text-info">
                         <th>Nombre</th>
                         <th>Grupo Muscular</th>
                         <th>Equipo</th>
@@ -91,7 +91,7 @@
         <div class="modal-content bg-panel text-white border-cyber">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title text-cyber-green">Ejercicio</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="exerciseForm">
@@ -100,19 +100,19 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Nombre *</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="exName"
-                                required placeholder="Ej. Press Banca">
+                            <input type="text" class="form-control border-secondary" id="exName" required
+                                placeholder="Ej. Press Banca">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Parte del Cuerpo</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exBodyPart">
+                            <select class="form-select border-secondary" id="exBodyPart">
                                 <!-- Options loaded via JS -->
                             </select>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Tipo de Registro</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exType">
+                            <select class="form-select border-secondary" id="exType">
                                 <option value="weight">Peso (Series x Reps)</option>
                                 <option value="time">Tiempo (Duración)</option>
                                 <option value="cardio">Cardio (Distancia/Tiempo)</option>
@@ -120,7 +120,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Equipo Requerido</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exEquipment">
+                            <select class="form-select border-secondary" id="exEquipment">
                                 <option value="barbell">Barra</option>
                                 <option value="dumbbell">Mancuernas</option>
                                 <option value="machine">Máquina</option>
@@ -135,25 +135,24 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-dark border-secondary text-secondary"><i
                                         class="fab fa-youtube"></i></span>
-                                <input type="url" class="form-control bg-dark text-white border-secondary" id="exVideo"
+                                <input type="url" class="form-control border-secondary" id="exVideo"
                                     placeholder="https://youtube.com/...">
                             </div>
                         </div>
 
                         <div class="col-12">
                             <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
-                            <textarea class="form-control bg-dark text-white border-secondary" id="exDescription"
-                                rows="3" placeholder="Ej. Mantener codos pegados al cuerpo..."></textarea>
+                            <textarea class="form-control border-secondary" id="exDescription" rows="3"
+                                placeholder="Ej. Mantener codos pegados al cuerpo..."></textarea>
                         </div>
 
                         <div class="col-12">
                             <label class="form-label text-secondary">Sustitutos / Equivalentes</label>
                             <div class="mb-2">
-                                <input type="text"
-                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                    id="subSearch" placeholder="Buscar por nombre, equipo o tipo...">
+                                <input type="text" class="form-control form-control-sm border-secondary" id="subSearch"
+                                    placeholder="Buscar por nombre, equipo o tipo...">
                             </div>
-                            <div class="bg-dark border border-secondary rounded p-2"
+                            <div class="bg-input border border-secondary rounded p-2"
                                 style="max-height: 200px; overflow-y: auto;" id="substitutesContainer">
                                 <!-- Llenado dinámicamente con checkboxes -->
                             </div>
@@ -224,7 +223,7 @@
 
     .btn-cyber-primary {
         background: linear-gradient(45deg, #00d2ff, #007bff);
-        color: white;
+        color: var(--text-main);
         border: none;
         box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
     }
@@ -232,7 +231,7 @@
     .btn-cyber-primary:hover {
         background: linear-gradient(45deg, #007bff, #0056b3);
         box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
-        color: white;
+        color: var(--text-main);
     }
 
     .border-cyber {
@@ -615,10 +614,10 @@
             const item = document.createElement("div");
             item.className = "form-check sub-item border-bottom border-secondary py-2";
             item.innerHTML = `
-                <input class="form-check-input bg-dark border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}" ${isChecked}>
+                <input class="form-check-input border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}" ${isChecked}>
                 <label class="form-check-label w-100 cursor-pointer" for="sub_${ex._id}">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-white fw-bold">${ex.name} ${hasVideo}</span>
+                        <span class="fw-bold">${ex.name} ${hasVideo}</span>
                         <span class="badge bg-secondary ms-2">${translateBodyPart(ex.body_part)}</span>
                     </div>
                     <div class="d-flex justify-content-between small text-secondary">

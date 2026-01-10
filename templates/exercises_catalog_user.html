@@ -128,7 +128,7 @@
 
     .btn-cyber-primary {
         background: linear-gradient(45deg, #00d2ff, #007bff);
-        color: white;
+        color: var(--text-main);
         border: none;
         box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
     }
@@ -136,7 +136,7 @@
     .btn-cyber-primary:hover {
         background: linear-gradient(45deg, #007bff, #0056b3);
         box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
-        color: white;
+        color: var(--text-main);
     }
 
     .border-cyber {
@@ -148,13 +148,13 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        border: 2px solid #444;
+        border: 2px solid var(--border-color);
         overflow: hidden;
         cursor: pointer;
         transition: all 0.3s;
         flex-shrink: 0;
         position: relative;
-        background: #222;
+        background: var(--bg-panel);
     }
 
     .muscle-icon img {
@@ -184,7 +184,7 @@
 
     .muscle-item:hover .muscle-label,
     .muscle-icon.active+.muscle-label {
-        color: #fff;
+        color: var(--text-main);
     }
 </style>
 

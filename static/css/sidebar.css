@@ -33,7 +33,7 @@ body.sb-right .sidebar-fixed {
     left: auto !important;
     right: 0 !important;
     border-right: none !important;
-    border-left: 1px solid #374151;
+    border-left: 1px solid var(--border-color);
 }
 
 body.sb-right .main-content {
@@ -120,15 +120,15 @@ body.sb-collapsed .sidebar-fixed .collapsing {
     top: 70px;
     /* Approximate height of user icon from top */
     width: 200px;
-    background-color: #1f2937;
+    background-color: var(--bg-panel);
     /* Dark background matching sidebar sub-menu */
-    border: 1px solid #374151;
+    border: 1px solid var(--border-color);
     border-radius: 0 8px 8px 0;
     padding: 0.5rem;
     z-index: 1040;
     margin-left: 0;
     /* Remove gap */
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 4px 0 10px var(--overlay-strong);
     /* Add depth */
 }
 
@@ -146,8 +146,8 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
     margin-left: 0;
     border-radius: 8px 0 0 8px;
     border-right: none;
-    border-left: 1px solid #374151;
-    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -4px 0 10px var(--overlay-strong);
 }
 
 /* Position Toggle Icons */
@@ -163,7 +163,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 
 .pos-toggle-btn.active {
     background: var(--primary);
-    color: white;
+    color: var(--text-main);
     /* Keep white for contrast on primary bg */
     border-color: var(--primary);
 }
@@ -189,7 +189,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         /* Fully hidden to the left */
         width: 250px !important;
         height: 100vh !important;
-        border-right: 1px solid #374151 !important;
+        border-right: 1px solid var(--border-color) !important;
         border-bottom: none !important;
         z-index: 1045 !important;
         transition: left 0.3s ease-in-out, right 0.3s ease-in-out;
@@ -199,7 +199,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
     /* Class to show sidebar on mobile */
     .sidebar-fixed.show-mobile {
         left: 0 !important;
-        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+        box-shadow: 4px 0 15px var(--overlay-strong);
     }
 
     /* --- RIGHT SIDEBAR MOBILE OVERRIDES --- */
@@ -207,13 +207,13 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         left: auto !important;
         right: -250px !important;
         border-right: none !important;
-        border-left: 1px solid #374151 !important;
+        border-left: 1px solid var(--border-color) !important;
     }
 
     body.sb-right .sidebar-fixed.show-mobile {
         left: auto !important;
         right: 0 !important;
-        box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+        box-shadow: -4px 0 15px var(--overlay-strong);
     }
 
 
@@ -224,7 +224,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: var(--overlay-strong);
         z-index: 1040;
         /* Just below sidebar */
         opacity: 0;
@@ -255,7 +255,7 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 .nav-pills .nav-link.active,
 .nav-pills .show>.nav-link {
     background-color: var(--primary) !important;
-    color: #fff !important;
+    color: var(--text-main) !important;
     /* Ensure white text on active blue background */
 }
 

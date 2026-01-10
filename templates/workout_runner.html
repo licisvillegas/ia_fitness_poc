@@ -11,10 +11,10 @@
 <!-- Modal Video -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-black text-white border border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content bg-card text-theme border border-theme">
+            <div class="modal-header border-theme">
                 <h5 class="modal-title text-cyber-green">Video</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
                 <div class="ratio ratio-16x9">
@@ -23,7 +23,7 @@
                         allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="modal-footer border-secondary">
+            <div class="modal-footer border-theme">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
@@ -40,8 +40,8 @@
     }
 
     body {
-        background-color: #000 !important;
-        color: white;
+        background-color: var(--bg-body);
+        color: var(--text-main);
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
         height: 100dvh;
         /* Dynamic Viewport Height */
@@ -64,15 +64,20 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        background: #000;
+        background: var(--bg-body);
     }
 
     /* 1. HEADER (Fixed) */
     .header-section {
         flex: 0 0 auto;
         z-index: 10;
-        background: rgba(0, 0, 0, 0.8);
+        background: var(--overlay-panel);
         backdrop-filter: blur(10px);
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
     }
 
     /* 2. VISUAL STAGE (Flexible) */
@@ -94,8 +99,8 @@
     /* 3. CONTROLS (Fixed Bottom) */
     .controls-section {
         flex: 0 0 auto;
-        background: #111;
-        border-top: 1px solid #333;
+        background: var(--bg-body);
+        border-top: 1px solid var(--border-color);
         padding: 15px;
         padding-bottom: calc(15px + env(safe-area-inset-bottom));
         z-index: 20;
@@ -105,8 +110,8 @@
     .active-card {
         width: 100%;
         max-width: 600px;
-        background: #1a1a1a;
-        border: 2px solid #333;
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
         border-radius: 24px;
         padding: 1.5rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -128,9 +133,9 @@
     }
 
     .input-hud {
-        background: #000;
-        border: 1px solid #333;
-        color: white;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
         font-family: 'Courier New', monospace;
         font-size: 2rem;
         text-align: center;
@@ -276,7 +281,7 @@
         border-radius: 50%;
         border: 2px solid #00ff9d;
         /* Cyan highlight */
-        background: #f8f9fa;
+        background: var(--bg-input);
         /* Light background for contrast */
         display: inline-flex;
         align-items: center;
@@ -320,25 +325,25 @@
     }
 
     .plate-modal {
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
         border-radius: 16px;
         width: min(420px, 95vw);
-        color: #fff;
+        color: var(--text-main);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
     }
 
     .plate-modal-header,
     .plate-modal-footer {
         padding: 12px 16px;
-        border-bottom: 1px solid #222;
+        border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
 
     .plate-modal-footer {
-        border-top: 1px solid #222;
+        border-top: 1px solid var(--border-color);
         border-bottom: none;
     }
 
@@ -427,8 +432,8 @@
         right: 0;
         width: 320px;
         height: calc(100vh - 70px);
-        background: #0b0b0b;
-        border-left: 1px solid #222;
+        background: var(--bg-body);
+        border-left: 1px solid var(--border-color);
         z-index: 2200;
         transform: translateX(100%);
         transition: transform 0.25s ease;
@@ -442,7 +447,7 @@
 
     .pending-panel-header {
         padding: 12px 16px;
-        border-bottom: 1px solid #222;
+        border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -516,7 +521,7 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <!-- REACT APP -->
-<script>
+<script type="text/javascript">
     // Inject server-side data from Jinja OUTSIDE the raw block
     window.initialRoutine = {{ routine | tojson }};
     window.currentUserName = {{ current_user_name | default ('', true) | tojson }};
@@ -1746,7 +1751,7 @@
         if (!routine) return <div className="text-white text-center">No routine data</div>;
 
         return (
-            <div className="card mx-3" style={{ background: 'rgba(30,30,30,0.95)', border: '1px solid #444', borderRadius: '20px', minHeight: '300px', opacity: 1 }}>
+            <div className="card mx-3" style={{ background: 'rgba(30,30,30,0.95)', border: '1px solid var(--border-color)', borderRadius: '20px', minHeight: '300px', opacity: 1 }}>
                 <div className="card-body">
                     <div className="text-center mb-4">
                         <h2 className="display-6 fw-bold text-white mb-2">{routine.name || "Rutina"}</h2>
@@ -2201,7 +2206,7 @@
                         <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
                             <div className="plate-modal-header">
                                 <div className="fw-bold">Discos (lb)</div>
-                                <button className="btn btn-sm btn-outline-light" onClick={() => setPlateModalOpen(false)}>
+                                <button className="btn btn-sm btn-outline-secondary" onClick={() => setPlateModalOpen(false)}>
                                     <i className="fas fa-times"></i>
                                 </button>
                             </div>
@@ -2213,7 +2218,7 @@
                                             <div className="text-secondary small">{plate.label} lb</div>
                                             <div className="plate-counter">
                                                 <button type="button" onClick={() => updatePlateCount(plate.value, -1)}>-</button>
-                                                <div className="text-white fw-bold" style={{ minWidth: '18px' }}>
+                                                <div className="fw-bold text-theme" style={{ minWidth: '18px' }}>
                                                     {plateCounts[plate.value] || 0}
                                                 </div>
                                                 <button type="button" onClick={() => updatePlateCount(plate.value, 1)}>+</button>
@@ -2241,7 +2246,7 @@
                                         <input
                                             type="number"
                                             min="0"
-                                            className="form-control form-control-sm bg-dark text-white border-secondary"
+                                            className="form-control form-control-sm border-secondary"
                                             style={{ width: '80px' }}
                                             value={barWeight}
                                             onChange={(e) => setBarWeight(e.target.value)}
@@ -2284,10 +2289,10 @@
 
         return (
             <div className="text-center py-4">
-                <div className="display-1 fw-bold text-white mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>
+                <div className="display-1 fw-bold text-theme mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(0,0,0,0.1)' }}>
                     {formatTime(stepTimer)}
                 </div>
-                <p className="text-cyber-green mb-4">TIEMPO OBJETIVO</p>
+                <p className="text-success mb-4">TIEMPO OBJETIVO</p>
 
                 <div className="d-grid gap-2">
                     {!isTimerRunning && stepTimer > 0 && (
@@ -2313,7 +2318,7 @@
         const isNextTimeBased = nextStep?.isTimeBased || false; // Or check type
 
         return (
-            <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark text-white p-4" style={{ zIndex: 2000 }}>
+            <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-body p-4" style={{ zIndex: 2000 }}>
                 <div className="position-absolute top-0 end-0 p-3">
                     <button
                         className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
@@ -2324,7 +2329,7 @@
                     </button>
                 </div>
                 <div className="text-center mb-5">
-                    <h2 className="display-1 fw-bold mb-0 text-cyber-green font-monospace">{formatTime(stepTimer)}</h2>
+                    <h2 className="display-1 fw-bold mb-0 text-success font-monospace">{formatTime(stepTimer)}</h2>
                     <p className="text-secondary text-uppercase letter-spacing-2 mt-2">Descanso</p>
                 </div>
 
@@ -2338,7 +2343,7 @@
                     )}
                 </div>
 
-                <button className="btn btn-outline-light rounded-pill px-5 py-3" onClick={skipRest}>
+                <button className="btn btn-outline-secondary rounded-pill px-5 py-3" onClick={skipRest}>
                     SALTAR DESCANSO <i className="fas fa-forward ms-2"></i>
                 </button>
             </div>
@@ -2548,15 +2553,20 @@
         return (
             <div className="header-section d-flex justify-content-between align-items-center p-3 relative">
                 {/* Left: Info */}
-                <div className="header-info" style={{ flex: 1 }}>
-                    <h5 className="m-0 fw-bold text-white text-truncate" style={{ fontSize: '1rem' }}>{routine.name}</h5>
-                    <div className="text-secondary small text-truncate">
-                        Serie {workStats.passed} / {workStats.total}
+                <div className="header-info d-flex align-items-center gap-3" style={{ flex: 1 }}>
+                    <a href="/dashboard" className="btn btn-sm btn-outline-secondary rounded-circle" title="Volver al Dashboard">
+                        <i className="fas fa-arrow-left"></i>
+                    </a>
+                    <div style={{ minWidth: 0 }}>
+                        <h5 className="m-0 fw-bold text-theme text-truncate" style={{ fontSize: '1rem' }}>{routine.name}</h5>
+                        <div className="text-secondary small text-truncate">
+                            Serie {workStats.passed} / {workStats.total}
+                        </div>
                     </div>
                 </div>
 
                 {/* Center: Global Timer */}
-                <div className="header-timer position-absolute start-50 top-50 translate-middle">
+                <div className="header-timer position-absolute start-50 top-50 translate-middle mobile-compact-timer">
                     <div className="font-monospace fs-3 text-cyber-green fw-bold bg-black px-3 rounded-pill border border-secondary shadow-sm">
                         {formatTime(globalTime)}
                     </div>
@@ -2564,6 +2574,15 @@
 
                 {/* Right: Controls */}
                 <div className="header-controls d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                    {/* Theme Toggle */}
+                    <button
+                        className="btn btn-sm btn-outline-secondary rounded-circle"
+                        onClick={() => window.toggleTheme && window.toggleTheme()}
+                        title="Cambiar Tema"
+                    >
+                        <i className="fas fa-adjust"></i>
+                    </button>
+
                     {status !== 'IDLE' && status !== 'FINISHED' && (
                         <button
                             className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}

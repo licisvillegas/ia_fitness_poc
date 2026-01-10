@@ -2,7 +2,7 @@
 .loader-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(11, 15, 20, 0.8);
+    background: var(--overlay-backdrop);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 9999;
@@ -21,7 +21,7 @@
     width: 100%;
     max-width: 380px;
     background: var(--bg-card, #1b2230);
-    border: 1px solid var(--border-color, #2f3a4e);
+    border: 1px solid var(--border-color, var(--border-color));
     border-radius: 20px;
     padding: 2rem;
     text-align: center;

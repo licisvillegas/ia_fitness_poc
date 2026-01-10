@@ -47,7 +47,7 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      color: white;
+      color: #ffffff !important;
       /* Keep white on image */
     }
 
@@ -169,7 +169,7 @@
             <a href="/exercises/list?muscles=Pecho,Tríceps" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/IMG_1612.JPG" class="img-fluid" alt="Entrenamiento de Pecho y Tríceps">
-                <h5 class="text-light fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
+                <h5 class="fw-bold mt-3" data-i18n="pecho_y_tríceps">Pecho y Tríceps</h5>
                 <p data-i18n="fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr" class="text-muted">Fortalece
                   tu tren superior con
                   ejercicios compuestos como press de banca, fondos y flexiones.
@@ -183,7 +183,7 @@
             <a href="/exercises/list?muscles=Espalda,Bíceps" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/IMG_1614.JPG" class="img-fluid" alt="Entrenamiento de Espalda y Bíceps">
-                <h5 class="text-light fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
+                <h5 class="fw-bold mt-3" data-i18n="espalda_y_bíceps">Espalda y Bíceps</h5>
                 <p data-i18n="rutinas_centradas_en_dominadas_remos_y_curls_para_mejorar_la" class="text-muted">Rutinas
                   centradas en
                   dominadas, remos y curls para mejorar la postura, la fuerza y la definición de la espalda.</p>
@@ -196,7 +196,7 @@
             <a href="/exercises/list?muscles=Piernas,Glúteos,Cuádriceps,Isquiosurales" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/IMG_1615.JPG" class="img-fluid" alt="Entrenamiento de Piernas y Glúteos">
-                <h5 class="text-light fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
+                <h5 class="fw-bold mt-3" data-i18n="piernas_y_glúteos">Piernas y Glúteos</h5>
                 <p data-i18n="ejercicios_de_fuerza_como_sentadillas_peso_muerto_y_zancadas" class="text-muted">
                   Ejercicios de fuerza como
                   sentadillas, peso muerto y zancadas para potenciar la estabilidad y la potencia del tren inferior.</p>
@@ -212,7 +212,7 @@
             <a href="/exercises/list?muscles=Hombros,Core,Abdominales" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/IMG_1616.JPG" class="img-fluid" alt="Entrenamiento de Hombros y Core">
-                <h5 class="text-light fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
+                <h5 class="fw-bold mt-3" data-i18n="hombros_y_core">Hombros y Core</h5>
                 <p data-i18n="desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para" class="text-muted">
                   Desarrolla equilibrio y fuerza
                   funcional con ejercicios para el abdomen, la espalda baja y los hombros.</p>
@@ -225,7 +225,7 @@
             <a href="/exercises/list?muscles=Cardio" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/TAFT2576.JPEG" class="img-fluid" alt="Entrenamiento de Cardio">
-                <h5 class="text-light fw-bold mt-3" data-i18n="cardio">Cardio</h5>
+                <h5 class="fw-bold mt-3" data-i18n="cardio">Cardio</h5>
                 <p data-i18n="ejercicios_cardio_caminadora_eliptica_natacion" class="text-muted">Ejercicios de cardio
                   como caminadora,
                   elíptica y natación para mejorar la resistencia y la salud cardiovascular.</p>
@@ -238,7 +238,7 @@
             <a href="/exercises/list?muscles=all" class="text-decoration-none">
               <div class="workout-card text-center">
                 <img src="/static/images/IMG_1617.JPG" class="img-fluid" alt="Entrenamiento Full Body">
-                <h5 class="text-light fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
+                <h5 class="fw-bold mt-3" data-i18n="entrenamiento_full_body">Entrenamiento Full Body</h5>
                 <p data-i18n="sesiones_completas_que_activan_todos_los_grupos_musculares_p" class="text-muted">Sesiones
                   completas que activan
                   todos los grupos musculares.
@@ -509,7 +509,7 @@
             const f = (m.macros && (m.macros.f || m.macros.fat)) || 0;
 
             const item = document.createElement('div');
-            item.className = 'accordion-item bg-dark border-secondary text-white';
+            item.className = 'accordion-item bg-panel border-secondary text-theme';
 
             // Build items list HTML
             let itemsHtml = '<ul class="list-group list-group-flush">';
@@ -521,9 +521,9 @@
                 const macroStr = `P:${ip} C:${ic} G:${if_}`;
 
                 itemsHtml += `
-                   <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+                   <li class="list-group-item bg-transparent text-theme border-secondary d-flex justify-content-between align-items-center">
                      <div>
-                       <div class="fw-bold fs-6 text-light">${i.food}</div>
+                       <div class="fw-bold fs-6">${i.food}</div>
                        <div class="small text-muted">${i.qty}</div>
                      </div>
                      <div class="text-end small">
@@ -538,7 +538,7 @@
 
             item.innerHTML = `
               <h2 class="accordion-header" id="heading-${itemId}">
-                <button class="accordion-button ${isFirst ? '' : 'collapsed'} bg-dark text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#${itemId}" aria-expanded="${isFirst}" aria-controls="${itemId}">
+                <button class="accordion-button ${isFirst ? '' : 'collapsed'} bg-panel text-theme shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#${itemId}" aria-expanded="${isFirst}" aria-controls="${itemId}">
                   <div class="d-flex w-100 justify-content-between align-items-center me-3">
                     <span class="fw-bold text-primary">${m.name}</span>
                     <span class="badge bg-secondary rounded-pill">${m.kcal} kcal</span>

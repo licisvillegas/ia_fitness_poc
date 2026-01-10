@@ -618,6 +618,7 @@
       <small class="text-secondary d-block">v. beta 1.0.4</small>
     </footer>
     <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
 
     <script>
       function toggleMealDetails(element) { const details = element.nextElementSibling; const icon = element.querySelector('i'); const isHidden = details.style.display === 'none' || details.style.display === ''; details.style.display = isHidden ? 'block' : 'none'; if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); } } function addNewMeal() { if (window.showAlertModal) { window.showAlertModal("Pronto", "Funcionalidad para agregar comida próximamente", "warning"); return; } alert('Funcionalidad para agregar comida próximamente'); }

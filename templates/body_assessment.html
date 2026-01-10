@@ -641,7 +641,9 @@
         <small>AI Fitness © 2025 · Herramientas inteligentes para el bienestar.</small>
       </div>
     </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
     <!-- Image Zoom Modal -->
     <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -834,22 +836,22 @@
           updateExampleImages();
         }
 
-      initUserSearch({
-        inputId: "userSearchTerm",
-        resultsId: "userSearchResults",
-        buttonId: "btnLookupUser",
-        clearButtonId: "btnClearUserSearch",
-        storageKey: "admin_working_user",
-        storeSelection: false,
-        updateInputValue: false,
-        onSelect: selectUser,
-        onClear: () => {
-          const userIdInput = document.getElementById("user_id");
-          const displayInput = document.getElementById("display_user_name");
-          if (userIdInput) userIdInput.value = "";
-          if (displayInput) displayInput.value = "";
-        }
-      });
+        initUserSearch({
+          inputId: "userSearchTerm",
+          resultsId: "userSearchResults",
+          buttonId: "btnLookupUser",
+          clearButtonId: "btnClearUserSearch",
+          storageKey: "admin_working_user",
+          storeSelection: false,
+          updateInputValue: false,
+          onSelect: selectUser,
+          onClear: () => {
+            const userIdInput = document.getElementById("user_id");
+            const displayInput = document.getElementById("display_user_name");
+            if (userIdInput) userIdInput.value = "";
+            if (displayInput) displayInput.value = "";
+          }
+        });
 
         // Auto-load user from URL or LocalStorage
         const urlParams = new URLSearchParams(window.location.search);

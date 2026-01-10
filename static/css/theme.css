@@ -32,7 +32,7 @@
     /* Blue-400 (Lighter blue for dark mode) */
     --table-header-bg: #1b2230;
     --table-row-bg: #1f2633;
-    --table-row-hover-bg: #2a3446;
+    --table-row-hover-bg: #374151;
 
     /* State colors */
     --success: #22c55e;
@@ -110,7 +110,7 @@
     --table-text: #1e293b;
     --table-header-bg: #f8fafc;
     --table-row-bg: #ffffff;
-    --table-row-hover-bg: #eef2f7;
+    --table-row-hover-bg: #e2e8f0;
 
     /* State colors - High legibility on light bg */
     --success: #22a861;
@@ -254,7 +254,7 @@ textarea::-ms-input-placeholder {
     color: var(--table-text) !important;
 }
 
-.table > :not(caption) > * {
+.table> :not(caption)>* {
     background-color: var(--table-row-bg) !important;
     border-color: var(--border-color) !important;
 }
@@ -270,12 +270,21 @@ textarea::-ms-input-placeholder {
     border-color: var(--border-color) !important;
 }
 
+/* Standardize Hover Colors */
 .table-hover tbody tr:hover {
     background-color: var(--table-row-hover-bg) !important;
     color: var(--table-text) !important;
 }
 
 .table-hover tbody tr:hover td {
+    color: var(--table-text) !important;
+}
+
+/* Ensure active rows match hover style for consistency */
+.table-active,
+.table-active>th,
+.table-active>td {
+    background-color: var(--table-row-hover-bg) !important;
     color: var(--table-text) !important;
 }
 
@@ -336,26 +345,34 @@ textarea::-ms-input-placeholder {
 
 [data-theme="light"] .table-dark {
     color: var(--table-text) !important;
+    background-color: var(--table-row-bg) !important;
+    --bs-table-bg: var(--table-row-bg);
+    --bs-table-accent-bg: transparent;
+    --bs-table-striped-bg: transparent;
+    --bs-table-hover-bg: var(--table-row-hover-bg);
+    --bs-table-active-bg: var(--table-row-hover-bg);
 }
 
-[data-theme="light"] .table-dark > :not(caption) > * {
+[data-theme="light"] .table-dark> :not(caption)>*>* {
     background-color: var(--table-row-bg) !important;
     color: var(--table-text) !important;
     border-color: var(--border-color) !important;
 }
 
-[data-theme="light"] .table-dark thead th {
-    background-color: var(--table-header-bg) !important;
+[data-theme="light"] .table-dark th,
+[data-theme="light"] .table-dark td {
+    background-color: var(--table-row-bg) !important;
     color: var(--table-text) !important;
 }
 
 [data-theme="light"] .table-dark.table-hover tbody tr:hover {
-    background-color: var(--bg-card-hover) !important;
+    background-color: var(--table-row-hover-bg) !important;
     color: var(--table-text) !important;
 }
 
 [data-theme="light"] .table-dark.table-hover tbody tr:hover td {
     color: var(--table-text) !important;
+    background-color: transparent !important;
 }
 
 /* Buttons */
@@ -665,4 +682,18 @@ textarea::-ms-input-placeholder {
 
 .card-premium-warning {
     --hover-shadow: rgba(245, 158, 11, 0.3);
+}
+
+/* Cyber/Premium Accents Global Classes */
+.text-cyber-blue {
+    color: var(--accent-cyan) !important;
+}
+
+.text-cyber-green {
+    color: var(--accent-green) !important;
+    text-shadow: var(--accent-green-glow) 0 0 10px;
+}
+
+.border-cyber {
+    border: 1px solid var(--accent-cyan-border) !important;
 }

@@ -81,8 +81,7 @@
             <label class="text-secondary small fw-bold mb-1" style="font-size: 0.7rem;">CHANGE USER</label>
             <div class="position-relative">
                 <div class="input-group input-group-sm">
-                    <input type="text" id="sidebar-user-search"
-                        class="form-control bg-dark text-light border-secondary"
+                    <input type="text" id="sidebar-user-search" class="form-control bg-dark text-light border-secondary"
                         placeholder="Buscar usuario...">
                     <button id="sidebar-clear-search" class="btn btn-outline-secondary" type="button" title="Limpiar">
                         <i class="fas fa-times"></i>
@@ -684,46 +683,38 @@
             } catch (ex) { }
         };
 
-        const brandLink = document.querySelector('.brand-text')?.closest('a');
-        const homeLink = document.querySelector('a[href="/"][title="Inicio"]');
 
-        if (homeLink) homeLink.addEventListener('click', redirectIfLogged);
+    // Revert Logic
+    const revertModalEl = document.getElementById('revertConfirmModal');
+    const confirmRevertBtn = document.getElementById('confirmRevertBtn');
+    let revertModal = null;
 
-        // 7. Theme Toggle Logic (Added Fix)
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
-            const icon = themeToggle.querySelector('i');
-            const html = document.documentElement;
+    if (revertBtn) {
+        revertBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!revertModal && revertModalEl) revertModal = new bootstrap.Modal(revertModalEl);
+            if (revertModal) revertModal.show();
+        });
+    }
 
-            // Load saved theme
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            if (savedTheme === 'light') {
-                html.setAttribute('data-theme', 'light');
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            } else {
-                // Ensure default is dark if cleared
-                html.removeAttribute('data-theme');
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            }
+    if (confirmRevertBtn) {
+        confirmRevertBtn.addEventListener('click', async () => {
+            confirmRevertBtn.disabled = true;
 
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = html.getAttribute('data-theme');
-                if (currentTheme === 'light') {
-                    // Switch to Dark
-                    html.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'dark');
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
+            try {
+                const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
+                    localStorage.setItem('ai_fitness_uid', data.user.user_id);
+                    window.location.reload();
                 } else {
-                    // Switch to Light
-                    html.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
+                    alert(data.error || "No se pudo volver a la sesión original.");
                 }
-            });
-        }
+            } catch (e) { console.error(e); }
+        });
+    }
     });
 </script>
+

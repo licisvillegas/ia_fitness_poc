@@ -50,15 +50,6 @@
         }
 
         /* Cyber Theme Styles extracted from exercises_catalog.html */
-        .text-cyber-green {
-            color: #00ff9d;
-            text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
-        }
-
-        .text-cyber-blue {
-            color: #00d2ff;
-        }
-
         .btn-cyber-primary {
             background: linear-gradient(45deg, #00d2ff, #007bff);
             color: var(--text-main);
@@ -70,10 +61,6 @@
             background: linear-gradient(45deg, #007bff, #0056b3);
             box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
             color: var(--text-main);
-        }
-
-        .border-cyber {
-            border: 1px solid rgba(0, 210, 255, 0.3);
         }
     </style>
 </head>
@@ -120,32 +107,32 @@
                             </div>
                         </div>
 
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-dark table-hover align-middle">
-                            <thead>
-                                <tr class="text-cyber-blue">
-                                    <th class="ps-4">Usuario</th>
+                        <div class="table-responsive d-none d-md-block">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr class="text-cyber-blue">
+                                        <th class="ps-4">Usuario</th>
                                         <th>Email</th>
                                         <th>Nombre</th>
                                         <th>Estado</th>
                                         <th class="text-end pe-4">Acciones</th>
                                     </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
+                                </thead>
+                                <tbody id="usersTableBody">
                                     <tr>
                                         <td colspan="5" class="text-center py-5 text-secondary">
                                             <div class="spinner-border text-primary mb-3" role="status"></div>
                                             <div>Cargando usuarios...</div>
                                         </td>
                                     </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="mobileUsersList" class="d-md-none d-flex flex-column gap-3 p-3">
-                        <!-- Mobile cards injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="mobileUsersList" class="d-md-none d-flex flex-column gap-3 p-3">
+                            <!-- Mobile cards injected here -->
+                        </div>
                     </div>
                 </div>
-            </div>
         </main>
     </div>
 
@@ -234,6 +221,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
     <script src="/static/js/user_search.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async function () {

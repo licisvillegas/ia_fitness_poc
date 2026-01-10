@@ -526,6 +526,7 @@
     window.initialRoutine = {{ routine | tojson }};
     window.currentUserName = {{ current_user_name | default ('', true) | tojson }};
     window.currentUserId = {{ current_user_id | default ('', true) | tojson }};
+    window.restoredState = {{ restored_state | tojson }};
 </script>
 
 {% raw %}
@@ -536,6 +537,7 @@
     const INITIAL_ROUTINE = window.initialRoutine;
     const CURRENT_USER_NAME = window.currentUserName;
     const CURRENT_USER_ID = window.currentUserId;
+    const RESTORED_STATE = window.restoredState;
 
     // --- HELPERS ---
     const formatTime = (seconds) => {
@@ -949,6 +951,34 @@
                 const q = buildQueue(routine);
                 setQueue(q);
                 setStatus('IDLE');
+
+                // Hydrate from restored state
+                if (RESTORED_STATE && RESTORED_STATE.routine_id === routine.id) {
+                    console.log("RESTORING STATE:", RESTORED_STATE);
+                    if (RESTORED_STATE.cursor > 0 && RESTORED_STATE.cursor < q.length) {
+                        setCursor(RESTORED_STATE.cursor);
+
+                        // AUTO-RESUME: Set status to WORK and ensure timer logic runs
+                        // We check the upcoming step type to decide WORK vs REST
+                        const resumeStep = q[RESTORED_STATE.cursor];
+                        if (resumeStep) {
+                            if (resumeStep.type === 'rest') {
+                                setStatus('REST');
+                                setStepTimer(resumeStep.duration); // Reset timer to full duration? Or should we save timer state? 
+                                // User asked "resume where leftover", assuming step is enough.
+                                setIsTimerRunning(true);
+                            } else {
+                                setStatus('WORK');
+                                setStepTimer(resumeStep.isTimeBased ? resumeStep.target.time : 0);
+                                setIsTimerRunning(resumeStep.isTimeBased);
+                            }
+                        }
+                    }
+                    if (RESTORED_STATE.session_log) {
+                        setSessionLog(RESTORED_STATE.session_log);
+                    }
+                }
+
                 console.log("Queue Built:", q);
             }
         }, [routine]);
@@ -1204,17 +1234,36 @@
             const resolvedTime = data.time_seconds != null
                 ? data.time_seconds
                 : (currentStep.isTimeBased ? currentStep.target?.time : null);
-            setSessionLog(prev => [...prev, {
+            const newLog = [...sessionLog, {
                 stepId: currentStep.id,
                 exerciseId,
                 exercise_id: exerciseId,
                 name: exerciseName,
                 exercise_type: exerciseType,
                 ...data,
-                duration_seconds: (Date.now() - startTimeRef.current) / 1000, // Actual execution time
+                duration_seconds: (Date.now() - startTimeRef.current) / 1000,
                 ...(resolvedTime != null ? { time_seconds: resolvedTime } : {}),
                 timestamp: new Date()
-            }]);
+            }];
+            setSessionLog(newLog);
+
+            // Sync Progress
+            syncProgress(cursor, newLog);
+        };
+
+        const syncProgress = async (idx, log) => {
+            // Debounce or just fire? Fire for now, robustness.
+            try {
+                await fetch("/workout/api/session/progress", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        routine_id: routine.id,
+                        cursor: idx,
+                        session_log: log
+                    })
+                });
+            } catch (e) { console.error("Sync error", e); }
         };
 
         const next = () => {
@@ -1226,6 +1275,9 @@
             const nextIdx = cursor + 1;
             setCursor(nextIdx);
             setIsPaused(false);
+
+            // Sync Progress (using current log)
+            syncProgress(nextIdx, sessionLog);
 
             // Setup next step state
             const upcoming = queue[nextIdx];
@@ -1320,13 +1372,20 @@
         };
 
         const cancelWorkout = () => {
-            if (status === 'IDLE') {
+            const doCancel = async () => {
+                try {
+                    await fetch("/workout/api/session/cancel", { method: "POST" });
+                } catch (e) { console.error("Error cancelling:", e); }
                 window.location.href = getReturnUrl();
+            };
+
+            if (status === 'IDLE') {
+                doCancel();
                 return;
             }
             showConfirm("Cancelar Rutina", "¿Estás seguro de que quieres salir? Se perderá el progreso actual.", () => {
                 showMessage("Rutina cancelada", "error");
-                window.location.href = getReturnUrl();
+                doCancel();
             }, "danger");
         };
 
@@ -1404,6 +1463,13 @@
                 setStepTimer(step.isTimeBased ? step.target.time : 0);
                 setIsTimerRunning(step.isTimeBased);
             }
+
+            // Call API to Lock
+            fetch("/workout/api/session/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ routine_id: routine.id })
+            }).catch(e => console.error("Start session error", e));
         };
 
         const showConfirm = (title, message, onConfirm, type = "danger") => {

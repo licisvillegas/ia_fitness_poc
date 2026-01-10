@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from config import Config
 import extensions
 from extensions import logger, init_db, create_indexes, db
-from middleware.auth_middleware import check_user_profile, inject_user_role
+from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock
 
 # Blueprints
 from routes.auth import auth_bp
@@ -32,6 +32,7 @@ def create_app():
 
     # Registrar middleware
     app.before_request(check_user_profile)
+    app.before_request(check_workout_lock)
     app.context_processor(inject_user_role)
 
     # Registrar blueprints

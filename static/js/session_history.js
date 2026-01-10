@@ -25,6 +25,16 @@
         return Math.round(toDisplay).toString();
     };
 
+    const formatDuration = (seconds) => {
+        const sec = Math.round(Number(seconds));
+        if (Number.isNaN(sec) || sec <= 0) return "-";
+        if (sec < 60) return `${sec}s`;
+        if (sec < 3600) return `${Math.floor(sec / 60)}min`;
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        return `${h}h ${m}min`;
+    };
+
     const renderSessions = (data) => {
         const container = document.getElementById("sessionsList");
         if (!container) return;
@@ -45,9 +55,15 @@
                 const sum = weights.reduce((acc, value) => acc + value, 0);
                 return sum / weights.length;
             })();
-            const duration = session.duration_seconds
-                ? `${Math.floor(session.duration_seconds / 60)}min`
-                : '-';
+
+            // Duration: Sum of set durations (Active Time) or fallback to wall clock
+            let totalSeconds = 0;
+            sets.forEach(s => totalSeconds += Number(s.duration_seconds || 0));
+
+            // If explicit set durations exist, use sum. Otherwise check session.duration_seconds
+            const displayDuration = totalSeconds > 0
+                ? formatDuration(totalSeconds)
+                : (session.duration_seconds ? formatDuration(session.duration_seconds) : '-');
 
             // Group sets by exercise
             const exerciseGroups = {};
@@ -71,7 +87,7 @@
                             <td>${idx + 1}</td>
                             <td>${set.weight != null && set.weight !== '' ? formatWeightValue(set.weight) : '-'}</td>
                             <td>${set.reps || '-'}</td>
-                            <td>${timeValue != null ? `${timeValue}s` : '-'}</td>
+                            <td>${set.duration_seconds ? formatDuration(set.duration_seconds) : (timeValue != null ? `${timeValue}s` : '-')}</td>
                             <td>${set.rpe || '-'}</td>
                         </tr>
                     `;
@@ -135,7 +151,7 @@
                                 </span>
                                 <span>
                                     <i class="far fa-clock text-cyber-green me-1"></i>
-                                    <span class="text-theme">${duration}</span>
+                                    <span class="text-theme">${displayDuration}</span>
                                 </span>
                             </div>
                             <div class="text-secondary small mt-1">

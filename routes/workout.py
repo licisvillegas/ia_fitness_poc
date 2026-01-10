@@ -532,18 +532,98 @@ def run_routine(routine_id):
         # Get Current User Name (for personalized hello)
         user_id = request.cookies.get("user_session")
         user_name = ""
+        restored_state = None
+        
         if user_id:
              u = db.users.find_one({"user_id": user_id})
              if u:
                  user_name = u.get("name") or u.get("username")
-        
+                 
+             # Check for active session to restore
+             active_session = db.active_workout_sessions.find_one({
+                 "user_id": user_id, 
+                 "routine_id": str(routine_id)
+             })
+             
+             if active_session:
+                 # Convert ObjectId if needed and prepare state
+                 if "_id" in active_session: active_session["_id"] = str(active_session["_id"])
+                 restored_state = active_session
+
         return render_template("workout_runner.html", 
                                routine=routine,
                                current_user_id=user_id,
-                               current_user_name=user_name)
+                               current_user_name=user_name,
+                               restored_state=restored_state)
     except Exception as e:
         logger.error(f"Error running routine: {e}")
         return f"Error interno: {e}", 500
+
+@workout_bp.post("/api/session/start")
+def api_start_session_endpoint():
+    """
+    Explicitly starts a session: Sets the lock and creates a temp record.
+    """
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify({"error": "Unauthorized"}), 401
+        
+        data = request.json
+        routine_id = data.get("routine_id")
+        if not routine_id: return jsonify({"error": "Missing routine_id"}), 400
+        
+        db = get_db()
+        
+        # 1. Create Active Session Record
+        db.active_workout_sessions.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "user_id": user_id,
+                "routine_id": routine_id,
+                "started_at": datetime.now().isoformat(),
+                "cursor": 0,
+                "session_log": [],
+                "updated_at": datetime.now()
+            }},
+            upsert=True
+        )
+        
+        # 2. Lock User
+        db.users.update_one(
+            {"user_id": user_id},
+            {"$set": {"active_routine_id": str(routine_id)}}
+        )
+        
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error(f"Error starting session: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@workout_bp.post("/api/session/progress")
+def api_update_progress():
+    """
+    Updates the cursor and session log of the active session.
+    """
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify({"error": "Unauthorized"}), 401
+        
+        data = request.json
+        # Expect: routine_id, cursor, session_log
+        
+        db = get_db()
+        db.active_workout_sessions.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "cursor": data.get("cursor", 0),
+                "session_log": data.get("session_log", []),
+                "updated_at": datetime.now()
+            }}
+        )
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error(f"Error updating progress: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @workout_bp.post("/api/session/save")
 def api_save_session():
@@ -585,8 +665,42 @@ def api_save_session():
         
         res = db.workout_sessions.insert_one(session_doc)
         
+        # UNLOCK USER and CLEAR TEMP
+        try:
+            db.users.update_one(
+                {"user_id": user_id},
+                {"$unset": {"active_routine_id": ""}}
+            )
+            db.active_workout_sessions.delete_one({"user_id": user_id})
+        except Exception as e:
+            logger.error(f"Failed to unlock user after save: {e}")
+
         return jsonify({"success": True, "id": str(res.inserted_id)}), 200
         
     except Exception as e:
         logger.error(f"Error saving session: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@workout_bp.post("/api/session/cancel")
+def api_cancel_session():
+    """
+    Cancels the current workout session (unlocks the user).
+    """
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+             return jsonify({"error": "Unauthorized"}), 401
+             
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+        
+        db.users.update_one(
+            {"user_id": user_id},
+            {"$unset": {"active_routine_id": ""}}
+        )
+        db.active_workout_sessions.delete_one({"user_id": user_id})
+        
+        return jsonify({"success": True, "message": "Workout cancelled"}), 200
+    except Exception as e:
+        logger.error(f"Error cancelling session: {e}")
         return jsonify({"error": str(e)}), 500

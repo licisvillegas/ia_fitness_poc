@@ -78,3 +78,46 @@ def inject_user_role():
         is_impersonating=is_impersonating,
         has_admin_token=has_admin_token
     )
+
+
+def check_workout_lock():
+    """
+    Middleware to lock the user into the active workout if one exists.
+    Redirects any navigation to /workout/run/<id>.
+    Excludes: static, auth, admin, and API calls.
+    """
+    if request.endpoint and "static" in request.endpoint:
+        return
+
+    # Exclude basic paths
+    if request.path.startswith("/auth") or \
+       request.path.startswith("/admin") or \
+       request.path.startswith("/static"):
+        return
+        
+    # Exclude ALL APIs (Global + Workout)
+    if "/api/" in request.path:
+        return
+        
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return
+
+    if extensions.db is not None:
+        try:
+            # Check if user has active_routine_id
+            user = extensions.db.users.find_one({"user_id": user_id}, {"active_routine_id": 1})
+            if user and user.get("active_routine_id"):
+                active_id = user.get("active_routine_id")
+                target_url = f"/workout/run/{active_id}"
+                
+                # If already on the target page, allowed
+                if request.path == target_url:
+                    return
+                
+                # Otherwise redirect
+                logger.info(f"REDIRECT LOCK: User {user_id} locked to {target_url}")
+                return redirect(target_url)
+        except Exception as e:
+            logger.error(f"Error checking workout lock: {e}")
+            pass

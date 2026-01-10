@@ -358,9 +358,9 @@
     }
 
     .plate-tile {
-        background: #033e53;
-        /* Light background */
-        border: 1px solid #dee2e6;
+        background: var(--bg-card);
+        /* Theme-aware background */
+        border: 1px solid var(--border-color);
         border-radius: 12px;
         padding: 10px;
         text-align: center;
@@ -2604,7 +2604,7 @@
                             <i className="fas fa-play"></i>
                         </button>
                     ) : (
-                        <button className="btn btn-sm btn-outline-light rounded-pill px-3" onClick={togglePause}>
+                        <button className="btn btn-sm btn-outline-primary rounded-pill px-3" onClick={togglePause}>
                             <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
                         </button>
                     )}

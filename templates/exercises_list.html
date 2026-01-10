@@ -91,6 +91,28 @@
             color: #dbeafe;
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
+
+        /* Force hero text white over image */
+        .hero-sm h2,
+        .hero-sm p {
+            color: #ffffff !important;
+        }
+
+        /* Adaptive Dropdown Menu */
+        .dropdown-menu {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .dropdown-item {
+            color: var(--text-main);
+        }
+
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background-color: var(--bg-card-hover);
+            color: var(--text-main);
+        }
     </style>
 </head>
 
@@ -117,17 +139,17 @@
                 <div class="col-md-8 mx-auto">
                     <div class="d-flex gap-2">
                         <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                            <span class="input-group-text bg-input border-secondary text-muted"><i
                                     class="fas fa-search"></i></span>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="searchInput"
-                                placeholder="Buscar ejercicio...">
+                            <input type="text" class="form-control bg-input text-theme border-secondary"
+                                id="searchInput" placeholder="Buscar ejercicio...">
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-dark border-secondary dropdown-toggle text-white" type="button"
+                            <button class="btn bg-input border-secondary dropdown-toggle text-theme" type="button"
                                 id="muscleFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
                                 Filtrar Músculos
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-dark p-3" aria-labelledby="muscleFilterBtn"
+                            <ul class="dropdown-menu p-3" aria-labelledby="muscleFilterBtn"
                                 style="min-width: 250px; max-height: 400px; overflow-y: auto;" id="muscleDropdownList">
                                 <li>
                                     <div class="form-check">
@@ -143,11 +165,11 @@
                             </ul>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-dark border-secondary dropdown-toggle text-white" type="button"
+                            <button class="btn bg-input border-secondary dropdown-toggle text-theme" type="button"
                                 id="equipmentFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
                                 Equipo
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="equipmentFilterBtn">
+                            <ul class="dropdown-menu" aria-labelledby="equipmentFilterBtn">
                                 <li><a class="dropdown-item active" href="#" data-val="">Todos</a></li>
                                 <li><a class="dropdown-item" href="#" data-val="bodyweight">Peso Corporal</a></li>
                                 <li><a class="dropdown-item" href="#" data-val="dumbbell">Mancuernas</a></li>
@@ -500,11 +522,11 @@
                                 ${videoBtn}
                                 <img src="${imageSrc}" class="exercise-img" alt="${ex.name}">
                                 <div class="card-body p-3">
-                                    <h5 class="card-title text-light mb-1">${ex.name}</h5>
+                                    <h5 class="card-title text-theme mb-1">${ex.name}</h5>
                                     
                                     <div class="d-flex flex-wrap gap-1 mb-2">
                                         <span class="badge bg-secondary" style="font-size: 0.7rem;">${bodyPartMap[ex.body_part] || ex.body_part}</span>
-                                        <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipLabel}</span>
+                                        <span class="badge bg-input border border-secondary text-info" style="font-size: 0.7rem;">${equipLabel}</span>
                                     </div>
 
                                     <p class="card-text text-muted small text-truncate">${ex.description || 'Sin descripción'}</p>
@@ -517,7 +539,7 @@
                     return `
                     <div class="accordion-item bg-transparent border-0 mb-3">
                         <h2 class="accordion-header" id="${headerId}">
-                            <button class="accordion-button collapsed bg-dark text-white border border-secondary rounded" type="button" 
+                            <button class="accordion-button collapsed bg-panel text-theme border border-secondary rounded" type="button" 
                                 data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
                                 <span class="fw-bold text-primary me-2">${part}</span> 
                                 <span class="badge bg-secondary rounded-pill">${groupExercises.length}</span>

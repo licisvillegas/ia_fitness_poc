@@ -186,6 +186,12 @@
     .muscle-icon.active+.muscle-label {
         color: var(--text-main);
     }
+
+    /* Fix for light theme contrast */
+    [data-theme="light"] .muscle-icon {
+        background-color: var(--text-secondary);
+        border-color: var(--text-secondary);
+    }
 </style>
 
 <script>

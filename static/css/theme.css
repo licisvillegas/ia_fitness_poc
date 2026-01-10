@@ -339,6 +339,10 @@ textarea::-ms-input-placeholder {
     color: var(--text-main) !important;
 }
 
+[data-theme="light"] .btn-close-white {
+    filter: none !important;
+}
+
 [data-theme="light"] .border-secondary {
     border-color: var(--border-color) !important;
 }

@@ -8,6 +8,7 @@
     AI Fitness | Acceder
   </title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet" />
   <link href="/static/css/theme.css" rel="stylesheet">
   <style>
@@ -27,6 +28,21 @@
       position: absolute;
       top: 0;
       border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Fix navbar visibility in light mode */
+    [data-theme="light"] .navbar {
+      --bs-navbar-color: var(--text-main);
+      --bs-navbar-hover-color: var(--primary);
+    }
+
+    [data-theme="light"] .navbar .btn-outline-light {
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    [data-theme="light"] .navbar .btn-outline-light:hover {
+      background-color: var(--bg-card-hover);
     }
 
     .navbar-brand {
@@ -57,7 +73,9 @@
     }
 
     .auth-left {
-      background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-body) 100%);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(0, 0, 0, 0.4)), url('/static/images/IMG_1552.jpg');
+      background-size: cover;
+      background-position: center;
       padding: 2rem;
       display: flex;
       flex-direction: column;
@@ -68,7 +86,11 @@
     .auth-title {
       font-weight: 700;
       margin-bottom: 1rem;
-      color: var(--primary);
+      color: #ffffff !important;
+    }
+
+    .auth-left .overlay p {
+      color: #ffffff !important;
     }
 
     .form-control {
@@ -118,6 +140,7 @@
         <img src="/static/images/logo.png" alt="AI Fitness" style="height: 42px; width: auto;">
       </a>
       <div class="d-flex align-items-center">
+        <!-- 
         <div aria-label="Language selector" class="btn-group ms-3" role="group">
           <button class="btn btn-sm btn-outline-light" id="lang-es">
             ES
@@ -126,6 +149,10 @@
             EN
           </button>
         </div>
+        -->
+        <button class="btn btn-link nav-link ms-3" type="button" id="theme-toggle" aria-label="Toggle theme">
+          <i class="fas fa-moon text-light"></i>
+        </button>
       </div>
     </div>
   </nav>
@@ -275,11 +302,11 @@
             showAlert('danger', 'No se pudo validar el token de administrador.');
           }
         });
-      }
 
-      // Vista admin sin toggles
+      }
     })();
   </script>
+  <script src="/static/js/theme.js"></script>
   <script src="/static/js/lang.js">
   </script>
   <script>

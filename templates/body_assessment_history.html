@@ -56,6 +56,34 @@
             background-color: rgba(59, 130, 246, 0.1);
         }
 
+        .history-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-toggle i {
+            transition: transform 0.2s;
+        }
+
+        .history-toggle[aria-expanded="false"] i {
+            transform: rotate(-90deg);
+        }
+
+        .history-toolbar {
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-panel);
+        }
+
+        .history-body {
+            height: calc(100% - 44px);
+        }
+
+        .history-detail-expanded {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
         .card {
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
@@ -252,13 +280,22 @@
             <script>console.log("User Name Rendered:", "{{ user_name }}");</script>
 
             <div class="card" style="height: calc(100vh - 140px); overflow: hidden;">
-                <div class="row g-0 h-100">
+                <div class="history-toolbar d-flex align-items-center justify-content-between px-3 py-2">
+                    <div class="text-secondary small text-uppercase fw-bold">Históricos</div>
+                    <button class="btn btn-sm btn-outline-secondary history-toggle" id="historyToggleBtn" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#history-list-wrap" aria-expanded="true"
+                        aria-controls="history-list-wrap">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="row g-0 history-body">
                     <!-- LISTA LATERAL -->
-                    <div class="col-md-3 history-list-col bg-dark" id="history-list">
+                    <div class="col-md-3 bg-dark collapse show" id="history-list-wrap">
+                        <div class="history-list-col" id="history-list"></div>
                     </div>
 
                     <!-- DETALLE PRINCIPAL -->
-                    <div class="col-md-9 h-100" style="overflow-y: auto;">
+                    <div class="col-md-9 h-100" id="history-detail-col" style="overflow-y: auto;">
                         <div id="empty-state"
                             class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary">
                             <i class="fas fa-clipboard-list fa-3x mb-3 opacity-25"></i>
@@ -444,6 +481,33 @@
         let historyData = [];
 
         document.addEventListener('DOMContentLoaded', loadHistory);
+        document.addEventListener('DOMContentLoaded', initHistoryCollapse);
+
+        function initHistoryCollapse() {
+            const listWrap = document.getElementById('history-list-wrap');
+            const toggleBtn = document.getElementById('historyToggleBtn');
+            const detailCol = document.getElementById('history-detail-col');
+            if (!listWrap || !toggleBtn) return;
+
+            const storageKey = `historyListCollapsed:${userId || 'anon'}`;
+            const stored = localStorage.getItem(storageKey);
+            if (stored === 'true') {
+                listWrap.classList.remove('show');
+                toggleBtn.setAttribute('aria-expanded', 'false');
+                if (detailCol) detailCol.classList.add('history-detail-expanded');
+            }
+
+            listWrap.addEventListener('shown.bs.collapse', () => {
+                localStorage.setItem(storageKey, 'false');
+                toggleBtn.setAttribute('aria-expanded', 'true');
+                if (detailCol) detailCol.classList.remove('history-detail-expanded');
+            });
+            listWrap.addEventListener('hidden.bs.collapse', () => {
+                localStorage.setItem(storageKey, 'true');
+                toggleBtn.setAttribute('aria-expanded', 'false');
+                if (detailCol) detailCol.classList.add('history-detail-expanded');
+            });
+        }
 
         async function loadHistory() {
             showLoader("Cargando historial...");

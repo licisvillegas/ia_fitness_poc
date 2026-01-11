@@ -101,17 +101,46 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            height: 95%;
+            height: 100%;
+            width: 100%;
             opacity: 0.6;
             z-index: 0;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .body-image-container img {
             height: 100%;
+            max-height: 100%;
+            width: auto;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
+        }
+
+        .opacity-control {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(10, 10, 10, 0.7);
+            border: 1px solid #222;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            backdrop-filter: blur(4px);
+        }
+
+        .opacity-control input[type="range"] {
+            width: 110px;
+            accent-color: var(--accent-green);
         }
 
         /* Etiquetas de medición posicionadas */
@@ -358,6 +387,13 @@
             color: #333;
         }
 
+        .menu-icon img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            display: block;
+        }
+
         /* --- Modales --- */
         .modal-overlay {
             position: fixed;
@@ -551,9 +587,14 @@
             </div>
 
             <div class="dashboard-container">
+                <div class="opacity-control">
+                    <span>Opacidad</span>
+                    <input type="range" id="imageOpacity" min="0.1" max="1" step="0.05" value="0.6"
+                        aria-label="Opacidad de la imagen">
+                </div>
                 <div class="body-image-container">
                     <!-- Placeholder or user provided image if available. Defaulting to a placeholder if specific file doesn't exist -->
-                    <img src="/static/images/examples/IMG_3006.png"
+                    <img src="/static/images/examples/IMG_3023.png"
                         onerror="this.src='/static/images/muscles/pec.png'; this.style.opacity='0.2';"
                         alt="Body Outline">
                 </div>
@@ -632,17 +673,58 @@
 
             <!-- FAB -->
             <div class="fab-container" id="fabContainer">
-                <div class="fab-menu">
-                    <div class="menu-item" onclick="openSideModal('Pantorrilla')">
-                        <span class="menu-label">PANTORRILLA</span>
-                        <div class="menu-icon"><i class="fas fa-running"></i></div>
-                    </div>
-                    <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
-                        <span class="menu-label">CADERA</span>
-                        <div class="menu-icon" style="background-color:#e6c345"><i class="fas fa-ruler-horizontal"></i>
-                        </div>
+            <div class="fab-menu">
+                <div class="menu-item" onclick="openSideModal('Pantorrilla')">
+                    <span class="menu-label">PANTORRILLA</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/gem.png" alt="Pantorrilla"></div>
+                </div>
+                <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
+                    <span class="menu-label">CADERA</span>
+                    <div class="menu-icon" style="background-color:#e6c345"><i class="fas fa-ruler-horizontal"></i>
                     </div>
                 </div>
+                <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
+                    <span class="menu-label">PECHO</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/pec.png" alt="Pecho"></div>
+                </div>
+                <div class="menu-item" onclick="openValueModal('Espalda', null, '0.0')">
+                    <span class="menu-label">ESPALDA</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/esp.png" alt="Espalda"></div>
+                </div>
+                <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
+                    <span class="menu-label">HOMBRO</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/hom.png" alt="Hombro"></div>
+                </div>
+                <div class="menu-item" onclick="openSideModal('Bíceps')">
+                    <span class="menu-label">BÍCEPS</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/bic.png" alt="Bíceps"></div>
+                </div>
+                <div class="menu-item" onclick="openSideModal('Tríceps')">
+                    <span class="menu-label">TRÍCEPS</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/tri.png" alt="Tríceps"></div>
+                </div>
+                <div class="menu-item" onclick="openSideModal('Cuádriceps')">
+                    <span class="menu-label">CUÁDRICEPS</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Cuádriceps"></div>
+                </div>
+                <div class="menu-item" onclick="openSideModal('Femoral')">
+                    <span class="menu-label">FEMORAL</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/isq.png" alt="Femoral"></div>
+                </div>
+                <div class="menu-item" onclick="openValueModal('Glúteos', null, '0.0')">
+                    <span class="menu-label">GLÚTEOS</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/glu.png" alt="Glúteos"></div>
+                </div>
+                <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
+                    <span class="menu-label">ABDÓMEN</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/abs.png" alt="Abdomen"></div>
+                </div>
+                <div class="menu-item" onclick="openSideModal('Antebrazo')">
+                    <span class="menu-label">ANTEBRAZO</span>
+                    <div class="menu-icon"><img src="/static/images/muscles/ant.png" alt="Antebrazo"></div>
+                </div>
+            </div>
+
                 <div class="fab-main" id="fabButton"><i class="fas fa-plus"></i></div>
             </div>
 
@@ -698,10 +780,19 @@
         const valueModalTitle = document.getElementById('valueModalTitle');
         const measurementInput = document.getElementById('measurementValueBtn');
         const currentDateDisplay = document.getElementById('currentDateDisplay');
+        const imageOpacity = document.getElementById('imageOpacity');
+        const bodyImageContainer = document.querySelector('.body-image-container');
 
         // Initial Date
         const now = new Date();
         if (currentDateDisplay) currentDateDisplay.textContent = now.toLocaleString();
+
+        if (imageOpacity && bodyImageContainer) {
+            bodyImageContainer.style.opacity = imageOpacity.value;
+            imageOpacity.addEventListener('input', () => {
+                bodyImageContainer.style.opacity = imageOpacity.value;
+            });
+        }
 
 
         // Toggle FAB Menu

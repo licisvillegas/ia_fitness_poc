@@ -43,13 +43,15 @@
         background-color: var(--bg-body);
         color: var(--text-main);
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        height: 100dvh;
-        /* Dynamic Viewport Height */
+        height: 100vh;
+        height: var(--app-height, 100dvh);
         width: 100vw;
         overflow: hidden;
         /* Prevent body scroll */
         overscroll-behavior: none;
         /* No bounce */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     #react-root {
@@ -385,7 +387,7 @@
     .plate-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
+        gap: 10px;
     }
 
     .plate-tile {
@@ -393,17 +395,17 @@
         /* Theme-aware background */
         border: 1px solid var(--border-color);
         border-radius: 12px;
-        padding: 10px;
+        padding: 8px;
         text-align: center;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .plate-tile img {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         object-fit: contain;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
     .plate-tile:hover {
@@ -553,6 +555,15 @@
 
 <!-- REACT APP -->
 <script type="text/javascript">
+    function setAppHeight() {
+        const doc = document.documentElement;
+        doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+    }
+
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', setAppHeight);
+    setAppHeight();
+
     // Inject server-side data from Jinja OUTSIDE the raw block
     window.initialRoutine = {{ routine | tojson }};
     window.currentUserName = {{ current_user_name | default ('', true) | tojson }};

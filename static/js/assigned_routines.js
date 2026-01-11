@@ -124,6 +124,8 @@ window.loadRoutines = async function loadRoutines(userId, options) {
       return (a.name || "").localeCompare(b.name || "");
     });
 
+    const todayKey = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
     assignedList.forEach((r) => {
       if (r && r._id) window.routinesMap.set(r._id, r);
       const cardCol = document.createElement("div");
@@ -133,7 +135,8 @@ window.loadRoutines = async function loadRoutines(userId, options) {
       const exCount = window.countExercises(r);
       const id = r._id;
       const partsLabel = window.getRoutineBodyPartsLabel(r);
-      const dayLabel = r.routine_day ? window.translateDay(r.routine_day) : "Sin dia";
+      const dayLabel = r.routine_day ? window.translateDay(r.routine_day) : null;
+      const isToday = r.routine_day && r.routine_day === todayKey;
       const validity = r.assigned_expires_at ? window.formatDate(r.assigned_expires_at) : null;
 
       cardCol.innerHTML = `
@@ -144,7 +147,10 @@ window.loadRoutines = async function loadRoutines(userId, options) {
                   <h5 class="card-title text-theme fw-bold mb-1 text-truncate" title="${name}">${name}</h5>
                   <div class="d-flex flex-wrap gap-1 mb-1">
                     <span class="badge bg-secondary" style="font-size: 0.7rem;">${partsLabel}</span>
-                    <span class="badge bg-secondary border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>
+                    ${dayLabel
+          ? `<span class="badge bg-secondary border border-secondary text-info" style="font-size: 0.7rem;">${dayLabel}</span>`
+          : `<span class="badge bg-secondary border border-secondary text-info" style="font-size: 0.7rem;"><i class="fas fa-infinity"></i></span>`}
+                    ${isToday ? `<span class="badge bg-success text-dark" style="font-size: 0.7rem;"><i class="fas fa-bolt me-1"></i>Hoy</span>` : ""}
                   </div>
                 </div>
                 <span class="badge bg-secondary border border-secondary text-info ms-2" style="font-size: 0.65rem;">

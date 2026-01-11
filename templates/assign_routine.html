@@ -194,10 +194,21 @@
                 <label class="form-label text-primary fw-bold mb-2">1. Seleccionar Usuario</label>
                 <div class="row align-items-center g-3">
                     <div class="col-md-6">
-                        <select id="userSelect" class="form-select">
-                            <option value="" selected disabled>-- Elegir Usuario --</option>
-                            <!-- Populated via JS -->
-                        </select>
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="userSearchTerm"
+                                    placeholder="Buscar: nombre, email o ID...">
+                                <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <input id="selectedUserId" type="hidden">
+                            <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
+                                style="z-index: 1000; display: none; width: 90%;"></div>
+                        </div>
+                        <button id="btnClearUserSearch" class="btn btn-outline-secondary btn-sm mt-2" title="Limpiar">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
                     </div>
                     <div class="col-md-6">
                         <div id="selectedUserDisplay" style="display: none;">
@@ -279,6 +290,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/user_search.js"></script>
     <script>
         // State
         let selectedUserId = null;
@@ -287,7 +299,6 @@
         let currentMuscles = "all";
 
         // Elements
-        const userSelect = document.getElementById('userSelect');
         const routinesGrid = document.getElementById('routinesGrid');
         const loadingRoutines = document.getElementById('loadingRoutines');
         const emptyState = document.getElementById('emptyState');
@@ -298,44 +309,36 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
-            loadUsers();
             loadRoutines();
             loadBodyParts();
+            initUserSearch({
+                inputId: "userSearchTerm",
+                resultsId: "userSearchResults",
+                hiddenId: "selectedUserId",
+                buttonId: "btnLookupUser",
+                clearButtonId: "btnClearUserSearch",
+                storageKey: "admin_working_user",
+                onSelect: handleUserSelect,
+                onClear: clearSelectedUser
+            });
         });
 
-        // --- Load Users ---
-        async function loadUsers() {
-            try {
-                // Use Admin API
-                const res = await fetch('/api/admin/users');
-                const users = await res.json();
-
-                users.forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.user_id;
-                    // Construct display name locally
-                    const displayName = u.name || u.username || u.email || "Usuario";
-                    opt.textContent = `${displayName} (${u.user_id})`;
-                    userSelect.appendChild(opt);
-                });
-            } catch (e) {
-                console.error(e);
-                showToast("Error cargando usuarios", "bg-danger");
-            }
+        function handleUserSelect(user) {
+            if (!user || !user.user_id) return;
+            selectedUserId = user.user_id;
+            selectedUserDisplay.style.display = 'block';
+            noUserDisplay.style.display = 'none';
+            badgeName.textContent = user.name || user.username || user.email || user.user_id;
+            loadAssignmentsForUser(selectedUserId);
         }
 
-        // --- Handle User Selection ---
-        userSelect.addEventListener('change', (e) => {
-            selectedUserId = e.target.value;
-            const text = e.target.options[e.target.selectedIndex].text;
-
-            if (selectedUserId) {
-                selectedUserDisplay.style.display = 'block';
-                noUserDisplay.style.display = 'none';
-                badgeName.textContent = text.split('(')[0]; // Just the name part
-                loadAssignmentsForUser(selectedUserId);
-            }
-        });
+        function clearSelectedUser() {
+            selectedUserId = null;
+            selectedUserDisplay.style.display = 'none';
+            noUserDisplay.style.display = 'block';
+            assignedMap = {};
+            applyFilters();
+        }
 
         // --- Load Routines ---
         async function loadRoutines() {

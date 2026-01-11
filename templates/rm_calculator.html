@@ -1,0 +1,688 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Calculadora RM{% endblock %}
+
+{% block sidebar %}
+{% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-lg-7">
+        <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-calculator me-2"></i>Calculadora RM</h2>
+        <p class="text-secondary mb-0">Estima tu 1RM con multiples formulas y guarda un registro rapido.</p>
+    </div>
+    <div class="col-lg-5 d-flex justify-content-lg-end mt-3 mt-lg-0">
+        <div class="rm-legend">
+            <span class="badge bg-dark border border-secondary me-2"><i class="fas fa-info-circle me-1"></i>1RM promedio</span>
+            <span class="badge bg-dark border border-secondary"><i class="fas fa-bolt me-1"></i>Tabla 1-12RM</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card bg-panel border-0 shadow-sm h-100">
+            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
+                <i class="fas fa-sliders-h text-cyber-blue"></i>
+                Configuracion y datos
+            </div>
+            <div class="card-body">
+                <div class="rm-section mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="text-secondary small fw-bold mb-0">UNIDAD</label>
+                        <div class="form-check form-switch rm-switch">
+                            <input class="form-check-input" type="checkbox" id="unitToggle" checked>
+                            <label class="form-check-label" for="unitToggle" id="unitToggleLabel">LB</label>
+                        </div>
+                    </div>
+                    <small class="text-muted">Cambia la unidad sin convertir automaticamente los valores.</small>
+                </div>
+
+                <div class="rm-section mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="text-secondary small fw-bold mb-0">FORMULAS ACTIVAS</label>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#rmFormulasCollapse" aria-expanded="false"
+                            aria-controls="rmFormulasCollapse">
+                            Mostrar
+                        </button>
+                    </div>
+                    <div class="collapse" id="rmFormulasCollapse">
+                        <div class="rm-formulas mt-3">
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="brzycki" checked>
+                            <span class="form-check-label">Brzycki</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="epley" checked>
+                            <span class="form-check-label">Epley</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="lander" checked>
+                            <span class="form-check-label">Lander</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="oconner" checked>
+                            <span class="form-check-label">O'Conner</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="lombardi" checked>
+                            <span class="form-check-label">Lombardi</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="mayhew" checked>
+                            <span class="form-check-label">Mayhew</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input formula-check" type="checkbox" value="wathen" checked>
+                            <span class="form-check-label">Wathen</span>
+                        </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <label class="text-secondary small fw-bold">PESO (<span id="weightLabel">lb</span>)</label>
+                        <input type="number" class="form-control form-control-lg text-end" id="weightInput"
+                            placeholder="0" min="0" step="0.5">
+                    </div>
+                    <div class="col-6">
+                        <label class="text-secondary small fw-bold">REPETICIONES</label>
+                        <input type="number" class="form-control form-control-lg text-end" id="repsInput"
+                            placeholder="0" min="0" step="1">
+                    </div>
+                </div>
+
+                <div class="rm-section border-top border-secondary pt-3">
+                    <h6 class="text-cyber-orange fw-bold mb-3"><i class="fas fa-save me-2"></i>Guardar registro</h6>
+                    <div class="mb-3 position-relative">
+                        <label class="text-secondary small fw-bold">EJERCICIO</label>
+                        <div class="input-group">
+                            <input type="text" id="exerciseSearch" class="form-control" readonly
+                                placeholder="Selecciona un ejercicio">
+                            <button class="btn btn-outline-secondary" type="button" id="openExerciseModal">
+                                Buscar
+                            </button>
+                        </div>
+                        <div id="exerciseSuggestions" class="rm-suggestions list-group mt-1"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold">FECHA</label>
+                        <input type="date" id="dateInput" class="form-control">
+                    </div>
+                    <button class="btn btn-cyber-primary w-100" id="saveButton">
+                        Guardar registro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card bg-panel border-0 shadow-sm h-100">
+            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
+                <i class="fas fa-chart-bar text-cyber-green"></i>
+                Resultados
+            </div>
+            <div class="card-body">
+                <div class="rm-summary mb-4">
+                    <div>
+                        <div class="text-secondary small fw-bold">1RM ESTIMADO</div>
+                        <div class="rm-primary-value" id="oneRmValue">--</div>
+                        <div class="text-muted small" id="oneRmUnit">kg</div>
+                    </div>
+                    <div class="rm-formula-list text-end">
+                        <div class="text-secondary small fw-bold">FORMULAS</div>
+                        <div id="formulaBadges" class="d-flex flex-wrap gap-2 justify-content-end"></div>
+                    </div>
+                </div>
+
+                <div id="resultsGrid" class="rm-grid"></div>
+                <div class="rm-actions">
+                    <button class="btn btn-outline-secondary" id="toggleRmButton" type="button">
+                        Mostrar mas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green {
+        color: var(--accent-green);
+        text-shadow: var(--accent-green-glow) 0 0 10px;
+    }
+
+    .text-cyber-blue {
+        color: var(--accent-cyan);
+    }
+
+    .text-cyber-orange {
+        color: var(--accent-orange);
+    }
+
+    .rm-legend .badge {
+        font-weight: 500;
+    }
+
+    .rm-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .rm-switch .form-check-input {
+        cursor: pointer;
+    }
+
+    .rm-switch .form-check-input:checked {
+        background-color: var(--accent-green);
+        border-color: var(--accent-green);
+    }
+
+    .rm-formulas {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem 1rem;
+    }
+
+    .rm-formulas .form-check-input {
+        cursor: pointer;
+    }
+
+    .rm-formulas .form-check-input:checked {
+        background-color: var(--accent-orange);
+        border-color: var(--accent-orange);
+    }
+
+    .rm-summary {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding: 1.25rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.12), rgba(0, 255, 157, 0.12));
+        border: 1px solid var(--border-color);
+    }
+
+    .rm-primary-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent-green);
+        text-shadow: 0 0 12px rgba(0, 255, 157, 0.3);
+        line-height: 1;
+    }
+
+    .rm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 1rem;
+    }
+
+    .rm-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    .rm-tile {
+        padding: 0.75rem;
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        text-align: center;
+    }
+
+    .rm-tile.highlight {
+        border-color: var(--accent-orange);
+        box-shadow: 0 0 12px rgba(255, 157, 0, 0.35);
+    }
+
+    .rm-tile .rm-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--accent-orange);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .rm-tile .rm-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+    }
+
+    .rm-tile .rm-unit {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .rm-suggestions {
+        display: none;
+        max-height: 180px;
+        overflow-y: auto;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        position: absolute;
+        width: 100%;
+        z-index: 20;
+    }
+
+    .rm-suggestions .list-group-item {
+        background: transparent;
+        color: var(--text-main);
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .rm-suggestions .list-group-item:hover {
+        background: var(--bg-card-hover);
+    }
+
+    .rm-exercise-modal .modal-content {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+    }
+
+    .rm-exercise-modal .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .rm-exercise-modal .modal-body {
+        padding: 0;
+    }
+
+    .rm-exercise-frame {
+        width: 100%;
+        height: 70vh;
+        border: none;
+        background: var(--bg-body);
+    }
+
+    .btn-cyber-primary {
+        background: linear-gradient(45deg, #00d2ff, #007bff);
+        color: var(--text-main);
+        border: none;
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    }
+
+    .btn-cyber-primary:hover {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+        color: var(--text-main);
+    }
+
+    body:not([data-theme="light"]) .rm-legend .badge {
+        background: #0f1622;
+        color: #d8e3f0;
+        border-color: #2b384c;
+    }
+
+    body:not([data-theme="light"]) .rm-summary {
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.18), rgba(0, 255, 157, 0.12));
+        border-color: rgba(0, 210, 255, 0.25);
+    }
+
+    body:not([data-theme="light"]) .rm-formulas .form-check-label {
+        color: #d8e3f0;
+    }
+
+    body:not([data-theme="light"]) .rm-tile {
+        background: #111a26;
+        border-color: #2b384c;
+    }
+
+    body:not([data-theme="light"]) .rm-tile .rm-value {
+        color: #e6f0ff;
+    }
+
+    body:not([data-theme="light"]) .rm-tile.highlight {
+        border-color: #ffb347;
+        box-shadow: 0 0 16px rgba(255, 157, 0, 0.35);
+    }
+
+    @media (max-width: 768px) {
+        .rm-formulas {
+            grid-template-columns: 1fr;
+        }
+
+        .rm-summary {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .rm-formula-list {
+            text-align: left;
+        }
+
+        .rm-grid {
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        }
+    }
+</style>
+
+<script>
+    let currentUnit = "kg";
+    let exerciseList = [];
+    let exerciseModal = null;
+    const kgToLb = 2.20462;
+
+    const formulas = {
+        brzycki: (w, r) => w * (36 / (37 - r)),
+        epley: (w, r) => w * (1 + 0.0333 * r),
+        lander: (w, r) => (100 * w) / (101.3 - 2.67123 * r),
+        lombardi: (w, r) => w * Math.pow(r, 0.10),
+        mayhew: (w, r) => (100 * w) / (52.2 + (41.9 * Math.exp(-0.055 * r))),
+        oconner: (w, r) => w * (1 + 0.025 * r),
+        wathen: (w, r) => (100 * w) / (48.8 + (53.8 * Math.exp(-0.075 * r)))
+    };
+
+    const rmPercentages = {
+        1: 1.00, 2: 0.95, 3: 0.93, 4: 0.90,
+        5: 0.87, 6: 0.85, 7: 0.83, 8: 0.80,
+        9: 0.77, 10: 0.75, 11: 0.70, 12: 0.67,
+        13: 0.65, 14: 0.63, 15: 0.60, 16: 0.58,
+        17: 0.56, 18: 0.55, 19: 0.53, 20: 0.50
+    };
+
+    const byId = (id) => document.getElementById(id);
+    let showAllResults = false;
+
+    function showNotice(message, tone) {
+        if (window.showAlertModal) {
+            window.showAlertModal("Aviso", message, tone || "warning");
+        } else {
+            alert(message);
+        }
+    }
+
+    function getActiveFormulas() {
+        const checks = document.querySelectorAll(".formula-check:checked");
+        return Array.from(checks).map(chk => chk.value);
+    }
+
+    function calculate() {
+        const weight = parseFloat(byId("weightInput").value) || 0;
+        const reps = parseFloat(byId("repsInput").value) || 0;
+        const activeFormulas = getActiveFormulas();
+
+        if (!weight || !reps) {
+            renderEmpty();
+            return;
+        }
+
+        if (activeFormulas.length === 0) {
+            showNotice("Selecciona al menos una formula.");
+            return;
+        }
+
+        let oneRm = weight;
+        if (reps > 1) {
+            let total = 0;
+            activeFormulas.forEach(method => {
+                if (formulas[method]) {
+                    total += formulas[method](weight, reps);
+                }
+            });
+            oneRm = total / activeFormulas.length;
+        }
+
+        renderSummary(oneRm, activeFormulas);
+        renderResults(oneRm);
+    }
+
+    function renderSummary(oneRm, activeFormulas) {
+        const value = Math.round(oneRm);
+        byId("oneRmValue").textContent = value ? value : "--";
+        byId("oneRmUnit").textContent = currentUnit;
+
+        const badges = byId("formulaBadges");
+        badges.innerHTML = "";
+        activeFormulas.forEach(name => {
+            const badge = document.createElement("span");
+            badge.className = "badge bg-dark border border-secondary";
+            badge.textContent = name;
+            badges.appendChild(badge);
+        });
+    }
+
+    function renderResults(oneRm) {
+        const container = byId("resultsGrid");
+        container.innerHTML = "";
+        const maxRm = showAllResults ? 20 : 12;
+        for (let i = 1; i <= maxRm; i++) {
+            const pct = rmPercentages[i];
+            const value = Math.round(oneRm * pct);
+            const tile = document.createElement("div");
+            tile.className = "rm-tile" + (i === 1 ? " highlight" : "");
+            tile.innerHTML = `
+                <div class="rm-label">${i}RM</div>
+                <div class="rm-value">${value}</div>
+                <div class="rm-unit">${currentUnit}</div>
+            `;
+            container.appendChild(tile);
+        }
+        updateToggleButton();
+    }
+
+    function renderEmpty() {
+        byId("oneRmValue").textContent = "--";
+        byId("oneRmUnit").textContent = currentUnit;
+        byId("formulaBadges").innerHTML = "";
+        byId("resultsGrid").innerHTML = "";
+        const toggleButton = byId("toggleRmButton");
+        if (toggleButton) {
+            toggleButton.style.display = "none";
+        }
+    }
+
+    function updateToggleButton() {
+        const toggleButton = byId("toggleRmButton");
+        if (!toggleButton) return;
+        toggleButton.style.display = "inline-flex";
+        toggleButton.textContent = showAllResults ? "Mostrar menos" : "Mostrar mas";
+    }
+
+    function toggleResultsView() {
+        showAllResults = !showAllResults;
+        const oneRmValue = parseFloat(byId("oneRmValue").textContent) || 0;
+        if (oneRmValue) {
+            renderResults(oneRmValue);
+        }
+    }
+
+    function convertWeight(value, fromUnit, toUnit) {
+        if (!value) return value;
+        if (fromUnit === toUnit) return value;
+        return fromUnit === "kg" ? value * kgToLb : value / kgToLb;
+    }
+
+    function updateUnitLabel() {
+        const isLb = byId("unitToggle").checked;
+        const nextUnit = isLb ? "lb" : "kg";
+        const weightInput = byId("weightInput");
+        const currentWeight = parseFloat(weightInput.value);
+
+        if (!Number.isNaN(currentWeight) && currentWeight > 0) {
+            const converted = convertWeight(currentWeight, currentUnit, nextUnit);
+            weightInput.value = Math.round(converted * 10) / 10;
+        }
+
+        currentUnit = nextUnit;
+        byId("unitToggleLabel").textContent = isLb ? "LB" : "KG";
+        byId("weightLabel").textContent = currentUnit;
+        calculate();
+    }
+
+    async function loadExercises() {
+        try {
+            const res = await fetch("/workout/api/exercises");
+            const data = await res.json();
+            exerciseList = Array.from(new Set(data.map(item => item.name).filter(Boolean))).sort();
+        } catch (e) {
+            console.error("Error loading exercises", e);
+        }
+    }
+
+    function renderSuggestions(matches) {
+        const box = byId("exerciseSuggestions");
+        box.innerHTML = "";
+
+        if (!matches.length) {
+            box.style.display = "none";
+            return;
+        }
+
+        matches.slice(0, 8).forEach(name => {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "list-group-item list-group-item-action";
+            item.textContent = name;
+            item.addEventListener("click", () => {
+                byId("exerciseSearch").value = name;
+                box.style.display = "none";
+            });
+            box.appendChild(item);
+        });
+        box.style.display = "block";
+    }
+
+    function setupExerciseSearch() {
+        const input = byId("exerciseSearch");
+        const box = byId("exerciseSuggestions");
+        if (!input) return;
+
+        input.addEventListener("input", () => {
+            const term = input.value.trim().toLowerCase();
+            if (term.length < 2) {
+                box.style.display = "none";
+                return;
+            }
+            const matches = exerciseList.filter(name => name.toLowerCase().includes(term));
+            renderSuggestions(matches);
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!input.contains(event.target) && !box.contains(event.target)) {
+                box.style.display = "none";
+            }
+        });
+    }
+
+    function openExerciseModal() {
+        const modalEl = byId("exerciseModal");
+        const frame = byId("exerciseFrame");
+        if (!modalEl || !frame) return;
+        frame.src = "/workout/exercises?embed=1";
+        if (!exerciseModal) {
+            exerciseModal = new bootstrap.Modal(modalEl);
+        }
+        exerciseModal.show();
+    }
+
+    function closeExerciseModal() {
+        const modalEl = byId("exerciseModal");
+        const frame = byId("exerciseFrame");
+        if (frame) frame.src = "";
+        if (modalEl) {
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance?.hide();
+        }
+    }
+
+    async function saveRecord() {
+        const weight = parseFloat(byId("weightInput").value) || 0;
+        const reps = parseFloat(byId("repsInput").value) || 0;
+        const exercise = byId("exerciseSearch").value.trim();
+        const date = byId("dateInput").value;
+        const oneRmValue = byId("oneRmValue").textContent;
+        const formulasUsed = getActiveFormulas();
+
+        if (!weight || !reps) {
+            showNotice("Ingresa peso y repeticiones.");
+            return;
+        }
+        if (!exercise) {
+            showNotice("Selecciona un ejercicio.");
+            return;
+        }
+        if (!date) {
+            showNotice("Selecciona una fecha.");
+            return;
+        }
+
+        const payload = {
+            weight: weight,
+            reps: reps,
+            unit: currentUnit,
+            one_rm: oneRmValue,
+            exercise: exercise,
+            date: date,
+            formulas: formulasUsed
+        };
+
+        try {
+            const res = await fetch("/workout/api/rm/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showNotice("Registro guardado.", "success");
+            } else {
+                showNotice(data.error || "No se pudo guardar.", "warning");
+            }
+        } catch (e) {
+            console.error("Save error", e);
+            showNotice("Error de conexion.", "danger");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        byId("unitToggle").addEventListener("change", updateUnitLabel);
+        byId("weightInput").addEventListener("input", calculate);
+        byId("repsInput").addEventListener("input", calculate);
+        document.querySelectorAll(".formula-check").forEach(chk => {
+            chk.addEventListener("change", calculate);
+        });
+        byId("saveButton").addEventListener("click", saveRecord);
+        byId("openExerciseModal").addEventListener("click", openExerciseModal);
+        byId("toggleRmButton").addEventListener("click", toggleResultsView);
+        byId("dateInput").valueAsDate = new Date();
+
+        updateUnitLabel();
+        loadExercises().then(setupExerciseSearch);
+    });
+
+    window.addEventListener("message", (event) => {
+        const data = event.data || {};
+        if (data.type === "rm-exercise-select" && data.exercise) {
+            const name = data.exercise.name || "";
+            if (name) {
+                byId("exerciseSearch").value = name;
+                closeExerciseModal();
+            }
+        }
+    });
+</script>
+
+<div class="modal fade rm-exercise-modal" id="exerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-white">Catalogo de ejercicios</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe id="exerciseFrame" class="rm-exercise-frame" title="Catalogo de ejercicios"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

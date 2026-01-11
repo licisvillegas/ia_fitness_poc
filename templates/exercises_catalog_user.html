@@ -3,7 +3,9 @@
 {% block title %}AI Fitness - Ver Ejercicios{% endblock %}
 
 {% block sidebar %}
+{% if not embed %}
 {% include 'components/sidebar.html' %}
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -192,13 +194,38 @@
         background-color: var(--text-secondary);
         border-color: var(--text-secondary);
     }
+
+    .rm-selectable {
+        cursor: pointer;
+    }
+
+    .rm-selectable:hover {
+        background-color: var(--bg-card-hover);
+    }
+
+    body.embed-mode .main-content {
+        margin: 0 !important;
+        padding-top: 0 !important;
+        width: 100% !important;
+    }
+
+    body.embed-mode .sidebar-fixed,
+    body.embed-mode .sidebar-mobile-nav,
+    body.embed-mode #sidebar-overlay {
+        display: none !important;
+    }
 </style>
 
 <script>
     let allExercises = [];
     let bodyPartMap = {}; // Will hold key -> label
+    const queryEmbed = new URLSearchParams(window.location.search).get("embed");
+    const isEmbed = {{ embed | default(false) | tojson }} || ["1", "true", "yes"].includes(String(queryEmbed).toLowerCase());
 
     document.addEventListener("DOMContentLoaded", () => {
+        if (isEmbed) {
+            document.body.classList.add("embed-mode");
+        }
         loadBodyParts().then(() => {
             mapIconsToKeys();
             renderMuscleIcons();
@@ -286,16 +313,23 @@
             <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
             <td>${ex.type}</td>
             <td>
-                ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
+                ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
             </td>
             <td>${ex.is_custom ? '<span class="text-info">Custom</span>' : '<span class="text-secondary">Global</span>'}</td>
         `;
             tbody.appendChild(tr);
 
+            if (isEmbed) {
+                tr.classList.add("rm-selectable");
+                tr.addEventListener("click", () => {
+                    sendSelection(ex);
+                });
+            }
+
             // Mobile Card
             const card = document.createElement("div");
             card.className = "card bg-panel border-secondary shadow-sm";
-            const videoBtn = hasVideo ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '';
+            const videoBtn = hasVideo ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '';
 
             card.innerHTML = `
                 <div class="card-body p-3">
@@ -324,6 +358,13 @@
                 </div>
             `;
             mobileContainer.appendChild(card);
+
+            if (isEmbed) {
+                card.classList.add("rm-selectable");
+                card.addEventListener("click", () => {
+                    sendSelection(ex);
+                });
+            }
         });
     }
 
@@ -500,6 +541,30 @@
         }
 
         filterExercises();
+    }
+
+    async function confirmSelection(ex) {
+        const name = ex.name || "este ejercicio";
+        const message = `¿Usar "${name}" en la calculadora RM?`;
+        if (window.showConfirmModal) {
+            return await window.showConfirmModal("Confirmar ejercicio", message, "success");
+        }
+        return confirm(message);
+    }
+
+    async function sendSelection(ex) {
+        if (!isEmbed) return;
+        const ok = await confirmSelection(ex);
+        if (!ok) return;
+        if (window.parent) {
+            window.parent.postMessage({
+                type: "rm-exercise-select",
+                exercise: {
+                    name: ex.name,
+                    id: ex._id
+                }
+            }, "*");
+        }
     }
 </script>
 <script src="/static/js/loader.js"></script>

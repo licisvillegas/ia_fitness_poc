@@ -50,7 +50,13 @@ def dashboard():
 @workout_bp.route("/exercises")
 def exercises_page():
     """Catalog of exercises for users (read-only)."""
-    return render_template("exercises_catalog_user.html")
+    embed = request.args.get("embed") in ("1", "true", "yes")
+    return render_template("exercises_catalog_user.html", embed=embed)
+
+@workout_bp.route("/rm-calculator")
+def rm_calculator_page():
+    """Render the 1RM calculator."""
+    return render_template("rm_calculator.html")
 
 @workout_bp.get("/api/exercises")
 def list_public_exercises():
@@ -68,6 +74,48 @@ def list_public_exercises():
     except Exception as e:
         logger.error(f"Error listing public exercises: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+@workout_bp.post("/api/rm/save")
+def api_save_rm_record():
+    """Saves a 1RM record for the authenticated user."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.get_json() or {}
+        weight = data.get("weight")
+        reps = data.get("reps")
+        exercise = (data.get("exercise") or "").strip()
+        date = data.get("date")
+        one_rm = data.get("one_rm")
+        unit = (data.get("unit") or "").strip()
+        formulas = data.get("formulas", [])
+
+        if not weight or not reps or not exercise or not date:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        record = {
+            "user_id": user_id,
+            "exercise": exercise,
+            "input_weight": float(weight),
+            "input_reps": int(reps),
+            "unit": unit,
+            "calculated_1rm": one_rm,
+            "formulas_used": formulas,
+            "date": date,
+            "created_at": datetime.utcnow()
+        }
+
+        res = db.one_rm_records.insert_one(record)
+        return jsonify({"status": "success", "id": str(res.inserted_id)}), 200
+    except Exception as e:
+        logger.error(f"Error saving 1RM record: {e}")
+        return jsonify({"error": "Internal Error"}), 500
 
 @workout_bp.get("/api/exercises/filter")
 def api_filter_exercises():

@@ -35,6 +35,80 @@
         return `${h}h ${m}min`;
     };
 
+    const ensureSessionConfirmModal = () => {
+        let modalEl = document.getElementById("sessionConfirmModal");
+        if (modalEl) return modalEl;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = `
+            <div class="modal fade" id="sessionConfirmModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content bg-panel text-white border-secondary">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title" id="sessionConfirmTitle">Confirmar</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="sessionConfirmMessage"></div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-outline-light" data-session-confirm="cancel">Cancelar</button>
+                            <button type="button" class="btn btn-outline-danger" data-session-confirm="confirm">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        modalEl = wrapper.firstElementChild;
+        document.body.appendChild(modalEl);
+        return modalEl;
+    };
+
+    const showSessionConfirm = (title, message) => {
+        if (typeof window.showConfirmModal === "function") {
+            return window.showConfirmModal(title, message, "danger");
+        }
+        if (typeof bootstrap === "undefined" || !bootstrap.Modal) {
+            return Promise.resolve(confirm(message || title || "Confirmar"));
+        }
+
+        const modalEl = ensureSessionConfirmModal();
+        const titleEl = modalEl.querySelector("#sessionConfirmTitle");
+        const messageEl = modalEl.querySelector("#sessionConfirmMessage");
+        const confirmBtn = modalEl.querySelector('[data-session-confirm="confirm"]');
+        const cancelBtn = modalEl.querySelector('[data-session-confirm="cancel"]');
+        if (titleEl) titleEl.textContent = title || "Confirmar";
+        if (messageEl) messageEl.textContent = message || "";
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        return new Promise(resolve => {
+            let resolved = false;
+            const resolveOnce = (value) => {
+                if (resolved) return;
+                resolved = true;
+                resolve(value);
+            };
+            const cleanup = () => {
+                confirmBtn?.removeEventListener("click", onConfirm);
+                cancelBtn?.removeEventListener("click", onCancel);
+                modalEl.removeEventListener("hidden.bs.modal", onHidden);
+            };
+            const onConfirm = () => {
+                resolveOnce(true);
+                modal.hide();
+            };
+            const onCancel = () => {
+                resolveOnce(false);
+                modal.hide();
+            };
+            const onHidden = () => {
+                cleanup();
+                resolveOnce(false);
+            };
+            confirmBtn?.addEventListener("click", onConfirm);
+            cancelBtn?.addEventListener("click", onCancel);
+            modalEl.addEventListener("hidden.bs.modal", onHidden);
+            modal.show();
+        });
+    };
+
     const renderSessions = (data) => {
         const container = document.getElementById("sessionsList");
         if (!container) return;
@@ -193,12 +267,11 @@
 
     window.deleteSession = async function (sessionId, index) {
         if (!sessionId) return;
-        if (typeof showConfirmModal !== 'function') {
-            if (!confirm("¿Estás seguro de eliminar esta sesión?")) return;
-        } else {
-            const confirmed = await showConfirmModal("Eliminar sesión", "¿Estás seguro de eliminar esta sesión? Esta acción no se puede deshacer.", "danger");
-            if (!confirmed) return;
-        }
+        const confirmed = await showSessionConfirm(
+            "Eliminar sesión",
+            "¿Estás seguro de eliminar esta sesión? Esta acción no se puede deshacer."
+        );
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/workout/api/sessions/${sessionId}`, { method: "DELETE" });

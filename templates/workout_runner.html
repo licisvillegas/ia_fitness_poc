@@ -309,6 +309,22 @@
         margin-bottom: 6px;
     }
 
+    .tap-hint-overlay {
+        position: absolute;
+        inset: 0;
+        border: 1px dashed rgba(0, 210, 255, 0.55);
+        border-radius: 12px;
+        background: rgba(13, 20, 30, 0.45);
+        color: #e6f0ff;
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+
     .reps-column {
         padding-top: 44px;
     }
@@ -2065,6 +2081,7 @@
             35: 0,
             45: 0
         });
+        const [showTapHint, setShowTapHint] = useState(false);
         const [plateCountMode, setPlateCountMode] = useState('per_side');
 
         // Reset plates when modal opens or step changes
@@ -2167,11 +2184,13 @@
             setRpe(8);
 
             const shouldFocusWeight = !compact && step.type === 'work' && !step.isTimeBased && !step.target?.time;
+            setShowTapHint(shouldFocusWeight);
             // If weight input is visible, focus/select it to speed entry.
             setTimeout(() => {
                 if (shouldFocusWeight && weightInputRef.current) {
                     weightInputRef.current.focus();
                     weightInputRef.current.select();
+                    setShowTapHint(false);
                     return;
                 }
                 if (rpe8Ref.current) {
@@ -2272,13 +2291,13 @@
                                     </button>
                                 </div>
                             </div>
-                            <div className="d-flex align-items-center justify-content-center gap-1">
-                                <button
-                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                    type="button"
-                                    onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
-                                >-</button>
-                                <div className="position-relative">
+                              <div className="d-flex align-items-center justify-content-center gap-1">
+                                  <button
+                                      className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                      type="button"
+                                      onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
+                                  >-</button>
+                                  <div className="position-relative">
                                       <input
                                           key={`weight_${step.id}`}
                                           type="text"
@@ -2292,13 +2311,28 @@
                                           onClick={(e) => e.target.select()}
                                           autoFocus={!compact && step.type === 'work' && !step.isTimeBased && !step.target?.time}
                                       />
-                                </div>
-                                <button
-                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                    type="button"
-                                    onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
-                                >+</button>
-                            </div>
+                                      {showTapHint && (
+                                          <button
+                                              type="button"
+                                              className="tap-hint-overlay"
+                                              onClick={() => {
+                                                  if (weightInputRef.current) {
+                                                      weightInputRef.current.focus();
+                                                      weightInputRef.current.select();
+                                                      setShowTapHint(false);
+                                                  }
+                                              }}
+                                          >
+                                              Tocar para editar
+                                          </button>
+                                      )}
+                                  </div>
+                                  <button
+                                      className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                      type="button"
+                                      onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
+                                  >+</button>
+                              </div>
                             <div className="text-center text-muted small mt-1" style={{ fontSize: '0.7rem' }}>
                                 {equivalentText}
                             </div>

@@ -2079,6 +2079,7 @@
         const [includeBar, setIncludeBar] = useState(false);
         const [barWeight, setBarWeight] = useState(20);
         const weightInputRef = useRef(null);
+        const promptStepRef = useRef(null);
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
 
@@ -2177,6 +2178,21 @@
                 }
             }, 100);
         }, [step, sessionLog, historyMaxByExercise]);
+
+        useEffect(() => {
+            if (!step || step.type !== 'work') return;
+            if (step.target?.weight == null) return;
+            if (promptStepRef.current === step.id) return;
+            promptStepRef.current = step.id;
+            setTimeout(() => {
+                const fallback = step.target?.weight ?? '';
+                const currentValue = (weight !== '' ? weight : fallback).toString();
+                const input = window.prompt("Ingresa el peso para esta serie", currentValue);
+                if (input !== null) {
+                    setWeight(input);
+                }
+            }, 100);
+        }, [step]);
 
         const adjustReps = (delta) => {
             const current = parseInt(reps, 10);

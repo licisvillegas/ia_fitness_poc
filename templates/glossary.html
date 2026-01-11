@@ -385,6 +385,15 @@
                             margin: 0 auto;
                         }
 
+                        .ref-card.ref-card-light {
+                            background-color: #f2f2f2;
+                            border-color: #e0e0e0;
+                        }
+
+                        .ref-card.ref-card-light .ref-caption {
+                            color: #333;
+                        }
+
                         .ref-img {
                             width: 100%;
                             height: auto;
@@ -404,26 +413,54 @@
                             color: var(--text-secondary);
                             border-top: 1px solid var(--border-color);
                         }
+
+                        .image-zoom-light .modal-content {
+                            background-color: #f2f2f2;
+                        }
+
+                        .image-zoom-light .modal-content.bg-dark {
+                            background-color: #f2f2f2;
+                        }
+
+                        .image-zoom-light .modal-header {
+                            background-color: #f2f2f2;
+                        }
+
+                        .image-zoom-light .modal-title {
+                            color: #111;
+                        }
+
+                        .image-zoom-light .modal-title.text-white {
+                            color: #111 !important;
+                        }
+
+                        .image-zoom-light .modal-body {
+                            background-color: #f2f2f2;
+                        }
+
+                        .image-zoom-light .btn-close {
+                            filter: none;
+                        }
                     </style>
                     <div class="row g-4">
                         <!-- Images from static/images/examples -->
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/IMG_3005.png" loading="lazy" class="ref-img"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/ref3.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 1">
                                 <div class="ref-caption">Guía Visual - Ejemplo 1</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/IMG_3006.png" loading="lazy" class="ref-img"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/ref1.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 2">
                                 <div class="ref-caption">Guía Visual - Ejemplo 2</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/IMG_3004.png" loading="lazy" class="ref-img"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/ref2.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 3">
                                 <div class="ref-caption">Guía Visual - Ejemplo 3</div>
                             </div>
@@ -510,6 +547,7 @@
             const modalImage = document.getElementById('modalImage');
             const modalTitle = document.getElementById('imageModalLabel');
             const modal = new bootstrap.Modal(modalElement);
+            const isLightZoom = (src) => /\/static\/images\/examples\/ref[123]\.png$/i.test(src || "");
 
             clickableCards.forEach(card => {
                 card.style.cursor = 'pointer'; // Ensure cursor indicates clickability
@@ -520,6 +558,7 @@
                     const name = titleEl ? titleEl.textContent : '';
 
                     if (img) {
+                        modalElement.classList.toggle('image-zoom-light', isLightZoom(img.src));
                         modalImage.src = img.src;
                         modalImage.alt = img.alt;
                         modalTitle.textContent = name;

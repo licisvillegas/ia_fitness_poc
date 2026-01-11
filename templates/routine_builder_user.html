@@ -150,9 +150,6 @@
                             <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
                                 <i class="fas fa-undo me-1"></i> Restablecer
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary" id="toggleAdvancedBtn" type="button">
-                                Opciones avanzadas
-                            </button>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2 advanced-only">
                             <button class="btn btn-sm btn-outline-info" onclick="addGroupBlock()">
@@ -187,7 +184,7 @@
                             </button>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
-                            <button class="btn btn-sm btn-outline-warning" type="button" onclick="clearRoutineForm()">
+                            <button class="btn btn-sm btn-outline-warning" type="button" onclick="startNewRoutine()">
                                 <i class="fas fa-eraser me-1"></i> Nueva
                             </button>
                         </div>
@@ -334,18 +331,10 @@
     }
 
     body.user-builder .advanced-only {
-        display: none !important;
-    }
-
-    body.user-builder.show-advanced .advanced-only {
         display: block !important;
     }
 
     body.user-builder .advanced-only-inline {
-        display: none !important;
-    }
-
-    body.user-builder.show-advanced .advanced-only-inline {
         display: inline-flex !important;
     }
 
@@ -370,6 +359,19 @@
         height: 100%;
         display: flex;
         flex-direction: column;
+    }
+
+    #restModal .btn-cyber-primary {
+        background: #00d2ff;
+        border-color: #00d2ff;
+        color: #081018;
+        font-weight: 600;
+    }
+
+    #restModal .btn-cyber-primary:hover {
+        background: #00b8e6;
+        border-color: #00b8e6;
+        color: #081018;
     }
 
     #exercisePicker,
@@ -442,7 +444,7 @@
     let activeGroupId = "";
     const collapsedBodyParts = new Set();
     let selectedRoutineId = "";
-    let advancedMode = false;
+    let advancedMode = true;
     const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
     const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP", "Reps fijas"];
     const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180];
@@ -462,10 +464,6 @@
         if (window.showLoader) window.showLoader("Cargando constructor...");
         try {
             document.body.classList.add("user-builder");
-            const toggleBtn = document.getElementById("toggleAdvancedBtn");
-            if (toggleBtn) {
-                toggleBtn.addEventListener("click", () => setAdvancedMode(!advancedMode));
-            }
             await Promise.all([
                 loadBodyPartsConfig(),
                 loadExercises(),
@@ -664,6 +662,13 @@
         }
     }
 
+    function maybeSwitchToDetails() {
+        const isMobile = window.matchMedia("(max-width: 991.98px)").matches;
+        const tabExercises = document.getElementById('mobile-tab-exercises');
+        if (!isMobile || !tabExercises || !tabExercises.classList.contains('active')) return;
+        switchMobileView('details');
+    }
+
     async function loadSelectedRoutine() {
         if (!selectedRoutineId) return;
         await loadRoutineById(selectedRoutineId);
@@ -672,6 +677,18 @@
     async function duplicateSelectedRoutine() {
         if (!selectedRoutineId) return;
         await loadRoutineById(selectedRoutineId, { duplicate: true });
+    }
+
+    async function startNewRoutine() {
+        if (hasRoutineChanges()) {
+            const confirmed = await showConfirmModal(
+                "Nueva rutina",
+                "Hay cambios o ejercicios ya agregados. Se perderán si continúas.",
+                "warning"
+            );
+            if (!confirmed) return;
+        }
+        clearRoutineForm();
     }
 
     function clearRoutineForm() {
@@ -683,7 +700,7 @@
         activeGroupId = "";
         selectedRoutineId = "";
         currentRoutineItems = [];
-        setAdvancedMode(false);
+        setAdvancedMode(true);
         renderRoutineItems();
         filterExercises();
         renderRoutineOptions();
@@ -718,11 +735,6 @@
 
     function setAdvancedMode(enabled) {
         advancedMode = Boolean(enabled);
-        document.body.classList.toggle("show-advanced", advancedMode);
-        const toggleBtn = document.getElementById("toggleAdvancedBtn");
-        if (toggleBtn) {
-            toggleBtn.textContent = advancedMode ? "Ocultar avanzadas" : "Opciones avanzadas";
-        }
     }
 
     function ensureAdvancedForItems(items) {
@@ -994,7 +1006,7 @@
             comment: ""
         });
         renderRoutineItems();
-        switchMobileView('details');
+        maybeSwitchToDetails();
     }
 
     function addGroupBlock() {
@@ -1012,6 +1024,7 @@
             });
             activeGroupId = groupId;
             renderRoutineItems();
+            maybeSwitchToDetails();
         });
     }
 
@@ -1030,6 +1043,7 @@
                 group_id: result.groupId || ""
             });
             renderRoutineItems();
+            maybeSwitchToDetails();
         });
     }
 

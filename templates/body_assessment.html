@@ -248,6 +248,24 @@
       line-height: 1.4;
     }
 
+    .image-zoom-light .modal-content {
+      background-color: #f2f2f2;
+      border-color: #e0e0e0;
+    }
+
+    .image-zoom-light .modal-title,
+    .image-zoom-light .modal-title.text-white {
+      color: #111 !important;
+    }
+
+    .image-zoom-light .modal-body {
+      background-color: #f2f2f2;
+    }
+
+    .image-zoom-light .btn-close {
+      filter: none;
+    }
+
     .alert-modal-actions {
       display: flex;
       gap: 0.75rem;
@@ -428,20 +446,20 @@
                   <div class="mt-4 border-top border-secondary pt-3">
                     <h6 class="text-secondary small text-uppercase fw-bold mb-3">Referencias Visuales</h6>
                     <div class="d-flex justify-content-center gap-3 overflow-auto pb-2" style="scrollbar-width: thin;">
-                      <img src="/static/images/examples/IMG_3006.png" data-male="/static/images/examples/IMG_3006.png"
+                      <img src="/static/images/examples/ref1.png" data-male="/static/images/examples/ref1.png"
                         data-female="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                         alt="Ejemplo 1" onclick="openZoomModal(this.src)">
-                      <img src="/static/images/examples/IMG_3005.png" data-male="/static/images/examples/IMG_3005.png"
+                      <img src="/static/images/examples/ref3.png" data-male="/static/images/examples/ref3.png"
                         data-female="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                         alt="Ejemplo 2" onclick="openZoomModal(this.src)">
-                      <img src="/static/images/examples/IMG_3004.png" data-male="/static/images/examples/IMG_3004.png"
+                      <img src="/static/images/examples/ref2.png" data-male="/static/images/examples/ref2.png"
                         data-female="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
                         class="rounded border border-secondary example-img"
-                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: var(--bg-body);"
+                        style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                         alt="Ejemplo 3" onclick="openZoomModal(this.src)">
                     </div>
                     <small class="text-muted" style="font-size: 0.75rem;">* Click para ver en pantalla completa.</small>
@@ -1229,8 +1247,14 @@
       });
 
       // Global zoom helper
+      function isLightZoom(src) {
+        return /\/static\/images\/examples\/ref[123]\.png$/i.test(src || "");
+      }
+
       window.openZoomModal = function (src) {
         if (src && zoomModal) {
+          const modalEl = document.getElementById('imageZoomModal');
+          if (modalEl) modalEl.classList.toggle('image-zoom-light', isLightZoom(src));
           document.getElementById('zoomedImage').src = src;
           zoomModal.show();
         }

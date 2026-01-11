@@ -180,7 +180,7 @@
                             </button>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
-                            <button class="btn btn-sm btn-outline-warning" type="button" onclick="clearRoutineForm()">
+                            <button class="btn btn-sm btn-outline-warning" type="button" onclick="startNewRoutine()">
                                 <i class="fas fa-eraser me-1"></i> Nueva
                             </button>
                         </div>
@@ -347,6 +347,19 @@
         height: 100%;
         display: flex;
         flex-direction: column;
+    }
+
+    #restModal .btn-cyber-primary {
+        background: #00d2ff;
+        border-color: #00d2ff;
+        color: #081018;
+        font-weight: 600;
+    }
+
+    #restModal .btn-cyber-primary:hover {
+        background: #00b8e6;
+        border-color: #00b8e6;
+        color: #081018;
     }
 
     #exercisePicker,
@@ -687,6 +700,13 @@
         }
     }
 
+    function maybeSwitchToDetails() {
+        const isMobile = window.matchMedia("(max-width: 991.98px)").matches;
+        const tabExercises = document.getElementById('mobile-tab-exercises');
+        if (!isMobile || !tabExercises || !tabExercises.classList.contains('active')) return;
+        switchMobileView('details');
+    }
+
     async function loadSelectedRoutine() {
         if (!selectedRoutineId) return;
         await loadRoutineById(selectedRoutineId);
@@ -695,6 +715,18 @@
     async function duplicateSelectedRoutine() {
         if (!selectedRoutineId) return;
         await loadRoutineById(selectedRoutineId, { duplicate: true });
+    }
+
+    async function startNewRoutine() {
+        if (hasRoutineChanges()) {
+            const confirmed = await showConfirmModal(
+                "Nueva rutina",
+                "Hay cambios o ejercicios ya agregados. Se perderán si continúas.",
+                "warning"
+            );
+            if (!confirmed) return;
+        }
+        clearRoutineForm();
     }
 
     function clearRoutineForm() {
@@ -971,7 +1003,7 @@
             comment: ""
         });
         renderRoutineItems();
-        switchMobileView('details');
+        maybeSwitchToDetails();
     }
 
     function addGroupBlock() {
@@ -988,6 +1020,7 @@
             });
             activeGroupId = groupId;
             renderRoutineItems();
+            maybeSwitchToDetails();
         });
     }
 
@@ -1005,6 +1038,7 @@
                 group_id: result.groupId || ""
             });
             renderRoutineItems();
+            maybeSwitchToDetails();
         });
     }
 

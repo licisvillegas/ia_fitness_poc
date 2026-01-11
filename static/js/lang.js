@@ -355,7 +355,7 @@
     if (loadBtn) loadBtn.textContent = t('btn_load_progress');
     const loadingEl = document.querySelector('#loading p');
     if (loadingEl) loadingEl.textContent = t('loading_data');
-    const selectUserLabel = document.querySelector('.container label.fw-bold');
+    const selectUserLabel = document.getElementById('select-user-label');
     if (selectUserLabel) selectUserLabel.textContent = t('select_user_label');
 
     // Index / Generate section

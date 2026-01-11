@@ -2079,7 +2079,6 @@
         const [includeBar, setIncludeBar] = useState(false);
         const [barWeight, setBarWeight] = useState(20);
         const weightInputRef = useRef(null);
-        const promptStepRef = useRef(null);
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
 
@@ -2167,8 +2166,13 @@
             setReps(nextReps);
             setRpe(8);
 
-            // Keep focus off the weight input on step change.
+            // If weight is expected, focus/select the weight input to speed entry.
             setTimeout(() => {
+                if (step.target?.weight != null && weightInputRef.current) {
+                    weightInputRef.current.focus();
+                    weightInputRef.current.select();
+                    return;
+                }
                 if (rpe8Ref.current) {
                     rpe8Ref.current.focus();
                     return;
@@ -2178,21 +2182,6 @@
                 }
             }, 100);
         }, [step, sessionLog, historyMaxByExercise]);
-
-        useEffect(() => {
-            if (!step || step.type !== 'work') return;
-            if (step.target?.weight == null) return;
-            if (promptStepRef.current === step.id) return;
-            promptStepRef.current = step.id;
-            setTimeout(() => {
-                const fallback = step.target?.weight ?? '';
-                const currentValue = (weight !== '' ? weight : fallback).toString();
-                const input = window.prompt("Ingresa el peso para esta serie", currentValue);
-                if (input !== null) {
-                    setWeight(input);
-                }
-            }, 100);
-        }, [step]);
 
         const adjustReps = (delta) => {
             const current = parseInt(reps, 10);
@@ -2289,15 +2278,14 @@
                                     onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
                                 >-</button>
                                 <div className="position-relative">
-                                    <input type="text"
-                                        ref={weightInputRef}
-                                        className="form-control input-hud text-center p-0"
-                                        value={weight}
-                                        onChange={e => setWeight(e.target.value)}
-                                        placeholder="0"
-                                        inputMode="decimal"
-                                        onClick={(e) => e.target.select()}
-                                    />
+                                      <input type="text" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*"
+                                          ref={weightInputRef}
+                                          className="form-control input-hud text-center p-0"
+                                          value={weight}
+                                          onChange={e => setWeight(e.target.value)}
+                                          placeholder="0"
+                                          onClick={(e) => e.target.select()}
+                                      />
                                 </div>
                                 <button
                                     className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"

@@ -351,6 +351,21 @@
         padding: 12px 16px 4px;
     }
 
+    .plate-mode-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 0 12px;
+    }
+
+    .plate-mode-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
     .plate-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2050,6 +2065,7 @@
             35: 0,
             45: 0
         });
+        const [plateCountMode, setPlateCountMode] = useState('per_side');
 
         // Reset plates when modal opens or step changes
         useEffect(() => {
@@ -2075,9 +2091,10 @@
             { value: 45, label: "45", src: "/static/images/disc/45.png" }
         ];
 
+        const plateMultiplier = plateCountMode === 'per_side' ? 2 : 1;
         const totalPlatesLb = plateOptions.reduce((acc, plate) => {
             const count = plateCounts[plate.value] || 0;
-            return acc + (count * plate.value);
+            return acc + (count * plate.value * plateMultiplier);
         }, 0);
         const totalWithBarLb = totalPlatesLb + (includeBar ? (parseFloat(barWeight) || 0) : 0);
 
@@ -2339,6 +2356,25 @@
                                 </button>
                             </div>
                             <div className="plate-modal-body">
+                                <div className="plate-mode-row">
+                                    <div className="plate-mode-label">Conteo</div>
+                                    <div className="btn-group btn-group-sm" role="group" aria-label="Conteo de discos">
+                                        <button
+                                            type="button"
+                                            className={`btn ${plateCountMode === 'per_side' ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
+                                            onClick={() => setPlateCountMode('per_side')}
+                                        >
+                                            Por lado
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`btn ${plateCountMode === 'total' ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
+                                            onClick={() => setPlateCountMode('total')}
+                                        >
+                                            Total
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="plate-grid">
                                     {plateOptions.map(plate => (
                                         <div key={plate.value} className="plate-tile">
@@ -2356,7 +2392,9 @@
                                 </div>
 
                                 <div className="mt-3 d-flex align-items-center justify-content-between">
-                                    <div className="text-secondary small">Total discos</div>
+                                    <div className="text-secondary small">
+                                        Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}
+                                    </div>
                                     <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
                                 </div>
 

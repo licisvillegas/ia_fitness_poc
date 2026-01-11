@@ -239,6 +239,18 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
         /* Catch clicks when visible */
     }
 
+    body.sb-right .sidebar-mobile-nav #mobile-sidebar-toggle {
+        order: 2;
+        margin-left: auto;
+        margin-right: 0;
+    }
+
+    body.sb-right .sidebar-mobile-nav .navbar-brand {
+        order: 1;
+        margin-left: 0;
+        margin-right: auto;
+    }
+
     /* Main content should take full width on mobile */
     .main-content {
         margin-left: 0 !important;

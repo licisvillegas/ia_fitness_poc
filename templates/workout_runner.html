@@ -2136,6 +2136,13 @@
         };
 
         // Pre-fill from history and AUTO-FOCUS
+        const focusWeightInput = (selectAll = true) => {
+            if (!weightInputRef.current) return false;
+            weightInputRef.current.focus();
+            if (selectAll) weightInputRef.current.select();
+            return true;
+        };
+
         useEffect(() => {
             const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
             let nextWeight = step.target.weight || '';
@@ -2187,9 +2194,7 @@
             setShowTapHint(shouldFocusWeight);
             // If weight input is visible, focus/select it to speed entry.
             setTimeout(() => {
-                if (shouldFocusWeight && weightInputRef.current) {
-                    weightInputRef.current.focus();
-                    weightInputRef.current.select();
+                if (shouldFocusWeight && focusWeightInput(true)) {
                     setShowTapHint(false);
                     return;
                 }
@@ -2201,6 +2206,13 @@
                     document.activeElement.blur();
                 }
             }, 100);
+            if (shouldFocusWeight) {
+                setTimeout(() => {
+                    if (focusWeightInput(true)) {
+                        setShowTapHint(false);
+                    }
+                }, 350);
+            }
         }, [step, sessionLog, historyMaxByExercise]);
 
         const adjustReps = (delta) => {
@@ -2309,6 +2321,7 @@
                                           onChange={e => setWeight(e.target.value)}
                                           placeholder="0"
                                           onClick={(e) => e.target.select()}
+                                          onFocus={() => setShowTapHint(false)}
                                           autoFocus={!compact && step.type === 'work' && !step.isTimeBased && !step.target?.time}
                                       />
                                       {showTapHint && (

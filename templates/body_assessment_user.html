@@ -504,12 +504,26 @@
 
                             <!-- Visual Report Container -->
                             <div id="result-container" class="d-none flex-column h-100">
-                                <ul class="nav nav-tabs border-secondary mb-3" role="tablist">
-                                    <li class="nav-item"><button class="nav-link active text-theme bg-transparent"
-                                            data-bs-toggle="tab" data-bs-target="#tab-visual">Reporte Visual</button>
+                                <ul class="nav nav-tabs border-secondary mb-3 flex-nowrap overflow-auto"
+                                    role="tablist" style="white-space: nowrap;">
+                                    <li class="nav-item">
+                                        <button class="nav-link active text-theme bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-visual">Reporte Visual</button>
                                     </li>
-                                    <li class="nav-item"><button class="nav-link text-theme bg-transparent"
-                                            data-bs-toggle="tab" data-bs-target="#tab-json">JSON</button></li>
+                                    {% if current_user_role == 'admin' %}
+                                    <li class="nav-item admin-only d-none">
+                                        <button class="nav-link text-theme bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-admin-comments">Comentarios Admin</button>
+                                    </li>
+                                    <li class="nav-item admin-only d-none">
+                                        <button class="nav-link text-theme bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-admin-adjust">Ajustes Manuales</button>
+                                    </li>
+                                    <li class="nav-item admin-only d-none">
+                                        <button class="nav-link text-theme bg-transparent" data-bs-toggle="tab"
+                                            data-bs-target="#tab-json">JSON</button>
+                                    </li>
+                                    {% endif %}
                                 </ul>
 
                                 <div class="tab-content flex-grow-1" style="overflow-y:auto; padding-right:5px;">
@@ -651,10 +665,64 @@
                                         </div>
                                     </div>
 
+                                    {% if current_user_role == 'admin' %}
+                                    <div class="tab-pane fade admin-only d-none" id="tab-admin-comments">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <div class="card border-secondary">
+                                                    <div class="card-body">
+                                                        <h6 class="section-title h6 mb-3">Notas internas (Admin)</h6>
+                                                        <textarea id="admin-notes-internal" class="form-control"
+                                                            rows="4"
+                                                            placeholder="Notas internas para el equipo admin"></textarea>
+                                                        <div class="text-secondary small mt-2">Solo visible para administradores.</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="card border-secondary">
+                                                    <div class="card-body">
+                                                        <h6 class="section-title h6 mb-3">Notas para la evaluacion</h6>
+                                                        <textarea id="admin-notes-user" class="form-control" rows="4"
+                                                            placeholder="Comentarios a incluir en la evaluacion del usuario"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane fade admin-only d-none" id="tab-admin-adjust">
+                                        <div class="card border-secondary">
+                                            <div class="card-body">
+                                                <h6 class="section-title h6 mb-3">Ajustes manuales</h6>
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="admin-tdee-select">Seleccionar TDEE</label>
+                                                    <select id="admin-tdee-select" class="form-select"></select>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label" for="admin-tdee-kcal">TDEE (kcal)</label>
+                                                        <input id="admin-tdee-kcal" type="number" class="form-control"
+                                                            placeholder="Ej: 2200" min="0" step="1">
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label" for="admin-kcal-target">Ajustar kcal</label>
+                                                        <input id="admin-kcal-target" type="number" class="form-control"
+                                                            placeholder="Ej: 2000" min="0" step="1">
+                                                    </div>
+                                                </div>
+                                                <div class="text-secondary small mt-2">
+                                                    Estos cambios se guardan junto con la evaluacion.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- JSON Tab -->
-                                    <div class="tab-pane fade" id="tab-json">
+                                    <div class="tab-pane fade admin-only d-none" id="tab-json">
                                         <pre id="result-output" class="result-pre text-small"></pre>
                                     </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -708,6 +776,21 @@
             const exampleImages = Array.from(document.querySelectorAll(".example-img"));
             let zoomModal;
 
+            const isAdminUnlocked = () => {
+                try {
+                    return sessionStorage.getItem('admin_unlocked') === 'true';
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const initAdminTabs = () => {
+                if (!isAdminUnlocked()) return;
+                document.querySelectorAll('.admin-only').forEach((el) => {
+                    el.classList.remove('d-none');
+                });
+            };
+
             const updateExampleImages = () => {
                 if (!sexSelect || !exampleImages.length) return;
                 const useFemale = sexSelect.value === "female";
@@ -721,6 +804,26 @@
             document.addEventListener('DOMContentLoaded', async () => {
                 const modalEl = document.getElementById('imageZoomModal');
                 if (modalEl) zoomModal = new bootstrap.Modal(modalEl);
+                initAdminTabs();
+
+                const tabLinks = document.querySelectorAll('#result-container .nav-link[data-bs-toggle="tab"]');
+                const tabContent = document.querySelector('#result-container .tab-content');
+                tabLinks.forEach((tab) => {
+                    tab.addEventListener('shown.bs.tab', () => {
+                        if (tabContent) tabContent.scrollTop = 0;
+                    });
+                });
+
+                const tdeeSelect = document.getElementById('admin-tdee-select');
+                const tdeeKcalInput = document.getElementById('admin-tdee-kcal');
+                if (tdeeSelect && tdeeKcalInput) {
+                    tdeeSelect.addEventListener('change', () => {
+                        const opt = tdeeSelect.options[tdeeSelect.selectedIndex];
+                        if (opt && opt.dataset && opt.dataset.kcal) {
+                            tdeeKcalInput.value = opt.dataset.kcal;
+                        }
+                    });
+                }
 
                 if (sexSelect) {
                     sexSelect.addEventListener('change', updateExampleImages);
@@ -938,6 +1041,35 @@
                     photos: [],
                 };
 
+                if (isAdminUnlocked()) {
+                    const adminInternalNotes = document.getElementById('admin-notes-internal');
+                    const adminUserNotes = document.getElementById('admin-notes-user');
+                    const tdeeSelect = document.getElementById('admin-tdee-select');
+                    const tdeeKcalInput = document.getElementById('admin-tdee-kcal');
+                    const kcalTargetInput = document.getElementById('admin-kcal-target');
+
+                    const internalNotes = adminInternalNotes ? adminInternalNotes.value.trim() : '';
+                    const userNotes = adminUserNotes ? adminUserNotes.value.trim() : '';
+
+                    if (internalNotes) {
+                        payload.admin_internal_notes = internalNotes;
+                    }
+                    if (userNotes) {
+                        payload.admin_user_notes = userNotes;
+                    }
+
+                    if (tdeeSelect || tdeeKcalInput || kcalTargetInput) {
+                        const manualAdjustments = {
+                            selected_tdee: tdeeSelect && tdeeSelect.value ? tdeeSelect.value : null,
+                            tdee_kcal: tdeeKcalInput && tdeeKcalInput.value ? Number(tdeeKcalInput.value) : null,
+                            kcal_target: kcalTargetInput && kcalTargetInput.value ? Number(kcalTargetInput.value) : null,
+                        };
+                        if (manualAdjustments.selected_tdee || manualAdjustments.tdee_kcal || manualAdjustments.kcal_target) {
+                            payload.manual_adjustments = manualAdjustments;
+                        }
+                    }
+                }
+
                 form.querySelectorAll("[data-measure]").forEach((input) => {
                     const key = input.getAttribute("data-measure");
                     const value = input.value.trim();
@@ -1014,7 +1146,9 @@
                 resultCont.classList.add('d-flex');
 
                 // 1. JSON Raw
-                resultOutput.textContent = JSON.stringify(data, null, 2);
+                if (resultOutput) {
+                    resultOutput.textContent = JSON.stringify(data, null, 2);
+                }
 
                 // 2. Populate Visual Elements
                 const out = data.output || {};
@@ -1074,6 +1208,38 @@
                     }
                 } else {
                     tdeeList.innerHTML = '<li class="text-muted fst-italic">No disponible</li>';
+                }
+
+                if (isAdminUnlocked()) {
+                    const tdeeSelect = document.getElementById('admin-tdee-select');
+                    const tdeeKcalInput = document.getElementById('admin-tdee-kcal');
+                    if (tdeeSelect) {
+                        tdeeSelect.innerHTML = '';
+                        const emptyOpt = document.createElement('option');
+                        emptyOpt.value = '';
+                        emptyOpt.textContent = 'Selecciona...';
+                        tdeeSelect.appendChild(emptyOpt);
+                        if (energy.tdee) {
+                            const labels = {
+                                "sedentary": "Sedentario",
+                                "light": "Ligero (1-3 dias)",
+                                "moderate": "Moderado (3-5 dias)",
+                                "strong": "Fuerte (6-7 dias)",
+                                "very_strong": "Muy fuerte"
+                            };
+                            Object.entries(energy.tdee).forEach(([key, val]) => {
+                                const opt = document.createElement('option');
+                                opt.value = key;
+                                opt.textContent = `${labels[key] || key} - ${val} kcal`;
+                                opt.dataset.kcal = val;
+                                if (energy.selected_activity === key) opt.selected = true;
+                                tdeeSelect.appendChild(opt);
+                            });
+                        }
+                    }
+                    if (tdeeKcalInput && energy.selected_activity && energy.tdee && energy.tdee[energy.selected_activity]) {
+                        tdeeKcalInput.value = energy.tdee[energy.selected_activity];
+                    }
                 }
 
                 // Proportions - Symmetry

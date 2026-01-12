@@ -75,32 +75,58 @@ class BodyAssessmentAgent:
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        from .ai_config import AIConfig, AIProvider
+        
+        self.provider = AIConfig.get_provider()
+        self.model = model or AIConfig.get_model(self.provider)
+        self.api_key = AIConfig.get_api_key(self.provider)
         self.init_error = None
         
         import logging
         logger = logging.getLogger("ai_fitness")
+        self._client = None
 
-        self._use_openai = bool(self.api_key)
-        if self._use_openai:
-            try:
-                from openai import OpenAI  # type: ignore
+        if self.provider == AIProvider.OPENAI:
+            if not self.api_key:
+                self.init_error = "OPENAI_API_KEY missing"
+                logger.warning("BodyAssessmentAgent: OPENAI_API_KEY missing. Fallback to mock.")
+                self.provider = AIProvider.MOCK
+            else:
+                try:
+                    from openai import OpenAI
+                    import httpx
+                    # Fix for "unexpected keyword argument 'proxies'":
+                    # We explicitly create the http_client to bypass OpenAI's internal client creation
+                    # that might be using deprecated args for newer httpx versions.
+                    http_client = httpx.Client()
+                    self._client = OpenAI(api_key=self.api_key, http_client=http_client)
+                    logger.info(f"BodyAssessmentAgent initialized with OpenAI model: {self.model}")
+                except Exception as e:
+                    self.init_error = str(e)
+                    logger.error(f"Failed to initialize OpenAI client: {e}")
+                    self.provider = AIProvider.MOCK
 
-                self._client = OpenAI(api_key=self.api_key)
-                logger.info(f"BodyAssessmentAgent initialized with OpenAI model: {self.model}")
-            except Exception as e:
-                self.init_error = str(e)
-                logger.error(f"Failed to initialize OpenAI client in BodyAssessmentAgent: {e}")
-                self._use_openai = False
-                self._client = None
-        else:
-            self.init_error = "OPENAI_API_KEY missing"
-            logger.warning("BodyAssessmentAgent: OPENAI_API_KEY not found or empty. Using mock.")
-            self._client = None
+        elif self.provider == AIProvider.GEMINI:
+            if not self.api_key:
+                self.init_error = "GEMINI_API_KEY missing"
+                logger.warning("BodyAssessmentAgent: GEMINI_API_KEY missing. Fallback to mock.")
+                self.provider = AIProvider.MOCK
+            else:
+                try:
+                    import google.generativeai as genai
+                    genai.configure(api_key=self.api_key)
+                    self._client = genai.GenerativeModel(self.model)
+                    logger.info(f"BodyAssessmentAgent initialized with Gemini model: {self.model}")
+                except Exception as e:
+                    self.init_error = str(e)
+                    logger.error(f"Failed to initialize Gemini client: {e}")
+                    self.provider = AIProvider.MOCK
+        
+        if self.provider == AIProvider.MOCK:
+            logger.info("BodyAssessmentAgent using Mock backend.")
 
     def backend(self) -> str:
-        return f"openai:{self.model}" if self._use_openai else "mock"
+        return f"{self.provider.value}:{self.model}" if self.provider else "mock"
 
     def run(self, context: Dict[str, Any], images: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         import logging
@@ -160,16 +186,27 @@ class BodyAssessmentAgent:
         # ------------------------------------------------------------------
         # 2. Execution
         # ------------------------------------------------------------------
-        if self._use_openai:
-            try:
+        # ------------------------------------------------------------------
+        # 2. Execution
+        # ------------------------------------------------------------------
+        from .ai_config import AIProvider
+        
+        try:
+            if self.provider == AIProvider.OPENAI:
                 if images:
                     result = self._run_openai_vision(prompt, images)
                 else:
                     result = self._run_openai(prompt)
-            except Exception:
+            elif self.provider == AIProvider.GEMINI:
+                if images:
+                    result = self._run_gemini_vision(prompt, images)
+                else:
+                    result = self._run_gemini(prompt)
+            else:
                 result = self._run_mock(context)
-        else:
-             result = self._run_mock(context)
+        except Exception as e:
+            logger.error(f"Agent execution failed for provider {self.provider}: {e}")
+            result = self._run_mock({"_fallback_reason": f"provider_error: {str(e)}"})
         
         # ------------------------------------------------------------------
         # 3. Post-Process & Overwrite
@@ -301,6 +338,57 @@ class BodyAssessmentAgent:
             logger = logging.getLogger("ai_fitness")
             logger.error(f"BodyAssessmentAgent OpenAI VISION call failed: {e}", exc_info=True)
             return self._run_mock({"_fallback_reason": f"openai_vision_error: {str(e)}"})
+
+    def _run_gemini(self, prompt: str) -> Dict[str, Any]:
+        try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(f"[AgentRun] BodyAssessmentAgent gemini call | model={self.model}")
+            
+            # Gemini usually expects text prompt. Configure generation config for JSON.
+            generation_config = {"response_mime_type": "application/json"}
+            
+            # Since self._client is a GenerativeModel instance
+            resp = self._client.generate_content(prompt, generation_config=generation_config)
+            content = resp.text
+            
+            logger.info(f"[AgentRun] BodyAssessmentAgent gemini success | content_len={len(content)}")
+            return self._parse_json_content(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"BodyAssessmentAgent Gemini call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"gemini_error: {str(e)}"})
+
+    def _run_gemini_vision(self, prompt: str, images: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Llama a Gemini con multimodal."""
+        try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(f"[AgentRun] BodyAssessmentAgent gemini vision call | model={self.model} images={len(images)}")
+            
+            inputs = [prompt]
+            for img in images[:8]:
+                data_b64 = img.get("data")
+                mime = img.get("mime") or "image/jpeg"
+                if data_b64:
+                    # Construct part for Gemini
+                    # google-generativeai expects a dict like {'mime_type':..., 'data':...}
+                    # or pure PIL image. Since we have b64, let's format it for the library.
+                    image_blob = {"mime_type": mime, "data": data_b64}
+                    inputs.append(image_blob)
+            
+            generation_config = {"response_mime_type": "application/json"}
+            resp = self._client.generate_content(inputs, generation_config=generation_config)
+            content = resp.text
+            
+            logger.info(f"[AgentRun] BodyAssessmentAgent gemini vision success | content_len={len(content)}")
+            return self._parse_json_content(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"BodyAssessmentAgent Gemini VISION call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"gemini_vision_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
         import logging

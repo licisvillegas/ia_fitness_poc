@@ -10,14 +10,20 @@
 <div class="row align-items-center mb-4">
     <div class="col-lg-8">
         <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-project-diagram me-2"></i>Mapa Muscular</h2>
-        <p class="text-secondary mb-0">Selecciona un musculo para ver informacion rapida y enfocarte en el grupo.</p>
+        <p class="text-secondary mb-2">Selecciona un musculo para ver informacion rapida y enfocarte en el grupo.</p>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+            <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click</div>
+            <div class="info-pill active-pill"><i class="fas fa-highlighter me-1"></i>Activo</div>
+            <div class="info-pill hover-pill"><i class="fas fa-wave-square me-1"></i>Hover</div>
+        </div>
     </div>
 </div>
 
 <div class="row g-4">
     <div class="col-lg-10 col-xl-8 mx-auto">
         <div class="card bg-panel border-0 shadow-sm h-100">
-            <div class="card-header border-secondary text-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div
+                class="card-header border-secondary text-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="fas fa-map text-cyber-blue"></i>
                     Mapa muscular
@@ -41,400 +47,508 @@
                     <i class="fas fa-undo"></i>
                 </button>
             </div>
-            <div class="card-body">
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="front-panel" role="tabpanel"
-                        aria-labelledby="front-tab">
-                        <div class="body-map-container body-map-front">
-                            <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular">
-                        <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
-                            class="body-outline" style="opacity: 0;" />
+            <div class="card-body p-0">
+                <div class="row g-0 h-100">
+                    <div class="col-md-7 border-end border-secondary border-opacity-25 relative-position">
+                        <div class="tab-content p-3">
+                            <div class="tab-pane fade show active" id="front-panel" role="tabpanel"
+                                aria-labelledby="front-tab">
+                                <div class="body-map-container body-map-front">
+                                    <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg"
+                                        aria-label="Mapa muscular">
+                                        <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
+                                            class="body-outline" style="opacity: 0;" />
 
-                        <g id="front-view">
-                            <path id="pecs-left" class="muscle" data-name="Pectorales"
-                                d="M250 145 L250 205 Q210 210 175 170 Q180 145 250 145 Z" />
-                            <path id="pecs-right" class="muscle" data-name="Pectorales"
-                                d="M250 145 L250 205 Q290 210 325 170 Q320 145 250 145 Z" />
+                                        <g id="front-view">
+                                            <path id="pecs-left" class="muscle" data-name="Pectorales"
+                                                d="M250 145 L250 205 Q210 210 175 170 Q180 145 250 145 Z" />
+                                            <path id="pecs-right" class="muscle" data-name="Pectorales"
+                                                d="M250 145 L250 205 Q290 210 325 170 Q320 145 250 145 Z" />
 
-                            <path id="delts-left" class="muscle" data-name="Hombros"
-                                d="M175 130 Q155 135 150 160 Q165 185 178 175 L175 130 Z" />
-                            <path id="delts-right" class="muscle" data-name="Hombros"
-                                d="M325 130 Q345 135 350 160 Q335 185 322 175 L325 130 Z" />
+                                            <path id="delts-left" class="muscle" data-name="Hombros"
+                                                d="M175 130 Q155 135 150 160 Q165 185 178 175 L175 130 Z" />
+                                            <path id="delts-right" class="muscle" data-name="Hombros"
+                                                d="M325 130 Q345 135 350 160 Q335 185 322 175 L325 130 Z" />
 
-                            <path id="traps-left" class="muscle" data-name="Trapecios"
-                                d="M210 110 L250 145 L175 145 Q190 120 210 110 Z" />
-                            <path id="traps-right" class="muscle" data-name="Trapecios"
-                                d="M290 110 L250 145 L325 145 Q310 120 290 110 Z" />
+                                            <path id="traps-left" class="muscle" data-name="Trapecios"
+                                                d="M210 110 L250 145 L175 145 Q190 120 210 110 Z" />
+                                            <path id="traps-right" class="muscle" data-name="Trapecios"
+                                                d="M290 110 L250 145 L325 145 Q310 120 290 110 Z" />
 
-                            <path id="biceps-left" class="muscle" data-name="Biceps"
-                                d="M150 175 Q140 200 155 225 Q170 210 165 180 Z" />
-                            <path id="biceps-right" class="muscle" data-name="Biceps"
-                                d="M350 175 Q360 200 345 225 Q330 210 335 180 Z" />
+                                            <path id="biceps-left" class="muscle" data-name="Biceps"
+                                                d="M150 175 Q140 200 155 225 Q170 210 165 180 Z" />
+                                            <path id="biceps-right" class="muscle" data-name="Biceps"
+                                                d="M350 175 Q360 200 345 225 Q330 210 335 180 Z" />
 
-                            <path id="forearms-left" class="muscle" data-name="Antebrazos"
-                                d="M140 255 L130 310 Q145 320 155 300 L150 255 Z" />
-                            <path id="forearms-right" class="muscle" data-name="Antebrazos"
-                                d="M360 255 L370 310 Q355 320 345 300 L350 255 Z" />
+                                            <path id="forearms-left" class="muscle" data-name="Antebrazos"
+                                                d="M140 255 L130 310 Q145 320 155 300 L150 255 Z" />
+                                            <path id="forearms-right" class="muscle" data-name="Antebrazos"
+                                                d="M360 255 L370 310 Q355 320 345 300 L350 255 Z" />
 
-                            <path id="abs" class="muscle" data-name="Abdominales"
-                                d="M220 205 L280 205 L270 320 L230 320 Z" />
+                                            <path id="abs" class="muscle" data-name="Abdominales"
+                                                d="M220 205 L280 205 L270 320 L230 320 Z" />
 
-                            <path id="obliques-left" class="muscle" data-name="Oblicuos"
-                                d="M190 205 L220 210 L230 320 L205 310 Z" />
-                            <path id="obliques-right" class="muscle" data-name="Oblicuos"
-                                d="M310 205 L280 210 L270 320 L295 310 Z" />
+                                            <path id="obliques-left" class="muscle" data-name="Oblicuos"
+                                                d="M190 205 L220 210 L230 320 L205 310 Z" />
+                                            <path id="obliques-right" class="muscle" data-name="Oblicuos"
+                                                d="M310 205 L280 210 L270 320 L295 310 Z" />
 
-                            <path id="quads-left" class="muscle" data-name="Cuadriceps"
-                                d="M175 350 L215 350 L210 450 L185 450 Q165 400 175 350 Z" />
-                            <path id="quads-right" class="muscle" data-name="Cuadriceps"
-                                d="M325 350 L285 350 L290 450 L315 450 Q335 400 325 350 Z" />
+                                            <path id="quads-left" class="muscle" data-name="Cuadriceps"
+                                                d="M175 350 L215 350 L210 450 L185 450 Q165 400 175 350 Z" />
+                                            <path id="quads-right" class="muscle" data-name="Cuadriceps"
+                                                d="M325 350 L285 350 L290 450 L315 450 Q335 400 325 350 Z" />
 
-                            <path id="calves-left" class="muscle" data-name="Gemelos"
-                                d="M175 508 Q165 538 175 578 Q195 558 190 508 Z" />
-                            <path id="calves-right" class="muscle" data-name="Gemelos"
-                                d="M325 508 Q335 538 325 578 Q305 558 310 508 Z" />
-                        </g>
-                            </svg>
+                                            <path id="calves-left" class="muscle" data-name="Gemelos"
+                                                d="M175 508 Q165 538 175 578 Q195 558 190 508 Z" />
+                                            <path id="calves-right" class="muscle" data-name="Gemelos"
+                                                d="M325 508 Q335 538 325 578 Q305 558 310 508 Z" />
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="back-panel" role="tabpanel" aria-labelledby="back-tab">
+                                <div class="body-map-container body-map-back">
+                                    <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg"
+                                        aria-label="Mapa muscular posterior">
+                                        <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
+                                            class="body-outline" style="opacity: 0;" />
+
+                                        <g id="back-view">
+                                            <path id="traps-back" class="muscle" data-name="Trapecios"
+                                                d="M220 110 L280 110 L310 145 L250 190 L190 145 Z" />
+
+                                            <path id="delts-back-left" class="muscle" data-name="Hombros"
+                                                d="M190 130 L150 140 Q155 165 180 175 L190 130 Z" />
+                                            <path id="delts-back-right" class="muscle" data-name="Hombros"
+                                                d="M310 130 L350 140 Q345 165 320 175 L310 130 Z" />
+
+                                            <path id="lats-back-left" class="muscle" data-name="Dorsal ancho"
+                                                d="M195 155 L250 200 L242 260 L195 245 Q175 200 195 155 Z" />
+                                            <path id="lats-back-right" class="muscle" data-name="Dorsal ancho"
+                                                d="M305 155 L250 200 L258 260 L305 245 Q325 200 305 155 Z" />
+
+                                            <path id="lower-back" class="muscle" data-name="Lumbares"
+                                                d="M240 260 L260 260 L260 300 L240 300 Z" />
+
+                                            <path id="triceps-back-left" class="muscle" data-name="Triceps"
+                                                d="M165 190 L175 190 L170 240 L150 230 Z" />
+                                            <path id="triceps-back-right" class="muscle" data-name="Triceps"
+                                                d="M335 190 L325 190 L330 240 L350 230 Z" />
+
+                                            <path id="forearms-back-left" class="muscle" data-name="Antebrazos"
+                                                d="M150 260 L140 320 L160 310 Z" />
+                                            <path id="forearms-back-right" class="muscle" data-name="Antebrazos"
+                                                d="M350 260 L360 320 L340 310 Z" />
+
+                                            <path id="glutes-left" class="muscle" data-name="Gluteos"
+                                                d="M195 300 L240 300 L240 370 Q195 360 195 300 Z" />
+                                            <path id="glutes-right" class="muscle" data-name="Gluteos"
+                                                d="M305 300 L260 300 L260 370 Q305 360 305 300 Z" />
+
+                                            <path id="hamstrings-left" class="muscle" data-name="Isquiotibiales"
+                                                d="M180 385 L215 385 L210 470 L185 470 Z" />
+                                            <path id="hamstrings-right" class="muscle" data-name="Isquiotibiales"
+                                                d="M320 385 L285 385 L290 470 L315 470 Z" />
+
+                                            <path id="calves-back-left" class="muscle" data-name="Gemelos"
+                                                d="M185 520 L210 520 Q205 560 190 570 L185 520 Z" />
+                                            <path id="calves-back-right" class="muscle" data-name="Gemelos"
+                                                d="M315 520 L290 520 Q295 560 310 570 L315 520 Z" />
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade" id="back-panel" role="tabpanel" aria-labelledby="back-tab">
-                        <div class="body-map-container body-map-back">
-                            <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular posterior">
-                        <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
-                            class="body-outline" style="opacity: 0;" />
 
-                        <g id="back-view">
-                            <path id="traps-back" class="muscle" data-name="Trapecios"
-                                d="M220 110 L280 110 L310 145 L250 190 L190 145 Z" />
+                    <!-- Info Panel (Right Side) -->
+                    <div class="col-md-5 p-3 d-flex flex-column justify-content-center bg-panel-soft">
+                        <div class="info-integrated text-center">
+                            <div class="info-label mb-2">Musculo seleccionado</div>
+                            <div id="muscleName" class="info-title mb-3">Ninguno</div>
 
-                            <path id="delts-back-left" class="muscle" data-name="Hombros"
-                                d="M190 130 L150 140 Q155 165 180 175 L190 130 Z" />
-                            <path id="delts-back-right" class="muscle" data-name="Hombros"
-                                d="M310 130 L350 140 Q345 165 320 175 L310 130 Z" />
+                            <div
+                                class="suggestion-box p-3 rounded-3 border border-secondary border-opacity-25 bg-opacity-10 bg-black">
+                                <div class="text-secondary x-small fw-bold mb-1 text-uppercase text-start"><i
+                                        class="fas fa-lightbulb text-cyber-yellow me-1"></i>Tip Rapido</div>
+                                <div class="suggestion-text small text-start text-white" id="muscleTip">
+                                    Selecciona un musculo para mostrar tips de entrenamiento.
+                                </div>
+                            </div>
 
-                            <path id="lats-back-left" class="muscle" data-name="Dorsal ancho"
-                                d="M195 155 L250 200 L242 260 L195 245 Q175 200 195 155 Z" />
-                            <path id="lats-back-right" class="muscle" data-name="Dorsal ancho"
-                                d="M305 155 L250 200 L258 260 L305 245 Q325 200 305 155 Z" />
-
-                            <path id="lower-back" class="muscle" data-name="Lumbares"
-                                d="M240 260 L260 260 L260 300 L240 300 Z" />
-
-                            <path id="triceps-back-left" class="muscle" data-name="Triceps"
-                                d="M165 190 L175 190 L170 240 L150 230 Z" />
-                            <path id="triceps-back-right" class="muscle" data-name="Triceps"
-                                d="M335 190 L325 190 L330 240 L350 230 Z" />
-
-                            <path id="forearms-back-left" class="muscle" data-name="Antebrazos"
-                                d="M150 260 L140 320 L160 310 Z" />
-                            <path id="forearms-back-right" class="muscle" data-name="Antebrazos"
-                                d="M350 260 L360 320 L340 310 Z" />
-
-                            <path id="glutes-left" class="muscle" data-name="Gluteos"
-                                d="M195 300 L240 300 L240 370 Q195 360 195 300 Z" />
-                            <path id="glutes-right" class="muscle" data-name="Gluteos"
-                                d="M305 300 L260 300 L260 370 Q305 360 305 300 Z" />
-
-                            <path id="hamstrings-left" class="muscle" data-name="Isquiotibiales"
-                                d="M180 385 L215 385 L210 470 L185 470 Z" />
-                            <path id="hamstrings-right" class="muscle" data-name="Isquiotibiales"
-                                d="M320 385 L285 385 L290 470 L315 470 Z" />
-
-                            <path id="calves-back-left" class="muscle" data-name="Gemelos"
-                                d="M185 520 L210 520 Q205 560 190 570 L185 520 Z" />
-                            <path id="calves-back-right" class="muscle" data-name="Gemelos"
-                                d="M315 520 L290 520 Q295 560 310 570 L315 520 Z" />
-                        </g>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-panel mt-4">
-                    <div class="info-label">Musculo seleccionado</div>
-                    <div id="muscleName" class="info-title">Ninguno</div>
-                    <p id="muscleDescription" class="text-secondary small mb-4">
-                        Elige un musculo en el mapa para ver sugerencias y enfoque de entrenamiento.
-                    </p>
-                    <div class="info-hints">
-                        <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click para seleccionar</div>
-                        <div class="info-pill"><i class="fas fa-highlighter me-1"></i>Color activo</div>
-                        <div class="info-pill"><i class="fas fa-wave-square me-1"></i>Hover interactivo</div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="text-secondary small fw-bold mb-2">Sugerencia rapida</div>
-                        <div class="suggestion-card" id="muscleTip">
-                            Selecciona un musculo para mostrar tips de entrenamiento.
+                            <!-- Muscle Image Card -->
+                            <div id="muscleImageCard"
+                                class="muscle-card-mini mt-3 p-2 rounded-3 border border-secondary border-opacity-25 bg-black d-none"
+                                style="cursor: pointer;">
+                                <img id="muscleImage" src="" alt="Musculo" class="img-fluid"
+                                    style="max-height: 100px; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));">
+                                <div class="text-center mt-1"><small class="text-muted" style="font-size: 0.6rem;"><i
+                                            class="fas fa-search-plus me-1"></i>Click para ampliar</small></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<style>
-    .text-cyber-green {
-        color: var(--accent-green);
-        text-shadow: var(--accent-green-glow) 0 0 10px;
-    }
+            <!-- Modal para la imagen del músculo -->
 
-    .text-cyber-blue {
-        color: var(--accent-cyan);
-    }
 
-    .nav-tabs-clean {
-        border-bottom: none;
-    }
+            <style>
+                .text-cyber-green {
+                    color: var(--accent-green);
+                    text-shadow: var(--accent-green-glow) 0 0 10px;
+                }
 
-    .nav-tabs-clean .nav-link {
-        border: 1px solid transparent;
-        color: var(--text-secondary);
-        font-weight: 600;
-        padding: 0.4rem 0.9rem;
-        border-radius: 999px;
-        background: transparent;
-    }
+                .text-cyber-blue {
+                    color: var(--accent-cyan);
+                }
 
-    .nav-tabs-clean .nav-link.active {
-        color: var(--text-main);
-        background: var(--bg-card-hover);
-        border-color: var(--border-color);
-    }
+                .nav-tabs-clean {
+                    border-bottom: none;
+                }
 
-    .btn-icon {
-        width: 38px;
-        height: 38px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        padding: 0;
-    }
+                .nav-tabs-clean .nav-link {
+                    border: 1px solid transparent;
+                    color: var(--text-secondary);
+                    font-weight: 600;
+                    padding: 0.4rem 0.9rem;
+                    border-radius: 999px;
+                    background: transparent;
+                }
 
-    .body-map-container {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 1rem;
-        background: radial-gradient(circle at top, rgba(0, 210, 255, 0.08), transparent 60%);
-        border-radius: 18px;
-        border: 1px dashed var(--border-color);
-        width: 100%;
-        max-width: 520px;
-        aspect-ratio: 2 / 3;
-        min-height: 520px;
-        margin: 0 auto;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: contain;
-    }
+                .nav-tabs-clean .nav-link.active {
+                    color: var(--text-main);
+                    background: var(--bg-card-hover);
+                    border-color: var(--border-color);
+                }
 
-    .body-map-front {
-        background-image: url("/static/images/examples/av1.png");
-    }
+                .btn-icon {
+                    width: 38px;
+                    height: 38px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 999px;
+                    padding: 0;
+                }
 
-    .body-map-back {
-        background-image: url("/static/images/examples/av2.png");
-    }
+                .body-map-container {
+                    position: relative;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 1rem;
+                    background: radial-gradient(circle at top, rgba(0, 210, 255, 0.08), transparent 60%);
+                    border-radius: 18px;
+                    border: 1px dashed var(--border-color);
+                    width: 100%;
+                    max-width: 520px;
+                    aspect-ratio: 2 / 3;
+                    min-height: 520px;
+                    margin: 0 auto;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: contain;
+                }
 
-    svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25));
-    }
+                .body-map-front {
+                    background-image: url("/static/images/examples/av1.png");
+                }
 
-    .body-map-front svg {
-        transform: translateY(-8px) scale(1.02);
-        transform-origin: center;
-    }
+                .body-map-back {
+                    background-image: url("/static/images/examples/av2.png");
+                }
 
-    .body-map-back svg {
-        transform: translateY(-22px) scale(1.02);
-        transform-origin: center;
-    }
+                svg {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25));
+                }
 
-    .body-outline {
-        fill: rgba(148, 163, 184, 0.15);
-        stroke: var(--border-color);
-        stroke-width: 2;
-    }
+                .body-map-front svg {
+                    transform: translateY(-8px) scale(1.02);
+                    transform-origin: center;
+                }
 
-    .muscle {
-        fill: rgba(148, 163, 184, 0.5);
-        stroke: #6b7280;
-        stroke-width: 1;
-        transition: all 0.25s ease;
-        cursor: pointer;
-    }
+                .body-map-back svg {
+                    transform: translateY(-22px) scale(1.02);
+                    transform-origin: center;
+                }
 
-    .muscle:hover {
-        fill: rgba(0, 210, 255, 0.6);
-        stroke: #00d2ff;
-        transform: scale(1.01);
-        filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.5));
-    }
+                .body-outline {
+                    fill: rgba(148, 163, 184, 0.15);
+                    stroke: var(--border-color);
+                    stroke-width: 2;
+                }
 
-    .muscle.active {
-        fill: rgba(239, 68, 68, 0.8);
-        stroke: #ef4444;
-        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
-    }
+                .muscle {
+                    fill: rgba(148, 163, 184, 0.5);
+                    stroke: #6b7280;
+                    stroke-width: 1;
+                    transition: all 0.25s ease;
+                    cursor: pointer;
+                }
 
-    .muscle-tooltip {
-        position: fixed;
-        top: 0;
-        left: 0;
-        transform: translate(-50%, -120%);
-        background: rgba(15, 23, 42, 0.9);
-        color: #f8fafc;
-        padding: 0.35rem 0.6rem;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        letter-spacing: 0.02em;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.15s ease;
-        z-index: 2000;
-    }
+                .muscle:hover {
+                    fill: rgba(0, 210, 255, 0.6);
+                    stroke: #00d2ff;
+                    transform: scale(1.01);
+                    filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.5));
+                }
 
-    .muscle-tooltip.show {
-        opacity: 1;
-    }
+                .muscle.active {
+                    fill: rgba(239, 68, 68, 0.8);
+                    stroke: #ef4444;
+                    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+                }
 
-    .info-panel {
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
-        background: var(--bg-card);
-    }
+                .muscle-tooltip {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    transform: translate(-50%, -120%);
+                    background: rgba(15, 23, 42, 0.9);
+                    color: #f8fafc;
+                    padding: 0.35rem 0.6rem;
+                    border-radius: 8px;
+                    font-size: 0.75rem;
+                    letter-spacing: 0.02em;
+                    border: 1px solid rgba(148, 163, 184, 0.35);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.15s ease;
+                    z-index: 2000;
+                }
 
-    .info-label {
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        margin-bottom: 0.5rem;
-    }
+                .muscle-tooltip.show {
+                    opacity: 1;
+                }
 
-    .info-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 0.5rem;
-    }
+                .info-panel {
+                    border: 1px solid var(--border-color);
+                    border-radius: 16px;
+                    padding: 1.5rem;
+                    background: var(--bg-card);
+                }
 
-    .info-hints {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
+                .info-label {
+                    font-size: 0.75rem;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    color: var(--text-muted);
+                    margin-bottom: 0.5rem;
+                }
 
-    .info-pill {
-        background: var(--bg-card-hover);
-        border: 1px solid var(--border-color);
-        border-radius: 999px;
-        padding: 0.35rem 0.75rem;
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-    }
+                .info-title {
+                    font-size: 2rem;
+                    font-weight: 700;
+                    color: var(--text-main);
+                    margin-bottom: 0.5rem;
+                }
 
-    .suggestion-card {
-        background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(0, 255, 157, 0.15));
-        border: 1px solid rgba(0, 210, 255, 0.3);
-        border-radius: 12px;
-        padding: 1rem;
-        color: var(--text-main);
-        font-size: 0.9rem;
-    }
+                .info-hints {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                }
 
-    @media (max-width: 768px) {
-        .body-map-container {
-            min-height: 420px;
-        }
+                .info-pill {
+                    border: 1px solid var(--border-color);
+                    border-radius: 999px;
+                    padding: 0.15rem 0.5rem;
+                    font-size: 0.65rem;
+                    background: rgba(0, 0, 0, 0.2);
+                    color: var(--text-secondary);
+                    font-weight: 500;
+                    display: inline-flex;
+                    align-items: center;
+                }
 
-        .info-title {
-            font-size: 1.5rem;
-        }
-    }
-</style>
+                .active-pill {
+                    color: #ef4444;
+                    border-color: #ef4444;
+                    background: rgba(239, 68, 68, 0.1);
+                }
 
-<script>
-    const muscles = document.querySelectorAll(".muscle");
-    const muscleName = document.getElementById("muscleName");
-    const muscleDescription = document.getElementById("muscleDescription");
-    const muscleTip = document.getElementById("muscleTip");
-    const clearBtn = document.getElementById("clearSelection");
+                .hover-pill {
+                    color: #00d2ff;
+                    border-color: #00d2ff;
+                    background: rgba(0, 210, 255, 0.1);
+                }
 
-    const muscleTips = {
-        "Pectorales": "Prueba press de banca e inclinados para activar el pecho completo.",
-        "Hombros": "Incluye press militar y elevaciones laterales para volumen.",
-        "Biceps": "Combina curl con barra y curl martillo para variedad.",
-        "Abdominales": "Alterna planchas con crunches controlados.",
-        "Cuadriceps": "Sentadillas y prensa son claves para fuerza frontal.",
-        "Trapecios": "Encogimientos y remo al menton ayudan a activar trapecios.",
-        "Oblicuos": "Twists y planchas laterales son ideales para oblicuos.",
-        "Antebrazos": "Farmer walks y curls inversos fortalecen el agarre.",
-        "Gemelos": "Elevaciones de talon ayudan a fortalecer los gemelos.",
-        "Gluteos": "Hip thrust y sentadillas profundas activan gluteos.",
-        "Dorsal ancho": "Dominadas y remos son fundamentales para la amplitud.",
-        "Lumbares": "Hiperextensiones y peso muerto fortalecen la zona baja.",
-        "Isquiotibiales": "Peso muerto rumano y curl femoral para la parte posterior.",
-        "Triceps": "Fondos y extensiones de polea para dar tamano al brazo."
-    };
+                .bg-panel-soft {
+                    background: rgba(255, 255, 255, 0.02);
+                }
 
-    function clearSelection() {
-        muscles.forEach(m => m.classList.remove("active"));
-        muscleName.textContent = "Ninguno";
-        muscleDescription.textContent = "Elige un musculo en el mapa para ver sugerencias y enfoque de entrenamiento.";
-        muscleTip.textContent = "Selecciona un musculo para mostrar tips de entrenamiento.";
-    }
+                .x-small {
+                    font-size: 0.65rem;
+                }
 
-    const tooltip = document.createElement("div");
-    tooltip.className = "muscle-tooltip";
-    document.body.appendChild(tooltip);
+                .suggestion-card {
+                    background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(0, 255, 157, 0.15));
+                    border: 1px solid rgba(0, 210, 255, 0.3);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    color: var(--text-main);
+                    font-size: 0.9rem;
+                }
 
-    function showTooltip(name, event) {
-        tooltip.textContent = name;
-        tooltip.style.left = `${event.clientX}px`;
-        tooltip.style.top = `${event.clientY}px`;
-        tooltip.classList.add("show");
-    }
+                @media (max-width: 768px) {
+                    .body-map-container {
+                        min-height: 420px;
+                    }
 
-    function moveTooltip(event) {
-        tooltip.style.left = `${event.clientX}px`;
-        tooltip.style.top = `${event.clientY}px`;
-    }
+                    .info-title {
+                        font-size: 1.5rem;
+                    }
+                }
+            </style>
 
-    function hideTooltip() {
-        tooltip.classList.remove("show");
-    }
+            <script>
+                const muscles = document.querySelectorAll(".muscle");
+                const muscleName = document.getElementById("muscleName");
+                // const muscleDescription ... (removed)
+                const muscleTip = document.getElementById("muscleTip");
+                const muscleImageCard = document.getElementById("muscleImageCard");
+                const muscleImage = document.getElementById("muscleImage");
+                const clearBtn = document.getElementById("clearSelection");
 
-    muscles.forEach(muscle => {
-        const nameAttr = muscle.getAttribute("data-name");
-        muscle.addEventListener("click", () => {
-            muscles.forEach(m => m.classList.remove("active"));
-            const name = muscle.getAttribute("data-name") || "Musculo";
-            document.querySelectorAll(`.muscle[data-name="${name}"]`).forEach(m => {
-                m.classList.add("active");
-            });
-            muscleName.textContent = name;
-            muscleDescription.textContent = `Seleccionaste ${name}. Puedes filtrar tus entrenamientos por este grupo.`;
-            muscleTip.textContent = muscleTips[name] || "Explora ejercicios enfocados en este musculo.";
-        });
+                const muscleImages = {
+                    "Pectorales": "pec.png",
+                    "Hombros": "hom.png",
+                    "Trapecios": "esp.png",
+                    "Dorsal ancho": "esp.png",
+                    "Lumbares": "esp.png",
+                    "Biceps": "bic.png",
+                    "Triceps": "tri.png",
+                    "Antebrazos": "ant.png",
+                    "Abdominales": "abs.png",
+                    "Oblicuos": "abs.png",
+                    "Cuadriceps": "cua.png",
+                    "Gemelos": "gem.png",
+                    "Gluteos": "glu.png",
+                    "Isquiotibiales": "isq.png"
+                };
 
-        if (nameAttr) {
-            muscle.addEventListener("mouseenter", (event) => showTooltip(nameAttr, event));
-            muscle.addEventListener("mousemove", moveTooltip);
-            muscle.addEventListener("mouseleave", hideTooltip);
-        }
-    });
+                const muscleTips = {
+                    "Pectorales": "Prueba press de banca e inclinados para activar el pecho completo.",
+                    "Hombros": "Incluye press militar y elevaciones laterales para volumen.",
+                    "Biceps": "Combina curl con barra y curl martillo para variedad.",
+                    "Abdominales": "Alterna planchas con crunches controlados.",
+                    "Cuadriceps": "Sentadillas y prensa son claves para fuerza frontal.",
+                    "Trapecios": "Encogimientos y remo al menton ayudan a activar trapecios.",
+                    "Oblicuos": "Twists y planchas laterales son ideales para oblicuos.",
+                    "Antebrazos": "Farmer walks y curls inversos fortalecen el agarre.",
+                    "Gemelos": "Elevaciones de talon ayudan a fortalecer los gemelos.",
+                    "Gluteos": "Hip thrust y sentadillas profundas activan gluteos.",
+                    "Dorsal ancho": "Dominadas y remos son fundamentales para la amplitud.",
+                    "Lumbares": "Hiperextensiones y peso muerto fortalecen la zona baja.",
+                    "Isquiotibiales": "Peso muerto rumano y curl femoral para la parte posterior.",
+                    "Triceps": "Fondos y extensiones de polea para dar tamano al brazo."
+                };
 
-    clearBtn?.addEventListener("click", clearSelection);
-</script>
-{% endblock %}
+                function clearSelection() {
+                    muscles.forEach(m => m.classList.remove("active"));
+                    muscleName.textContent = "Ninguno";
+                    // muscleDescription removed from DOM
+                    muscleTip.textContent = "Selecciona un musculo para mostrar tips de entrenamiento.";
+                    muscleImageCard.classList.add("d-none");
+                }
+
+                const tooltip = document.createElement("div");
+                tooltip.className = "muscle-tooltip";
+                document.body.appendChild(tooltip);
+
+                function showTooltip(name, event) {
+                    tooltip.textContent = name;
+                    tooltip.style.left = `${event.clientX}px`;
+                    tooltip.style.top = `${event.clientY}px`;
+                    tooltip.classList.add("show");
+                }
+
+                function moveTooltip(event) {
+                    tooltip.style.left = `${event.clientX}px`;
+                    tooltip.style.top = `${event.clientY}px`;
+                }
+
+                function hideTooltip() {
+                    tooltip.classList.remove("show");
+                }
+
+                muscles.forEach(muscle => {
+                    const nameAttr = muscle.getAttribute("data-name");
+                    muscle.addEventListener("click", () => {
+                        muscles.forEach(m => m.classList.remove("active"));
+                        const name = muscle.getAttribute("data-name") || "Musculo";
+                        document.querySelectorAll(`.muscle[data-name="${name}"]`).forEach(m => {
+                            m.classList.add("active");
+                        });
+                        muscleName.textContent = name;
+                        // muscleDescription.textContent = `Seleccionaste ${name}. Puedes filtrar tus entrenamientos por este grupo.`;
+                        muscleTip.textContent = muscleTips[name] || "Explora ejercicios enfocados en este musculo.";
+
+                        // Update Image
+                        if (muscleImages[name]) {
+                            muscleImage.src = `/static/images/muscles/${muscleImages[name]}`;
+                            muscleImageCard.classList.remove("d-none");
+                        } else {
+                            muscleImageCard.classList.add("d-none");
+                        }
+                    });
+
+                    if (nameAttr) {
+                        muscle.addEventListener("mouseenter", (event) => showTooltip(nameAttr, event));
+                        muscle.addEventListener("mousemove", moveTooltip);
+                        muscle.addEventListener("mouseleave", hideTooltip);
+                    }
+                });
+
+                clearBtn?.addEventListener("click", clearSelection);
+
+                // Modal Zoom Logic
+                document.addEventListener('DOMContentLoaded', function () {
+                    const modalElement = document.getElementById('imageModal');
+                    if (modalElement) {
+                        const modalImage = document.getElementById('modalImage');
+                        const modalTitle = document.getElementById('imageModalLabel');
+                        // Ensure bootstrap is available
+                        if (typeof bootstrap !== 'undefined') {
+                            const modal = new bootstrap.Modal(modalElement);
+
+                            if (muscleImageCard && muscleImage) {
+                                muscleImageCard.addEventListener('click', () => {
+                                    const src = muscleImage.src;
+                                    if (src && !muscleImageCard.classList.contains('d-none')) {
+                                        modalImage.src = src;
+                                        modalTitle.textContent = muscleName.textContent;
+                                        modal.show();
+                                    }
+                                });
+                            }
+                        } else {
+                            console.error("Bootstrap not loaded");
+                        }
+                    }
+                });
+            </script>
+
+            <!-- Modal for Fullscreen Image -->
+            <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-fullscreen">
+                    <div class="modal-content bg-dark">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title text-white" id="imageModalLabel"></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                            <img src="" id="modalImage" class="img-fluid"
+                                style="max-height: 90vh; max-width: 90vw; object-fit: contain;" alt="Fullscreen Image">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}

@@ -62,37 +62,57 @@ class ReasoningAgent:
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        from .ai_config import AIConfig, AIProvider
+        
+        self.provider = AIConfig.get_provider()
+        self.model = model or AIConfig.get_model(self.provider)
+        self.api_key = AIConfig.get_api_key(self.provider)
         self.init_error = None
 
         import logging
         logger = logging.getLogger("ai_fitness")
-        
-        self._use_openai = bool(self.api_key)
-        if self._use_openai:
-            try:
-                # Lazy import so the package is optional for tests
-                from openai import OpenAI  # type: ignore
+        self._client = None
 
-                self._client = OpenAI(api_key=self.api_key)
-                logger.info(f"ReasoningAgent initialized with OpenAI model: {self.model}")
-            except Exception as e:
-                # If OpenAI client cannot be initialized, fallback to mock
-                self.init_error = str(e)
-                logger.error(f"Failed to initialize OpenAI client: {e}")
-                self._use_openai = False
-                self._client = None
-        else:
-            self.init_error = "OPENAI_API_KEY missing"
-            logger.warning("ReasoningAgent: OPENAI_API_KEY not found or empty. Using mock.")
-            self._client = None
+        if self.provider == AIProvider.OPENAI:
+            if not self.api_key:
+                self.init_error = "OPENAI_API_KEY missing"
+                logger.warning("ReasoningAgent: OPENAI_API_KEY missing. Fallback to mock.")
+                self.provider = AIProvider.MOCK
+            else:
+                try:
+                    from openai import OpenAI
+                    import httpx
+                    # Explicit http_client to avoid proxies arg error with recent httpx
+                    http_client = httpx.Client()
+                    self._client = OpenAI(api_key=self.api_key, http_client=http_client)
+                    logger.info(f"ReasoningAgent initialized with OpenAI model: {self.model}")
+                except Exception as e:
+                    self.init_error = str(e)
+                    logger.error(f"Failed to initialize OpenAI client: {e}")
+                    self.provider = AIProvider.MOCK
+
+        elif self.provider == AIProvider.GEMINI:
+            if not self.api_key:
+                self.init_error = "GEMINI_API_KEY missing"
+                logger.warning("ReasoningAgent: GEMINI_API_KEY missing. Fallback to mock.")
+                self.provider = AIProvider.MOCK
+            else:
+                try:
+                    import google.generativeai as genai
+                    genai.configure(api_key=self.api_key)
+                    self._client = genai.GenerativeModel(self.model)
+                    logger.info(f"ReasoningAgent initialized with Gemini model: {self.model}")
+                except Exception as e:
+                    self.init_error = str(e)
+                    logger.error(f"Failed to initialize Gemini client: {e}")
+                    self.provider = AIProvider.MOCK
+
+        if self.provider == AIProvider.MOCK:
+            logger.info("ReasoningAgent using Mock backend.")
 
     def backend(self) -> str:
-        """Indica el backend activo: 'openai:<modelo>' o 'mock'."""
-        if self._use_openai:
-            return f"openai:{self.model}"
-        return f"mock ({self.init_error})" if self.init_error else "mock"
+        """Indica el backend activo."""
+        return f"{self.provider.value}:{self.model}" if self.provider else "mock"
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent and return structured JSON as dict.
@@ -112,9 +132,18 @@ class ReasoningAgent:
         context_str = json.dumps(context, ensure_ascii=False)
         prompt = build_reasoning_prompt(context_str)
 
-        if self._use_openai:
-            return self._run_openai(prompt)
-        return self._run_mock(context)
+        from .ai_config import AIProvider
+        
+        try:
+            if self.provider == AIProvider.OPENAI:
+                return self._run_openai(prompt)
+            elif self.provider == AIProvider.GEMINI:
+                return self._run_gemini(prompt)
+            else:
+                return self._run_mock(context)
+        except Exception as e:
+            logger.error(f"Agent execution failed for provider {self.provider}: {e}")
+            return self._run_mock({"_fallback_reason": f"provider_error: {str(e)}"})
 
     # -------------------------
     # Backends
@@ -163,6 +192,42 @@ class ReasoningAgent:
                 f.write(f"[ReasoningAgent] FAIL: {str(e)}\n")
 
             return self._run_mock({"_fallback_reason": f"openai_error: {str(e)}"})
+
+    def _run_gemini(self, prompt: str) -> Dict[str, Any]:
+        try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(f"[AgentRun] ReasoningAgent gemini call | model={self.model}")
+            
+            generation_config = {"response_mime_type": "application/json"}
+            resp = self._client.generate_content(prompt, generation_config=generation_config)
+            content = resp.text
+            
+            logger.info(f"[AgentRun] ReasoningAgent gemini success | content_len={len(content)}")
+            return json.loads(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"ReasoningAgent Gemini call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"gemini_error: {str(e)}"})
+
+    def _run_gemini(self, prompt: str) -> Dict[str, Any]:
+        try:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.info(f"[AgentRun] ReasoningAgent gemini call | model={self.model}")
+            
+            generation_config = {"response_mime_type": "application/json"}
+            resp = self._client.generate_content(prompt, generation_config=generation_config)
+            content = resp.text
+            
+            logger.info(f"[AgentRun] ReasoningAgent gemini success | content_len={len(content)}")
+            return json.loads(content)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("ai_fitness")
+            logger.error(f"ReasoningAgent Gemini call failed: {e}", exc_info=True)
+            return self._run_mock({"_fallback_reason": f"gemini_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Heuristic mock for offline/testing without API calls.

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, render_template
 import os
 import base64
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from bson import ObjectId
 import cloudinary
 import cloudinary.uploader
@@ -14,6 +15,7 @@ from utils.helpers import (
     normalize_measurements, sanitize_photos
 )
 from utils.db_helpers import log_agent_execution
+from utils.auth_helpers import check_admin_access
 
 # Agents
 from ai_agents.reasoning_agent import ReasoningAgent
@@ -31,6 +33,34 @@ cloudinary.config(
 )
 
 ai_bp = Blueprint('ai', __name__)
+
+def _cloudinary_public_id_from_url(url: str):
+    if not url or not isinstance(url, str):
+        return None
+    try:
+        path = urlparse(url).path or ""
+    except Exception:
+        return None
+    if "/upload/" not in path:
+        return None
+    tail = path.split("/upload/", 1)[1].lstrip("/")
+    if not tail:
+        return None
+    parts = tail.split("/")
+    if parts and parts[0].startswith("v") and parts[0][1:].isdigit():
+        parts = parts[1:]
+    else:
+        for idx, part in enumerate(parts):
+            if part.startswith("v") and part[1:].isdigit():
+                parts = parts[idx + 1:]
+                break
+    if not parts:
+        return None
+    last = parts[-1]
+    if "." in last:
+        parts[-1] = last.rsplit(".", 1)[0]
+    public_id = "/".join([p for p in parts if p])
+    return public_id or None
 
 @ai_bp.get("/ai/reason/<user_id>")
 def ai_reason_for_user(user_id: str):
@@ -317,6 +347,47 @@ def get_body_assessment_history(user_id):
     except Exception as e:
         logger.error(f"Error fetching history: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+@ai_bp.delete("/ai/body_assessment/history/<assessment_id>")
+def delete_body_assessment_history(assessment_id):
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+        ok, err = check_admin_access()
+        if not ok:
+            return err
+        try:
+            oid = ObjectId(assessment_id)
+        except Exception:
+            return jsonify({"error": "assessment_id invalido"}), 400
+
+        doc = extensions.db.body_assessments.find_one({"_id": oid})
+        if not doc:
+            return jsonify({"error": "Registro no encontrado"}), 404
+
+        photos = ((doc.get("input") or {}).get("photos") or [])
+        deleted_images = 0
+        if os.getenv("CLOUDINARY_CLOUD_NAME"):
+            for ph in photos:
+                if not isinstance(ph, dict):
+                    continue
+                url = ph.get("url") or ph.get("secure_url")
+                public_id = _cloudinary_public_id_from_url(url)
+                if not public_id:
+                    continue
+                try:
+                    cloudinary.uploader.destroy(public_id, resource_type="image")
+                    deleted_images += 1
+                except Exception as cloud_err:
+                    logger.warning(f"No se pudo borrar imagen Cloudinary {public_id}: {cloud_err}")
+        else:
+            logger.warning("Cloudinary no configurado. No se borraran imagenes.")
+
+        extensions.db.body_assessments.delete_one({"_id": oid})
+        return jsonify({"deleted": True, "deleted_images": deleted_images}), 200
+    except Exception as e:
+        logger.error(f"Error eliminando evaluacion corporal: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al eliminar"}), 500
 
 @ai_bp.post("/api/generate_routine")
 def api_generate_routine():

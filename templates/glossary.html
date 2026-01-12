@@ -438,9 +438,44 @@
                             background-color: #f2f2f2;
                         }
 
-                        .image-zoom-light .btn-close {
-                            filter: none;
-                        }
+        .image-zoom-light .btn-close {
+            filter: none;
+        }
+
+        .image-nav {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 0 1rem;
+        }
+
+        .image-nav button {
+            pointer-events: auto;
+            border: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.45);
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .image-nav button:hover {
+            transform: scale(1.05);
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .image-nav button:disabled {
+            opacity: 0.4;
+            transform: none;
+            cursor: not-allowed;
+        }
                     </style>
                     <div class="row g-4">
                         <!-- Images from static/images/examples -->
@@ -448,42 +483,42 @@
                             <div class="ref-card ref-card-light">
                                 <img src="/static/images/examples/ref3.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 1">
-                                <div class="ref-caption">Guía Visual - Ejemplo 1</div>
+                                <div class="ref-caption">Guía Visual - Perfil H</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card ref-card-light">
                                 <img src="/static/images/examples/ref1.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 2">
-                                <div class="ref-caption">Guía Visual - Ejemplo 2</div>
+                                <div class="ref-caption">Guía Visual - Frente H</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card ref-card-light">
                                 <img src="/static/images/examples/ref2.png" loading="lazy" class="ref-img"
                                     alt="Referencia Visual 3">
-                                <div class="ref-caption">Guía Visual - Ejemplo 3</div>
+                                <div class="ref-caption">Guía Visual - Poterior H</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card">
                                 <img src="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 4">
-                                <div class="ref-caption">Guía Visual - Ejemplo 4</div>
+                                <div class="ref-caption">Guía Visual - Perfil M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card">
                                 <img src="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 5">
-                                <div class="ref-caption">Guía Visual - Ejemplo 5</div>
+                                <div class="ref-caption">Guía Visual - Frente M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card">
                                 <img src="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 6">
-                                <div class="ref-caption">Guía Visual - Ejemplo 6</div>
+                                <div class="ref-caption">Guía Visual - Poterior M</div>
                             </div>
                         </div>
                     </div>
@@ -509,6 +544,14 @@
                 <div class="modal-body d-flex align-items-center justify-content-center p-0">
                     <img src="" id="modalImage" class="img-fluid"
                         style="max-height: 90vh; max-width: 90vw; object-fit: contain;" alt="Fullscreen Image">
+                    <div class="image-nav" id="imageNav">
+                        <button type="button" id="prevImageBtn" aria-label="Anterior">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button type="button" id="nextImageBtn" aria-label="Siguiente">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -543,11 +586,36 @@
 
             // Select both muscle cards and reference cards
             const clickableCards = document.querySelectorAll('.muscle-card, .ref-card');
+            const refImages = Array.from(document.querySelectorAll('.ref-card .ref-img'));
             const modalElement = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             const modalTitle = document.getElementById('imageModalLabel');
+            const nav = document.getElementById('imageNav');
+            const prevBtn = document.getElementById('prevImageBtn');
+            const nextBtn = document.getElementById('nextImageBtn');
             const modal = new bootstrap.Modal(modalElement);
             const isLightZoom = (src) => /\/static\/images\/examples\/ref[123]\.png$/i.test(src || "");
+            let currentRefIndex = -1;
+
+            function updateNav() {
+                if (!nav) return;
+                const hasRef = currentRefIndex >= 0;
+                nav.style.display = hasRef ? "flex" : "none";
+                if (prevBtn) prevBtn.disabled = !hasRef || currentRefIndex === 0;
+                if (nextBtn) nextBtn.disabled = !hasRef || currentRefIndex === refImages.length - 1;
+            }
+
+            function showRefAt(index) {
+                const img = refImages[index];
+                if (!img) return;
+                currentRefIndex = index;
+                modalElement.classList.toggle('image-zoom-light', isLightZoom(img.src));
+                modalImage.src = img.src;
+                modalImage.alt = img.alt;
+                const titleEl = img.closest('.ref-card')?.querySelector('.ref-caption');
+                modalTitle.textContent = titleEl ? titleEl.textContent : '';
+                updateNav();
+            }
 
             clickableCards.forEach(card => {
                 card.style.cursor = 'pointer'; // Ensure cursor indicates clickability
@@ -557,15 +625,33 @@
                     const titleEl = this.querySelector('.muscle-name') || this.querySelector('.ref-caption');
                     const name = titleEl ? titleEl.textContent : '';
 
-                    if (img) {
+                    if (!img) return;
+                    if (this.classList.contains('ref-card')) {
+                        const idx = refImages.indexOf(img);
+                        showRefAt(idx >= 0 ? idx : 0);
+                    } else {
+                        currentRefIndex = -1;
                         modalElement.classList.toggle('image-zoom-light', isLightZoom(img.src));
                         modalImage.src = img.src;
                         modalImage.alt = img.alt;
                         modalTitle.textContent = name;
-                        modal.show();
+                        updateNav();
                     }
+                    modal.show();
                 });
             });
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function () {
+                    if (currentRefIndex > 0) showRefAt(currentRefIndex - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function () {
+                    if (currentRefIndex < refImages.length - 1) showRefAt(currentRefIndex + 1);
+                });
+            }
 
             // Simulated load finish
             setTimeout(() => {

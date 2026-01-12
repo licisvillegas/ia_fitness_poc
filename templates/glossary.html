@@ -501,22 +501,22 @@
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/rf6.png"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 4">
                                 <div class="ref-caption">Guía Visual - Perfil M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/rf4.png"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 5">
                                 <div class="ref-caption">Guía Visual - Frente M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
-                            <div class="ref-card">
-                                <img src="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
+                            <div class="ref-card ref-card-light">
+                                <img src="/static/images/examples/rf5.png"
                                     loading="lazy" class="ref-img" alt="Referencia Visual 6">
                                 <div class="ref-caption">Guía Visual - Poterior M</div>
                             </div>
@@ -594,7 +594,7 @@
             const prevBtn = document.getElementById('prevImageBtn');
             const nextBtn = document.getElementById('nextImageBtn');
             const modal = new bootstrap.Modal(modalElement);
-            const isLightZoom = (src) => /\/static\/images\/examples\/ref[123]\.png$/i.test(src || "");
+            const isLightZoom = (src) => /\/static\/images\/examples\/(ref[123]|rf[456])\.png$/i.test(src || "");
             let currentRefIndex = -1;
 
             function updateNav() {

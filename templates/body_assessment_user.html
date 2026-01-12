@@ -432,19 +432,19 @@
                                             style="scrollbar-width: thin;">
                                             <img src="/static/images/examples/ref1.png"
                                                 data-male="/static/images/examples/ref1.png"
-                                                data-female="/static/images/examples/941d46f8-9cf4-4a2c-aa60-2b47451ed702.jpeg"
+                                                data-female="/static/images/examples/rf4.png"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                                                 alt="Ejemplo 1" onclick="openZoomModal(this.src)">
                                             <img src="/static/images/examples/ref3.png"
                                                 data-male="/static/images/examples/ref3.png"
-                                                data-female="/static/images/examples/46b52abe-32b2-49b4-bd39-a5cc4f235335.jpeg"
+                                                data-female="/static/images/examples/rf6.png"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                                                 alt="Ejemplo 2" onclick="openZoomModal(this.src)">
                                             <img src="/static/images/examples/ref2.png"
                                                 data-male="/static/images/examples/ref2.png"
-                                                data-female="/static/images/examples/cd448a21-e5bc-4d65-a13f-95fbb83b3691.jpeg"
+                                                data-female="/static/images/examples/rf5.png"
                                                 class="rounded border border-secondary example-img"
                                                 style="height: 100px; cursor: pointer; min-width: 100px; object-fit: contain; background-color: #f2f2f2;"
                                                 alt="Ejemplo 3" onclick="openZoomModal(this.src)">
@@ -1127,7 +1127,7 @@
 
             // Global zoom helper
             function isLightZoom(src) {
-                return /\/static\/images\/examples\/ref[123]\.png$/i.test(src || "");
+                return /\/static\/images\/examples\/(ref[123]|rf[456])\.png$/i.test(src || "");
             }
 
             window.openZoomModal = function (src) {

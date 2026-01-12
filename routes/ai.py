@@ -206,10 +206,12 @@ def ai_body_assessment():
                         if os.getenv("CLOUDINARY_CLOUD_NAME"):
                             try:
                                 # Upload toma el file_storage directamente (file-like object)
-                                file_storage.seek(0) 
+                                file_storage.seek(0)
+                                user_folder_id = payload.get("user_id") or "unknown"
+                                date_folder = datetime.now().strftime("%Y%m%d")
                                 upload_result = cloudinary.uploader.upload(
                                     file_storage, 
-                                    folder="ia_fitness/body_assessments",
+                                    folder=f"ia_fitness/body_assessments/{user_folder_id}/{date_folder}",
                                     resource_type="image"
                                 )
                                 secure_url = upload_result.get("secure_url")

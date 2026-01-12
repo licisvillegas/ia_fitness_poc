@@ -46,25 +46,40 @@ def check_user_profile():
 
 def inject_user_role():
     """
-    Context processor para inyectar el rol del usuario en todas las plantillas
+    Context processor para inyectar el rol del usuario y datos básicos (user_data) en todas las plantillas.
+    Esto asegura que la sidebar muestre la imagen de perfil inmediatamente.
     """
     user_id = request.cookies.get("user_session")
     user_role = "guest"
+    user_data = None
     
     if user_id and extensions.db is not None:
         try:
+            # 1. Fetch User Role
             role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
             if role_doc:
                 user_role = role_doc.get("role", "user")
-                logger.info(f"DEBUG ROLE: User {user_id} has role {user_role}")
             else:
                 user_role = "user"
-                logger.info(f"DEBUG ROLE: User {user_id} has no role doc, defaulting to user")
+            
+            # 2. Fetch User Basic Data (Name, Username)
+            user_doc = extensions.db.users.find_one({"user_id": user_id})
+            
+            # 3. Fetch User Profile (Image)
+            profile_doc = extensions.db.user_profiles.find_one({"user_id": user_id})
+            
+            if user_doc or profile_doc:
+                user_data = {
+                    "user_id": user_id,
+                    "name": user_doc.get("name") if user_doc else None,
+                    "username": user_doc.get("username") if user_doc else None,
+                    "email": user_doc.get("email") if user_doc else None,
+                    "profile_image_url": profile_doc.get("profile_image_url") if profile_doc else None
+                }
+                
         except Exception as e:
-            logger.error(f"Error checking role: {e}")
+            logger.error(f"Error checking role/profile context: {e}")
             pass
-    elif extensions.db is None:
-        logger.warning("DEBUG ROLE: DB is None in inject_user_role")
     
     # Check admin context
     is_impersonating = bool(request.cookies.get("admin_origin_session"))
@@ -75,6 +90,7 @@ def inject_user_role():
 
     return dict(
         current_user_role=user_role,
+        user_data=user_data,
         is_impersonating=is_impersonating,
         has_admin_token=has_admin_token
     )

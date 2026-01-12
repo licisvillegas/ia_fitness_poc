@@ -21,9 +21,11 @@
         <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
             style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
             <img id="sidebar-avatar-img" alt="Usuario"
-                style="width: 100%; height: 100%; object-fit: cover; display: none;"
+                src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
+                style="width: 100%; height: 100%; object-fit: cover; {{ 'display: block;' if user_data and user_data.profile_image_url else 'display: none;' }}"
                 data-profile-url="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}">
-            <i id="sidebar-avatar-icon" class="fas fa-user"></i>
+            <i id="sidebar-avatar-icon" class="fas fa-user"
+                style="{{ 'display: none;' if user_data and user_data.profile_image_url else '' }}"></i>
         </div>
         <strong><span id="sidebar-username">{{ user_data.name if user_data and user_data.name else (user_data.username
                 if user_data and user_data.username else 'Usuario') }}</span></strong>
@@ -729,37 +731,36 @@
         };
 
 
-    // Revert Logic
-    const revertModalEl = document.getElementById('revertConfirmModal');
-    const confirmRevertBtn = document.getElementById('confirmRevertBtn');
-    let revertModal = null;
+        // Revert Logic
+        const revertModalEl = document.getElementById('revertConfirmModal');
+        const confirmRevertBtn = document.getElementById('confirmRevertBtn');
+        let revertModal = null;
 
-    if (revertBtn) {
-        revertBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!revertModal && revertModalEl) revertModal = new bootstrap.Modal(revertModalEl);
-            if (revertModal) revertModal.show();
-        });
-    }
+        if (revertBtn) {
+            revertBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!revertModal && revertModalEl) revertModal = new bootstrap.Modal(revertModalEl);
+                if (revertModal) revertModal.show();
+            });
+        }
 
-    if (confirmRevertBtn) {
-        confirmRevertBtn.addEventListener('click', async () => {
-            confirmRevertBtn.disabled = true;
+        if (confirmRevertBtn) {
+            confirmRevertBtn.addEventListener('click', async () => {
+                confirmRevertBtn.disabled = true;
 
-            try {
-                const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
-                const data = await res.json();
+                try {
+                    const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
+                    const data = await res.json();
 
-                if (res.ok) {
-                    localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
-                    localStorage.setItem('ai_fitness_uid', data.user.user_id);
-                    window.location.reload();
-                } else {
-                    alert(data.error || "No se pudo volver a la sesión original.");
-                }
-            } catch (e) { console.error(e); }
-        });
-    }
+                    if (res.ok) {
+                        localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
+                        localStorage.setItem('ai_fitness_uid', data.user.user_id);
+                        window.location.reload();
+                    } else {
+                        alert(data.error || "No se pudo volver a la sesión original.");
+                    }
+                } catch (e) { console.error(e); }
+            });
+        }
     });
 </script>
-

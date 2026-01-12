@@ -59,8 +59,10 @@
         <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
             style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
             <img id="sidebar-admin-avatar-img" alt="Administrador"
-                style="width: 100%; height: 100%; object-fit: cover; display: none;">
-            <i id="sidebar-admin-avatar-icon" class="fas fa-user-shield"></i>
+                src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
+                style="width: 100%; height: 100%; object-fit: cover; {{ 'display: block;' if user_data and user_data.profile_image_url else 'display: none;' }}">
+            <i id="sidebar-admin-avatar-icon" class="fas fa-user-shield"
+                style="{{ 'display: none;' if user_data and user_data.profile_image_url else '' }}"></i>
         </div>
         <strong><span id="sidebar-username">Administrador</span></strong>
     </div>

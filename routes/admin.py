@@ -209,6 +209,33 @@ def list_users():
         logger.error(f"Error listing users: {e}")
         return jsonify({"error": "Error interno"}), 500
 
+@admin_bp.post("/admin/api/update_role")
+def update_user_role():
+    """Actualiza solo el rol de un usuario (Endpoint para admin_privileges.html)."""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        data = request.get_json() or {}
+        user_id = data.get("user_id")
+        new_role = data.get("role")
+
+        if not user_id or not new_role:
+             return jsonify({"error": "Faltan datos (user_id, role)"}), 400
+
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+
+        extensions.db.user_roles.update_one(
+            {"user_id": user_id},
+            {"$set": {"role": new_role}},
+            upsert=True
+        )
+        
+        return jsonify({"message": "Rol actualizado"}), 200
+    except Exception as e:
+        logger.error(f"Error updating role: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
 @admin_bp.post("/admin/api/impersonate")
 def impersonate_user():
     """Permite al admin iniciar sesión como otro usuario."""

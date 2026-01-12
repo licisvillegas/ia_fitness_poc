@@ -12,15 +12,10 @@
         <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-project-diagram me-2"></i>Mapa Muscular</h2>
         <p class="text-secondary mb-0">Selecciona un musculo para ver informacion rapida y enfocarte en el grupo.</p>
     </div>
-    <div class="col-lg-4 d-flex justify-content-lg-end mt-3 mt-lg-0">
-        <button class="btn btn-outline-secondary btn-sm" id="clearSelection">
-            <i class="fas fa-undo me-1"></i>Limpiar seleccion
-        </button>
-    </div>
 </div>
 
 <div class="row g-4">
-    <div class="col-lg-7">
+    <div class="col-lg-10 col-xl-8 mx-auto">
         <div class="card bg-panel border-0 shadow-sm h-100">
             <div class="card-header border-secondary text-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div class="d-flex align-items-center gap-2">
@@ -42,6 +37,9 @@
                         </button>
                     </li>
                 </ul>
+                <button class="btn btn-outline-secondary btn-sm btn-icon" id="clearSelection" title="Limpiar seleccion">
+                    <i class="fas fa-undo"></i>
+                </button>
             </div>
             <div class="card-body">
                 <div class="tab-content">
@@ -151,18 +149,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="col-lg-5">
-        <div class="card bg-panel border-0 shadow-sm h-100">
-            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
-                <i class="fas fa-info-circle text-cyber-green"></i>
-                Panel de informacion
-            </div>
-            <div class="card-body">
-                <div class="info-panel">
+                <div class="info-panel mt-4">
                     <div class="info-label">Musculo seleccionado</div>
                     <div id="muscleName" class="info-title">Ninguno</div>
                     <p id="muscleDescription" class="text-secondary small mb-4">
@@ -173,11 +161,11 @@
                         <div class="info-pill"><i class="fas fa-highlighter me-1"></i>Color activo</div>
                         <div class="info-pill"><i class="fas fa-wave-square me-1"></i>Hover interactivo</div>
                     </div>
-                </div>
-                <div class="mt-4">
-                    <div class="text-secondary small fw-bold mb-2">Sugerencia rapida</div>
-                    <div class="suggestion-card" id="muscleTip">
-                        Selecciona un musculo para mostrar tips de entrenamiento.
+                    <div class="mt-4">
+                        <div class="text-secondary small fw-bold mb-2">Sugerencia rapida</div>
+                        <div class="suggestion-card" id="muscleTip">
+                            Selecciona un musculo para mostrar tips de entrenamiento.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -212,6 +200,16 @@
         color: var(--text-main);
         background: var(--bg-card-hover);
         border-color: var(--border-color);
+    }
+
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0;
     }
 
     .body-map-container {

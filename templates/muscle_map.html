@@ -43,13 +43,22 @@
                         </button>
                     </li>
                 </ul>
-                <button class="btn btn-outline-secondary btn-sm btn-icon" id="clearSelection" title="Limpiar seleccion">
-                    <i class="fas fa-undo"></i>
-                </button>
+                </ul>
             </div>
             <div class="card-body p-0">
                 <div class="row g-0 h-100">
-                    <div class="col-md-7 border-end border-secondary border-opacity-25 relative-position">
+                    <div class="col-md-7 border-end border-secondary border-opacity-25 relative-position"
+                        style="position: relative;">
+                        <!-- Floating Controls -->
+                        <div class="map-controls">
+                            <button class="btn btn-glass btn-icon mb-2" id="toggleViewBtn" title="Rotar vista">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn btn-glass btn-icon" id="clearSelection" title="Limpiar seleccion">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+
                         <div class="tab-content p-3">
                             <div class="tab-pane fade show active" id="front-panel" role="tabpanel"
                                 aria-labelledby="front-tab">
@@ -288,7 +297,7 @@
                 }
 
                 .muscle {
-                    fill: rgba(148, 163, 184, 0.5);
+                    fill: rgba(148, 163, 184, 0.2);
                     stroke: #6b7280;
                     stroke-width: 1;
                     transition: all 0.25s ease;
@@ -296,7 +305,7 @@
                 }
 
                 .muscle:hover {
-                    fill: rgba(0, 210, 255, 0.6);
+                    fill: rgba(0, 210, 255, 0.4);
                     stroke: #00d2ff;
                     transform: scale(1.01);
                     filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.5));
@@ -400,6 +409,33 @@
                     font-size: 0.9rem;
                 }
 
+                /* Floating Controls */
+                .map-controls {
+                    position: absolute;
+                    top: 1rem;
+                    right: 1rem;
+                    z-index: 10;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .btn-glass {
+                    background: rgba(255, 255, 255, 0.1);
+                    backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: var(--text-main);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    transition: all 0.2s ease;
+                }
+
+                .btn-glass:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-2px);
+                    color: var(--accent-cyan);
+                    border-color: var(--accent-cyan);
+                }
+
                 @media (max-width: 768px) {
                     .body-map-container {
                         min-height: 420px;
@@ -407,6 +443,11 @@
 
                     .info-title {
                         font-size: 1.5rem;
+                    }
+
+                    .map-controls {
+                        top: 0.5rem;
+                        right: 0.5rem;
                     }
                 }
             </style>
@@ -419,6 +460,9 @@
                 const muscleImageCard = document.getElementById("muscleImageCard");
                 const muscleImage = document.getElementById("muscleImage");
                 const clearBtn = document.getElementById("clearSelection");
+                const toggleViewBtn = document.getElementById("toggleViewBtn");
+
+                // ... (muscleImages and muscleTips objects remain the same) ...
 
                 const muscleImages = {
                     "Pectorales": "pec.png",
@@ -457,10 +501,21 @@
                 function clearSelection() {
                     muscles.forEach(m => m.classList.remove("active"));
                     muscleName.textContent = "Ninguno";
-                    // muscleDescription removed from DOM
                     muscleTip.textContent = "Selecciona un musculo para mostrar tips de entrenamiento.";
                     muscleImageCard.classList.add("d-none");
                 }
+
+                // Toggle View Logic
+                toggleViewBtn?.addEventListener("click", () => {
+                    const frontTab = document.getElementById("front-tab");
+                    const backTab = document.getElementById("back-tab");
+
+                    if (frontTab.classList.contains("active")) {
+                        backTab.click(); // Switch to back
+                    } else {
+                        frontTab.click(); // Switch to front
+                    }
+                });
 
                 const tooltip = document.createElement("div");
                 tooltip.className = "muscle-tooltip";

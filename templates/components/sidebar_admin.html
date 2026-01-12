@@ -57,8 +57,10 @@
     <div class="d-flex align-items-center text-theme text-decoration-none mb-3 px-2 py-2 rounded"
         style="background-color: rgba(239, 68, 68, 0.1);">
         <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
-            style="width: 32px; height: 32px; min-width: 32px;">
-            <i class="fas fa-user-shield"></i>
+            style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
+            <img id="sidebar-admin-avatar-img" alt="Administrador"
+                style="width: 100%; height: 100%; object-fit: cover; display: none;">
+            <i id="sidebar-admin-avatar-icon" class="fas fa-user-shield"></i>
         </div>
         <strong><span id="sidebar-username">Administrador</span></strong>
     </div>
@@ -321,6 +323,26 @@
                 }
             });
         });
+
+        // Avatar from profile image if available
+        try {
+            const userJson = localStorage.getItem('ai_fitness_user');
+            const user = userJson ? JSON.parse(userJson) : null;
+            const avatarUrl = user ? user.profile_image_url : '';
+            const avatarImg = document.getElementById('sidebar-admin-avatar-img');
+            const avatarIcon = document.getElementById('sidebar-admin-avatar-icon');
+            if (avatarImg && avatarIcon) {
+                if (avatarUrl) {
+                    avatarImg.src = avatarUrl;
+                    avatarImg.style.display = 'block';
+                    avatarIcon.style.display = 'none';
+                } else {
+                    avatarImg.removeAttribute('src');
+                    avatarImg.style.display = 'none';
+                    avatarIcon.style.display = 'block';
+                }
+            }
+        } catch (e) { }
 
         // Theme Toggle Logic now handled by static/js/theme.js
     });

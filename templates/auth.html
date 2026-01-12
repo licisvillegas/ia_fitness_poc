@@ -257,7 +257,7 @@
                   Correo o usuario
                 </label>
                 <input class="form-control" data-i18n="auth_identifier_ph" id="loginIdentifier"
-                  placeholder="correo@dominio.com o usuario" required="" type="text" />
+                  placeholder="correo@dominio.com o usuario" required="" type="text" autocomplete="username" />
                 <div class="invalid-feedback">
                   Ingresa tu correo o usuario.
                 </div>
@@ -267,7 +267,8 @@
                   Contrase&ntilde;a
                 </label>
                 <input class="form-control" data-i18n="auth_password_ph" id="loginPassword"
-                  placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required="" type="password" />
+                  placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required="" type="password"
+                  autocomplete="current-password" />
                 <div class="invalid-feedback">
                   Ingrese su contrase&ntilde;a.
                 </div>
@@ -297,7 +298,7 @@
                   Nombre
                 </label>
                 <input class="form-control" data-i18n="auth_name_ph" id="regName" placeholder="Tu nombre" required=""
-                  type="text" />
+                  type="text" autocomplete="name" />
                 <div class="invalid-feedback">
                   Ingrese su nombre.
                 </div>
@@ -307,7 +308,7 @@
                   Usuario
                 </label>
                 <input class="form-control" data-i18n="auth_username_ph" id="regUsername" pattern="[a-zA-Z0-9_.-]{3,20}"
-                  placeholder="Nombre de usuario" required="" type="text" />
+                  placeholder="Nombre de usuario" required="" type="text" autocomplete="username" />
                 <div class="invalid-feedback">
                   El usuario debe tener de 3 a 20 caracteres alfanumericos.
                 </div>
@@ -317,7 +318,7 @@
                   Correo electr&oacute;nico
                 </label>
                 <input class="form-control" data-i18n="auth_email_ph" id="regEmail" placeholder="tu@email.com"
-                  required="" type="email" />
+                  required="" type="email" autocomplete="email" />
                 <div class="invalid-feedback">
                   Ingrese un correo v&aacute;lido.
                 </div>
@@ -327,7 +328,7 @@
                   Contrase&ntilde;a
                 </label>
                 <input class="form-control" data-i18n="auth_password_min_ph" id="regPassword" minlength="8"
-                  placeholder="M&iacute;nimo 8 caracteres" required="" type="password" />
+                  placeholder="M&iacute;nimo 8 caracteres" required="" type="password" autocomplete="new-password" />
                 <div class="invalid-feedback">
                   La contrase&ntilde;a debe tener al menos 8 caracteres.
                 </div>
@@ -337,7 +338,7 @@
                   Confirmar contrase&ntilde;a
                 </label>
                 <input class="form-control" data-i18n="auth_password_confirm_ph" id="regPassword2" minlength="8"
-                  placeholder="Repite tu contrase&ntilde;a" required="" type="password" />
+                  placeholder="Repite tu contrase&ntilde;a" required="" type="password" autocomplete="new-password" />
                 <div class="invalid-feedback">
                   Repita su contrase&ntilde;a.
                 </div>

@@ -353,7 +353,7 @@ def get_progress(user_id):
                 r["date"] = r["date"].strftime("%Y-%m-%d") # Use consistent YYYY-MM-DD for charts
             
         if not all_records:
-            return jsonify({"error": "No hay registros de progreso para este usuario"}), 404
+            return jsonify([]), 200
             
         return jsonify(all_records), 200
         

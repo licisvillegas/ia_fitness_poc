@@ -712,8 +712,11 @@
         // 5. Logout
         const logoutBtn = document.getElementById('sidebar-logout');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', function (e) {
+            logoutBtn.addEventListener('click', async function (e) {
                 e.preventDefault();
+                try {
+                    await fetch('/auth/logout', { method: 'POST' });
+                } catch (e) { console.error(e); }
                 localStorage.removeItem('ai_fitness_user');
                 localStorage.removeItem('ai_fitness_uid');
                 sessionStorage.removeItem('admin_unlocked');

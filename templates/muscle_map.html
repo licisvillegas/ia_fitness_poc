@@ -22,13 +22,33 @@
 <div class="row g-4">
     <div class="col-lg-7">
         <div class="card bg-panel border-0 shadow-sm h-100">
-            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
-                <i class="fas fa-map text-cyber-blue"></i>
-                Vista frontal
+            <div class="card-header border-secondary text-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-map text-cyber-blue"></i>
+                    Mapa muscular
+                </div>
+                <ul class="nav nav-tabs nav-tabs-clean" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="front-tab" data-bs-toggle="tab"
+                            data-bs-target="#front-panel" type="button" role="tab" aria-controls="front-panel"
+                            aria-selected="true">
+                            Vista frontal
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="back-tab" data-bs-toggle="tab" data-bs-target="#back-panel"
+                            type="button" role="tab" aria-controls="back-panel" aria-selected="false">
+                            Vista posterior
+                        </button>
+                    </li>
+                </ul>
             </div>
             <div class="card-body">
-                <div class="body-map-container body-map-front">
-                    <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="front-panel" role="tabpanel"
+                        aria-labelledby="front-tab">
+                        <div class="body-map-container body-map-front">
+                            <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular">
                         <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
                             class="body-outline" style="opacity: 0;" />
 
@@ -76,52 +96,12 @@
                             <path id="calves-right" class="muscle" data-name="Gemelos"
                                 d="M325 508 Q335 538 325 578 Q305 558 310 508 Z" />
                         </g>
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-5">
-        <div class="card bg-panel border-0 shadow-sm h-100">
-            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
-                <i class="fas fa-info-circle text-cyber-green"></i>
-                Panel de informacion
-            </div>
-            <div class="card-body">
-                <div class="info-panel">
-                    <div class="info-label">Musculo seleccionado</div>
-                    <div id="muscleName" class="info-title">Ninguno</div>
-                    <p id="muscleDescription" class="text-secondary small mb-4">
-                        Elige un musculo en el mapa para ver sugerencias y enfoque de entrenamiento.
-                    </p>
-                    <div class="info-hints">
-                        <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click para seleccionar</div>
-                        <div class="info-pill"><i class="fas fa-highlighter me-1"></i>Color activo</div>
-                        <div class="info-pill"><i class="fas fa-wave-square me-1"></i>Hover interactivo</div>
+                            </svg>
+                        </div>
                     </div>
-                </div>
-                <div class="mt-4">
-                    <div class="text-secondary small fw-bold mb-2">Sugerencia rapida</div>
-                    <div class="suggestion-card" id="muscleTip">
-                        Selecciona un musculo para mostrar tips de entrenamiento.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mt-1">
-    <div class="col-lg-7">
-        <div class="card bg-panel border-0 shadow-sm h-100">
-            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
-                <i class="fas fa-map text-cyber-orange"></i>
-                Vista posterior
-            </div>
-            <div class="card-body">
-                <div class="body-map-container body-map-back">
-                    <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular posterior">
+                    <div class="tab-pane fade" id="back-panel" role="tabpanel" aria-labelledby="back-tab">
+                        <div class="body-map-container body-map-back">
+                            <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa muscular posterior">
                         <path d="M150 70 Q250 10 350 70 L400 160 L370 540 L130 540 L100 160 Z"
                             class="body-outline" style="opacity: 0;" />
 
@@ -167,7 +147,38 @@
                             <path id="calves-back-right" class="muscle" data-name="Gemelos"
                                 d="M315 520 L290 520 Q295 560 310 570 L315 520 Z" />
                         </g>
-                    </svg>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card bg-panel border-0 shadow-sm h-100">
+            <div class="card-header border-secondary text-white fw-bold d-flex align-items-center gap-2">
+                <i class="fas fa-info-circle text-cyber-green"></i>
+                Panel de informacion
+            </div>
+            <div class="card-body">
+                <div class="info-panel">
+                    <div class="info-label">Musculo seleccionado</div>
+                    <div id="muscleName" class="info-title">Ninguno</div>
+                    <p id="muscleDescription" class="text-secondary small mb-4">
+                        Elige un musculo en el mapa para ver sugerencias y enfoque de entrenamiento.
+                    </p>
+                    <div class="info-hints">
+                        <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click para seleccionar</div>
+                        <div class="info-pill"><i class="fas fa-highlighter me-1"></i>Color activo</div>
+                        <div class="info-pill"><i class="fas fa-wave-square me-1"></i>Hover interactivo</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="text-secondary small fw-bold mb-2">Sugerencia rapida</div>
+                    <div class="suggestion-card" id="muscleTip">
+                        Selecciona un musculo para mostrar tips de entrenamiento.
+                    </div>
                 </div>
             </div>
         </div>
@@ -182,6 +193,25 @@
 
     .text-cyber-blue {
         color: var(--accent-cyan);
+    }
+
+    .nav-tabs-clean {
+        border-bottom: none;
+    }
+
+    .nav-tabs-clean .nav-link {
+        border: 1px solid transparent;
+        color: var(--text-secondary);
+        font-weight: 600;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: transparent;
+    }
+
+    .nav-tabs-clean .nav-link.active {
+        color: var(--text-main);
+        background: var(--bg-card-hover);
+        border-color: var(--border-color);
     }
 
     .body-map-container {

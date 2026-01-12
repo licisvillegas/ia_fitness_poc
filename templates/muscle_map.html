@@ -284,6 +284,29 @@
         filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
     }
 
+    .muscle-tooltip {
+        position: fixed;
+        top: 0;
+        left: 0;
+        transform: translate(-50%, -120%);
+        background: rgba(15, 23, 42, 0.9);
+        color: #f8fafc;
+        padding: 0.35rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+        z-index: 2000;
+    }
+
+    .muscle-tooltip.show {
+        opacity: 1;
+    }
+
     .info-panel {
         border: 1px solid var(--border-color);
         border-radius: 16px;
@@ -372,7 +395,28 @@
         muscleTip.textContent = "Selecciona un musculo para mostrar tips de entrenamiento.";
     }
 
+    const tooltip = document.createElement("div");
+    tooltip.className = "muscle-tooltip";
+    document.body.appendChild(tooltip);
+
+    function showTooltip(name, event) {
+        tooltip.textContent = name;
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY}px`;
+        tooltip.classList.add("show");
+    }
+
+    function moveTooltip(event) {
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY}px`;
+    }
+
+    function hideTooltip() {
+        tooltip.classList.remove("show");
+    }
+
     muscles.forEach(muscle => {
+        const nameAttr = muscle.getAttribute("data-name");
         muscle.addEventListener("click", () => {
             muscles.forEach(m => m.classList.remove("active"));
             const name = muscle.getAttribute("data-name") || "Musculo";
@@ -383,6 +427,12 @@
             muscleDescription.textContent = `Seleccionaste ${name}. Puedes filtrar tus entrenamientos por este grupo.`;
             muscleTip.textContent = muscleTips[name] || "Explora ejercicios enfocados en este musculo.";
         });
+
+        if (nameAttr) {
+            muscle.addEventListener("mouseenter", (event) => showTooltip(nameAttr, event));
+            muscle.addEventListener("mousemove", moveTooltip);
+            muscle.addEventListener("mouseleave", hideTooltip);
+        }
     });
 
     clearBtn?.addEventListener("click", clearSelection);

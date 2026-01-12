@@ -64,7 +64,7 @@
         padding-top: 0 !important;
     }
 
-    .main-content > main.container {
+    .main-content>main.container {
         max-width: 100% !important;
         padding: 0 !important;
     }
@@ -2086,7 +2086,7 @@
         );
     };
 
-    const InputControls = ({ step, compact = false }) => {
+    const InputControls = ({ step, compact = false, hideRPE = false }) => {
         const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise } = useWorkout();
         // Local state for inputs so we can edit before committing
         const [weight, setWeight] = useState(step.target.weight || '');
@@ -2324,49 +2324,49 @@
                                     </button>
                                 </div>
                             </div>
-                              <div className="d-flex align-items-center justify-content-center gap-1">
-                                  <button
-                                      className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                      type="button"
-                                      onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
-                                  >-</button>
-                                  <div className="position-relative">
-                                      <input
-                                          key={`weight_${step.id}`}
-                                          type="text"
-                                          inputMode="decimal"
-                                          pattern="[0-9]*[.,]?[0-9]*"
-                                          ref={weightInputRef}
-                                          className="form-control input-hud text-center p-0"
-                                          value={weight}
-                                          onChange={e => setWeight(e.target.value)}
-                                          placeholder="0"
-                                          onClick={(e) => e.target.select()}
-                                          onFocus={() => setShowTapHint(false)}
-                                          autoFocus={!compact && step.type === 'work' && !step.isTimeBased && !step.target?.time}
-                                      />
-                                      {showTapHint && (
-                                          <button
-                                              type="button"
-                                              className="tap-hint-overlay"
-                                              onClick={() => {
-                                                  if (weightInputRef.current) {
-                                                      weightInputRef.current.focus();
-                                                      weightInputRef.current.select();
-                                                      setShowTapHint(false);
-                                                  }
-                                              }}
-                                          >
-                                              Tocar para editar
-                                          </button>
-                                      )}
-                                  </div>
-                                  <button
-                                      className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
-                                      type="button"
-                                      onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
-                                  >+</button>
-                              </div>
+                            <div className="d-flex align-items-center justify-content-center gap-1">
+                                <button
+                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                    type="button"
+                                    onClick={() => adjustWeight(unit === 'lb' ? -5 : -2.5)}
+                                >-</button>
+                                <div className="position-relative">
+                                    <input
+                                        key={`weight_${step.id}`}
+                                        type="text"
+                                        inputMode="decimal"
+                                        pattern="[0-9]*[.,]?[0-9]*"
+                                        ref={weightInputRef}
+                                        className="form-control input-hud text-center p-0"
+                                        value={weight}
+                                        onChange={e => setWeight(e.target.value)}
+                                        placeholder="0"
+                                        onClick={(e) => e.target.select()}
+                                        onFocus={() => setShowTapHint(false)}
+                                        autoFocus={!compact && step.type === 'work' && !step.isTimeBased && !step.target?.time}
+                                    />
+                                    {showTapHint && (
+                                        <button
+                                            type="button"
+                                            className="tap-hint-overlay"
+                                            onClick={() => {
+                                                if (weightInputRef.current) {
+                                                    weightInputRef.current.focus();
+                                                    weightInputRef.current.select();
+                                                    setShowTapHint(false);
+                                                }
+                                            }}
+                                        >
+                                            Tocar para editar
+                                        </button>
+                                    )}
+                                </div>
+                                <button
+                                    className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
+                                    type="button"
+                                    onClick={() => adjustWeight(unit === 'lb' ? 5 : 2.5)}
+                                >+</button>
+                            </div>
                             <div className="text-center text-muted small mt-1" style={{ fontSize: '0.7rem' }}>
                                 {equivalentText}
                             </div>
@@ -2402,7 +2402,7 @@
                     </div>
                 </div>
 
-                {!compact && (
+                {!compact && !hideRPE && (
                     <div className="mb-3">
                         <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
                         <div className="d-flex justify-content-center gap-1">
@@ -2630,15 +2630,15 @@
                             {currentStep.isTimeBased && (
                                 <div className="text-secondary small mt-1">Tiempo objetivo: {Math.round((currentStep.target?.time || 0) / 60)} min</div>
                             )}
-                            {!currentStep.isTimeBased && currentStep.target?.reps && (
-                                <div className="text-secondary small mt-1">Reps objetivo: {currentStep.target.reps}</div>
+                            {currentStep.isTimeBased && (
+                                <div className="text-secondary small mt-1">Tiempo objetivo: {Math.round((currentStep.target?.time || 0) / 60)} min</div>
                             )}
                         </div>
                         <div className="flex-grow-1 d-flex flex-column justify-content-center">
                             {currentStep.isTimeBased ? (
                                 <TimerControls step={currentStep} />
                             ) : (
-                                <InputControls key={currentStep.id} step={currentStep} compact />
+                                <InputControls key={currentStep.id} step={currentStep} hideRPE />
                             )}
                         </div>
                     </div>

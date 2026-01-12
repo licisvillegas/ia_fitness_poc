@@ -1,10 +1,21 @@
 from flask import Blueprint, request, jsonify, render_template
 from datetime import datetime
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
+import cloudinary
+import cloudinary.uploader
 import extensions
 from extensions import logger
 from utils.auth_helpers import ensure_user_status
 from utils.helpers import parse_birth_date
+
+# Configuracion Cloudinary (perfil)
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 user_bp = Blueprint('user', __name__)
 
@@ -75,6 +86,7 @@ def profile_page():
                         "sex": p.get("sex"),
                         "birth_date": bdate,
                         "phone": p.get("phone"),
+                        "profile_image_url": p.get("profile_image_url"),
                         "has_profile": True
                     })
                 else:
@@ -170,6 +182,56 @@ def api_user_profile_save():
 
     except Exception as e:
         logger.error(f"Error guardando perfil usuario: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+@user_bp.post("/api/user/profile/image")
+def api_user_profile_image():
+    """Sube la imagen de perfil del usuario y guarda la URL."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autenticado"}), 401
+
+        if not os.getenv("CLOUDINARY_CLOUD_NAME"):
+            return jsonify({"error": "Cloudinary no configurado"}), 503
+
+        if "image" not in request.files:
+            return jsonify({"error": "Falta el archivo de imagen"}), 400
+
+        file_storage = request.files.get("image")
+        if not file_storage or not file_storage.filename:
+            return jsonify({"error": "Archivo de imagen invalido"}), 400
+
+        if not (file_storage.mimetype or "").startswith("image/"):
+            return jsonify({"error": "Formato de imagen invalido"}), 400
+
+        folder = f"ia_fitness/profile/user/{user_id}"
+        upload_result = cloudinary.uploader.upload(
+            file_storage,
+            folder=folder,
+            resource_type="image"
+        )
+        secure_url = upload_result.get("secure_url")
+        if not secure_url:
+            return jsonify({"error": "No se pudo subir la imagen"}), 500
+
+        if extensions.db is not None:
+            extensions.db.user_profiles.update_one(
+                {"user_id": user_id},
+                {
+                    "$set": {
+                        "profile_image_url": secure_url,
+                        "updated_at": datetime.utcnow()
+                    },
+                    "$setOnInsert": {"created_at": datetime.utcnow(), "user_id": user_id}
+                },
+                upsert=True,
+            )
+
+        return jsonify({"message": "Imagen actualizada", "profile_image_url": secure_url}), 200
+
+    except Exception as e:
+        logger.error(f"Error subiendo imagen de perfil: {e}", exc_info=True)
         return jsonify({"error": "Error interno"}), 500
 
 @user_bp.route("/get_user_plan/<user_id>", methods=["GET"])

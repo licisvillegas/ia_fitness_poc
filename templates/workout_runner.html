@@ -393,6 +393,33 @@
         padding: 16px;
     }
 
+    .pending-tabs {
+        display: flex;
+        gap: 10px;
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--border-color);
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .pending-tab {
+        flex: 1;
+        padding: 8px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .pending-tab.active {
+        color: var(--text-main);
+        border-bottom-color: var(--cyber-green);
+        background: rgba(0, 230, 118, 0.05);
+    }
+
     .plate-modal {
         background: var(--bg-body);
         border: 1px solid var(--border-color);
@@ -1126,6 +1153,7 @@
         const [showCompletionIcon, setShowCompletionIcon] = useState(false);
         const [showCountdown, setShowCountdown] = useState(false);
         const [countdownValue, setCountdownValue] = useState(3);
+        const [unit, setUnit] = useState('lb');
 
 
         // Timers
@@ -1453,36 +1481,52 @@
         }, []);
 
         const logSet = (data) => {
-            const exerciseId = currentStep.exercise?.exercise_id || currentStep.exercise?._id || currentStep.exercise?.id;
-            const exerciseName = currentStep.exercise?.exercise_name || currentStep.exercise?.name;
-            const exerciseType = currentStep.exercise?.exercise_type || currentStep.exercise?.type;
+            const step = currentStep;
+            logSpecificStep(step, data, true);
+        };
+
+        const logSpecificStep = (step, data, isMeasured = false) => {
+            if (!step || !step.exercise) return;
+            const exerciseId = step.exercise.exercise_id || step.exercise._id || step.exercise.id;
+            const exerciseName = step.exercise.exercise_name || step.exercise.name;
+            const exerciseType = step.exercise.exercise_type || step.exercise.type;
+
+            // Normalize weight to KG for database
+            let finalWeight = parseFloat(data.weight) || 0;
+            const dataUnit = data.unit || unit;
+            if (dataUnit === 'lb') {
+                finalWeight = finalWeight / 2.20462;
+            }
+
             const resolvedTime = data.time_seconds != null
                 ? data.time_seconds
-                : (currentStep.isTimeBased ? currentStep.target?.time : null);
-            const baseLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
-            const newLog = [...baseLog, {
-                stepId: currentStep.id,
+                : (step.isTimeBased ? step.target?.time : null);
+
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+
+            // Avoid duplicates for same stepId
+            if (currentLog.some(l => l.stepId === step.id)) return;
+
+            const newLog = [...currentLog, {
+                stepId: step.id,
                 exerciseId,
                 exercise_id: exerciseId,
                 name: exerciseName,
                 exercise_type: exerciseType,
-                weight: 0,
-                reps: 0,
-                ...data,
-                duration_seconds: (Date.now() - startTimeRef.current) / 1000,
+                weight: finalWeight.toFixed(1),
+                reps: data.reps || 0,
+                rpe: data.rpe || 8,
+                duration_seconds: isMeasured ? (Date.now() - startTimeRef.current) / 1000 : 0,
                 ...(resolvedTime != null ? { time_seconds: resolvedTime } : {}),
                 timestamp: new Date()
             }];
 
             setSessionLog(newLog);
-            sessionLogRef.current = newLog; // Immediate update
-
-            // Sync Progress
+            sessionLogRef.current = newLog;
             syncProgress(cursor, newLog);
         };
 
         const syncProgress = async (idx, log) => {
-            // Debounce or just fire? Fire for now, robustness.
             try {
                 await fetch("/workout/api/session/progress", {
                     method: "POST",
@@ -1490,35 +1534,30 @@
                     body: JSON.stringify({
                         routine_id: routine.id,
                         cursor: idx,
-                        session_log: log || sessionLogRef.current // Use arg or ref
+                        session_log: log || sessionLogRef.current
                     })
                 });
             } catch (e) { console.error("Sync error", e); }
         };
 
+        const isStepLogged = (stepId, log) => {
+            const currentLog = log || (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            return currentLog.some(l => l.stepId === stepId);
+        };
+
         const next = () => {
             console.log("DEBUG: Next called. Cursor:", cursor, "QueueLen:", queue.length);
 
-            // AUTO-LOG CHECK: If moving away from a WORK step that hasn't been logged, log it now.
             if (currentStep && currentStep.type === 'work') {
                 const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
-                const alreadyLogged = currentLog.some(l => l.stepId === currentStep.id);
-                if (!alreadyLogged) {
-                    console.log("DEBUG: Auto-logging skipped/done work step:", currentStep.id);
-                    // Use target time or elapsed time? 
-                    // If isTimeBased, probably use target if manually done "as complete", or elapsed. 
-                    // Let's use target time if available, else 0.
+                if (!isStepLogged(currentStep.id, currentLog)) {
+                    console.log("DEBUG: Auto-logging current step:", currentStep.id);
                     const fallbackTime = currentStep.isTimeBased ? currentStep.target.time : 0;
                     logSet({
                         time_seconds: fallbackTime,
                         weight: 0,
                         reps: 0
                     });
-                    // Note: logSet is async state update. next() continues below. 
-                    // We need to pass the *updated* log to syncProgress, but we can't get it immediately.
-                    // syncProgress inside next() uses sessionLog closure. 
-                    // We should rely on logSet calling syncProgress internally.
-                    // BUT next() calls syncProgress too. 
                 }
             }
 
@@ -1526,24 +1565,34 @@
                 finishWorkout();
                 return;
             }
-            const nextIdx = cursor + 1;
+
+            let nextIdx = cursor + 1;
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+
+            // Smart skip
+            while (nextIdx < queue.length && (queue[nextIdx].type === 'work' && isStepLogged(queue[nextIdx].id, currentLog))) {
+                console.log("DEBUG: Skipping step:", queue[nextIdx].id);
+                nextIdx++;
+            }
+
+            if (nextIdx >= queue.length) {
+                finishWorkout();
+                return;
+            }
+
             setCursor(nextIdx);
             setIsPaused(false);
+            syncProgress(nextIdx, currentLog);
 
-            // Sync Progress (using current log)
-            syncProgress(nextIdx, (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog);
-
-            // Setup next step state
             const upcoming = queue[nextIdx];
             if (upcoming.type === 'rest') {
                 setStatus('REST');
                 setStepTimer(upcoming.duration);
                 setIsTimerRunning(true);
             } else {
-                // Work Step
                 setStatus('WORK');
                 setStepTimer(upcoming.isTimeBased ? upcoming.target.time : 0);
-                setIsTimerRunning(upcoming.isTimeBased); // Start immediately if timed? User said "Sonar alarma y pasar...". Usually explicit start is safer but for flow dynamic is ok.
+                setIsTimerRunning(upcoming.isTimeBased);
             }
         };
 
@@ -1571,10 +1620,15 @@
 
         const prev = () => {
             if (cursor <= 0) return;
+
             let idx = cursor - 1;
-            while (idx >= 0 && queue[idx].type === 'rest') {
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+
+            // Skip already logged steps when going back
+            while (idx >= 0 && (queue[idx].type === 'rest' || (queue[idx].type === 'work' && isStepLogged(queue[idx].id, currentLog)))) {
                 idx -= 1;
             }
+
             if (idx < 0) return;
             setCursor(idx);
             setIsTimerRunning(false);
@@ -1791,8 +1845,11 @@
             skipRest,
             addRestTime,
             logSet,
-            logSet,
+            logSpecificStep,
+            isStepLogged,
             sessionLog,
+            unit,
+            setUnit,
             sessionLogRef,
             historyMaxByExercise,
             finishWorkout,
@@ -2333,12 +2390,11 @@
     };
 
     const InputControls = ({ step, compact = false, hideRPE = false }) => {
-        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise } = useWorkout();
+        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit } = useWorkout();
         // Local state for inputs so we can edit before committing
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
-        const [unit, setUnit] = useState('lb');
         const [plateModalOpen, setPlateModalOpen] = useState(false);
         const [plateCounts, setPlateCounts] = useState({
             2.5: 0,
@@ -2490,11 +2546,7 @@
         };
 
         const handleSubmit = () => {
-            let finalWeight = parseFloat(weight) || 0;
-            if (unit === 'lb') {
-                finalWeight = finalWeight / 2.20462;
-            }
-            logSet({ weight: finalWeight.toFixed(1), reps, rpe });
+            logSet({ weight, reps, rpe });
             next();
         };
 
@@ -3013,49 +3065,175 @@
     };
 
     const PendingPanel = ({ isOpen, onClose }) => {
-        const { queue, cursor, status } = useWorkout();
+        const { queue, cursor, status, logSpecificStep, isStepLogged, sessionLog, unit } = useWorkout();
+        const [activeTab, setActiveTab] = React.useState('pending');
+        const [expandedStepId, setExpandedStepId] = React.useState(null);
+
+        // Input state for quick log
+        const [weight, setWeight] = React.useState('0');
+        const [reps, setReps] = React.useState('0');
+
         if (status === 'LOADING' || status === 'IDLE' || status === 'FINISHED') return null;
 
-        const pendingSteps = queue.slice(cursor + 1).filter(step => step.type === 'work');
+        const allWorkSteps = queue.filter(step => step.type === 'work');
+        const pendingSteps = allWorkSteps.filter(step => !isStepLogged(step.id));
+        const completedSteps = allWorkSteps.filter(step => isStepLogged(step.id));
+
+        const handleQuickLog = (step) => {
+            logSpecificStep(step, {
+                weight: parseFloat(weight) || 0,
+                reps: reps,
+                unit: unit
+            });
+            setExpandedStepId(null);
+        };
+
+        const toggleExpand = (step) => {
+            if (isStepLogged(step.id)) return;
+            if (expandedStepId === step.id) {
+                setExpandedStepId(null);
+            } else {
+                setExpandedStepId(step.id);
+                setWeight(step.target?.weight || '0');
+                setReps(step.target?.reps || '0');
+            }
+        };
+
+        const formatWeight = (kg) => {
+            if (unit === 'lb') return (parseFloat(kg) * 2.20462).toFixed(1);
+            return parseFloat(kg).toFixed(1);
+        };
 
         return (
             <>
                 <div className={`pending-backdrop ${isOpen ? 'show' : ''}`} onClick={onClose}></div>
                 <div className={`pending-panel ${isOpen ? 'open' : ''}`}>
-                    <div className="pending-panel-header">
-                        <div className="fw-bold text-white">Pendientes</div>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
-                            <i className="fas fa-times"></i>
-                        </button>
+                    <div className="pending-panel-header px-3 pt-3 pb-0 border-bottom-0">
+                        <div className="d-flex justify-content-between align-items-center w-100">
+                            <div className="fw-bold text-white">Seguimiento</div>
+                            <button className="btn btn-sm btn-outline-secondary rounded-circle" onClick={onClose}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div className="pending-panel-body">
-                        {pendingSteps.length === 0 && (
-                            <div className="text-secondary small">No hay ejercicios pendientes.</div>
-                        )}
-                        {pendingSteps.map((step, idx) => {
-                            const ex = step.exercise || {};
-                            const name = ex.exercise_name || ex.name || 'Ejercicio';
-                            const target = step.isTimeBased
-                                ? `${Math.round((step.target?.time || 0))}s`
-                                : (step.target?.reps || '-');
-                            const setsLabel = `${step.setNumber}/${step.totalSets}`;
-                            return (
-                                <div key={`${step.id}_${idx}`} className="border border-secondary rounded p-2 mb-2 bg-black-trans">
-                                    <div className="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div className="text-white fw-bold">{name}</div>
-                                            {step.groupName && (
-                                                <div className="text-cyber-orange small">{step.groupName}</div>
+
+                    <div className="pending-tabs">
+                        <div
+                            id="tab-pending"
+                            className={`pending-tab ${activeTab === 'pending' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('pending')}
+                        >
+                            Pendientes ({pendingSteps.length})
+                        </div>
+                        <div
+                            id="tab-completed"
+                            className={`pending-tab ${activeTab === 'completed' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('completed')}
+                        >
+                            Completados ({completedSteps.length})
+                        </div>
+                    </div>
+
+                    <div className="pending-panel-body p-3">
+                        {activeTab === 'pending' ? (
+                            <>
+                                {pendingSteps.length === 0 && (
+                                    <div className="text-secondary small text-center py-4">No hay ejercicios pendientes.</div>
+                                )}
+                                {pendingSteps.map((step, idx) => {
+                                    const ex = step.exercise || {};
+                                    const name = ex.exercise_name || ex.name || 'Ejercicio';
+                                    const targetVal = step.isTimeBased
+                                        ? `${Math.round((step.target?.time || 0))}s`
+                                        : (step.target?.reps || '-');
+                                    const isExpanded = expandedStepId === step.id;
+
+                                    return (
+                                        <div key={`${step.id}_${idx}`}
+                                            className="border border-secondary rounded p-2 mb-2 bg-black-trans"
+                                            style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                            onClick={() => toggleExpand(step)}
+                                        >
+                                            <div className="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div className="text-white fw-bold">{name}</div>
+                                                    {step.groupName && (
+                                                        <div className="text-cyber-orange small">{step.groupName}</div>
+                                                    )}
+                                                </div>
+                                                <div className="text-secondary small text-end">
+                                                    <div>Serie {step.setNumber}/{step.totalSets}</div>
+                                                    <div>{step.isTimeBased ? `Tiempo ${targetVal}` : `Reps ${targetVal}`}</div>
+                                                </div>
+                                            </div>
+
+                                            {isExpanded && (
+                                                <div className="mt-3 p-2 bg-dark rounded border border-info animate-entry" onClick={e => e.stopPropagation()}>
+                                                    <div className="row g-2 mb-2">
+                                                        <div className="col-6">
+                                                            <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Peso ({unit})</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
+                                                                value={weight}
+                                                                onChange={e => setWeight(e.target.value)}
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                        <div className="col-6">
+                                                            <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Reps</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
+                                                                value={reps}
+                                                                onChange={e => setReps(e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-info btn-sm w-100 fw-bold py-2 shadow-sm"
+                                                        onClick={() => handleQuickLog(step)}
+                                                    >
+                                                        REGISTRAR SERIE
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
-                                        <div className="text-secondary small text-end">
-                                            <div>Serie {setsLabel}</div>
-                                            <div>{step.isTimeBased ? `Tiempo ${target}` : `Reps ${target}`}</div>
+                                    );
+                                })}
+                            </>
+                        ) : (
+                            <>
+                                {completedSteps.length === 0 && (
+                                    <div className="text-secondary small text-center py-4">Aún no has completado ejercicios.</div>
+                                )}
+                                {completedSteps.map((step, idx) => {
+                                    const logEntry = sessionLog.find(l => l.stepId === step.id);
+                                    const ex = step.exercise || {};
+                                    const name = ex.exercise_name || ex.name || 'Ejercicio';
+
+                                    return (
+                                        <div key={`${step.id}_${idx}`} className="border border-success rounded p-2 mb-2 bg-black-trans opacity-75">
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div className="text-white fw-bold d-flex align-items-center gap-2">
+                                                        {name}
+                                                        <i className="fas fa-check-circle text-success small"></i>
+                                                    </div>
+                                                    <div className="text-secondary small">Serie {step.setNumber}/{step.totalSets}</div>
+                                                </div>
+                                                <div className="text-end">
+                                                    <div className="text-success fw-bold" style={{ fontSize: '0.9rem' }}>
+                                                        {logEntry ? `${formatWeight(logEntry.weight)}${unit} x ${logEntry.reps}` : '--'}
+                                                    </div>
+                                                    {logEntry?.rpe && <div className="text-muted small">RPE {logEntry.rpe}</div>}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                    );
+                                })}
+                            </>
+                        )}
                     </div>
                 </div>
             </>

@@ -321,6 +321,29 @@
         margin-bottom: 6px;
     }
 
+    .reps-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* justify-content: flex-end; -- Standard flex behavior (top) is fine for Reps unless forced */
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        /* Remove fixed height for Normal Mode to restore original behavior */
+        min-height: auto;
+    }
+
+    /* Focus Mode Alignment */
+    .focus-mode .reps-header {
+        /* Match the height of the Weight Header (Label + Unit Button) in Focus Mode (~28-30px) */
+        min-height: 28px;
+        justify-content: flex-end;
+    }
+
+    .focus-mode .weight-header {
+        justify-content: flex-end;
+    }
+
     .tap-hint-overlay {
         position: absolute;
         inset: 0;
@@ -338,7 +361,25 @@
     }
 
     .reps-column {
-        padding-top: 44px;
+        /* Button (36px) + Gap (6px) = 42px exactly */
+        padding-top: 42px;
+    }
+
+    /* Focus Mode overrides */
+    .focus-mode .reps-column {
+        padding-top: 0;
+    }
+
+    .focus-mode .reps-header {
+        /* Match height of Weight Header (~28px with button) so inputs start at same line */
+        min-height: 28px;
+        justify-content: flex-end;
+    }
+
+    .focus-mode .weight-header {
+        justify-content: flex-end;
+        min-height: 28px;
+        /* Force match */
     }
 
     .plate-modal-backdrop {
@@ -2309,14 +2350,16 @@
                     {!compact && (
                         <div className="col-6">
                             <div className="weight-header">
-                                <button
-                                    type="button"
-                                    className="plate-icon-btn"
-                                    title="Calculadora de discos"
-                                    onClick={() => setPlateModalOpen(true)}
-                                >
-                                    <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
-                                </button>
+                                {!hideRPE && (
+                                    <button
+                                        type="button"
+                                        className="plate-icon-btn"
+                                        title="Calculadora de discos"
+                                        onClick={() => setPlateModalOpen(true)}
+                                    >
+                                        <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
+                                    </button>
+                                )}
                                 <div className="d-flex align-items-center justify-content-center gap-1">
                                     <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
                                     <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
@@ -2373,9 +2416,11 @@
                         </div>
                     )}
                     <div className={compact ? "col-12" : "col-6 reps-column"}>
-                        <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>
-                            REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
-                        </label>
+                        <div className="reps-header">
+                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>
+                                REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
+                            </label>
+                        </div>
                         <div className="d-flex align-items-center justify-content-center gap-1">
                             <button
                                 className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"

@@ -236,6 +236,11 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
   const isExerciseItem = (item) => item && item.item_type === "exercise";
   const isGroupHeader = (item) => item && item.item_type === "group";
   const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
+  const getExerciseId = (exercise) => {
+    if (!exercise) return null;
+    if (exercise.$oid || exercise.oid) return exercise.$oid || exercise.oid;
+    return exercise.exercise_id || exercise._id || exercise.id || null;
+  };
 
   const groupMetaMap = new Map();
   items.forEach((item) => {
@@ -291,16 +296,28 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
         <div class="text-end text-secondary small">${restSeconds}s</div>
       </div>`;
     }
-    const name = item.exercise_name || item.name || "Ejercicio";
-    const bodyPartLabel = window.translateBodyPart(item.body_part);
-    const sets = item.target_sets || item.sets || 1;
-    const reps = item.target_reps || item.reps || "-";
-    const time = item.target_time_seconds || item.time_seconds || 60;
-    const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
-    const rest = window.getRestSeconds(item);
-    const equipmentMeta = window.getEquipmentMeta(item.equipment);
-    const hasVideo = item.video_url && item.video_url.trim() !== "";
-    const substitutes = window.resolveSubstitutes(item.substitutes || []);
+    const exId = getExerciseId(item.exercise_id) || getExerciseId(item);
+    const baseExercise = exId ? window.exerciseLookup[String(exId)] : null;
+    const ex = baseExercise ? { ...baseExercise, ...item } : item;
+    ["substitutes", "equivalents", "equivalent_exercises"].forEach((field) => {
+      const baseVal = baseExercise ? baseExercise[field] : null;
+      const itemVal = item ? item[field] : null;
+      if (Array.isArray(baseVal) && baseVal.length > 0) {
+        if (!Array.isArray(itemVal) || itemVal.length === 0) {
+          ex[field] = baseVal;
+        }
+      }
+    });
+    const name = ex.exercise_name || ex.name || "Ejercicio";
+    const bodyPartLabel = window.translateBodyPart(ex.body_part);
+    const sets = ex.target_sets || ex.sets || 1;
+    const reps = ex.target_reps || ex.reps || "-";
+    const time = ex.target_time_seconds || ex.time_seconds || 60;
+    const isTime = (ex.exercise_type || ex.type) === "time" || (ex.exercise_type || ex.type) === "cardio";
+    const rest = window.getRestSeconds(ex);
+    const equipmentMeta = window.getEquipmentMeta(ex.equipment);
+    const hasVideo = ex.video_url && ex.video_url.trim() !== "";
+    const substitutes = window.resolveSubstitutes(ex.substitutes || ex.equivalents || ex.equivalent_exercises || []);
     const subsId = `subs_${safeId(routine._id)}_${idxKey}`;
 
     return `<div class="routine-preview-item d-flex justify-content-between align-items-start">
@@ -391,8 +408,16 @@ window.resolveSubstitutes = function resolveSubstitutes(substitutes) {
   if (!Array.isArray(substitutes) || substitutes.length === 0) return [];
   return substitutes
     .map((sub) => {
-      if (typeof sub === "string") return window.exerciseLookup[sub];
-      if (sub && typeof sub === "object") return sub;
+      if (typeof sub === "string" || typeof sub === "number") {
+        return window.exerciseLookup[String(sub)] || null;
+      }
+      if (sub && typeof sub === "object") {
+        const oid = sub.$oid || sub.oid;
+        if (oid) return window.exerciseLookup[String(oid)] || null;
+        const subId = sub._id || sub.exercise_id || sub.id;
+        if (subId != null) return window.exerciseLookup[String(subId)] || sub;
+        return sub;
+      }
       return null;
     })
     .filter(Boolean);

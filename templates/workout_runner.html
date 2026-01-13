@@ -729,7 +729,31 @@
 
     const getExerciseId = (exercise) => {
         if (!exercise) return null;
-        return exercise.exercise_id || exercise._id || exercise.id || null;
+        const raw = exercise.exercise_id || exercise._id || exercise.id || null;
+        if (!raw) return null;
+        if (typeof raw === "object") {
+            return raw.$oid || raw.oid || null;
+        }
+        return raw;
+    };
+
+    const getExerciseWithLookup = (exercise, exerciseLookup) => {
+        if (!exercise) return exercise;
+        const exId = getExerciseId(exercise);
+        if (!exId) return exercise;
+        const fromLookup = exerciseLookup[String(exId)];
+        if (!fromLookup) return exercise;
+        const merged = { ...fromLookup, ...exercise };
+        ["substitutes", "equivalents", "equivalent_exercises"].forEach((field) => {
+            const lookupVal = fromLookup[field];
+            const exerciseVal = exercise[field];
+            if (Array.isArray(lookupVal) && lookupVal.length > 0) {
+                if (!Array.isArray(exerciseVal) || exerciseVal.length === 0) {
+                    merged[field] = lookupVal;
+                }
+            }
+        });
+        return merged;
     };
 
     const mergeExerciseForSwap = (original, substitute) => {
@@ -801,6 +825,7 @@
             const isTime = exType === 'time' || exType === 'cardio' || (hasTimeTarget && !hasRepsTarget);
             queue.push({
                 id: `step_${key}_${setNumber}`,
+                routineItemId: ex._id || ex.id, // Stable ID for RoutineDetails lookup (persists through swaps)
                 type: 'work',
                 exercise: ex,
                 groupName: groupInfo ? groupInfo.name : null,
@@ -999,6 +1024,7 @@
                 }
             });
         }
+
 
         return queue;
     };
@@ -1712,7 +1738,7 @@
     };
 
     const RoutineDetails = ({ routine }) => {
-        const { exerciseLookup } = useWorkout();
+        const { exerciseLookup, applySubstitute, showConfirm, queue } = useWorkout();
         // Collapsed by default: We track EXPANDED groups.
         const [expandedGroups, setExpandedGroups] = useState(new Set());
         const [blocks, setBlocks] = useState([]);
@@ -1835,6 +1861,17 @@
             return acc;
         }, 0);
 
+        // Find the first queue index for a given exercise ID (for swapping)
+        // Find the first queue index for a given exercise ID (for swapping)
+        const findStepIndex = (routineItemId) => {
+            if (!queue || !routineItemId) return -1;
+            return queue.findIndex(step => {
+                if (step.type !== 'work') return false;
+                // Use the stable routineItemId added in buildQueue
+                return String(step.routineItemId) === String(routineItemId);
+            });
+        };
+
         // Helper to render an individual entry
         const renderEntry = (entry, key) => {
             if (entry.type === 'rest') {
@@ -1853,18 +1890,34 @@
                 );
             }
 
-            const ex = entry.data || {};
-            const isTime = (ex.exercise_type || ex.type) === 'time' || (ex.exercise_type || ex.type) === 'cardio';
-            const name = ex.exercise_name || ex.name || "Ejercicio";
-            const bodyPartLabel = translateBodyPart(ex.body_part);
-            const equipmentMeta = getEquipmentMeta(ex.equipment);
-            const hasVideo = ex.video_url && ex.video_url.trim() !== "";
-            const substitutes = resolveSubstitutes(ex.substitutes || [], exerciseLookup);
+            // Original Item Data (Static)
+            const item = entry.data || {};
+            const routineItemId = item._id || item.id;
+
+            // Resolve Dynamic State from Queue
+            // We find the first step corresponding to this routine item to get the *current* exercise (handling swaps)
+            const stepIdx = findStepIndex(routineItemId);
+            const step = stepIdx !== -1 ? queue[stepIdx] : null;
+
+            // Use Step Exercise if available (swapped), else fallback to original item
+            const ex = step ? step.exercise : item;
+            const mergedEx = getExerciseWithLookup(ex, exerciseLookup);
+
+            const isTime = (mergedEx.exercise_type || mergedEx.type) === 'time' || (mergedEx.exercise_type || mergedEx.type) === 'cardio';
+            const name = mergedEx.exercise_name || mergedEx.name || "Ejercicio";
+            const bodyPartLabel = translateBodyPart(mergedEx.body_part);
+            const equipmentMeta = getEquipmentMeta(mergedEx.equipment);
+            const hasVideo = mergedEx.video_url && mergedEx.video_url.trim() !== "";
+            // FIX: Use comprehensive lookup like SubstitutesModal
+            const substitutes = resolveSubstitutes(
+                mergedEx.substitutes || mergedEx.equivalents || mergedEx.equivalent_exercises || [],
+                exerciseLookup
+            );
             const subsId = `subs_${key}`;
-            const sets = ex.target_sets || ex.sets || 1;
-            const reps = ex.target_reps || ex.reps;
-            const time = ex.target_time_seconds || ex.time_seconds;
-            const restSeconds = getRestSeconds(ex);
+            const sets = mergedEx.target_sets || mergedEx.sets || 1;
+            const reps = mergedEx.target_reps || mergedEx.reps;
+            const time = mergedEx.target_time_seconds || mergedEx.time_seconds;
+            const restSeconds = getRestSeconds(mergedEx);
 
             return (
                 <div key={key} className="d-flex justify-content-between align-items-start gap-3">
@@ -1876,7 +1929,7 @@
                                     type="button"
                                     className="btn btn-sm btn-outline-danger"
                                     title="Ver video"
-                                    onClick={() => openVideoModal(ex.video_url)}
+                                    onClick={() => openVideoModal(mergedEx.video_url)}
                                 >
                                     <i className="fab fa-youtube"></i>
                                 </button>
@@ -1888,9 +1941,9 @@
                                 <i className={`${equipmentMeta.icon} me-1`}></i>{equipmentMeta.label}
                             </span>
                         </div>
-                        {(ex.comment || ex.note) && (
+                        {(mergedEx.comment || mergedEx.note) && (
                             <div className="mt-2 text-warning small fst-italic">
-                                <i className="fas fa-sticky-note me-1"></i> {ex.comment || ex.note}
+                                <i className="fas fa-sticky-note me-1"></i> {mergedEx.comment || mergedEx.note}
                             </div>
                         )}
                         {substitutes.length > 0 && (
@@ -1918,16 +1971,38 @@
                                                             <i className={`${subEquipment.icon} me-1`}></i>{subEquipment.label}
                                                         </div>
                                                     </div>
-                                                    {subHasVideo && (
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-sm btn-outline-danger ms-2"
-                                                            title="Ver video"
-                                                            onClick={() => openVideoModal(sub.video_url)}
-                                                        >
-                                                            <i className="fab fa-youtube"></i>
-                                                        </button>
-                                                    )}
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        {subHasVideo && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-outline-danger"
+                                                                title="Ver video"
+                                                                onClick={() => openVideoModal(sub.video_url)}
+                                                            >
+                                                                <i className="fab fa-youtube"></i>
+                                                            </button>
+                                                        )}
+                                                        {stepIdx !== -1 && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-outline-success"
+                                                                title="Usar este ejercicio"
+                                                                onClick={() => {
+                                                                    const subName = sub.exercise_name || sub.name || "Ejercicio";
+                                                                    const subEquip = getEquipmentMeta(sub.equipment).label;
+                                                                    const origEquip = getEquipmentMeta(mergedEx.equipment).label;
+                                                                    showConfirm(
+                                                                        "Confirmar sustituto",
+                                                                        `¿Aplicar "${subName}" (${subEquip}) en lugar de "${name}" (${origEquip}) a todas las series?`,
+                                                                        () => applySubstitute(sub, "remaining", stepIdx),
+                                                                        "warning"
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Usar
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -2015,7 +2090,7 @@
         const step = queue[substituteModal.stepIndex];
         if (!step || step.type !== 'work') return null;
 
-        const ex = step.exercise || {};
+        const ex = getExerciseWithLookup(step.exercise || {}, exerciseLookup);
         const substitutes = resolveSubstitutes(
             ex.substitutes || ex.equivalents || ex.equivalent_exercises || [],
             exerciseLookup
@@ -2652,7 +2727,7 @@
         const { currentStep, exerciseLookup, openSubstituteModal } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
-        const ex = currentStep.exercise || {};
+        const ex = getExerciseWithLookup(currentStep.exercise || {}, exerciseLookup);
         const name = ex.exercise_name || ex.name || 'Ejercicio';
         const bodyPart = translateBodyPart(ex.body_part);
         const hasVideo = ex.video_url && ex.video_url.trim() !== "";
@@ -2977,12 +3052,15 @@
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
         if (status === 'IDLE') return (
-            <PreStart
-                focusMode={focusMode}
-                onToggleFocus={() => setFocusMode(prev => !prev)}
-                showPending={showPending}
-                onTogglePending={() => setShowPending(prev => !prev)}
-            />
+            <>
+                <PreStart
+                    focusMode={focusMode}
+                    onToggleFocus={() => setFocusMode(prev => !prev)}
+                    showPending={showPending}
+                    onTogglePending={() => setShowPending(prev => !prev)}
+                />
+                <ConfirmModal />
+            </>
         );
         if (status === 'FINISHED') return <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success"><h1>¡Entrenamiento Completado!</h1><p>Guardando...</p></div>;
 

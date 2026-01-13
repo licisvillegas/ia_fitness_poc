@@ -1,2 +1,0 @@
-URI: mongodb+srv://1smaelV:fGLlKX8lKwT1SsAa@mongofree.vxtfsny.mongodb.net/?retryWrites=true&w=majority&appName=MongoFree
-DB: ia_fitness_db

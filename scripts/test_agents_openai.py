@@ -29,7 +29,7 @@ try:
 except Exception:
     pass
 
-from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent  # noqa: E402
+from ai_agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent  # noqa: E402
 from ai_agents.reasoning_agent import ReasoningAgent  # noqa: E402
 from ai_agents.body_assessment_agent import BodyAssessmentAgent  # noqa: E402
 from ai_agents.meal_plan_agent import MealPlanAgent  # noqa: E402

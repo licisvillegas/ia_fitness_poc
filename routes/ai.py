@@ -21,7 +21,8 @@ from utils.auth_helpers import check_admin_access
 from ai_agents.reasoning_agent import ReasoningAgent
 from ai_agents.body_assessment_agent import BodyAssessmentAgent
 from ai_agents.routine_agent import RoutineAgent
-from agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
+from ai_agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
+
 from ai_agents.meal_plan_agent import MealPlanAgent # Used in diagnostics
 
 # Configuración Cloudinary

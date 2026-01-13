@@ -640,6 +640,43 @@
             opacity: 1;
         }
     }
+
+    /* Countdown Overlay */
+    .countdown-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .countdown-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .countdown-image {
+        width: 400px;
+        height: 400px;
+        object-fit: contain;
+        margin-bottom: 2rem;
+    }
+
+    .countdown-text {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 5rem;
+        font-weight: bold;
+        color: #00ff9d;
+        text-shadow: 0 0 20px rgba(0, 255, 157, 0.8), 0 0 40px rgba(0, 255, 157, 0.4);
+        letter-spacing: 5px;
+    }
 </style>
 
 
@@ -1087,6 +1124,8 @@
         const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, type: "danger" }); // type: danger | warning | info
         const [substituteModal, setSubstituteModal] = useState({ isOpen: false, stepIndex: null });
         const [showCompletionIcon, setShowCompletionIcon] = useState(false);
+        const [showCountdown, setShowCountdown] = useState(false);
+        const [countdownValue, setCountdownValue] = useState(3);
 
 
         // Timers
@@ -1675,25 +1714,43 @@
         };
 
         const startWorkout = () => {
-            if (!queue.length) return;
-            const step = queue[cursor];
-            setIsPaused(false);
-            if (step.type === 'rest') {
-                setStatus('REST');
-                setStepTimer(step.duration);
-                setIsTimerRunning(true);
-            } else {
-                setStatus('WORK');
-                setStepTimer(step.isTimeBased ? step.target.time : 0);
-                setIsTimerRunning(step.isTimeBased);
-            }
+            if (!queue || queue.length === 0) return;
 
-            // Call API to Lock
+            console.log("Starting countdown...");
+            setCountdownValue(3);
+            setShowCountdown(true);
+
+            // Fetch session start immediately to lock it
             fetch("/workout/api/session/start", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ routine_id: routine.id })
             }).catch(e => console.error("Start session error", e));
+
+            const interval = setInterval(() => {
+                setCountdownValue(prev => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        setShowCountdown(false);
+
+                        console.log("Countdown finished, starting workout...");
+                        // Actual start logic
+                        const step = queueRef.current[cursor]; // Use ref to avoid stale queue
+                        setIsPaused(false);
+                        if (step && step.type === 'rest') {
+                            setStatus('REST');
+                            setStepTimer(step.duration);
+                            setIsTimerRunning(true);
+                        } else if (step) {
+                            setStatus('WORK');
+                            setStepTimer(step.isTimeBased ? step.target.time : 0);
+                            setIsTimerRunning(step.isTimeBased);
+                        }
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
         };
 
         const showConfirm = (title, message, onConfirm, type = "danger") => {
@@ -1754,7 +1811,9 @@
             openSubstituteModal,
             closeSubstituteModal,
             applySubstitute,
-            showCompletionIcon
+            showCompletionIcon,
+            showCountdown,
+            countdownValue
         };
 
 
@@ -3127,7 +3186,7 @@
 
     // --- MAIN APP ---
     const App = () => {
-        const { currentStep, status, queue, cursor, showCompletionIcon } = useWorkout();
+        const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
         const [showPending, setShowPending] = useState(false);
 
@@ -3138,55 +3197,66 @@
             return queue.slice(cursor + 1).find(s => s.type === 'work');
         }, [queue, cursor]);
 
-        console.log("App Status:", status);
-        console.log("App Routine:", window.initialRoutine);
-
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
-        if (status === 'IDLE') return (
-            <>
-                <PreStart
-                    focusMode={focusMode}
-                    onToggleFocus={() => setFocusMode(prev => !prev)}
-                    showPending={showPending}
-                    onTogglePending={() => setShowPending(prev => !prev)}
-                />
-                <ConfirmModal />
-            </>
-        );
-        if (status === 'FINISHED') return <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success"><h1>¡Entrenamiento Completado!</h1><p>Guardando...</p></div>;
 
         return (
-            <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
+            <>
+                {/* Countdown Overlay */}
+                <div className={`countdown-overlay ${showCountdown ? 'show' : ''}`}>
+                    <img src="/static/images/icon/stw.png" alt="Get Ready" className="countdown-image" />
+                    <div className="countdown-text">
+                        00:0{countdownValue}
+                    </div>
+                </div>
+
+                {/* Completion Overlay */}
                 <div className={`completion-overlay ${showCompletionIcon ? 'show' : ''}`}>
                     <img src="/static/images/icon/fw.png" alt="Finished" className="completion-icon" />
                 </div>
-                <Header
-                    focusMode={focusMode}
-                    onToggleFocus={() => setFocusMode(prev => !prev)}
-                    showPending={showPending}
-                    onTogglePending={() => setShowPending(prev => !prev)}
-                />
 
-                <div className="visual-stage">
-                    {!focusMode && <MessageBar />}
-                    {!focusMode && <NextUpBar />}
-                    <NavigationWrapper>
-                        {currentStep && <ActiveExercise focusMode={focusMode} />}
-                    </NavigationWrapper>
-                </div>
+                {status === 'IDLE' ? (
+                    <PreStart
+                        focusMode={focusMode}
+                        onToggleFocus={() => setFocusMode(prev => !prev)}
+                        showPending={showPending}
+                        onTogglePending={() => setShowPending(prev => !prev)}
+                    />
+                ) : status === 'FINISHED' ? (
+                    <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success">
+                        <h1>¡Entrenamiento Completado!</h1>
+                        <p>Guardando...</p>
+                    </div>
+                ) : (
+                    <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
+                        <Header
+                            focusMode={focusMode}
+                            onToggleFocus={() => setFocusMode(prev => !prev)}
+                            showPending={showPending}
+                            onTogglePending={() => setShowPending(prev => !prev)}
+                        />
 
-                {(status === 'WORK' || status === 'REST') && (
-                    <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
+                        <div className="visual-stage">
+                            {!focusMode && <MessageBar />}
+                            {!focusMode && <NextUpBar />}
+                            <NavigationWrapper>
+                                {currentStep && <ActiveExercise focusMode={focusMode} />}
+                            </NavigationWrapper>
+                        </div>
+
+                        {(status === 'WORK' || status === 'REST') && (
+                            <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
+                        )}
+
+                        <RestOverlay
+                            nextStep={nextStep}
+                            showPending={showPending}
+                            onTogglePending={() => setShowPending(prev => !prev)}
+                        />
+                        <SubstitutesModal />
+                        <ConfirmModal />
+                    </div>
                 )}
-
-                <RestOverlay
-                    nextStep={nextStep}
-                    showPending={showPending}
-                    onTogglePending={() => setShowPending(prev => !prev)}
-                />
-                <SubstitutesModal />
-                <ConfirmModal />
-            </div>
+            </>
         );
     };
 

@@ -94,7 +94,10 @@ class RoutineAgent:
         if self._use_openai:
             try:
                 from openai import OpenAI
-                self._client = OpenAI(api_key=self.api_key)
+                import httpx
+                # Fix for proxies arg error
+                http_client = httpx.Client()
+                self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                 logger.info(f"RoutineAgent initialized with OpenAI model: {self.model}")
             except Exception as e:
                 self.init_error = str(e)

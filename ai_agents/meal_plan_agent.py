@@ -102,7 +102,10 @@ class MealPlanAgent:
         if self._use_openai:
             try:
                 from openai import OpenAI
-                self._client = OpenAI(api_key=self.api_key)
+                import httpx
+                # Explicit http_client to avoid proxies arg error with recent httpx
+                http_client = httpx.Client()
+                self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                 logger.info(f"MealPlanAgent initialized with OpenAI model: {self.model}")
             except Exception as e:
                 self.init_error = str(e)
@@ -170,9 +173,9 @@ class MealPlanAgent:
         # Simplificado para v3: Usamos listas de tuplas
         dist_map = {
             3: [(0.35, "Desayuno", "breakfast"), (0.40, "Comida", "main"), (0.25, "Cena", "main")],
-            4: [(0.30, "Desayuno", "breakfast"), (0.35, "Comida", "main"), (0.10, "Merienda", "snack"), (0.25, "Cena", "main")],
-            5: [(0.25, "Desayuno", "breakfast"), (0.10, "Media Mañana", "snack"), (0.35, "Comida", "main"), (0.10, "Merienda", "snack"), (0.20, "Cena", "main")],
-            6: [(0.20, "Desayuno", "breakfast"), (0.10, "Media Mañana", "snack"), (0.30, "Comida", "main"), (0.10, "Merienda", "snack"), (0.20, "Cena", "main"), (0.10, "Recena", "snack")]
+            4: [(0.30, "Desayuno", "breakfast"), (0.35, "Comida", "main"), (0.10, "Snack", "snack"), (0.25, "Cena", "main")],
+            5: [(0.25, "Desayuno", "breakfast"), (0.10, "Snack", "snack"), (0.35, "Comida", "main"), (0.10, "Snack", "snack"), (0.20, "Cena", "main")],
+            6: [(0.20, "Desayuno", "breakfast"), (0.10, "Snack", "snack"), (0.30, "Comida", "main"), (0.10, "Snack", "snack"), (0.20, "Cena", "main"), (0.10, "Recena", "snack")]
         }
         
         selected_config = dist_map.get(n_meals, dist_map[4])

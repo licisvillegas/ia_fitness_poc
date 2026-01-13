@@ -98,7 +98,7 @@
           <div class="card">
             <div class="card-body">
               <div class="mb-3">
-                <label class="form-label">Usuario</label>
+                <label class="form-label text-theme">Usuario</label>
                 <div class="input-group">
                   <input type="text" class="form-control" id="userSearchTerm"
                     placeholder="Buscar: nombre, email o ID...">
@@ -136,20 +136,20 @@
               <hr />
 
               <!-- AI Generator (Collapsible) -->
-              <div class="mb-3 border border-primary rounded p-2 bg-light">
+              <div class="mb-3 border border-primary rounded p-2 bg-card">
                 <div class="d-flex justify-content-between align-items-center cursor-pointer"
                   onclick="document.getElementById('aiGenBody').style.display = document.getElementById('aiGenBody').style.display==='none'?'block':'none'">
                   <strong class="text-primary"><i class="fas fa-robot me-1"></i> Generador AI (Sobreescribir)</strong>
-                  <i class="fas fa-chevron-down text-secondary"></i>
+                  <i class="fas fa-chevron-down text-muted"></i>
                 </div>
                 <div id="aiGenBody" style="display:none; margin-top:10px;">
                   <div class="row g-2">
                     <div class="col-6 col-md-3">
                       <select id="aiMeals" class="form-select form-select-sm">
-                        <option value="3">3 Comidas</option>
-                        <option value="4">4 Comidas</option>
-                        <option value="5">5 Comidas</option>
-                        <option value="6" selected>6 Comidas</option>
+                        <option value="3">3 Comidas (Simplicidad / Ayuno Intermitente)</option>
+                        <option value="4">4 Comidas (Estilo de vida oficina / Mantenimiento)</option>
+                        <option value="5">5 Comidas (Control de ansiedad / Estándar fitness)</option>
+                        <option value="6" selected>6 Comidas (Ganancia muscular / Alto rendimiento)</option>
                       </select>
                     </div>
                     <div class="col-12 col-md-9">
@@ -168,25 +168,32 @@
 
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">Backend</label>
+                  <label class="form-label text-theme">Backend</label>
                   <input id="fBackend" type="text" class="form-control" placeholder="backend" readonly>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Plan ID (vinculado)</label>
+                  <label class="form-label text-theme">Plan ID (vinculado)</label>
                   <input id="fPlanId" type="text" class="form-control" placeholder="plan_id">
                 </div>
 
                 <div class="col-12">
-                  <label class="form-label">Notas</label>
+                  <label class="form-label text-theme">Notas</label>
                   <input id="fNotes" type="text" class="form-control" placeholder="Notas opcionales">
                 </div>
 
                 <div class="col-12 mt-4">
+                  <!-- Input Summary -->
+                  <div id="adminPlanInputSummary" class="d-flex flex-wrap gap-2 mb-3"></div>
+
                   <!-- TABS -->
                   <ul class="nav nav-tabs border-secondary mb-3" id="planTabs" role="tablist">
                     <li class="nav-item">
                       <button class="nav-link active text-theme bg-transparent" id="tab-visual-btn" data-bs-toggle="tab"
                         data-bs-target="#tab-visual" type="button">Vista Previa</button>
+                    </li>
+                    <li class="nav-item">
+                      <button class="nav-link text-theme bg-transparent" id="tab-editor-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-editor" type="button">Editor Visual</button>
                     </li>
                     <li class="nav-item">
                       <button class="nav-link text-theme bg-transparent" id="tab-json-btn" data-bs-toggle="tab"
@@ -201,6 +208,19 @@
                         style="background: var(--bg-panel); min-height: 300px;">
                         <div id="previewContainer">
                           <p class="text-secondary small text-center mt-5">Selecciona un plan para visualizar.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Visual Editor Tab -->
+                    <div class="tab-pane fade" id="tab-editor" role="tabpanel">
+                      <div class="p-3 border border-secondary rounded"
+                        style="background: var(--bg-panel); min-height: 400px;">
+                        <div id="editorContainer"></div>
+                        <div class="mt-3">
+                          <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMealVisual">
+                            <i class="fas fa-plus"></i> Agregar Comida
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -330,6 +350,22 @@
           lastGeneratedInput = null;
           lastGeneratedBackend = null;
           document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
+
+          const inputSum = document.getElementById('adminPlanInputSummary');
+          const inp = p.input || {};
+          if (inp.total_kcal || inp.meals) {
+            inputSum.innerHTML = `
+                 <span class="badge bg-dark text-info border border-info p-2">
+                    <i class="fas fa-fire me-1"></i> Calorías: <strong>${inp.total_kcal || '-'}</strong>
+                 </span>
+                 <span class="badge bg-dark text-success border border-success p-2">
+                    <i class="fas fa-utensils me-1"></i> Comidas: <strong>${inp.meals || '-'}</strong>
+                 </span>
+             `;
+          } else {
+            inputSum.innerHTML = '';
+          }
+
           const badge = document.getElementById('adminPlanActiveBadge');
           badge.style.display = p.active ? 'inline-block' : 'none';
           document.getElementById('fBackend').value = (p.backend ?? '') || '';
@@ -372,14 +408,13 @@
 
               let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
               (m.items || []).forEach(it => {
-                itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-info ms-1">(${it.kcal || '-'} kcal)</span></li>`;
+                itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-warning small mx-1">${it.qty || ''}</span> <span class="text-info">(${it.kcal || '-'} kcal)</span></li>`;
               });
               itemsHtml += '</ul>';
 
               el.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <strong class="text-primary small">${m.name || 'Comida'}</strong>
-                            <span class="badge bg-dark border border-secondary text-white" style="font-size:0.7em">${m.kcal || 0} kcal</span>
+                            <span class="badge bg-dark border border-secondary text-white" style="font-size:0.7em">${m.total_kcal || m.kcal || 0} kcal</span>
                         </div>
                         ${itemsHtml}
                     `;
@@ -402,6 +437,219 @@
         tabVisualBtn.addEventListener('click', () => {
           updateVisualPreview(fOutput.value);
         });
+
+        const tabEditorBtn = document.getElementById('tab-editor-btn');
+        if (tabEditorBtn) {
+          tabEditorBtn.addEventListener('click', () => {
+            renderVisualEditor(fOutput.value);
+          });
+        }
+
+        document.getElementById('btnAddMealVisual').addEventListener('click', () => {
+          addMealToVisual();
+        });
+
+        function renderVisualEditor(jsonRaw) {
+          const container = document.getElementById('editorContainer');
+          container.innerHTML = '';
+
+          let data = {};
+          try {
+            if (jsonRaw.trim()) data = JSON.parse(jsonRaw);
+          } catch (e) {
+            container.innerHTML = `<p class="text-danger small">JSON Inválido, corrige en RAW primero: ${e.message}</p>`;
+            return;
+          }
+
+          const output = data.output || data || {};
+          // Work with a local copy of meals to render inputs
+          const meals = output.meals || (Array.isArray(output) ? output : []);
+
+          // Store reference to raw meals for manipulation
+          container.dataset.meals = JSON.stringify(meals);
+
+          if (meals.length === 0) {
+            container.innerHTML = '<p class="text-muted small">Sin comidas. Agrega una.</p>';
+          }
+
+          meals.forEach((m, mIdx) => {
+            const card = document.createElement('div');
+            card.className = "card mb-3 border-secondary bg-dark";
+
+            let itemsHtml = '';
+            (m.items || []).forEach((it, itIdx) => {
+              const mac = it.macros || {};
+              itemsHtml += `
+                      <div class="row g-1 align-items-center mb-2 item-row" data-m="${mIdx}" data-i="${itIdx}">
+                        <div class="col-3">
+                           <input type="text" class="form-control form-control-sm bg-black text-white border-secondary inp-food" value="${it.food || ''}" placeholder="Alimento">
+                        </div>
+                        <div class="col-2">
+                           <input type="text" class="form-control form-control-sm bg-black text-white border-secondary inp-qty" value="${it.qty || ''}" placeholder="Cant.">
+                        </div>
+                        <div class="col-1">
+                           <input type="number" class="form-control form-control-sm bg-black text-white border-secondary inp-kcal" value="${it.kcal || ''}" placeholder="Kcal">
+                        </div>
+                        <div class="col-4 d-flex gap-1">
+                           <input type="number" class="form-control form-control-sm bg-black text-white border-secondary inp-p" value="${mac.p || 0}" placeholder="P" title="Proteína">
+                           <input type="number" class="form-control form-control-sm bg-black text-white border-secondary inp-c" value="${mac.c || 0}" placeholder="C" title="Carbos">
+                           <input type="number" class="form-control form-control-sm bg-black text-white border-secondary inp-f" value="${mac.f || 0}" placeholder="G" title="Grasas">
+                        </div>
+                        <div class="col-1 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-del-item" onclick="removeVisualItem(${mIdx}, ${itIdx})"><i class="fas fa-times"></i></button>
+                        </div>
+                      </div>
+                    `;
+            });
+
+            card.innerHTML = `
+                    <div class="card-header p-2 d-flex gap-2 align-items-center bg-secondary bg-opacity-10 border-bottom border-secondary">
+                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary fw-bold inp-m-name" 
+                          style="max-width:200px;" value="${m.name || 'Comida'}" data-m="${mIdx}">
+                        <div class="input-group input-group-sm" style="max-width: 140px;">
+                            <span class="input-group-text bg-dark border-secondary text-light">Kcal</span>
+                            <input type="number" class="form-control bg-dark text-white border-secondary text-end inp-m-kcal" value="${m.total_kcal || m.kcal || 0}" data-m="${mIdx}">
+                        </div>
+                        <div class="ms-auto">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="addVisualItem(${mIdx})"><i class="fas fa-plus"></i> Item</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeVisualMeal(${mIdx})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        ${itemsHtml || '<small class="text-muted fst-italic">Sin alimentos</small>'}
+                    </div>
+                `;
+            container.appendChild(card);
+          });
+
+          // Attach 'change' listeners to all inputs to sync back JSON
+          container.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('change', syncVisualToJSON);
+          });
+        }
+
+        window.removeVisualItem = function (mIdx, itIdx) {
+          const current = parseOrEmpty(fOutput.value);
+          const meals = getMealsList(current);
+          if (meals[mIdx] && meals[mIdx].items) {
+            meals[mIdx].items.splice(itIdx, 1);
+            updateAndRender(current);
+          }
+        };
+
+        window.removeVisualMeal = function (mIdx) {
+          const current = parseOrEmpty(fOutput.value);
+          const meals = getMealsList(current);
+          meals.splice(mIdx, 1);
+          updateAndRender(current);
+        };
+
+        window.addVisualItem = function (mIdx) {
+          const current = parseOrEmpty(fOutput.value);
+          const meals = getMealsList(current);
+          if (meals[mIdx]) {
+            if (!meals[mIdx].items) meals[mIdx].items = [];
+            meals[mIdx].items.push({ food: "", qty: "", kcal: 0, macros: { p: 0, c: 0, f: 0 } });
+            updateAndRender(current);
+          }
+        };
+
+        window.addMealToVisual = function () {
+          const current = parseOrEmpty(fOutput.value);
+          const meals = getMealsList(current);
+          meals.push({ name: "Nueva Comida", total_kcal: 0, items: [] });
+          updateAndRender(current);
+        };
+
+        function parseOrEmpty(jsonStr) {
+          try { return jsonStr.trim() ? JSON.parse(jsonStr) : {}; }
+          catch (e) { return {}; }
+        }
+
+        function getMealsList(data) {
+          // normalization logic matching render
+          if (data.output && data.output.meals) return data.output.meals;
+          if (data.meals) return data.meals;
+          if (Array.isArray(data)) return data;
+          // Ensure structure exists if empty
+          if (!data.output) data.output = { meals: [] };
+          return data.output.meals;
+        }
+
+        function updateAndRender(dataObj) {
+          // Recalculate global total_kcal if possible
+          let total = 0;
+          const meals = getMealsList(dataObj);
+          meals.forEach(m => {
+            let mTotal = 0;
+            if (m.items) {
+              m.items.forEach(i => mTotal += Number(i.kcal || 0));
+              // Update meal total if items exist (optional, or manual)
+              // Let's decide: strict calculation or manual?
+              // User might want to override. Let's rely on manual input OR auto-sum if manual is 0?
+              // For now, let's just save.
+            }
+            total += Number(m.total_kcal || m.kcal || 0);
+          });
+          if (dataObj.output) dataObj.output.total_kcal = total;
+          else if (dataObj.total_kcal !== undefined) dataObj.total_kcal = total;
+
+          const str = JSON.stringify(dataObj, null, 2);
+          fOutput.value = str;
+          renderVisualEditor(str);
+        }
+
+        function syncVisualToJSON() {
+          const container = document.getElementById('editorContainer');
+          const cards = container.querySelectorAll('.card');
+
+          const current = parseOrEmpty(fOutput.value);
+          const meals = getMealsList(current);
+
+          // Rebuild meals array from DOM inputs
+          // We assume order hasn't changed (re-render handles structure changes)
+          // so we just read values by index.
+
+          cards.forEach((card, mIdx) => {
+            const mName = card.querySelector('.inp-m-name').value;
+            const mKcal = card.querySelector('.inp-m-kcal').value;
+
+            if (meals[mIdx]) {
+              meals[mIdx].name = mName;
+              meals[mIdx].total_kcal = Number(mKcal);
+              // cleanup old key if present?
+              delete meals[mIdx].kcal;
+
+              const itemRows = card.querySelectorAll('.item-row');
+              if (!meals[mIdx].items) meals[mIdx].items = [];
+
+              // If lengths mismatch re-render should have happened. 
+              // We trust indices here.
+              itemRows.forEach((row, itIdx) => {
+                if (meals[mIdx].items[itIdx]) {
+                  const f = row.querySelector('.inp-food').value;
+                  const q = row.querySelector('.inp-qty').value;
+                  const k = row.querySelector('.inp-kcal').value;
+                  const p = row.querySelector('.inp-p').value;
+                  const c = row.querySelector('.inp-c').value;
+                  const fat = row.querySelector('.inp-f').value;
+
+                  meals[mIdx].items[itIdx].food = f;
+                  meals[mIdx].items[itIdx].qty = q;
+                  meals[mIdx].items[itIdx].kcal = Number(k);
+                  meals[mIdx].items[itIdx].macros = {
+                    p: Number(p), c: Number(c), f: Number(fat)
+                  };
+                }
+              });
+            }
+          });
+
+          // We don't call updateAndRender here to avoid losing focus while typing.
+          // Just update Textarea.
+          const str = JSON.stringify(current, null, 2);
+          fOutput.value = str;
+        }
 
         function collectChanges() {
           const body = {};
@@ -548,6 +796,22 @@
               document.getElementById('fNotes').value = `Generado por Admin AI el ${new Date().toLocaleString()}`;
               lastGeneratedInput = data.input || {};
               lastGeneratedBackend = data.backend || "AI-Gen";
+
+              // Update Input Summary for the newly generated plan
+              const inputSum = document.getElementById('adminPlanInputSummary');
+              const inp = lastGeneratedInput;
+              if (inp.total_kcal || inp.meals) {
+                inputSum.innerHTML = `
+                     <span class="badge bg-dark text-info border border-info p-2">
+                        <i class="fas fa-fire me-1"></i> Calorías: <strong>${inp.total_kcal || '-'}</strong>
+                     </span>
+                     <span class="badge bg-dark text-success border border-success p-2">
+                        <i class="fas fa-utensils me-1"></i> Comidas: <strong>${inp.meals || '-'}</strong>
+                     </span>
+                 `;
+              } else {
+                inputSum.innerHTML = '';
+              }
 
               // Clear Plan ID if it's new
               document.getElementById('fPlanId').value = "";

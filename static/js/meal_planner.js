@@ -93,7 +93,7 @@
             });
 
             // Fallback to meal-level values if present and non-zero/valid, otherwise use calculated sums
-            const displayKcal = (m.kcal != null && m.kcal !== '-') ? m.kcal : mealKcalSum;
+            const displayKcal = (m.total_kcal != null) ? m.total_kcal : ((m.kcal != null && m.kcal !== '-') ? m.kcal : mealKcalSum);
 
             // Only use calculated macros if meal.macros is missing or empty
             const mac = m.macros || {};

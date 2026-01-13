@@ -4,7 +4,7 @@ Maneja dashboard, runner, sesiones y estadísticas de entrenamiento
 """
 from flask import Blueprint, request, jsonify, render_template, redirect
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 import extensions
 from extensions import logger
 
@@ -458,6 +458,64 @@ def api_stats_volume():
         return jsonify(data), 200
     except Exception as e:
         logger.error(f"Error fetching volume stats: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.get("/api/stats/weekly")
+def api_stats_weekly():
+    """Returns weekly stats (volume and consistency) for the last 12 weeks."""
+    try:
+        user_id = request.args.get("user_id")
+        if not user_id: return jsonify({"error": "Missing user_id"}), 400
+        
+        db = get_db()
+        if db is None: return jsonify([]), 503
+        
+        # Get all sessions for this user
+        cursor = db.workout_sessions.find(
+            {"user_id": user_id},
+            {"total_volume": 1, "started_at": 1, "created_at": 1}
+        ).sort("created_at", -1)
+        
+        weekly_stats = {}
+        for s in cursor:
+            raw_date = s.get("started_at") or s.get("created_at")
+            if not raw_date: continue
+            
+            dt = None
+            if isinstance(raw_date, datetime):
+                dt = raw_date
+            elif isinstance(raw_date, str):
+                try:
+                    if "T" in raw_date:
+                        dt = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+                    else:
+                        dt = datetime.strptime(raw_date[:10], "%Y-%m-%d")
+                except: continue
+            
+            if not dt: continue
+            
+            year, week, _ = dt.isocalendar()
+            week_key = f"{year}-W{week:02d}"
+            
+            if week_key not in weekly_stats:
+                # Find start of the week (Monday) for the label
+                monday = dt - timedelta(days=dt.weekday())
+                weekly_stats[week_key] = {
+                    "week_key": week_key,
+                    "volume": 0,
+                    "sessions": 0,
+                    "date_label": monday.strftime("%d %b")
+                }
+            
+            weekly_stats[week_key]["volume"] += s.get("total_volume", 0)
+            weekly_stats[week_key]["sessions"] += 1
+            
+        sorted_weeks = sorted(weekly_stats.values(), key=lambda x: x["week_key"])
+        data = sorted_weeks[-12:]
+        
+        return jsonify(data), 200
+    except Exception as e:
+        logger.error(f"Error fetching weekly stats: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
 @workout_bp.get("/api/sessions")

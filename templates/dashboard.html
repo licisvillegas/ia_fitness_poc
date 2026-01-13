@@ -389,8 +389,8 @@
         <div class="col-md-6 position-relative"><canvas id="performanceChart"></canvas>
           <div class="chart-overlay" id="msg-performance">Sin datos disponibles</div>
         </div>
-        <div class="col-md-6 position-relative"><canvas id="nutritionChart"></canvas>
-          <div class="chart-overlay" id="msg-nutrition">Sin datos disponibles</div>
+        <div class="col-md-6 position-relative"><canvas id="metabolismChart"></canvas>
+          <div class="chart-overlay" id="msg-metabolism">Sin datos disponibles</div>
         </div>
       </div>
     </section>
@@ -427,7 +427,7 @@
         const data = await res.json();
 
         // Oculta overlays de "Sin datos" antes de validar la respuesta
-        const overlays = ["weight", "fat", "performance", "nutrition"];
+        const overlays = ["weight", "fat", "performance", "metabolism"];
         overlays.forEach(id => {
           const el = document.getElementById(`msg-${id}`);
           if (el) el.style.visibility = "hidden";
@@ -471,7 +471,22 @@
         const weights = data.map(d => d.weight_kg);
         const fats = data.map(d => d.body_fat);
         const performance = data.map(d => d.performance);
-        const nutrition = data.map(d => d.nutrition_adherence);
+        const tmbArr = data.map(d => d.tmb);
+        const tdeeArr = data.map(d => d.tdee);
+
+        // --- FETCH WEEKLY STATS FOR VOLUME & CONSISTENCY ---
+        let weeklyLabels = [];
+        let weeklyVolumes = [];
+        let weeklySessions = [];
+        try {
+          const wRes = await fetch(`/workout/api/stats/weekly?user_id=${userId}`);
+          if (wRes.ok) {
+            const wData = await wRes.json();
+            weeklyLabels = wData.map(d => d.date_label);
+            weeklyVolumes = wData.map(d => d.volume);
+            weeklySessions = wData.map(d => d.sessions);
+          }
+        } catch (e) { console.error("Error fetching weekly stats", e); }
 
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const textColor = isLight ? '#374151' : '#e5e7eb';
@@ -493,10 +508,45 @@
           charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
         }
         if (document.getElementById("performanceChart")) {
-          charts.push(new Chart("performanceChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_performance'), data: performance, backgroundColor: colors.green }] }, options: opts }));
+          charts.push(new Chart("performanceChart", {
+            type: "line",
+            data: {
+              labels: weeklyLabels.length > 0 ? weeklyLabels : labels,
+              datasets: [{
+                label: 'Volumen Total (kg)',
+                data: weeklyVolumes.length > 0 ? weeklyVolumes : performance,
+                borderColor: colors.green,
+                backgroundColor: "rgba(16,185,129,0.2)",
+                fill: true,
+                tension: 0.4,
+                spanGaps: true
+              }]
+            },
+            options: opts
+          }));
         }
-        if (document.getElementById("nutritionChart")) {
-          charts.push(new Chart("nutritionChart", { type: "bar", data: { labels, datasets: [{ label: t('chart_nutrition'), data: nutrition, backgroundColor: colors.yellow }] }, options: opts }));
+        if (document.getElementById("metabolismChart")) {
+          charts.push(new Chart("metabolismChart", {
+            type: "bar",
+            data: {
+              labels: weeklyLabels.length > 0 ? weeklyLabels : labels,
+              datasets: [
+                {
+                  label: 'Sesiones Semana',
+                  data: weeklySessions.length > 0 ? weeklySessions : tmbArr,
+                  backgroundColor: colors.blue,
+                  borderRadius: 6
+                }
+              ]
+            },
+            options: {
+              ...opts,
+              scales: {
+                ...opts.scales,
+                y: { ...opts.scales.y, beginAtZero: true, ticks: { ...opts.scales.y.ticks, stepSize: 1 } }
+              }
+            }
+          }));
         }
 
         window.updateChartLabels = function () {
@@ -504,8 +554,8 @@
             if (!charts) return;
             if (charts[0]?.data?.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
             if (charts[1]?.data?.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
-            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = t('chart_performance');
-            if (charts[3]?.data?.datasets[0]) charts[3].data.datasets[0].label = t('chart_nutrition');
+            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = 'Volumen Total (kg)';
+            if (charts[3]?.data?.datasets[0]) charts[3].data.datasets[0].label = 'Sesiones Semana';
             charts.forEach(c => c.update());
           } catch (e) { }
         };

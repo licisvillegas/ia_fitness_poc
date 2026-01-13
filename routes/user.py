@@ -318,6 +318,15 @@ def get_progress(user_id):
             elif meas.get("body_fat"):
                 bf = meas.get("body_fat")
                 
+            # TMB & TDEE (from output.energy_expenditure)
+            tmb = None
+            tdee = None
+            energy = out.get("energy_expenditure") or {}
+            if energy.get("tmb"):
+                tmb = energy.get("tmb")
+            if energy.get("selected_tdee"):
+                tdee = energy.get("selected_tdee")
+
             # Only add if we have at least weight or body_fat, or it's a valid record we want to show
             # It's better to show it if it has date
             assess_records.append({
@@ -326,6 +335,8 @@ def get_progress(user_id):
                 "date": created, # Keep as object for sorting first
                 "weight_kg": w,
                 "body_fat": bf,
+                "tmb": tmb,
+                "tdee": tdee,
                 "performance": None, # Assessments don't usually have this
                 "nutrition_adherence": None 
             })
@@ -349,6 +360,10 @@ def get_progress(user_id):
         # Final formatting for JSON
         for r in all_records:
             r["_id"] = str(r["_id"])
+            # Ensure tmb and tdee keys exist
+            if "tmb" not in r: r["tmb"] = None
+            if "tdee" not in r: r["tdee"] = None
+            
             if r.get("date") and isinstance(r["date"], datetime):
                 r["date"] = r["date"].strftime("%Y-%m-%d") # Use consistent YYYY-MM-DD for charts
             

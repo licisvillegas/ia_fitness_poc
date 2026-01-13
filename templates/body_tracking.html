@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -181,41 +181,48 @@
         /* Posicionamiento manual aproximado (ajustar según la imagen real) */
         /* Estas posiciones asumen un contenedor de ~400px ancho x 550px alto */
         .l-cuello {
-            top: 5%;
-            left: 60%;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .l-torax {
-            top: 18%;
-            left: 68%;
+            top: 22%;
+            left: 65%;
         }
 
         .l-biceps-izq {
-            top: 25%;
-            right: 75%;
+            top: 28%;
+            right: 74%;
+            text-align: right;
+        }
+
+        .l-ant-izq {
+            top: 36%;
+            right: 76%;
             text-align: right;
         }
 
         .l-cintura {
-            top: 32%;
-            left: 68%;
+            top: 38%;
+            left: 65%;
         }
 
         .l-cadera {
-            top: 42%;
-            right: 75%;
+            top: 48%;
+            right: 72%;
             text-align: right;
         }
 
         .l-muslo-izq {
-            top: 55%;
-            right: 70%;
+            top: 60%;
+            right: 68%;
             text-align: right;
         }
 
         .l-pant-izq {
-            top: 72%;
-            right: 70%;
+            top: 78%;
+            right: 68%;
             text-align: right;
         }
 
@@ -609,22 +616,34 @@
                 'cintura': 'l-cintura', 'cadera': 'l-cadera', 'muslo_izq': 'l-muslo-izq',
                 'pantorrilla_izq': 'l-pant-izq'
                 } %}
+                {% set name_map = {
+                'cuello': 'CUELLO', 'torax': 'TORAX', 'pecho': 'TORAX',
+                'biceps_izq': 'BÍCEPS', 'antebrazo_izq': 'ANTEBRAZO',
+                'cintura': 'CINTURA', 'cadera': 'CADERA', 'muslo_izq': 'MUSLO',
+                'pantorrilla_izq': 'PANTORRILLA'
+                } %}
                 {% set pos_class = cls_map.get(key, '') %}
                 {% if pos_class %}
+                {% set change_class = 'pos' if item.change and item.change.startswith('+') else ('neg' if item.change
+                and item.change.startswith('-') else 'neutral') %}
                 <div class="measure-label {{ pos_class }}"
                     onclick="openValueModal('{{ key }}', null, '{{ item.value }}')">
+
+                    <div class="label-text" style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: -2px;">{{
+                        name_map.get(key, key|upper) }}</div>
+
                     {% if 'izq' not in key and 'der' not in key %}
                     <!-- Left side labels logic (visual tweak) -->
-                    {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq'] %}
-                    <span class="change {{ 'pos' if '+' in item.change else 'neg' }}">{{ item.change }}</span> <span
-                        class="val">{{ item.value }}</span>cm
+                    {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq', 'antebrazo_izq'] %}
+                    {% if item.change %}<span class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
+                    <span class="val">{{ item.value }}</span>cm
                     {% else %}
-                    <span class="val">{{ item.value }}</span>cm <span
-                        class="change {{ 'pos' if '+' in item.change else 'neg' }}">{{ item.change }}</span>
+                    <span class="val">{{ item.value }}</span>cm {% if item.change %}<span
+                        class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
                     {% endif %}
                     {% else %}
-                    <span class="change {{ 'pos' if '+' in item.change else 'neg' }}">{{ item.change }}</span> <span
-                        class="val">{{ item.value }}</span>cm
+                    {% if item.change %}<span class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
+                    <span class="val">{{ item.value }}</span>cm
                     {% endif %}
                 </div>
                 {% endif %}
@@ -640,7 +659,8 @@
                         <h4>Peso Corporal</h4>
                         <p>{{ data.stats.peso.value }}{{ data.stats.peso.unit }}</p>
                     </div>
-                    <div class="stat-trend {{ 'trend-up' if data.stats.peso.trend == 'up' else 'trend-down' }}">
+                    <div
+                        class="stat-trend {{ 'trend-up' if data.stats.peso.trend == 'up' else ('trend-down' if data.stats.peso.trend == 'down' else 'trend-neutral') }}">
                         {{ data.stats.peso.change }}
                     </div>
                 </div>
@@ -651,7 +671,8 @@
                         <h4>Porcentaje de Grasa</h4>
                         <p>{{ data.stats.grasa.value }}{{ data.stats.grasa.unit }}</p>
                     </div>
-                    <div class="stat-trend {{ 'trend-up' if data.stats.grasa.trend == 'up' else 'trend-down' }}">
+                    <div
+                        class="stat-trend {{ 'trend-up' if data.stats.grasa.trend == 'up' else ('trend-down' if data.stats.grasa.trend == 'down' else 'trend-neutral') }}">
                         {{ data.stats.grasa.change }}
                     </div>
                 </div>
@@ -663,7 +684,8 @@
                         <h4>Músculo</h4>
                         <p>{{ data.stats.musculo.value }}{{ data.stats.musculo.unit }}</p>
                     </div>
-                    <div class="stat-trend {{ 'trend-up' if data.stats.musculo.trend == 'up' else 'trend-down' }}">
+                    <div
+                        class="stat-trend {{ 'trend-up' if data.stats.musculo.trend == 'up' else ('trend-down' if data.stats.musculo.trend == 'down' else 'trend-neutral') }}">
                         {{ data.stats.musculo.change }}
                     </div>
                 </div>
@@ -673,57 +695,57 @@
 
             <!-- FAB -->
             <div class="fab-container" id="fabContainer">
-            <div class="fab-menu">
-                <div class="menu-item" onclick="openSideModal('Pantorrilla')">
-                    <span class="menu-label">PANTORRILLA</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/gem.png" alt="Pantorrilla"></div>
-                </div>
-                <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
-                    <span class="menu-label">CADERA</span>
-                    <div class="menu-icon" style="background-color:#e6c345"><i class="fas fa-ruler-horizontal"></i>
+                <div class="fab-menu">
+                    <div class="menu-item" onclick="openSideModal('Pantorrilla')">
+                        <span class="menu-label">PANTORRILLA</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/gem.png" alt="Pantorrilla"></div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
+                        <span class="menu-label">CADERA</span>
+                        <div class="menu-icon" style="background-color:#e6c345"><i class="fas fa-ruler-horizontal"></i>
+                        </div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
+                        <span class="menu-label">PECHO</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/pec.png" alt="Pecho"></div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Espalda', null, '0.0')">
+                        <span class="menu-label">ESPALDA</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/esp.png" alt="Espalda"></div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
+                        <span class="menu-label">HOMBRO</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/hom.png" alt="Hombro"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Bíceps')">
+                        <span class="menu-label">BÍCEPS</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/bic.png" alt="Bíceps"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Tríceps')">
+                        <span class="menu-label">TRÍCEPS</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/tri.png" alt="Tríceps"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Cuádriceps')">
+                        <span class="menu-label">CUÁDRICEPS</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Cuádriceps"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Femoral')">
+                        <span class="menu-label">FEMORAL</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/isq.png" alt="Femoral"></div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Glúteos', null, '0.0')">
+                        <span class="menu-label">GLÚTEOS</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/glu.png" alt="Glúteos"></div>
+                    </div>
+                    <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
+                        <span class="menu-label">ABDÓMEN</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/abs.png" alt="Abdomen"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Antebrazo')">
+                        <span class="menu-label">ANTEBRAZO</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/ant.png" alt="Antebrazo"></div>
                     </div>
                 </div>
-                <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
-                    <span class="menu-label">PECHO</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/pec.png" alt="Pecho"></div>
-                </div>
-                <div class="menu-item" onclick="openValueModal('Espalda', null, '0.0')">
-                    <span class="menu-label">ESPALDA</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/esp.png" alt="Espalda"></div>
-                </div>
-                <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
-                    <span class="menu-label">HOMBRO</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/hom.png" alt="Hombro"></div>
-                </div>
-                <div class="menu-item" onclick="openSideModal('Bíceps')">
-                    <span class="menu-label">BÍCEPS</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/bic.png" alt="Bíceps"></div>
-                </div>
-                <div class="menu-item" onclick="openSideModal('Tríceps')">
-                    <span class="menu-label">TRÍCEPS</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/tri.png" alt="Tríceps"></div>
-                </div>
-                <div class="menu-item" onclick="openSideModal('Cuádriceps')">
-                    <span class="menu-label">CUÁDRICEPS</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Cuádriceps"></div>
-                </div>
-                <div class="menu-item" onclick="openSideModal('Femoral')">
-                    <span class="menu-label">FEMORAL</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/isq.png" alt="Femoral"></div>
-                </div>
-                <div class="menu-item" onclick="openValueModal('Glúteos', null, '0.0')">
-                    <span class="menu-label">GLÚTEOS</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/glu.png" alt="Glúteos"></div>
-                </div>
-                <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
-                    <span class="menu-label">ABDÓMEN</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/abs.png" alt="Abdomen"></div>
-                </div>
-                <div class="menu-item" onclick="openSideModal('Antebrazo')">
-                    <span class="menu-label">ANTEBRAZO</span>
-                    <div class="menu-icon"><img src="/static/images/muscles/ant.png" alt="Antebrazo"></div>
-                </div>
-            </div>
 
                 <div class="fab-main" id="fabButton"><i class="fas fa-plus"></i></div>
             </div>

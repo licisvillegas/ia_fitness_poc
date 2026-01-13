@@ -487,30 +487,104 @@ def api_get_user_latest_metrics(user_id):
 @user_bp.route("/tracking")
 def body_tracking_page():
     embed = request.args.get("embed") in ("1", "true", "yes")
-    # Mock Data as requested by user
-    user_data = {
-        "measurements": {
-            "cuello": {"value": 38.0, "change": "+1cm"},
-            "torax": {"value": 101.0, "change": "+1cm"},
-            "biceps_izq": {"value": 40.5, "change": "+0.5cm"},
-            "biceps_der": {"value": 40.5, "change": "+0.5cm"},
-            "antebrazo_izq": {"value": 29.3, "change": "-0.6cm"},
-            "antebrazo_der": {"value": 29.3, "change": "-0.6cm"},
-            "cintura": {"value": 80.0, "change": "-2cm"},
-            "cadera": {"value": 96.5, "change": "+1.5cm"},
-            "muslo_izq": {"value": 60.6, "change": "+1.6cm"},
-            "muslo_der": {"value": 60.6, "change": "+2.3cm"},
-            "pantorrilla_izq": {"value": 37.5, "change": "+1.4cm"},
-            "pantorrilla_der": {"value": 37.5, "change": "+1.4cm"},
-        },
-        "stats": {
-            "peso": {"value": 73.7, "unit": "kg", "change": "+2.7kg", "trend": "up"},
-            "musculo": {"value": 39.5, "unit": "%", "change": "+7%", "trend": "up"},
-            "agua": {"value": 39.5, "unit": "%", "change": "-18.9%", "trend": "down"},
-            "grasa": {"value": 20.6, "unit": "%", "change": "+0.1%", "trend": "up"},
-            "imc": {"value": 26.7, "unit": "", "change": "", "trend": "neutral"}
-        }
-    }
+    user_id = request.args.get("user_id") or request.cookies.get("user_session")
+    user_data = {"measurements": {}, "stats": {}}
+
+    if user_id and extensions.db is not None:
+        try:
+            assessments = list(
+                extensions.db.body_assessments.find(
+                    {"user_id": user_id},
+                    {"created_at": 1, "input": 1, "output": 1}
+                ).sort("created_at", -1).limit(2)
+            )
+
+            latest = assessments[0] if assessments else None
+            previous = assessments[1] if len(assessments) > 1 else None
+
+            latest_input = (latest or {}).get("input") or {}
+            latest_meas = latest_input.get("measurements") or {}
+            prev_input = (previous or {}).get("input") or {}
+            prev_meas = prev_input.get("measurements") or {}
+
+            def format_change(curr, prev, unit):
+                if curr is None or prev is None:
+                    return ""
+                try:
+                    delta = float(curr) - float(prev)
+                except (TypeError, ValueError):
+                    return ""
+                sign = "+" if delta >= 0 else "-"
+                return f"{sign}{abs(delta):.1f}{unit}"
+
+            def map_measure(key, value, unit="cm"):
+                prev_val = prev_meas.get(key)
+                change = format_change(value, prev_val, unit)
+                return {"value": value, "change": change}
+
+            if latest_meas:
+                arm_key = "arm_flexed" if latest_meas.get("arm_flexed") is not None else "arm_relaxed"
+                mapping = {
+                    "cuello": ("neck", "cm"),
+                    "torax": ("chest", "cm"),
+                    "biceps_izq": (arm_key, "cm"),
+                    "cintura": ("waist", "cm"),
+                    "cadera": ("hip", "cm"),
+                    "muslo_izq": ("thigh", "cm"),
+                    "pantorrilla_izq": ("calf", "cm"),
+                    "antebrazo_izq": ("forearm", "cm"),
+                }
+                for label_key, (source_key, unit) in mapping.items():
+                    value = latest_meas.get(source_key)
+                    if value is not None:
+                        user_data["measurements"][label_key] = map_measure(source_key, value, unit)
+
+            # Stats (peso, grasa, musculo, agua, imc)
+            stats = {}
+            weight = latest_meas.get("weight_kg")
+            prev_weight = prev_meas.get("weight_kg")
+            if weight is not None:
+                stats["peso"] = {
+                    "value": weight,
+                    "unit": "kg",
+                    "change": format_change(weight, prev_weight, "kg"),
+                    "trend": "up" if (prev_weight is not None and weight >= prev_weight) else "down"
+                }
+
+            latest_out = (latest or {}).get("output") or {}
+            prev_out = (previous or {}).get("output") or {}
+            latest_comp = latest_out.get("body_composition") or {}
+            prev_comp = prev_out.get("body_composition") or {}
+
+            body_fat = latest_comp.get("body_fat_percent")
+            prev_fat = prev_comp.get("body_fat_percent")
+            if body_fat is not None:
+                stats["grasa"] = {
+                    "value": body_fat,
+                    "unit": "%",
+                    "change": format_change(body_fat, prev_fat, "%"),
+                    "trend": "up" if (prev_fat is not None and body_fat >= prev_fat) else "down"
+                }
+
+            muscle = latest_comp.get("muscle_mass_percent")
+            prev_muscle = prev_comp.get("muscle_mass_percent")
+            if muscle is not None:
+                stats["musculo"] = {
+                    "value": muscle,
+                    "unit": "%",
+                    "change": format_change(muscle, prev_muscle, "%"),
+                    "trend": "up" if (prev_muscle is not None and muscle >= prev_muscle) else "down"
+                }
+
+            bmi = (latest_input.get("calculations") or {}).get("bmi")
+            if bmi is not None:
+                stats["imc"] = {"value": bmi, "unit": "", "change": "", "trend": "neutral"}
+
+            if stats:
+                user_data["stats"] = stats
+        except Exception as e:
+            logger.error(f"Error loading tracking data for {user_id}: {e}")
+
     return render_template("body_tracking.html", data=user_data, embed=embed)
 
 @user_bp.post("/api/user/measurement/save")

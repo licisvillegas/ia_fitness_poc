@@ -163,6 +163,12 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .muscle-icon img.loaded {
+        opacity: 1;
     }
 
     .muscle-icon.active {
@@ -174,6 +180,23 @@
     .muscle-icon:hover {
         border-color: #00d2ff;
         transform: translateY(-2px);
+    }
+
+    /* Skeleton Animation */
+    .skeleton-pulse {
+        background: linear-gradient(-90deg, var(--bg-panel) 0%, #2a2a2a 50%, var(--bg-panel) 100%);
+        background-size: 400% 400%;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            background-position: 100% 0%;
+        }
+
+        100% {
+            background-position: -100% 0%;
+        }
     }
 
     .muscle-label {
@@ -220,7 +243,7 @@
     let allExercises = [];
     let bodyPartMap = {}; // Will hold key -> label
     const queryEmbed = new URLSearchParams(window.location.search).get("embed");
-    const isEmbed = {{ embed | default(false) | tojson }} || ["1", "true", "yes"].includes(String(queryEmbed).toLowerCase());
+    const isEmbed = {{ embed | default (false) | tojson }} || ["1", "true", "yes"].includes(String(queryEmbed).toLowerCase());
 
     document.addEventListener("DOMContentLoaded", () => {
         if (isEmbed) {
@@ -465,8 +488,8 @@
 
         container.innerHTML = muscleIcons.map(m => `
             <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
-                <div class="muscle-icon" id="icon-${m.key}">
-                    <img src="/static/images/muscles/${m.img}" alt="${m.label}">
+                <div class="muscle-icon skeleton-pulse" id="icon-${m.key}">
+                    <img src="/static/images/muscles/${m.img}" alt="${m.label}" onload="this.classList.add('loaded'); this.parentElement.classList.remove('skeleton-pulse')">
                 </div>
                 <!-- Show mapped label if available, otherwise default -->
                 <span class="muscle-label">${m.mappedLabel || m.label}</span>

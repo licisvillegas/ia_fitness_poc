@@ -412,11 +412,19 @@
                 /* Floating Controls */
                 .map-controls {
                     position: absolute;
-                    top: 1rem;
+                    bottom: 1rem;
                     right: 1rem;
                     z-index: 10;
                     display: flex;
                     flex-direction: column;
+                }
+
+                @media (min-width: 992px) {
+                    .map-controls {
+                        bottom: auto;
+                        top: 50%;
+                        transform: translateY(-50%);
+                    }
                 }
 
                 .btn-glass {
@@ -443,11 +451,6 @@
 
                     .info-title {
                         font-size: 1.5rem;
-                    }
-
-                    .map-controls {
-                        top: 0.5rem;
-                        right: 0.5rem;
                     }
                 }
             </style>

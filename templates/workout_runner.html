@@ -1537,6 +1537,32 @@
             syncProgress(cursor, newLog);
         };
 
+        const updateLoggedStep = (stepId, data) => {
+            if (!stepId) return;
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            const idx = currentLog.findIndex(l => l.stepId === stepId);
+            if (idx === -1) return;
+
+            let finalWeight = parseFloat(data.weight) || 0;
+            const dataUnit = data.unit || unit;
+            if (dataUnit === 'lb') {
+                finalWeight = finalWeight / 2.20462;
+            }
+
+            const updatedEntry = {
+                ...currentLog[idx],
+                weight: finalWeight.toFixed(1),
+                reps: data.reps != null ? data.reps : currentLog[idx].reps,
+                timestamp: new Date()
+            };
+
+            const newLog = [...currentLog];
+            newLog[idx] = updatedEntry;
+            setSessionLog(newLog);
+            sessionLogRef.current = newLog;
+            syncProgress(cursor, newLog);
+        };
+
         const syncProgress = async (idx, log) => {
             try {
                 await fetch("/workout/api/session/progress", {
@@ -1857,6 +1883,7 @@
             addRestTime,
             logSet,
             logSpecificStep,
+            updateLoggedStep,
             isStepLogged,
             sessionLog,
             unit,
@@ -3077,13 +3104,16 @@
     };
 
     const PendingPanel = ({ isOpen, onClose }) => {
-        const { queue, cursor, status, logSpecificStep, isStepLogged, sessionLog, unit } = useWorkout();
+        const { queue, cursor, status, logSpecificStep, updateLoggedStep, isStepLogged, sessionLog, unit } = useWorkout();
         const [activeTab, setActiveTab] = React.useState('pending');
         const [expandedStepId, setExpandedStepId] = React.useState(null);
+        const [expandedCompletedId, setExpandedCompletedId] = React.useState(null);
 
         // Input state for quick log
         const [weight, setWeight] = React.useState('0');
         const [reps, setReps] = React.useState('0');
+        const [completedWeight, setCompletedWeight] = React.useState('0');
+        const [completedReps, setCompletedReps] = React.useState('0');
 
         if (status === 'LOADING' || status === 'IDLE' || status === 'FINISHED') return null;
 
@@ -3114,6 +3144,27 @@
         const formatWeight = (kg) => {
             if (unit === 'lb') return (parseFloat(kg) * 2.20462).toFixed(1);
             return parseFloat(kg).toFixed(1);
+        };
+
+        const toggleCompletedExpand = (step) => {
+            const logEntry = sessionLog.find(l => l.stepId === step.id);
+            if (!logEntry) return;
+            if (expandedCompletedId === step.id) {
+                setExpandedCompletedId(null);
+                return;
+            }
+            setExpandedCompletedId(step.id);
+            setCompletedWeight(formatWeight(logEntry.weight || 0));
+            setCompletedReps(logEntry.reps != null ? String(logEntry.reps) : '0');
+        };
+
+        const handleUpdateCompleted = (step) => {
+            updateLoggedStep(step.id, {
+                weight: parseFloat(completedWeight) || 0,
+                reps: completedReps,
+                unit: unit
+            });
+            setExpandedCompletedId(null);
         };
 
         return (
@@ -3229,9 +3280,14 @@
                                     const logEntry = sessionLog.find(l => l.stepId === step.id);
                                     const ex = step.exercise || {};
                                     const name = ex.exercise_name || ex.name || 'Ejercicio';
+                                    const isExpanded = expandedCompletedId === step.id;
 
                                     return (
-                                        <div key={`${step.id}_${idx}`} className="border border-success rounded p-2 mb-2 bg-black-trans opacity-75">
+                                        <div key={`${step.id}_${idx}`}
+                                            className="border border-success rounded p-2 mb-2 bg-black-trans opacity-75"
+                                            style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                            onClick={() => toggleCompletedExpand(step)}
+                                        >
                                             <div className="d-flex justify-content-between align-items-center">
                                                 <div>
                                                     <div className="text-white fw-bold d-flex align-items-center gap-2">
@@ -3247,6 +3303,44 @@
                                                     {logEntry?.rpe && <div className="text-muted small">RPE {logEntry.rpe}</div>}
                                                 </div>
                                             </div>
+
+                                            {isExpanded && logEntry && (
+                                                <div className="mt-3 p-2 bg-dark rounded border border-success animate-entry" onClick={e => e.stopPropagation()}>
+                                                    <div className="row g-2 mb-2">
+                                                        <div className="col-6">
+                                                            <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Peso ({unit})</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
+                                                                value={completedWeight}
+                                                                onChange={e => setCompletedWeight(e.target.value)}
+                                                                onFocus={e => e.target.select()}
+                                                                inputMode="decimal"
+                                                                pattern="[0-9]*[.,]?[0-9]*"
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                        <div className="col-6">
+                                                            <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Reps</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
+                                                                value={completedReps}
+                                                                onChange={e => setCompletedReps(e.target.value)}
+                                                                onFocus={e => e.target.select()}
+                                                                inputMode="decimal"
+                                                                pattern="[0-9]*[.,]?[0-9]*"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-success btn-sm w-100 fw-bold py-2 shadow-sm"
+                                                        onClick={() => handleUpdateCompleted(step)}
+                                                    >
+                                                        ACTUALIZAR SERIE
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

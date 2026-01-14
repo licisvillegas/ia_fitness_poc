@@ -543,31 +543,44 @@ class BodyAssessmentAgent:
         n = neck
         
         # Select measurement based on sex and instructions
+        # Uses Standard US Navy Method (Metric) based on Density
+        # %BF = (495 / Density) - 450
+        
         if sex == "female":
-            # WOMEN: Use Waist (narrowest) + Hip - Neck
-            # Formula: 163.205 * log10(w + p - c) - 97.684 * log10(h) - 78.387
+            # WOMEN: Density = 1.29579 - 0.35004 * log10(Waist + Hip - Neck) + 0.22100 * log10(Height)
             w = waist if (waist and waist > 0) else abdomen # Fallback if waist missing
             p = hip
             
             if w and p and n and h:
                 try:
+                    # All measurements in cm
                     term1 = w + p - n
                     if term1 > 0:
-                        bf = 163.205 * math.log10(term1) - 97.684 * math.log10(h) - 78.387
-                        return max(5.0, min(60.0, bf))
+                        log_measure = math.log10(term1)
+                        log_h = math.log10(h)
+                        
+                        density = 1.29579 - 0.35004 * log_measure + 0.22100 * log_h
+                        if density > 0:
+                            bf = (495.0 / density) - 450.0
+                            return max(5.0, min(60.0, bf))
                 except Exception:
                     pass
         else:
-            # MEN: Use Abdomen (navel) - Neck
-            # Formula: 86.010 * log10(a - c) - 70.041 * log10(h) + 36.76
+            # MEN: Density = 1.0324 - 0.19077 * log10(Waist - Neck) + 0.15456 * log10(Height)
             a = abdomen if (abdomen and abdomen > 0) else waist # Fallback if abdomen missing
             
             if a and n and h:
                 try:
+                    # All measurements in cm
                     term1 = a - n
                     if term1 > 0:
-                        bf = 86.010 * math.log10(term1) - 70.041 * math.log10(h) + 36.76
-                        return max(3.0, min(50.0, bf))
+                        log_measure = math.log10(term1)
+                        log_h = math.log10(h)
+                        
+                        density = 1.0324 - 0.19077 * log_measure + 0.15456 * log_h
+                        if density > 0:
+                            bf = (495.0 / density) - 450.0
+                            return max(3.0, min(50.0, bf))
                 except Exception:
                     pass
 

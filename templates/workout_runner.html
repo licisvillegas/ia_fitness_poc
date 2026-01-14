@@ -248,6 +248,12 @@
             /* Fixed compact width */
         }
 
+        .pending-panel input,
+        .pending-panel select,
+        .pending-panel textarea {
+            font-size: 16px;
+        }
+
 
         .btn-control-hud {
             width: 40px !important;
@@ -714,11 +720,18 @@
 <script type="text/javascript">
     function setAppHeight() {
         const doc = document.documentElement;
-        doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        doc.style.setProperty('--app-height', `${height}px`);
     }
 
     window.addEventListener('resize', setAppHeight);
     window.addEventListener('orientationchange', setAppHeight);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setAppHeight);
+        window.visualViewport.addEventListener('scroll', setAppHeight);
+    }
+    document.addEventListener('focusin', setAppHeight);
+    document.addEventListener('focusout', () => setTimeout(setAppHeight, 50));
     setAppHeight();
 
     // Inject server-side data from Jinja OUTSIDE the raw block

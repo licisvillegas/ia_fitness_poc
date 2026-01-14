@@ -330,6 +330,17 @@
         // 1. Volume Chart
         try {
             const uid = getActiveUserId();
+
+            // Fetch Latest Weight for reference
+            let latestWeight = null;
+            try {
+                const mRes = await fetch(`/api/user/${uid}/latest_metrics`);
+                if (mRes.ok) {
+                    const mData = await mRes.json();
+                    latestWeight = mData.weight_kg;
+                }
+            } catch (e) { console.error("Error fetching latest weight", e); }
+
             const vRes = await fetch(`/workout/api/stats/volume?user_id=${uid}`);
             const vData = await vRes.json();
 
@@ -340,7 +351,7 @@
                     data: {
                         labels: vData.map(d => d.date.substring(5)), // MM-DD
                         datasets: [{
-                            label: 'Volumen Total (kg)',
+                            label: 'Volumen Avg. (kg)',
                             data: vData.map(d => d.volume),
                             borderColor: '#00d2ff',
                             backgroundColor: 'rgba(0, 210, 255, 0.1)',
@@ -349,11 +360,11 @@
                             fill: true
                         }, {
                             label: 'Peso Corporal (kg)',
-                            data: vData.map(d => d.weight),
+                            data: vData.map(() => latestWeight),
                             borderColor: '#ff9d00',
                             borderDash: [5, 5],
-                            yAxisID: 'y1',
-                            tension: 0.1
+                            tension: 0,
+                            pointRadius: 0
                         }]
                     },
                     options: {
@@ -362,8 +373,14 @@
                         plugins: { legend: { labels: { color: '#ccc' } } },
                         scales: {
                             x: { ticks: { color: '#888' }, grid: { color: '#333' } },
-                            y: { type: 'linear', display: true, position: 'left', ticks: { color: '#00d2ff' }, grid: { color: '#333' } },
-                            y1: { type: 'linear', display: true, position: 'right', ticks: { color: '#ff9d00' }, grid: { drawOnChartArea: false } }
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                ticks: { color: '#ccc' },
+                                grid: { color: '#333' }
+                            }
                         }
                     }
                 });

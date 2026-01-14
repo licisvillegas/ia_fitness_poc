@@ -76,7 +76,14 @@ def get_active_meal_plan(user_id: str):
     try:
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        doc = extensions.db.meal_plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
+        search_ids = [user_id]
+        try:
+            if len(user_id) == 24:
+                search_ids.append(ObjectId(user_id))
+        except Exception:
+            pass
+
+        doc = extensions.db.meal_plans.find_one({"user_id": {"$in": search_ids}, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
         if not doc:
             return jsonify({"error": "Sin plan de nutrición activo"}), 404
         doc["_id"] = str(doc.get("_id")) if doc.get("_id") is not None else None
@@ -145,7 +152,14 @@ def list_meal_plans(user_id: str):
             except ValueError:
                 pass
 
-        cursor = extensions.db.meal_plans.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        search_ids = [user_id]
+        try:
+            if len(user_id) == 24:
+                search_ids.append(ObjectId(user_id))
+        except Exception:
+            pass
+
+        cursor = extensions.db.meal_plans.find({"user_id": {"$in": search_ids}}).sort("created_at", -1).limit(limit)
         items = []
         for doc in cursor:
             d = doc.copy()
@@ -248,12 +262,19 @@ def activate_meal_plan(plan_id: str):
         mp = extensions.db.meal_plans.find_one({"_id": oid})
         if not mp:
             return jsonify({"error": "Meal plan no encontrado"}), 404
+        
+        # FIX: Define user_id from the document
         user_id = mp.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Meal plan sin user_id"}), 400
+        user_id_str = str(user_id)
+        search_ids = [user_id_str]
+        try:
+            if len(user_id_str) == 24:
+                search_ids.append(ObjectId(user_id_str))
+        except Exception:
+            pass
 
         try:
-            extensions.db.meal_plans.update_many({"user_id": user_id}, {"$set": {"active": False}})
+            extensions.db.meal_plans.update_many({"user_id": {"$in": search_ids}}, {"$set": {"active": False}})
         except Exception:
             pass
         extensions.db.meal_plans.update_one({"_id": oid}, {"$set": {"active": True, "activated_at": datetime.utcnow()}})

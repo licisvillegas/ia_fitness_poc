@@ -91,7 +91,7 @@
           <div class="card">
             <div class="card-body">
               <div class="mb-3">
-                <label class="form-label">Usuario</label>
+                <label class="form-label text-theme">Usuario</label>
                 <div class="input-group">
                   <input type="text" class="form-control" id="userSearchTerm"
                     placeholder="Buscar: nombre, email o ID...">
@@ -111,6 +111,9 @@
                 <button id="btnSearchPlans" class="btn btn-primary">Buscar planes</button>
               </div>
               <div id="adminMsg" class="mt-3 text-info"></div>
+              <div class="d-grid mt-2">
+                <button id="btnShowGenerator" class="btn btn-outline-primary" style="display: none;">Generar plan base</button>
+              </div>
               <hr />
               <h6 class="mb-2">Planes</h6>
               <ul id="adminPlanList" class="list-group list-group-flush"></ul>
@@ -128,22 +131,37 @@
               <small id="adminPlanMeta" class="muted"></small>
               <hr />
 
-              <div class="row g-3">
+              <ul class="nav nav-tabs mb-3" id="planTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active text-theme bg-transparent" id="plan-edit-tab" data-bs-toggle="tab"
+                    data-bs-target="#plan-edit" type="button" role="tab" aria-controls="plan-edit"
+                    aria-selected="true">Editar</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link text-theme bg-transparent" id="plan-json-tab" data-bs-toggle="tab"
+                    data-bs-target="#plan-json" type="button" role="tab" aria-controls="plan-json"
+                    aria-selected="false">JSON</button>
+                </li>
+              </ul>
+
+              <div class="tab-content" id="planTabsContent">
+                <div class="tab-pane fade show active" id="plan-edit" role="tabpanel" aria-labelledby="plan-edit-tab">
+                  <div class="row g-3">
                 <div class="col-md-4">
-                  <label class="form-label">Calorías/día</label>
+                  <label class="form-label text-theme">Calorías/día</label>
                   <input id="fCalories" type="number" class="form-control" placeholder="p.ej. 2300">
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Delta kcal</label>
+                  <label class="form-label text-theme">Delta kcal</label>
                   <input id="fKcalDelta" type="number" class="form-control" placeholder="p.ej. -250">
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Cardio</label>
+                  <label class="form-label text-theme">Cardio</label>
                   <input id="fCardio" type="text" class="form-control" placeholder="p.ej. 2x LISS 30'">
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Objetivo (goal)</label>
+                  <label class="form-label text-theme">Objetivo (goal)</label>
                   <select id="fGoal" class="form-select">
                     <option value="">(sin definir)</option>
                     <option value="gain_muscle">Ganar músculo</option>
@@ -153,24 +171,24 @@
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Proteína (g)</label>
+                  <label class="form-label text-theme">Proteína (g)</label>
                   <input id="fProt" type="number" class="form-control" placeholder="p.ej. 160">
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Carbohidratos (g)</label>
+                  <label class="form-label text-theme">Carbohidratos (g)</label>
                   <input id="fCarb" type="number" class="form-control" placeholder="p.ej. 250">
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Grasas (g)</label>
+                  <label class="form-label text-theme">Grasas (g)</label>
                   <input id="fFat" type="number" class="form-control" placeholder="p.ej. 70">
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label">Volumen Δ</label>
+                  <label class="form-label text-theme">Volumen Δ</label>
                   <input id="fVolumeDelta" type="number" step="0.01" class="form-control" placeholder="p.ej. -0.12">
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Notas</label>
+                  <label class="form-label text-theme">Notas</label>
                   <textarea id="fNotes" rows="4" class="form-control"
                     placeholder="Notas internas o indicaciones del coach"></textarea>
                 </div>
@@ -196,6 +214,12 @@
                 </div>
               </div>
               <div id="adminSaveMsg" class="mt-2"></div>
+                </div>
+                <div class="tab-pane fade" id="plan-json" role="tabpanel" aria-labelledby="plan-json-tab">
+                  <pre id="planJsonDump" class="small bg-card border-theme rounded p-3"
+                    style="white-space: pre-wrap;"></pre>
+                </div>
+              </div>
 
             </div>
           </div>
@@ -211,11 +235,11 @@
 
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
-              <label class="form-label">Peso (kg)</label>
+              <label class="form-label text-theme">Peso (kg)</label>
               <input type="number" id="genWeight" class="form-control" placeholder="Ej. 75">
             </div>
             <div class="col-md-3">
-              <label class="form-label">Objetivo</label>
+              <label class="form-label text-theme">Objetivo</label>
               <select id="genGoal" class="form-select">
                 <option value="gain_muscle">Ganar Músculo</option>
                 <option value="lose_fat">Perder Grasa</option>
@@ -223,7 +247,7 @@
               </select>
             </div>
             <div class="col-md-3">
-              <label class="form-label">Nivel</label>
+              <label class="form-label text-theme">Nivel</label>
               <select id="genLevel" class="form-select">
                 <option value="beginner">Principiante</option>
                 <option value="intermediate">Intermedio</option>
@@ -251,7 +275,21 @@
         let currentPlan = null;
 
         // --- Standard User Search Logic ---
+        function formatUserLabel(u) {
+          const name = (u.name || u.username || '').trim();
+          const email = (u.email || '').trim();
+          if (name && email) return `${name} (${email})`;
+          if (name) return name;
+          if (u.user_id) return u.user_id;
+          return '';
+        }
+
         function selectUser(u) {
+          if (!u) return;
+          const hidden = document.getElementById('adminUserId');
+          if (hidden) hidden.value = u.user_id || '';
+          const input = document.getElementById('userSearchTerm');
+          if (input) input.value = formatUserLabel(u);
           // Auto-trigger load
           loadPlans();
         }
@@ -287,7 +325,20 @@
         async function loadPlans() {
           const msg = document.getElementById('adminMsg');
           const list = document.getElementById('adminPlanList');
-          const uid = resolveUserId(document.getElementById('adminUserId').value);
+          const genBtn = document.getElementById('btnShowGenerator');
+          let uid = resolveUserId(document.getElementById('adminUserId').value);
+          if (!uid) {
+            try {
+              const raw = localStorage.getItem('admin_working_user');
+              if (raw) {
+                const u = JSON.parse(raw);
+                if (u && u.user_id) {
+                  document.getElementById('adminUserId').value = u.user_id;
+                  uid = resolveUserId(u.user_id);
+                }
+              }
+            } catch (e) { }
+          }
           if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
           msg.textContent = 'Buscando planes...'; list.innerHTML = '';
           try {
@@ -297,15 +348,25 @@
               throw new Error(err.error || `HTTP ${resp.status}`);
             }
             const rows = await resp.json();
+            const hasActive = rows.some(p => p.active);
             msg.textContent = rows.length ? '' : 'Sin planes';
 
             // Toggle Generator if empty
             const genCard = document.getElementById('planGeneratorCard');
             if (rows.length === 0) {
+              currentPlan = null;
+              const jsonEl = document.getElementById('planJsonDump');
+              if (jsonEl) jsonEl.textContent = '';
               msg.innerHTML = '<span class="text-warning">Sin planes.</span> <a href="#" class="fw-bold" onclick="document.getElementById(\'planGeneratorCard\').style.display=\'block\';return false;">Generar uno nuevo</a>';
               genCard.style.display = 'block';
+              genBtn.style.display = 'inline-block';
+            } else if (!hasActive) {
+              msg.innerHTML = '<span class="text-warning">Sin plan activo.</span>';
+              genCard.style.display = 'none';
+              genBtn.style.display = 'inline-block';
             } else {
               genCard.style.display = 'none';
+              genBtn.style.display = 'none';
             }
 
             const frag = document.createDocumentFragment();
@@ -341,6 +402,10 @@
           document.getElementById('fVolumeDelta').value = (tr.ai_volumen_delta_ratio ?? '') || '';
           document.getElementById('fNotes').value = (p.notes ?? '') || '';
           document.getElementById('fGoal').value = (p.goal ?? '') || '';
+          const jsonEl = document.getElementById('planJsonDump');
+          if (jsonEl) {
+            jsonEl.textContent = JSON.stringify(p, null, 2);
+          }
           document.getElementById('adminSaveMsg').textContent = '';
         }
 
@@ -373,6 +438,13 @@
           return body;
         }
 
+        async function confirmDeletePlan() {
+          if (typeof window.showConfirmModal === 'function') {
+            return await window.showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este plan?", "danger");
+          }
+          return window.confirm("¿Seguro que deseas borrar este plan?");
+        }
+
         async function savePlan() {
           const msg = document.getElementById('adminSaveMsg');
           if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
@@ -395,6 +467,11 @@
         }
 
         document.getElementById('btnSearchPlans').addEventListener('click', loadPlans);
+        document.getElementById('btnShowGenerator').addEventListener('click', () => {
+          const genCard = document.getElementById('planGeneratorCard');
+          genCard.style.display = 'block';
+          genCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
         document.getElementById('btnSavePlan').addEventListener('click', savePlan);
         document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
 
@@ -417,7 +494,7 @@
           if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
           const token = document.getElementById('adminToken').value.trim();
           if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          const confirmed = await showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este plan?", "danger");
+          const confirmed = await confirmDeletePlan();
           if (!confirmed) return;
           msg.textContent = 'Borrando...';
           try {
@@ -491,3 +568,5 @@
 </body>
 
 </html>
+
+

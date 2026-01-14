@@ -121,15 +121,26 @@ def auth_login_api():
         logger.info(f"Usuario accedió: {u.get('email')} ({u.get('username')})")
         
         resp = jsonify({"message": "Inicio de sesión exitoso", "user": user})
-        resp.set_cookie("user_session", user["user_id"], httponly=True, samesite="Lax", max_age=86400*30)
+        
+        remember = data.get("remember", False)
+        # 30 days if remember is true, else session cookie (None)
+        max_age = 86400 * 30 if remember else None
+        
+        # Safari and modern browsers require SameSite/Secure for some contexts.
+        # Max-age=None makes it a session cookie.
+        resp.set_cookie(
+            "user_session", 
+            user["user_id"], 
+            httponly=True, 
+            samesite="Lax", 
+            max_age=max_age,
+            secure=request.is_secure # Set secure based on connection
+        )
         return resp, 200
 
     except Exception as e:
         logger.error(f"Error en login: {e}", exc_info=True)
         return jsonify({"error": "Error interno en inicio de sesión"}), 500
-
-# Admin Auth
-
 @auth_bp.post("/admin/login")
 def admin_login():
     """Valida el token de administrador enviado por POST y establece cookie.

@@ -442,6 +442,7 @@
 <body>
   <!-- Navbar -->
   <!-- Navbar -->
+  <input type="hidden" id="current_user_id" value="{{ current_user.user_id if current_user else '' }}">
   {% include 'components/sidebar.html' %}
   {% include 'components/loader.html' %}
   <div class="main-content">

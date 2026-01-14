@@ -3,7 +3,7 @@
     const btn = document.getElementById('btnGenMeals');
     const container = document.getElementById('mealsContainer');
     const btnSave = document.getElementById('btnSaveMealPlan');
-    if (!btn) return;
+    // if (!btn) return; // Permitir ejecución sin controles de admin
 
     // Oculta ejemplos estáticos del template original para evitar confusión
     function hideSampleCards() {
@@ -143,8 +143,8 @@
         const prefs = document.getElementById('nutriPrefs').value.trim();
         const exclude = document.getElementById('nutriExclude').value.trim();
         const cuisine = document.getElementById('nutriCuisine').value.trim();
-        const uid = resolveUserId(userInput.value);
-        if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+        const uid = resolveUserId(userInput ? userInput.value : '');
+        if (!uid) { if (msg) msg.textContent = 'Ingresa un user_id'; return; }
         if (window.showLoader) window.showLoader("Generando plan de comidas...");
         btnSave.style.display = 'none';
         try {
@@ -162,14 +162,14 @@
             renderMeals(data, true);
             msg.textContent = '';
         } catch (e) {
-            msg.textContent = `No se pudo generar el plan: ${e.message}`;
+            if (msg) msg.textContent = `No se pudo generar el plan: ${e.message}`;
         } finally {
             if (window.hideLoader) window.hideLoader();
         }
     }
 
-    btn.addEventListener('click', generate);
-    btnSave.addEventListener('click', async () => {
+    if (btn) btn.addEventListener('click', generate);
+    if (btnSave) btnSave.addEventListener('click', async () => {
         const payloadStr = btnSave.dataset.payload || '';
         if (!payloadStr) { return; }
         if (window.showLoader) window.showLoader("Guardando y activando plan...");
@@ -190,14 +190,23 @@
 
     async function loadActive() {
         try {
-            const uid = resolveUserId(document.getElementById('nutriUserId').value);
-            if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+            const userInput = document.getElementById('nutriUserId');
+            const hidden = document.getElementById('current_user_id');
+            let rawVal = '';
+            if (userInput && userInput.value.trim()) rawVal = userInput.value;
+            else if (hidden && hidden.value.trim()) rawVal = hidden.value;
+
+            const uid = resolveUserId(rawVal);
+            if (!uid) {
+                if (msg) msg.textContent = 'Ingresa un user_id';
+                return;
+            }
             if (window.showLoader) window.showLoader("Cargando plan activo...");
             const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}/active`);
             if (!resp.ok) {
-                msg.textContent = 'No cuenta con plan de nutrición activo';
+                if (msg) msg.textContent = 'No cuenta con plan de nutrición activo';
                 container.innerHTML = '';
-                btnSave.style.display = 'none';
+                if (btnSave) btnSave.style.display = 'none';
                 // Hide summary if no plan
                 const s = document.getElementById('nutritionPlanSummary');
                 if (s) s.style.display = 'none';
@@ -205,9 +214,9 @@
             }
             const doc = await resp.json();
             renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
-            msg.textContent = 'Plan de nutrición activo cargado';
+            if (msg) msg.textContent = 'Plan de nutrición activo cargado';
         } catch (e) {
-            msg.textContent = `Error al cargar plan activo: ${e.message}`;
+            if (msg) msg.textContent = `Error al cargar plan activo: ${e.message}`;
         } finally {
             if (window.hideLoader) window.hideLoader();
         }
@@ -220,7 +229,8 @@
             if (raw) {
                 const u = JSON.parse(raw);
                 const display = (u.username || '').trim();
-                if (display) { document.getElementById('nutriUserId').value = display; }
+                const userIdInput = document.getElementById('nutriUserId');
+                if (display && userIdInput) { userIdInput.value = display; }
             }
         } catch (e) { }
         loadActive();

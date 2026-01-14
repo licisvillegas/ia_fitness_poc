@@ -742,6 +742,11 @@ def edit_plan(plan_id):
     try:
         data = request.get_json()
         if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        try:
+            plan_oid = ObjectId(plan_id)
+            plan_filter = {"_id": plan_oid}
+        except Exception:
+            plan_filter = {"_id": plan_id}
         
         # Merge changes deep? o simple replace?
         # El front envía estructura update: body -> nutrition_plan, etc.
@@ -760,7 +765,9 @@ def edit_plan(plan_id):
             for k, v in data["training_plan"].items():
                 setter[f"training_plan.{k}"] = v
         
-        extensions.db.plans.update_one({"_id": ObjectId(plan_id)}, {"$set": setter})
+        res = extensions.db.plans.update_one(plan_filter, {"$set": setter})
+        if res.matched_count == 0:
+            return jsonify({"error": "Plan no encontrado"}), 404
         return jsonify({"message": "Plan actualizado"}), 200
     except Exception as e:
         logger.error(f"Error editing plan: {e}")
@@ -771,7 +778,14 @@ def deactivate_plan(plan_id):
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        extensions.db.plans.update_one({"_id": ObjectId(plan_id)}, {"$set": {"active": False}})
+        try:
+            plan_oid = ObjectId(plan_id)
+            plan_filter = {"_id": plan_oid}
+        except Exception:
+            plan_filter = {"_id": plan_id}
+        res = extensions.db.plans.update_one(plan_filter, {"$set": {"active": False}})
+        if res.matched_count == 0:
+            return jsonify({"error": "Plan no encontrado"}), 404
         return jsonify({"message": "Desactivado"}), 200
     except Exception as e:
         return jsonify({"error": "Error"}), 500
@@ -781,40 +795,130 @@ def delete_plan(plan_id):
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        extensions.db.plans.delete_one({"_id": ObjectId(plan_id)})
+        try:
+            plan_oid = ObjectId(plan_id)
+            plan_filter = {"_id": plan_oid}
+        except Exception:
+            plan_filter = {"_id": plan_id}
+        res = extensions.db.plans.delete_one(plan_filter)
+        if res.deleted_count == 0:
+            return jsonify({"error": "Plan no encontrado"}), 404
         return jsonify({"message": "Eliminado"}), 200
     except Exception as e:
         return jsonify({"error": "Error"}), 500
 
 @admin_bp.post("/generate_plan")
 def simple_generate_plan():
-    """Generador simple de plan (stub placeholder)"""
+    """Generador simple de plan (admin)"""
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        data = request.get_json()
-        uid = data.get("user_id")
-        weight = data.get("weight_kg")
-        goal = data.get("goal")
-        
-        # Create a dummy plan
-        new_plan = {
-            "user_id": uid,
-            "created_at": datetime.utcnow(),
-            "active": True,
-            "goal": goal,
-            "notes": f"Generado manualmente (peso: {weight}kg)",
-            "nutrition_plan": {
-                 "calories_per_day": 2500,
-                 "macros": {"protein": 150, "carbs": 250, "fat": 70}
-            },
-            "training_plan": {
-                "cardio": "Caminata 30min",
-                "routine": []
+        if not request.is_json:
+            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
+
+        data = request.get_json() or {}
+        uid = (data.get("user_id") or "").strip()
+        if not uid:
+            return jsonify({"error": "user_id requerido"}), 400
+
+        now = datetime.utcnow()
+        plan_doc = None
+        message = "Plan generado"
+
+        adj = extensions.db.ai_adjustments.find_one(
+            {"user_id": uid},
+            sort=[("created_at", -1)]
+        )
+        if adj:
+            output = (adj.get("output") or {})
+            ajustes = (output.get("ajustes") or {})
+            food = (ajustes.get("plan_alimentacion") or {})
+            macros = (food.get("macros") or {})
+            train = (ajustes.get("plan_entrenamiento") or {})
+
+            plan_doc = {
+                "user_id": uid,
+                "source": "ai_adjustment",
+                "nutrition_plan": {
+                    "calories_per_day": food.get("kcal_obj"),
+                    "kcal_delta": food.get("kcal_delta"),
+                    "macros": {
+                        "protein": macros.get("p"),
+                        "carbs": macros.get("c"),
+                        "fat": macros.get("g"),
+                    },
+                },
+                "training_plan": {
+                    "ai_volumen_delta_ratio": train.get("volumen_delta_ratio"),
+                    "cardio": train.get("cardio"),
+                },
+                "ai_summary": {
+                    "razonamiento_resumido": output.get("razonamiento_resumido"),
+                    "proxima_revision_dias": output.get("proxima_revision_dias"),
+                    "backend": adj.get("backend"),
+                    "adjustment_id": str(adj.get("_id")) if adj.get("_id") is not None else None,
+                },
+                "active": True,
+                "created_at": now,
+                "activated_at": now,
             }
-        }
-        res = extensions.db.plans.insert_one(new_plan)
-        return jsonify({"message": "Generado", "id": str(res.inserted_id)}), 200
+            message = "Plan creado desde ajuste AI"
+        else:
+            weight = data.get("weight_kg")
+            goal = (data.get("goal") or "maintain").strip()
+            if weight is None:
+                return jsonify({"error": "weight_kg requerido"}), 400
+            try:
+                weight = float(weight)
+            except (TypeError, ValueError):
+                return jsonify({"error": "weight_kg invalido"}), 400
+
+            if goal not in ["gain_muscle", "lose_fat", "maintain"]:
+                return jsonify({"error": "goal invalido"}), 400
+
+            if goal == "gain_muscle":
+                calories = weight * 36
+                macros = {"protein": 2.2 * weight, "carbs": 5 * weight, "fat": 0.9 * weight}
+            elif goal == "lose_fat":
+                calories = weight * 28
+                macros = {"protein": 2 * weight, "carbs": 2.5 * weight, "fat": 0.8 * weight}
+            else:
+                calories = weight * 32
+                macros = {"protein": 2 * weight, "carbs": 3.5 * weight, "fat": 0.85 * weight}
+
+            plan_doc = {
+                "user_id": uid,
+                "goal": goal,
+                "source": "base_generator",
+                "notes": f"Generado manualmente (peso: {weight}kg)",
+                "nutrition_plan": {
+                    "calories_per_day": calories,
+                    "kcal_delta": 0,
+                    "macros": macros,
+                },
+                "training_plan": {
+                    "cardio": "",
+                    "ai_volumen_delta_ratio": None,
+                },
+                "ai_summary": {
+                    "razonamiento_resumido": None,
+                    "proxima_revision_dias": None,
+                    "backend": "base_generator",
+                    "adjustment_id": None,
+                },
+                "active": True,
+                "created_at": now,
+                "activated_at": now,
+            }
+
+        try:
+            extensions.db.plans.update_many({"user_id": uid}, {"$set": {"active": False}})
+        except Exception:
+            pass
+
+        res = extensions.db.plans.insert_one(plan_doc)
+        plan_doc["_id"] = str(res.inserted_id)
+        return jsonify({"message": message, "plan": plan_doc}), 201
     except Exception as e:
         logger.error(f"Generate err: {e}")
         return jsonify({"error": "Error"}), 500

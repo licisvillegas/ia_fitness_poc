@@ -423,7 +423,7 @@ def api_save_my_routine():
 
 @workout_bp.get("/api/stats/volume")
 def api_stats_volume():
-    """Returns volume progress over time."""
+    """Returns average weight per set grouped by day."""
     try:
         user_id = request.args.get("user_id")
         if not user_id: return jsonify({"error": "Missing user_id"}), 400
@@ -431,31 +431,51 @@ def api_stats_volume():
         db = get_db()
         if db is None: return jsonify([]), 503
         
-        # Get last 30 sessions with total_volume
-        # Note: Sorting might be tricky with mixed types, but we'll try best effort
-        # USE 'workout_sessions'
+        # Fetch sessions for this user
         cursor = db.workout_sessions.find(
-            {"user_id": user_id, "total_volume": {"$gt": 0}},
-            {"total_volume": 1, "body_weight": 1, "started_at": 1, "created_at": 1}
-        ).sort([("created_at", 1)]).limit(30)
+            {"user_id": user_id},
+            {"sets": 1, "started_at": 1, "created_at": 1}
+        ).sort([("created_at", 1)])
         
-        data = []
+        daily_weights = {}
         for s in cursor:
             raw_date = s.get("started_at") or s.get("created_at")
-            date_str = "Unknown"
+            if not raw_date: continue
             
+            date_str = None
             if isinstance(raw_date, datetime):
                 date_str = raw_date.strftime("%Y-%m-%d")
             elif isinstance(raw_date, str):
                 date_str = raw_date[:10]
-                
-            data.append({
-                "date": date_str,
-                "volume": s.get("total_volume", 0),
-                "weight": s.get("body_weight", 0)
-            })
             
-        return jsonify(data), 200
+            if not date_str: continue
+            
+            sets = s.get("sets", [])
+            for st in sets:
+                try:
+                    w = float(st.get("weight", 0))
+                    # Only count sets with weight > 0 if we want a meaningful average of weights used
+                    if w > 0:
+                        if date_str not in daily_weights:
+                            daily_weights[date_str] = {"total_weight": 0, "count": 0}
+                        daily_weights[date_str]["total_weight"] += w
+                        daily_weights[date_str]["count"] += 1
+                except (ValueError, TypeError):
+                    continue
+            
+        # Convert to list of averages
+        data = []
+        sorted_dates = sorted(daily_weights.keys())
+        for d in sorted_dates:
+            if daily_weights[d]["count"] > 0:
+                avg = daily_weights[d]["total_weight"] / daily_weights[d]["count"]
+                data.append({
+                    "date": d,
+                    "volume": round(avg, 2)
+                })
+            
+        # Return last 30 daily points
+        return jsonify(data[-30:]), 200
     except Exception as e:
         logger.error(f"Error fetching volume stats: {e}")
         return jsonify({"error": "Internal Error"}), 500
@@ -511,7 +531,7 @@ def api_stats_weekly():
             weekly_stats[week_key]["sessions"] += 1
             
         sorted_weeks = sorted(weekly_stats.values(), key=lambda x: x["week_key"])
-        data = sorted_weeks[-12:]
+        data = sorted_weeks[-10:]
         
         return jsonify(data), 200
     except Exception as e:

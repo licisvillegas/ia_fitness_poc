@@ -453,11 +453,15 @@
         document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
 
         // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS ---
+        let latestUserWeight = null;
         try {
           const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
           if (mRes.ok) {
             const mData = await mRes.json();
-            if (mData.weight_kg) document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
+            if (mData.weight_kg) {
+              document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
+              latestUserWeight = mData.weight_kg;
+            }
             if (mData.body_fat) document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
             if (mData.tmb) document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
             if (mData.tdee) document.getElementById("stat-diet").innerText = `${mData.tdee}`;
@@ -488,6 +492,18 @@
           }
         } catch (e) { console.error("Error fetching weekly stats", e); }
 
+        // --- FETCH DAILY VOLUME STATS ---
+        let dailyVolumeLabels = [];
+        let dailyVolumes = [];
+        try {
+          const vRes = await fetch(`/workout/api/stats/volume?user_id=${userId}`);
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            dailyVolumeLabels = vData.map(d => d.date);
+            dailyVolumes = vData.map(d => d.volume);
+          }
+        } catch (e) { console.error("Error fetching daily volume stats", e); }
+
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const textColor = isLight ? '#374151' : '#e5e7eb';
         const gridColor = isLight ? '#e5e7eb' : '#374151';
@@ -508,21 +524,48 @@
           charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
         }
         if (document.getElementById("performanceChart")) {
+          const chartLabels = dailyVolumeLabels.length > 0 ? dailyVolumeLabels : labels;
           charts.push(new Chart("performanceChart", {
             type: "line",
             data: {
-              labels: weeklyLabels.length > 0 ? weeklyLabels : labels,
-              datasets: [{
-                label: 'Volumen Total (kg)',
-                data: weeklyVolumes.length > 0 ? weeklyVolumes : performance,
-                borderColor: colors.green,
-                backgroundColor: "rgba(16,185,129,0.2)",
-                fill: true,
-                tension: 0.4,
-                spanGaps: true
-              }]
+              labels: chartLabels,
+              datasets: [
+                {
+                  label: 'Volumen Avg. (kg)',
+                  data: dailyVolumes.length > 0 ? dailyVolumes : performance,
+                  borderColor: colors.green,
+                  backgroundColor: "rgba(16,185,129,0.2)",
+                  fill: true,
+                  tension: 0.4,
+                  spanGaps: true,
+                  yAxisID: 'y'
+                },
+                latestUserWeight ? {
+                  label: 'Peso Corporal (kg)',
+                  data: chartLabels.map(() => latestUserWeight),
+                  borderColor: colors.red,
+                  borderDash: [5, 5],
+                  fill: false,
+                  pointRadius: 0,
+                  tension: 0
+                } : null
+              ].filter(d => d !== null)
             },
-            options: opts
+            options: {
+              ...opts,
+              interaction: { mode: 'index', intersect: false },
+              scales: {
+                x: opts.scales.x,
+                y: {
+                  type: 'linear',
+                  display: true,
+                  position: 'left',
+                  beginAtZero: true,
+                  ticks: { color: textColor },
+                  grid: opts.scales.y.grid
+                }
+              }
+            }
           }));
         }
         if (document.getElementById("metabolismChart")) {
@@ -554,7 +597,7 @@
             if (!charts) return;
             if (charts[0]?.data?.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
             if (charts[1]?.data?.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
-            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = 'Volumen Total (kg)';
+            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = 'Volumen Avg. (kg)';
             if (charts[3]?.data?.datasets[0]) charts[3].data.datasets[0].label = 'Sesiones Semana';
             charts.forEach(c => c.update());
           } catch (e) { }

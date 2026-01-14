@@ -276,26 +276,57 @@ def ai_body_assessment():
             "measurements": measurements,
             "photos": sanitize_photos((payload or {}).get("photos")),
             "notes": (payload or {}).get("notes"),
+            "admin_internal_notes": (payload or {}).get("admin_internal_notes"),
+            "admin_user_notes": (payload or {}).get("admin_user_notes"),
+            "manual_adjustments": (payload or {}).get("manual_adjustments"),
         }
 
         agent = BodyAssessmentAgent()
         log_agent_execution("start", "BodyAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment"})
         result = agent.run(context, images=images_for_agent)
         log_agent_execution("end", "BodyAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment"})
-
         try:
             if extensions.db is not None and context.get("user_id"):
+                created_at = datetime.utcnow()
                 extensions.db.body_assessments.insert_one(
                     {
                         "user_id": context.get("user_id"),
                         "backend": agent.backend(),
                         "input": context,
                         "output": result,
-                        "created_at": datetime.utcnow(),
+                        "created_at": created_at,
                     }
                 )
+
+                # Mirror essential metrics into progress for consistency
+                meas = (context or {}).get("measurements") or {}
+                weight_kg = meas.get("weight_kg") or meas.get("weight")
+                body_fat = None
+                out = result or {}
+                bc = out.get("body_composition") or {}
+                if bc.get("body_fat_percent"):
+                    body_fat = bc.get("body_fat_percent")
+                elif out.get("body_fat_percent"):
+                    body_fat = out.get("body_fat_percent")
+                elif meas.get("body_fat_percent"):
+                    body_fat = meas.get("body_fat_percent")
+                elif meas.get("body_fat"):
+                    body_fat = meas.get("body_fat")
+
+                if weight_kg is not None or body_fat is not None:
+                    extensions.db.progress.insert_one(
+                        {
+                            "user_id": context.get("user_id"),
+                            "date": created_at,
+                            "weight_kg": weight_kg,
+                            "body_fat": body_fat,
+                            "performance": None,
+                            "nutrition_adherence": None,
+                            "source": "body_assessment",
+                        }
+                    )
         except Exception as persist_err:
-            logger.warning(f"No se pudo guardar evaluación corporal: {persist_err}")
+            logger.warning(f"No se pudo guardar evaluaci?n corporal: {persist_err}")
 
         return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
     except Exception as e:

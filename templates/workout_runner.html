@@ -3189,6 +3189,9 @@
                                                                 className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
                                                                 value={weight}
                                                                 onChange={e => setWeight(e.target.value)}
+                                                                onFocus={e => e.target.select()}
+                                                                inputMode="decimal"
+                                                                pattern="[0-9]*[.,]?[0-9]*"
                                                                 autoFocus
                                                             />
                                                         </div>
@@ -3199,6 +3202,9 @@
                                                                 className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
                                                                 value={reps}
                                                                 onChange={e => setReps(e.target.value)}
+                                                                onFocus={e => e.target.select()}
+                                                                inputMode="decimal"
+                                                                pattern="[0-9]*[.,]?[0-9]*"
                                                             />
                                                         </div>
                                                     </div>

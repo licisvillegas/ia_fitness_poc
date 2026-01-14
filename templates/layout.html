@@ -186,6 +186,27 @@
 
         window.showAlertModal = showAlertModal;
         window.showConfirmModal = showConfirmModal;
+
+        (function syncAdminWorkingUserGlobal() {
+            function setWorkingUser(user) {
+                window.adminWorkingUser = user || null;
+                window.adminWorkingUserId = user && user.user_id ? String(user.user_id) : "";
+            }
+
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                setWorkingUser(stored ? JSON.parse(stored) : null);
+            } catch (e) {
+                setWorkingUser(null);
+            }
+
+            window.addEventListener("admin-user-selected", (evt) => {
+                setWorkingUser(evt.detail || null);
+            });
+            window.addEventListener("admin-user-cleared", () => {
+                setWorkingUser(null);
+            });
+        })();
     </script>
 </body>
 

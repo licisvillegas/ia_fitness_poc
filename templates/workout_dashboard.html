@@ -15,17 +15,17 @@
             <div class="d-flex gap-2">
                 <div class="position-relative flex-grow-1">
                     <div class="input-group">
-                        <input type="text" class="form-control bg-dark text-white border-secondary" id="userSearchTerm"
-                            placeholder="Nombre, usuario o email">
+                        <input type="text" class="form-control" id="userSearchTerm"
+                            placeholder="Buscar: nombre, email o ID...">
                         <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
                     <input type="hidden" id="userSelector" value="{{ current_user_id }}">
                     <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
-                        style="z-index: 1000; display: none; width: 90%;"></div>
+                        style="z-index: 1000; display: none; width: 100%;"></div>
                 </div>
-                <button id="btnClearUser" class="btn btn-outline-secondary" title="Limpiar">
+                <button id="btnClearUserSearch" class="btn btn-outline-secondary" title="Limpiar">
                     <i class="fas fa-times"></i>
                 </button>
                 <button id="btnRefreshUser" class="btn btn-dark border-secondary" title="Refrescar">
@@ -241,7 +241,9 @@
     const userSelector = document.getElementById('userSelector');
 
     function getActiveUserId() {
-        if (userSelector && userSelector.value) return userSelector.value;
+        // If the selector exists (Admin mode), strictly respect its value (even if empty)
+        if (userSelector) return userSelector.value;
+        // Only fallback to logged-in user if NOT in admin mode (no selector)
         return window.currentUserId;
     }
 
@@ -255,11 +257,33 @@
     document.addEventListener("DOMContentLoaded", () => {
         // Sync with local storage if Admin
         if (userSelector) {
-            const storedUid = localStorage.getItem("ai_fitness_uid");
+            let storedUid = localStorage.getItem("ai_fitness_uid");
+            let storedUser = null;
+            try {
+                const ctx = localStorage.getItem("admin_working_user");
+                if (ctx) {
+                    const u = JSON.parse(ctx);
+                    if (u && u.user_id) {
+                        storedUid = u.user_id;
+                        storedUser = u;
+                    }
+                }
+            } catch (e) { }
             if (storedUid) {
                 userSelector.value = storedUid;
             } else if (window.currentUserId) {
                 userSelector.value = window.currentUserId;
+            }
+            if (storedUser) {
+                const searchInput = document.getElementById("userSearchTerm");
+                if (searchInput) {
+                    const label = storedUser.name || storedUser.username || "";
+                    const email = storedUser.email || "";
+                    searchInput.value = label && email ? `${label} (${email})` : (label || storedUser.user_id || "");
+                }
+                selectDashboardUser(storedUser);
+            } else if (userSelector.value) {
+                refreshDashboard();
             }
 
             initUserSearch({
@@ -267,13 +291,23 @@
                 resultsId: "userSearchResults",
                 hiddenId: "userSelector",
                 buttonId: "btnLookupUser",
-                clearButtonId: "btnClearUser",
+                clearButtonId: "btnClearUserSearch",
                 storageKey: "admin_working_user",
                 onSelect: selectDashboardUser,
                 onClear: () => {
                     if (userSelector) userSelector.value = "";
                     refreshDashboard();
                 }
+            });
+
+            window.addEventListener("admin-user-selected", (evt) => {
+                const u = evt.detail || {};
+                if (!u.user_id) return;
+                selectDashboardUser(u);
+            });
+            window.addEventListener("admin-user-cleared", () => {
+                if (userSelector) userSelector.value = "";
+                refreshDashboard();
             });
         } else if (window.currentUserId) {
             try {
@@ -311,16 +345,52 @@
         refreshDashboard();
     });
 
+    function resetDashboardForNoUser() {
+        const assignedList = document.getElementById("routines-list");
+        const createdList = document.getElementById("created-routines-list");
+        const heatmapGrid = document.getElementById("heatmapGrid");
+        const volumeCanvas = document.getElementById("volumeChart");
+
+        if (assignedList) {
+            assignedList.innerHTML = '<div class="col-12 text-muted text-center py-3">Selecciona un usuario para ver rutinas asignadas.</div>';
+        }
+        if (createdList) {
+            createdList.innerHTML = '<div class="col-12 text-muted text-center py-3">Selecciona un usuario para ver rutinas creadas.</div>';
+        }
+        if (heatmapGrid) {
+            heatmapGrid.innerHTML = "";
+        }
+        if (volumeCanvas) {
+            const ctx = volumeCanvas.getContext('2d');
+            if (window.volumeChart) {
+                window.volumeChart.destroy();
+                window.volumeChart = null;
+            }
+            ctx.clearRect(0, 0, volumeCanvas.width, volumeCanvas.height);
+            ctx.font = "14px Arial";
+            ctx.fillStyle = "#888";
+            ctx.fillText("Selecciona un usuario", 10, 50);
+        }
+    }
+
     function refreshDashboard() {
+        const uid = getActiveUserId();
+        if (!uid) {
+            resetDashboardForNoUser();
+            return;
+        }
         if (window.loadRoutines) {
-            window.loadRoutines(getActiveUserId(), { returnTo: '/workout/dashboard' });
+            window.loadRoutines(uid, { returnTo: '/workout/dashboard' });
         }
         if (window.loadCreatedRoutines) {
-            window.loadCreatedRoutines({ returnTo: '/workout/dashboard' });
+            window.loadCreatedRoutines({
+                returnTo: '/workout/dashboard',
+                userId: uid
+            });
         }
         loadStats();
         if (window.loadSessions) {
-            window.loadSessions(getActiveUserId());
+            window.loadSessions(uid);
         }
     }
 
@@ -330,6 +400,11 @@
         // 1. Volume Chart
         try {
             const uid = getActiveUserId();
+
+            if (!uid) {
+                resetDashboardForNoUser();
+                return;
+            }
 
             // Fetch Latest Weight for reference
             let latestWeight = null;
@@ -342,17 +417,36 @@
             } catch (e) { console.error("Error fetching latest weight", e); }
 
             const vRes = await fetch(`/workout/api/stats/volume?user_id=${uid}`);
-            const vData = await vRes.json();
+            const vData = await vRes.json(); // returns array or error
+            const cleanVData = Array.isArray(vData) ? vData : [];
 
-            const ctx = document.getElementById('volumeChart').getContext('2d');
-            if (vData.length > 0) {
-                new Chart(ctx, {
+            let labels = [];
+            let volumeSeries = [];
+            let weightSeries = [];
+
+            if (cleanVData.length > 0) {
+                labels = cleanVData.map(d => d.date.substring(5)); // MM-DD
+                volumeSeries = cleanVData.map(d => d.volume);
+
+                // Use Flat Line for Weight (Robust Approach from /dashboard)
+                weightSeries = cleanVData.map(() => latestWeight);
+            }
+
+            const canvas = document.getElementById('volumeChart');
+            const ctx = canvas.getContext('2d');
+            if (window.volumeChartInstance) {
+                window.volumeChartInstance.destroy();
+                window.volumeChartInstance = null;
+            }
+
+            if (labels.length > 0) {
+                window.volumeChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: vData.map(d => d.date.substring(5)), // MM-DD
+                        labels,
                         datasets: [{
                             label: 'Volumen Avg. (kg)',
-                            data: vData.map(d => d.volume),
+                            data: volumeSeries,
                             borderColor: '#00d2ff',
                             backgroundColor: 'rgba(0, 210, 255, 0.1)',
                             yAxisID: 'y',
@@ -360,7 +454,7 @@
                             fill: true
                         }, {
                             label: 'Peso Corporal (kg)',
-                            data: vData.map(() => latestWeight),
+                            data: weightSeries,
                             borderColor: '#ff9d00',
                             borderDash: [5, 5],
                             tension: 0,
@@ -385,9 +479,8 @@
                     }
                 });
             } else {
-                ctx.font = "14px Arial";
-                ctx.fillStyle = "#888";
-                ctx.fillText("Sin datos suficientes", 10, 50);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillText("Sin datos de entrenamiento recientes", 10, 50);
             }
         } catch (e) { console.error("Chart error", e); }
 

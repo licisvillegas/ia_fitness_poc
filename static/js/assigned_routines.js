@@ -88,6 +88,12 @@ window.loadRoutines = async function loadRoutines(userId, options) {
   const returnTo = (options && options.returnTo) || "/dashboard";
 
   if (!listEl || !sectionEl) return;
+  if (!userId) {
+    listEl.innerHTML =
+      '<div class="col-12 text-muted text-center py-3">Selecciona un usuario para ver rutinas asignadas.</div>';
+    sectionEl.style.display = "block";
+    return;
+  }
   if (window.showLoader) window.showLoader("Buscando rutinas...");
 
   await window.ensureRoutineDependencies();
@@ -483,15 +489,23 @@ window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
   const listEl = document.getElementById("created-routines-list");
   const sectionEl = document.getElementById("my-created-routines");
   const returnTo = (options && options.returnTo) || "/dashboard";
+  const userId = options && options.userId;
 
   if (!listEl || !sectionEl) return;
+  if (!userId) {
+    listEl.innerHTML =
+      '<div class="col-12 text-muted text-center py-3">Selecciona un usuario para ver rutinas creadas.</div>';
+    sectionEl.style.display = "block";
+    return;
+  }
 
   listEl.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
   sectionEl.style.display = "block";
 
   try {
     await window.ensureRoutineDependencies();
-    const res = await fetch("/workout/api/my-routines");
+    const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+    const res = await fetch(`/workout/api/my-routines${query}`);
     const routines = await res.json();
     listEl.innerHTML = "";
 

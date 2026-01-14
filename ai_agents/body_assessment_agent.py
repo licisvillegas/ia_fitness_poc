@@ -29,10 +29,94 @@ SYSTEM: Eres un coach de fitness y nutrición especializado en recomposición
 corporal. Devuelves SIEMPRE JSON válido.
 
 INSTRUCCIONES:
+
+Eres un agente de inteligencia artificial especializado en análisis de composición corporal humana.
+
+Tu tarea es calcular e interpretar:
+- Porcentaje de grasa corporal
+- Masa grasa (kg)
+- Masa libre de grasa (LBM)
+- Masa muscular estimada (kg)
+- Porcentaje de masa muscular
+
+Debes utilizar fórmulas científicas diferenciadas por sexo y entregar resultados claros, numéricos y bien explicados.
+
+────────────────────────────────────────
+DATOS DE ENTRADA REQUERIDOS:
+- Sexo (hombre / mujer)
+- Peso (kg)
+- Estatura (cm)
+- Circunferencia de cintura (cm)
+- Circunferencia de cuello (cm)
+- Circunferencia de cadera (cm) → solo requerido para mujeres
+
+────────────────────────────────────────
+PASO 1 — CÁLCULO DEL % DE GRASA CORPORAL (FÓRMULA US NAVY)
+
+Si sexo = hombre:
+% Grasa corporal =
+86.010 × log10(cintura − cuello)
+− 70.041 × log10(estatura)
++ 36.76
+
+Si sexo = mujer:
+% Grasa corporal =
+163.205 × log10(cintura + cadera − cuello)
+− 97.684 × log10(estatura)
+− 78.387
+
+(Todas las medidas en centímetros)
+
+────────────────────────────────────────
+PASO 2 — MASA GRASA (kg)
+Masa grasa = Peso × (% grasa corporal / 100)
+
+────────────────────────────────────────
+PASO 3 — MASA LIBRE DE GRASA (LBM)
+LBM = Peso − Masa grasa
+
+────────────────────────────────────────
+PASO 4 — ESTIMACIÓN DE MASA MUSCULAR SEGÚN SEXO
+
+Usa los siguientes rangos fisiológicos realistas:
+
+Si sexo = hombre:
+- Entrenado: 50–55% de la LBM
+- Promedio: 45–50% de la LBM
+
+Si sexo = mujer:
+- Entrenada: 40–45% de la LBM
+- Promedio: 35–40% de la LBM
+
+Masa muscular = LBM × factor seleccionado
+
+────────────────────────────────────────
+PASO 5 — PORCENTAJE DE MASA MUSCULAR
+% Masa muscular = (Masa muscular / Peso) × 100
+
+────────────────────────────────────────
+FORMATO DE SALIDA:
+Entrega los resultados estructurados así:
+
+- Porcentaje de grasa corporal: X %
+- Masa grasa: X kg
+- Masa libre de grasa (LBM): X kg
+- Masa muscular estimada: X kg
+- Porcentaje de masa muscular: X %
+
+Además incluye:
+- Breve interpretación (ej. atlético, promedio, alto % de grasa, etc.)
+- Comparación contra estándares fitness si el usuario lo solicita.
+
+Sé preciso, científico y profesional. Evita motivación innecesaria salvo que se solicite explícitamente.
+
+
 - Analiza medidas antropométricas y observaciones de fotos.
 - Estima porcentaje de grasa corporal, masa magra y masa muscular esquelética.
 - Evalúa proporciones (cintura-altura, cintura-cadera, simetría visual).
-- Resume hallazgos clave en tono profesional (≤120 palabras).
+- Usa los calculos del campo "calculations" en CONTEXTO_JSON cuando existan.
+- No recalcules % grasa ni masa magra si ya vienen calculados; respeta el sexo indicado.
+- Resume hallazgos clave en tono profesional.
 - Genera recomendaciones concretas según objetivo (definición/volumen/mantenimiento).
 - Añade observaciones puntuales sobre las fotos recibidas (Análisis de proporciones y simetría visual)
 - Describe los ragos corporales en términos objetivos de las fotos recibidas.
@@ -40,6 +124,7 @@ INSTRUCCIONES:
 - En photo_feedback, describe la forma fisica con detalle: musculos, definicion, volumen, y partes del cuerpo (hombros, pecho, brazos, abdomen, espalda, gluteos, piernas).
 - Incluye referencia a la vista cuando exista (frontal/lateral/espalda) y menciona simetria y postura.
 - Usa 4-8 bullets concretos, sin consejos genericos ni instrucciones de toma de foto.
+
 
 CONTEXTO_JSON:
 {context_json}
@@ -50,6 +135,7 @@ Formato de salida (SOLO JSON):
     "body_fat_percent": float,
     "lean_mass_kg": float,
     "fat_mass_kg": float,
+    "muscle_mass_kg": float,
     "muscle_mass_percent": float
   }},
   "proportions": {{
@@ -220,12 +306,14 @@ class BodyAssessmentAgent:
         result["body_composition"]["fat_mass_kg"] = round(fat_mass, 1)
         
         # Muscle Percentage
-        muscle_percent, muscle_notes = self._estimate_muscle_percent(
+        muscle_percent, muscle_mass_kg, muscle_notes = self._estimate_muscle_percent(
             sex=sex, lean_mass=lean_mass, weight=weight, height_cm=height_cm,
             arm_relaxed=arm_relaxed, arm_flexed=arm_flexed, thigh=thigh, calf=calf
         )
         if "muscle_mass_percent" not in result["body_composition"] or result["body_composition"]["muscle_mass_percent"] == 0:
              result["body_composition"]["muscle_mass_percent"] = round(muscle_percent, 1)
+        if "muscle_mass_kg" not in result["body_composition"] or result["body_composition"]["muscle_mass_kg"] == 0:
+             result["body_composition"]["muscle_mass_kg"] = round(muscle_mass_kg, 1)
 
         # Proportions
         waist_metric = waist if (sex == "female" and waist) else (abdomen or waist or 80)
@@ -275,7 +363,7 @@ class BodyAssessmentAgent:
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "Eres especialista en fitness. Devuelve SOLO JSON."},
+                    {"role": "system", "content": "Eres especialista en fitness. Respeta los calculos del contexto y devuelve SOLO JSON."},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
@@ -321,7 +409,7 @@ class BodyAssessmentAgent:
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "Eres especialista en fitness. Devuelve SOLO JSON."},
+                    {"role": "system", "content": "Eres especialista en fitness. Respeta los calculos del contexto y devuelve SOLO JSON."},
                     {"role": "user", "content": content_blocks},
                 ],
                 temperature=0.2,
@@ -440,7 +528,7 @@ class BodyAssessmentAgent:
         fat_mass = max(0.0, weight * (body_fat / 100))
         lean_mass = max(0.0, weight - fat_mass)
 
-        muscle_percent, muscle_notes = self._estimate_muscle_percent(
+        muscle_percent, muscle_mass_kg, muscle_notes = self._estimate_muscle_percent(
             sex=sex,
             lean_mass=lean_mass,
             weight=weight,
@@ -490,9 +578,10 @@ class BodyAssessmentAgent:
             "body_composition": {
                 "body_fat_percent": round(body_fat, 1),
                 "lean_mass_kg": round(lean_mass, 1),
-                "fat_mass_kg": round(fat_mass, 1),
-                "muscle_mass_percent": round(muscle_percent, 1),
-            },
+            "fat_mass_kg": round(fat_mass, 1),
+            "muscle_mass_kg": round(muscle_mass_kg, 1),
+            "muscle_mass_percent": round(muscle_percent, 1),
+        },
             "proportions": {
                 "waist_to_height": round(waist_to_height, 3) if waist_to_height else None,
                 "waist_to_hip": round(waist_to_hip, 3) if waist_to_hip else None,
@@ -600,8 +689,8 @@ class BodyAssessmentAgent:
         arm_flexed: Optional[float],
         thigh: Optional[float],
         calf: Optional[float],
-    ) -> (float, str):
-        """Calcula % de músculo esquelético aproximado y nota asociada."""
+    ) -> (float, float, str):
+        """Calcula % y kg de músculo esquelético aproximado y nota asociada."""
 
         height_m = height_cm / 100 if height_cm else 1.75
         circumferences: List[float] = []
@@ -630,7 +719,7 @@ class BodyAssessmentAgent:
         else:
             note = "Masa muscular dentro de un rango saludable"
 
-        return percent, note
+        return percent, skeletal_mass, note
 
     def _build_symmetry_notes(
         self,

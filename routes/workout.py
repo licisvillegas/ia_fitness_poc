@@ -341,12 +341,17 @@ def user_routines_catalog_page():
 def api_list_my_routines():
     """Lista las rutinas creadas por el usuario."""
     try:
-        user_id = request.cookies.get("user_session")
-        if not user_id:
+        current_user_id = request.cookies.get("user_session")
+        if not current_user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
         db = get_db()
         if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        role_doc = db.user_roles.find_one({"user_id": current_user_id})
+        is_admin = role_doc and role_doc.get("role") == "admin"
+        target_user_id = request.args.get("user_id") if is_admin else None
+        user_id = target_user_id or current_user_id
 
         cursor = db.routines.find({"user_id": user_id}).sort("created_at", -1)
         results = []
@@ -362,14 +367,19 @@ def api_list_my_routines():
 def api_get_my_routine_detail(routine_id):
     """Obtiene detalle de una rutina propia."""
     try:
-        user_id = request.cookies.get("user_session")
-        if not user_id:
+        current_user_id = request.cookies.get("user_session")
+        if not current_user_id:
             return jsonify({"error": "Unauthorized"}), 401
         if not ObjectId.is_valid(routine_id):
             return jsonify({"error": "ID invalido"}), 400
 
         db = get_db()
         if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        role_doc = db.user_roles.find_one({"user_id": current_user_id})
+        is_admin = role_doc and role_doc.get("role") == "admin"
+        target_user_id = request.args.get("user_id") if is_admin else None
+        user_id = target_user_id or current_user_id
 
         r = db.routines.find_one({"_id": ObjectId(routine_id), "user_id": user_id})
         if not r:

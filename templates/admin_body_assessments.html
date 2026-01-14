@@ -389,6 +389,7 @@
             buttonId: "btnLookupUser",
             clearButtonId: "btnClearUserSearch",
             storageKey: "admin_working_user",
+            storageUidKey: "admin_working_user_id",
             itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
             renderItem: renderAdminUserResult,
             onSelect: selectUser,
@@ -397,13 +398,45 @@
             }
         });
 
-        // Restore functionality for existing Search Logic (Last Search)
-        const savedUser = localStorage.getItem('ai_fitness_last_search_uid');
-        if (savedUser) {
-            // Optional: Auto-load functionality could be re-enabled if desired
-            // hiddenId.value = savedUser;
-            // searchInput.value = savedUser; 
+        function restoreSelectedUser() {
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                if (!stored) return;
+                const user = JSON.parse(stored);
+                if (!user || !user.user_id) return;
+                const inputEl = document.getElementById("userSearchTerm");
+                const hiddenEl = document.getElementById("adminUserId");
+                if (hiddenEl) hiddenEl.value = user.user_id;
+                if (inputEl) {
+                    const label = user.name || user.username || "";
+                    const email = user.email || "";
+                    inputEl.value = label && email ? `${label} (${email})` : (label || user.user_id || "");
+                }
+                if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (user.name || user.username || user.user_id);
+                loadHistory(user.user_id);
+            } catch (e) { }
         }
+
+        restoreSelectedUser();
+
+        window.addEventListener("admin-user-selected", (evt) => {
+            const u = evt.detail || {};
+            if (!u.user_id) return;
+            const inputEl = document.getElementById("userSearchTerm");
+            const hiddenEl = document.getElementById("adminUserId");
+            if (hiddenEl) hiddenEl.value = u.user_id;
+            if (inputEl) {
+                const label = u.name || u.username || "";
+                const email = u.email || "";
+                inputEl.value = label && email ? `${label} (${email})` : (label || u.user_id || "");
+            }
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username || u.user_id);
+            loadHistory(u.user_id);
+        });
+
+        window.addEventListener("admin-user-cleared", () => {
+            if (searchMsg) searchMsg.textContent = "";
+        });
 
 
         // --- 2. HISTORY LOGIC (Ported) ---

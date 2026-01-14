@@ -1273,10 +1273,10 @@
         // Metrics
         const metricsDiv = document.getElementById('res-metrics');
         metricsDiv.innerHTML = `
-            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.body_fat_percent}%</div><div class="metric-label">Grasa Corporal</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.body_fat_percent}%</div><div class="metric-label">Grasa Corporal (%)</div></div></div>
             <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.muscle_mass_percent}%</div><div class="metric-label">Masa Muscular</div></div></div>
             <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.lean_mass_kg} kg</div><div class="metric-label">Masa Magra</div></div></div>
-            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.fat_mass_kg} kg</div><div class="metric-label">Masa Grasa</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-value">${res.body_composition?.fat_mass_kg} kg</div><div class="metric-label">Masa Grasa (kg)</div></div></div>
           `;
 
         // Summary

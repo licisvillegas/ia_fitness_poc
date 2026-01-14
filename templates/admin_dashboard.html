@@ -20,6 +20,7 @@
             <div class="mb-4">
                 <h2 class="text-theme">Panel de Administración</h2>
                 <p class="text-secondary">Bienvenido al centro de control de AI Fitness.</p>
+                <div id="admin-active-user" class="text-info small fst-italic"></div>
             </div>
 
             <div class="row g-4">
@@ -143,6 +144,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/lang.js"></script>
     <script src="/static/js/theme.js"></script>
+    <script>
+        (function syncAdminWorkingUser() {
+            const target = document.getElementById("admin-active-user");
+            if (!target) return;
+
+            function renderUser(user) {
+                if (!user || !user.user_id) {
+                    target.textContent = "";
+                    return;
+                }
+                const label = user.name || user.username || user.user_id;
+                target.textContent = "Usuario activo: " + label;
+            }
+
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                renderUser(stored ? JSON.parse(stored) : null);
+            } catch (e) {
+                renderUser(null);
+            }
+
+            window.addEventListener("admin-user-selected", (evt) => {
+                renderUser(evt.detail || null);
+            });
+            window.addEventListener("admin-user-cleared", () => {
+                renderUser(null);
+            });
+        })();
+    </script>
     <style>
         .hover-card {
             transition: transform 0.2s, box-shadow 0.2s;

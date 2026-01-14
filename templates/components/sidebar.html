@@ -76,33 +76,19 @@
                     <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
                 </a>
             </li>
+            <!-- Admin User Search Button (Replaces container) -->
+            {% if current_user_role == 'admin' %}
+            <li id="sidebar-search-user-li">
+                <a href="#" id="sidebar-search-user-btn"
+                    class="d-flex align-items-center text-primary text-decoration-none py-1 hover-white"
+                    data-bs-toggle="modal" data-bs-target="#userContextModal">
+                    <i class="fas fa-search me-2"></i> Buscar Usuario
+                </a>
             </li>
+            {% endif %}
+
         </ul>
-
-        <!-- Admin User Search (Visible if admin unlocked AND NOT impersonating) -->
-        {% if not is_impersonating %}
-        <div id="admin-user-search-container" class="mt-2 px-3 pb-3 d-none border-top border-secondary pt-2"
-            data-impersonating="{{ 'true' if is_impersonating else 'false' }}">
-            <label class="text-secondary small fw-bold mb-1" style="font-size: 0.7rem;">CHANGE USER</label>
-            <div class="position-relative">
-                <div class="input-group input-group-sm">
-                    <input type="text" id="sidebar-user-search" class="form-control bg-dark text-light border-secondary"
-                        placeholder="Buscar usuario...">
-                    <button id="sidebar-clear-search" class="btn btn-outline-secondary" type="button" title="Limpiar">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div id="sidebar-search-results"
-                    class="position-absolute w-100 bg-dark border border-secondary rounded mt-1"
-                    style="z-index: 1050; max-height: 200px; overflow-y: auto; display: none;">
-                    <!-- Results here -->
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
-
-
 
     <hr class="border-theme" style="margin: 1rem 0;">
 
@@ -114,6 +100,7 @@
                 <span>Inicio</span>
             </a>
         </li>
+
         <li>
             <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"
                 title="Dashboard">
@@ -515,8 +502,7 @@
                 alert("Error de conexión");
             }
         }
-
-        // Revert Logic
+        // Revert Impersonation Logic
         const revertModalEl = document.getElementById('revertConfirmModal');
         const confirmRevertBtn = document.getElementById('confirmRevertBtn');
         let revertModal = null;
@@ -540,15 +526,212 @@
                     if (res.ok) {
                         localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
                         localStorage.setItem('ai_fitness_uid', data.user.user_id);
+                        localStorage.removeItem('admin_working_user');
+                        localStorage.removeItem('admin_working_user_id');
+
+                        const modalInstance = bootstrap.Modal.getInstance(revertModalEl);
+                        if (modalInstance) modalInstance.hide();
                         window.location.reload();
                     } else {
-                        alert(data.error || "No se pudo volver a la sesión original.");
+                        alert(data.error || "No se pudo volver a la sesiИn original.");
                     }
                 } catch (e) { console.error(e); }
+                confirmRevertBtn.disabled = false;
             });
         }
+
+        // --- Admin Context Search Logic (Mirrors sidebar_admin.html) ---
+        // Initialize User Search inside the Modal
+        function initSidebarContextSearch() {
+            const modalMsgEl = document.getElementById("modalUserSearchMsg");
+            const confirmBtn = document.getElementById("modalConfirmUserSelection");
+            const hiddenEl = document.getElementById("modalAdminUserId");
+            let pendingContextUser = null;
+
+            function setPendingUser(user, prefix) {
+                pendingContextUser = user || null;
+                if (hiddenEl) hiddenEl.value = user && user.user_id ? user.user_id : "";
+                if (confirmBtn) confirmBtn.disabled = !user;
+                if (modalMsgEl) {
+                    if (user) {
+                        modalMsgEl.textContent = (prefix || "Usuario seleccionado: ") +
+                            (user.name || user.username || user.user_id || "");
+                    } else {
+                        modalMsgEl.textContent = "";
+                    }
+                }
+            }
+
+            function confirmSelection() {
+                if (!pendingContextUser) {
+                    if (modalMsgEl) modalMsgEl.textContent = "Selecciona un usuario primero.";
+                    return;
+                }
+                if (confirmBtn) confirmBtn.disabled = true;
+                try {
+                    localStorage.setItem("admin_working_user", JSON.stringify(pendingContextUser));
+                    if (pendingContextUser.user_id) {
+                        localStorage.setItem("admin_working_user_id", String(pendingContextUser.user_id));
+                    }
+                } catch (e) { }
+
+                if (modalMsgEl) {
+                    modalMsgEl.textContent = "Usuario activo: " +
+                        (pendingContextUser.name || pendingContextUser.username || pendingContextUser.user_id || "");
+                }
+                window.dispatchEvent(new CustomEvent("admin-user-selected", { detail: pendingContextUser }));
+
+                fetch('/admin/api/impersonate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: pendingContextUser.user_id })
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error("No se pudo cambiar de usuario");
+                        const userData = {
+                            user_id: pendingContextUser.user_id,
+                            name: pendingContextUser.name,
+                            username: pendingContextUser.username,
+                            email: pendingContextUser.email
+                        };
+                        localStorage.setItem('ai_fitness_user', JSON.stringify(userData));
+                        localStorage.setItem('ai_fitness_uid', pendingContextUser.user_id);
+                        const modalEl = document.getElementById('userContextModal');
+                        if (modalEl) {
+                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) modalInstance.hide();
+                        }
+                        window.location.reload();
+                    })
+                    .catch((e) => {
+                        if (modalMsgEl) modalMsgEl.textContent = e.message || "Error al cambiar de usuario.";
+                    })
+                    .finally(() => {
+                        if (confirmBtn) confirmBtn.disabled = false;
+                    });
+            }
+
+            initUserSearch({
+                inputId: "modalUserSearchInput",
+                resultsId: "modalUserSearchResults",
+                hiddenId: "modalAdminUserId",
+                buttonId: "modalBtnLookupUser",
+                minChars: 2,
+                debounceMs: 300,
+                clearButtonId: "modalBtnClearSearch",
+                storageKey: "admin_working_user",
+                storageUidKey: "admin_working_user_id",
+                storeSelection: false,
+                itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+                onSelect: (u) => {
+                    setPendingUser(u);
+                },
+                onClear: () => {
+                    setPendingUser(null);
+                    window.dispatchEvent(new CustomEvent("admin-user-cleared"));
+                }
+            });
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener("click", confirmSelection);
+            }
+
+            // Restore context if exists
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                if (stored) {
+                    const user = JSON.parse(stored);
+                    const inputEl = document.getElementById("modalUserSearchInput");
+                    if (inputEl && user) {
+                        const label = user.name || user.username || "";
+                        const email = user.email || "";
+                        inputEl.value = label && email ? `${label} (${email})` : (label || user.user_id || "");
+                    }
+                    setPendingUser(user, "Usuario activo: ");
+                }
+            } catch (e) { }
+        }
+
+        let sidebarContextSearchReady = false;
+        // Show button for admins and init search once.
+        window.checkAdminLockAndInit = function () {
+            const btnLi = document.getElementById('sidebar-search-user-li');
+            if (btnLi) btnLi.classList.remove('d-none');
+            if (sidebarContextSearchReady) return;
+
+            if (typeof window.initUserSearch === "function") {
+                initSidebarContextSearch();
+                sidebarContextSearchReady = true;
+                return;
+            }
+
+            let s = document.querySelector('script[src="/static/js/user_search.js"]');
+            if (!s) {
+                s = document.createElement("script");
+                s.src = "/static/js/user_search.js";
+                document.head.appendChild(s);
+            }
+            const existingOnload = s.onload;
+            s.onload = function () {
+                if (existingOnload) existingOnload();
+                initSidebarContextSearch();
+                sidebarContextSearchReady = true;
+            };
+        };
+
+        // Run on load
+        window.checkAdminLockAndInit();
+
+        // Failsafe: Retry check a few times to handle any race conditions or slow DOM updates
+        let retryCount = 0;
+        const retryInterval = setInterval(() => {
+            window.checkAdminLockAndInit();
+            retryCount++;
+            if (retryCount > 5) clearInterval(retryInterval);
+        }, 500);
     });
 </script>
+
+<!-- User Context Selection Modal -->
+<div class="modal fade" id="userContextModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fs-5">Seleccionar Usuario de Trabajo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2">Busca y selecciona un usuario para ver el sitio como el.</p>
+
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control bg-dark text-white border-secondary"
+                        id="modalUserSearchInput" placeholder="Buscar por nombre, correo o ID...">
+                    <button class="btn btn-outline-primary" type="button" id="modalBtnLookupUser">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" id="modalBtnClearSearch">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="modalUserSearchResults" class="list-group shadow"
+                    style="max-height: 300px; overflow-y: auto; display: none;">
+                    <!-- Results will appear here -->
+                </div>
+
+                <input type="hidden" id="modalAdminUserId">
+                <div id="modalUserSearchMsg" class="mt-2 text-info small"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="modalConfirmUserSelection" class="btn btn-primary btn-sm" disabled>
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Mobile Toggle Button (Visible only on mobile) -->
 <!-- Mobile Fixed Navbar (Visible only on mobile) -->
@@ -732,38 +915,6 @@
                 }
             } catch (ex) { }
         };
-
-
-        // Revert Logic
-        const revertModalEl = document.getElementById('revertConfirmModal');
-        const confirmRevertBtn = document.getElementById('confirmRevertBtn');
-        let revertModal = null;
-
-        if (revertBtn) {
-            revertBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (!revertModal && revertModalEl) revertModal = new bootstrap.Modal(revertModalEl);
-                if (revertModal) revertModal.show();
-            });
-        }
-
-        if (confirmRevertBtn) {
-            confirmRevertBtn.addEventListener('click', async () => {
-                confirmRevertBtn.disabled = true;
-
-                try {
-                    const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
-                    const data = await res.json();
-
-                    if (res.ok) {
-                        localStorage.setItem('ai_fitness_user', JSON.stringify(data.user));
-                        localStorage.setItem('ai_fitness_uid', data.user.user_id);
-                        window.location.reload();
-                    } else {
-                        alert(data.error || "No se pudo volver a la sesión original.");
-                    }
-                } catch (e) { console.error(e); }
-            });
-        }
     });
 </script>
+

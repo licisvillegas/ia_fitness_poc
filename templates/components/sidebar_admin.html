@@ -67,6 +67,26 @@
         <strong><span id="sidebar-username">Administrador</span></strong>
     </div>
 
+    <!-- Admin User Search -->
+    <div class="px-2 mb-2 sidebar-section position-relative">
+        <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
+        <div class="input-group input-group-sm">
+            <input type="text" class="form-control bg-dark text-white border-secondary"
+                id="sidebarUserSearchTerm" placeholder="Nombre, Email o ID...">
+            <button class="btn btn-outline-primary" type="button" id="sidebarBtnLookupUser">
+                <i class="fas fa-search"></i>
+            </button>
+            <button class="btn btn-outline-secondary" type="button" id="sidebarBtnClearUserSearch" title="Limpiar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="sidebarUserSearchResults"
+            class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+            style="display: none; z-index: 1050;"></div>
+        <input type="hidden" id="sidebarAdminUserId">
+        <div id="sidebarUserSearchMsg" class="text-info small mt-2 fst-italic"></div>
+    </div>
+
     <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
@@ -345,6 +365,58 @@
                 }
             }
         } catch (e) { }
+
+        function initSidebarUserSearch() {
+            if (typeof window.initUserSearch !== "function") return;
+            const msgEl = document.getElementById("sidebarUserSearchMsg");
+            initUserSearch({
+                inputId: "sidebarUserSearchTerm",
+                resultsId: "sidebarUserSearchResults",
+                hiddenId: "sidebarAdminUserId",
+                buttonId: "sidebarBtnLookupUser",
+                clearButtonId: "sidebarBtnClearUserSearch",
+                storageKey: "admin_working_user",
+                storageUidKey: "admin_working_user_id",
+                itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+                onSelect: (u) => {
+                    if (msgEl) {
+                        msgEl.textContent = "Usuario activo: " + (u.name || u.username || u.user_id || "");
+                    }
+                    window.dispatchEvent(new CustomEvent("admin-user-selected", { detail: u }));
+                },
+                onClear: () => {
+                    if (msgEl) msgEl.textContent = "";
+                    window.dispatchEvent(new CustomEvent("admin-user-cleared"));
+                }
+            });
+
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                if (stored) {
+                    const user = JSON.parse(stored);
+                    const inputEl = document.getElementById("sidebarUserSearchTerm");
+                    const hiddenEl = document.getElementById("sidebarAdminUserId");
+                    if (hiddenEl && user && user.user_id) hiddenEl.value = user.user_id;
+                    if (inputEl && user) {
+                        const label = user.name || user.username || "";
+                        const email = user.email || "";
+                        inputEl.value = label && email ? `${label} (${email})` : (label || user.user_id || "");
+                    }
+                    if (msgEl) {
+                        msgEl.textContent = "Usuario activo: " + (user.name || user.username || user.user_id || "");
+                    }
+                }
+            } catch (e) { }
+        }
+
+        if (typeof window.initUserSearch === "function") {
+            initSidebarUserSearch();
+        } else {
+            const script = document.createElement("script");
+            script.src = "/static/js/user_search.js";
+            script.onload = initSidebarUserSearch;
+            document.head.appendChild(script);
+        }
 
         // Theme Toggle Logic now handled by static/js/theme.js
     });

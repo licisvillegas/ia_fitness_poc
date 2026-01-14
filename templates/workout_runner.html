@@ -217,9 +217,6 @@
     }
 
     @media (max-width: 768px) {
-        .player-container {
-            /* Ensure full height usage */
-        }
 
         .visual-stage {
             padding: 0.5rem;
@@ -250,6 +247,7 @@
             width: 80px !important;
             /* Fixed compact width */
         }
+
 
         .btn-control-hud {
             width: 40px !important;
@@ -2378,6 +2376,7 @@
             <div className="player-container">
                 <Header focusMode={focusMode} onToggleFocus={onToggleFocus} showPending={showPending} onTogglePending={onTogglePending} />
                 <div className="visual-stage text-center">
+                    <MessageBar />
                     <RoutineDetails routine={routine} />
                 </div>
                 <div className="controls-section">
@@ -3430,10 +3429,10 @@
                             showPending={showPending}
                             onTogglePending={() => setShowPending(prev => !prev)}
                         />
-                        <SubstitutesModal />
-                        <ConfirmModal />
                     </div>
                 )}
+                <SubstitutesModal />
+                <ConfirmModal />
             </>
         );
     };

@@ -435,6 +435,18 @@
         applySessionFilters();
     };
 
+    // Helper to find latest session date
+    const getLatestSessionDate = () => {
+        if (!sessionData || sessionData.length === 0) return new Date();
+        // Assuming sessionData might not be sorted, find max
+        let maxDate = 0;
+        sessionData.forEach(s => {
+            const d = getSessionDate(s);
+            if (d && d.getTime() > maxDate) maxDate = d.getTime();
+        });
+        return maxDate > 0 ? new Date(maxDate) : new Date();
+    };
+
     window.setSessionFilterRange = function (range) {
         sessionFilterRange = range;
         const dayBtn = document.getElementById("filterDayBtn");
@@ -453,6 +465,35 @@
             el.classList.toggle("text-dark", active);
             el.classList.toggle("btn-outline-secondary", !active);
         });
+
+        // Smart Default Selection
+        // Day/Week -> Latest Data Date
+        // Month -> Current System Date (as requested)
+        // Weekday -> Current System Date (or latest? defaulting to current for generic weekday)
+
+        let targetDate = new Date(); // Default for Month/Weekday
+        if (range === "day" || range === "week") {
+            targetDate = getLatestSessionDate();
+        }
+
+        if (range === "day") {
+            const k = getDayKey(targetDate);
+            sessionFilterValue = k.split("|")[0];
+        } else if (range === "weekday") {
+            // "Día semana" usually implies generic aggregation (e.g. "Mondays"), 
+            // but here we filter by a specific day index. Defaulting to Today's weekday is reasonable.
+            const k = getWeekdayKey(targetDate);
+            sessionFilterValue = k.split("|")[0];
+        } else if (range === "week") {
+            const k = getWeekKey(targetDate);
+            sessionFilterValue = k.split("|")[0];
+        } else if (range === "month") {
+            const k = getMonthKey(targetDate);
+            sessionFilterValue = k.split("|")[0];
+        } else {
+            sessionFilterValue = "";
+        }
+
         buildRangeOptions(sessionData, sessionFilterRange);
         applySessionFilters();
     };
@@ -485,7 +526,8 @@
                 collapseAllSessionDetails();
             });
         }
-        window.setSessionFilterRange("month");
+        // Initial setup, though loadSessions will override
+        // setSessionFilterRange("day"); 
     };
 
     window.loadSessions = async function (userId) {
@@ -498,8 +540,8 @@
             const res = await fetch(`/workout/api/sessions?user_id=${userId}`);
             const data = await res.json();
             sessionData = Array.isArray(data) ? data : [];
-            buildRangeOptions(sessionData, sessionFilterRange);
-            applySessionFilters();
+            // Apply default filter: Day (Latest)
+            window.setSessionFilterRange("day");
         } catch (e) {
             console.error("Error loading sessions:", e);
             container.innerHTML = `<p class="text-danger text-center m-0">Error cargando sesiones.</p>`;

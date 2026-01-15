@@ -560,10 +560,20 @@ def api_get_sessions():
         if db is None: return jsonify([]), 503
         
         limit = int(request.args.get("limit", 20))
+
+        # Limit to last 2 months for performance
+        cutoff_date = datetime.utcnow() - timedelta(days=60)
         
         # Try finding sessions by 'created_at' (or started_at) descending
+        # Filter filters strictly by date > 60 days ago
         cursor = db.workout_sessions.find(
-            {"user_id": user_id}
+            {
+                "user_id": user_id,
+                "$or": [
+                    {"created_at": {"$gte": cutoff_date}},
+                    {"started_at": {"$gte": cutoff_date}}
+                ]
+            }
         ).sort("created_at", -1).limit(limit)
         
         sessions = []
@@ -609,7 +619,7 @@ def api_get_sessions():
     except Exception as e:
         logger.error(f"Error fetching sessions: {e}")
         return jsonify({"error": "Internal Error"}), 500
-
+        
 @workout_bp.delete("/api/sessions/<session_id>")
 def api_delete_session(session_id):
     """Deletes a workout session."""

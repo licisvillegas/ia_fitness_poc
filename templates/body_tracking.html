@@ -487,7 +487,7 @@
             z-index: 100;
             display: flex;
             flex-direction: column;
-            gap: 50px;
+            /* gap: 53px; Removed, using margin instead for robustness */
             align-items: flex-start;
             opacity: 0;
             pointer-events: none;
@@ -505,6 +505,7 @@
             display: flex;
             align-items: center;
             cursor: pointer;
+            margin-bottom: 18px;
         }
 
         .menu-item-left .menu-label-left {
@@ -892,47 +893,47 @@
                         <!-- 1. Pantorrilla -->
                         <div class="menu-item" onclick="openSideModal('Pantorrilla')">
                             <span class="menu-label">PANTORRILLA</span>
-                            <div class="menu-icon"><img src="/static/images/icon/pan.png" alt="Pantorrilla"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/pan.png" alt="Pantorrilla"></div>
                         </div>
                         <!-- 2. Muslos (using Muslo logic) -->
                         <div class="menu-item" onclick="openSideModal('Muslo')">
                             <span class="menu-label">MUSLOS</span>
-                            <div class="menu-icon"><img src="/static/images/icon/mus.png" alt="Muslo"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/mus.png" alt="Muslo"></div>
                         </div>
                         <!-- 3. Cadera -->
                         <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
                             <span class="menu-label">CADERA</span>
-                            <div class="menu-icon"><img src="/static/images/icon/cd2.png" alt="Cadera"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/cd2.png" alt="Cadera"></div>
                         </div>
                         <!-- 4. Abdomen/Cintura (using Abdomen logic) -->
                         <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
                             <span class="menu-label">ABDOMEN/CINTURA</span>
-                            <div class="menu-icon"><img src="/static/images/icon/cn.png" alt="Abdomen"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/cn.png" alt="Abdomen"></div>
                         </div>
                         <!-- 5. Antebrazo -->
                         <div class="menu-item" onclick="openSideModal('Antebrazo')">
                             <span class="menu-label">ANTEBRAZO</span>
-                            <div class="menu-icon"><img src="/static/images/icon/ant.png" alt="Antebrazo"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/ant.png" alt="Antebrazo"></div>
                         </div>
                         <!-- 6. Brazo Superior (using Biceps logic) -->
                         <div class="menu-item" onclick="openSideModal('Bíceps')">
                             <span class="menu-label">BRAZO SUPERIOR</span>
-                            <div class="menu-icon"><img src="/static/images/icon/bic.png" alt="Biceps"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/bic.png" alt="Biceps"></div>
                         </div>
                         <!-- 7. Toráx (using Pecho logic) -->
                         <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
                             <span class="menu-label">TORÁX</span>
-                            <div class="menu-icon"><img src="/static/images/icon/tx1.png" alt="Pecho"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/tx1.png" alt="Pecho"></div>
                         </div>
                         <!-- 8. Hombros (using Hombro logic) -->
                         <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
                             <span class="menu-label">HOMBROS</span>
-                            <div class="menu-icon"><img src="/static/images/icon/hm.png" alt="Hombro"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/hm.png" alt="Hombro"></div>
                         </div>
                         <!-- 9. Cuello -->
                         <div class="menu-item" onclick="openValueModal('Cuello', null, '0.0')">
                             <span class="menu-label">CUELLO</span>
-                            <div class="menu-icon"><img src="/static/images/icon/cu.png" alt="Cuello"></div>
+                            <div class="menu-icon"><img src="/static/images/icon/male/cu.png" alt="Cuello"></div>
                         </div>
                     </div>
 
@@ -1143,6 +1144,7 @@
         function toggleGender() {
             const img = document.getElementById('bodyImage');
             const icon = document.getElementById('genderToggleIcon');
+            const menuIcons = document.querySelectorAll('.menu-icon img');
 
             if (currentGender === 'male') {
                 currentGender = 'female';
@@ -1152,6 +1154,11 @@
                 // Switch icon to Male (to switch back)
                 icon.classList.remove('fa-female');
                 icon.classList.add('fa-male');
+
+                // Update menu icons
+                menuIcons.forEach(i => {
+                    i.src = i.src.replace('/male/', '/female/');
+                });
             } else {
                 currentGender = 'male';
                 img.src = imgMale;
@@ -1159,6 +1166,11 @@
                 // Switch icon to Female
                 icon.classList.remove('fa-male');
                 icon.classList.add('fa-female');
+
+                // Update menu icons
+                menuIcons.forEach(i => {
+                    i.src = i.src.replace('/female/', '/male/');
+                });
             }
         }
 

@@ -170,12 +170,16 @@
         }
 
         .change.pos {
-            color: var(--accent-red);
+            color: var(--accent-green);
+        }
+
+        .change.neutral {
+            color: var(--accent-blue);
         }
 
         /* En medidas corporales, subir suele ser "alarma" si es grasa, pero aqui es generico */
         .change.neg {
-            color: var(--accent-blue);
+            color: var(--accent-red);
         }
 
         /* Posicionamiento manual aproximado (ajustar según la imagen real) */
@@ -187,7 +191,7 @@
         }
 
         .l-torax {
-            top: 22%;
+            top: 20%;
             left: 65%;
         }
 
@@ -197,15 +201,26 @@
             text-align: right;
         }
 
+        .l-biceps-der {
+            top: 28%;
+            left: 74%;
+        }
+
         .l-ant-izq {
-            top: 36%;
-            right: 76%;
+            top: 38%;
+            right: 74%;
             text-align: right;
+        }
+
+        .l-ant-der {
+            top: 38%;
+            left: 74%;
         }
 
         .l-cintura {
             top: 38%;
-            left: 65%;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .l-cadera {
@@ -220,10 +235,20 @@
             text-align: right;
         }
 
+        .l-muslo-der {
+            top: 60%;
+            left: 68%;
+        }
+
         .l-pant-izq {
             top: 78%;
             right: 68%;
             text-align: right;
+        }
+
+        .l-pant-der {
+            top: 78%;
+            left: 68%;
         }
 
         /* --- Stats Footer --- */
@@ -231,6 +256,47 @@
             max-width: 500px;
             margin: 0 auto;
             padding: 20px;
+            background: #111;
+            border-radius: 15px;
+            margin-bottom: 80px;
+            /* Space for FAB */
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .stats-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .stats-header i {
+            color: var(--text-dim);
+            transition: transform 0.3s ease;
+        }
+
+        .stats-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        .stats-content {
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            max-height: 1000px;
+            /* Arbitrary high value for expanded state */
+        }
+
+        .stats-content.collapsed {
+            max-height: 0;
         }
 
         .stat-row {
@@ -277,17 +343,16 @@
             font-weight: bold;
         }
 
-        .trend-up {
+        .stat-trend.pos {
+            color: var(--accent-green);
+        }
+
+        .stat-trend.neg {
             color: var(--accent-red);
         }
 
-        /* Para peso/grasa, subir es malo (rojo) - configurable */
-        .trend-down {
+        .stat-trend.neutral {
             color: var(--accent-blue);
-        }
-
-        .trend-neutral {
-            color: var(--text-light);
         }
 
         /* Colores de iconos */
@@ -489,6 +554,12 @@
             font-size: 0.9rem;
         }
 
+        .picker-side {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
         .picker-container-custom {
             display: flex;
             justify-content: center;
@@ -579,9 +650,12 @@
             <div class="tracking-header">
                 <div class="top-bar">
                     <div class="brand-custom">
-                        <img src="/static/images/logo.png" alt="AI Fitness" style="height: 36px; width: auto;">
+                        <!-- Logo removed as requested -->
                     </div>
-                    <div><a href="/profile" class="text-secondary"><i class="fas fa-cog"></i></a></div>
+                    <div onclick="toggleGender()" class="text-secondary" style="cursor: pointer;"
+                        title="Cambiar Género">
+                        <i class="fas fa-female" id="genderToggleIcon" style="font-size: 1.5rem;"></i>
+                    </div>
                 </div>
 
                 <nav class="header-nav">
@@ -601,7 +675,7 @@
                 </div>
                 <div class="body-image-container">
                     <!-- Placeholder or user provided image if available. Defaulting to a placeholder if specific file doesn't exist -->
-                    <img src="/static/images/examples/ref1.png"
+                    <img id="bodyImage" src="/static/images/examples/ref1.png"
                         onerror="this.src='/static/images/muscles/pec.png'; this.style.opacity='0.2';"
                         alt="Body Outline">
                 </div>
@@ -612,37 +686,42 @@
                 <!-- Mapping keys to classes -->
                 {% set cls_map = {
                 'cuello': 'l-cuello', 'torax': 'l-torax', 'pecho': 'l-torax',
-                'biceps_izq': 'l-biceps-izq', 'antebrazo_izq': 'l-ant-izq',
-                'cintura': 'l-cintura', 'cadera': 'l-cadera', 'muslo_izq': 'l-muslo-izq',
-                'pantorrilla_izq': 'l-pant-izq'
+                'biceps_izq': 'l-biceps-izq', 'biceps_der': 'l-biceps-der',
+                'antebrazo_izq': 'l-ant-izq', 'antebrazo_der': 'l-ant-der',
+                'cintura': 'l-cintura', 'cadera': 'l-cadera',
+                'muslo_izq': 'l-muslo-izq', 'muslo_der': 'l-muslo-der',
+                'pantorrilla_izq': 'l-pant-izq', 'pantorrilla_der': 'l-pant-der'
                 } %}
                 {% set name_map = {
                 'cuello': 'CUELLO', 'torax': 'TORAX', 'pecho': 'TORAX',
-                'biceps_izq': 'BÍCEPS', 'antebrazo_izq': 'ANTEBRAZO',
-                'cintura': 'CINTURA', 'cadera': 'CADERA', 'muslo_izq': 'MUSLO',
-                'pantorrilla_izq': 'PANTORRILLA'
+                'biceps_izq': 'BICEPS', 'biceps_der': 'BICEPS',
+                'antebrazo_izq': 'ANTEBRAZO', 'antebrazo_der': 'ANTEBRAZO',
+                'cintura': 'CINTURA', 'cadera': 'CADERA',
+                'muslo_izq': 'MUSLO', 'muslo_der': 'MUSLO',
+                'pantorrilla_izq': 'PANTORRILLA', 'pantorrilla_der': 'PANTORRILLA'
                 } %}
                 {% set pos_class = cls_map.get(key, '') %}
                 {% if pos_class %}
                 {% set change_class = 'pos' if item.change and item.change.startswith('+') else ('neg' if item.change
                 and item.change.startswith('-') else 'neutral') %}
+                {% set side_label = 'IZQ' if key.endswith('_izq') else ('DER' if key.endswith('_der') else '') %}
                 <div class="measure-label {{ pos_class }}"
                     onclick="openValueModal('{{ key }}', null, '{{ item.value }}')">
 
                     <div class="label-text" style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: -2px;">{{
-                        name_map.get(key, key|upper) }}</div>
+                        name_map.get(key, key|upper) }}{% if side_label %} {{ side_label }}{% endif %}</div>
 
                     {% if 'izq' not in key and 'der' not in key %}
                     <!-- Left side labels logic (visual tweak) -->
                     {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq', 'antebrazo_izq'] %}
-                    {% if item.change %}<span class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
+                    {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                     <span class="val">{{ item.value }}</span>cm
                     {% else %}
                     <span class="val">{{ item.value }}</span>cm {% if item.change %}<span
-                        class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
+                        class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                     {% endif %}
                     {% else %}
-                    {% if item.change %}<span class="change {{ change_class }}">{{ item.change }}</span>{% endif %}
+                    {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                     <span class="val">{{ item.value }}</span>cm
                     {% endif %}
                 </div>
@@ -652,44 +731,75 @@
             </div>
 
             {% if data and data.stats %}
-            <div class="stats-container">
-                <div class="stat-row">
-                    <div class="stat-icon icon-peso"><i class="fas fa-weight"></i></div>
-                    <div class="stat-data">
-                        <h4>Peso Corporal</h4>
-                        <p>{{ data.stats.peso.value }}{{ data.stats.peso.unit }}</p>
-                    </div>
-                    <div
-                        class="stat-trend {{ 'trend-up' if data.stats.peso.trend == 'up' else ('trend-down' if data.stats.peso.trend == 'down' else 'trend-neutral') }}">
-                        {{ data.stats.peso.change }}
-                    </div>
+            <div class="stats-container collapsible-panel">
+                <div class="stats-header" onclick="toggleStats()">
+                    <h3>INDICADORES CORPORALES</h3>
+                    <i class="fas fa-chevron-down" id="statsChevron"></i>
                 </div>
-                <!-- Grasa -->
-                <div class="stat-row">
-                    <div class="stat-icon icon-grasa"><i class="fas fa-tint"></i></div>
-                    <div class="stat-data">
-                        <h4>Porcentaje de Grasa</h4>
-                        <p>{{ data.stats.grasa.value }}{{ data.stats.grasa.unit }}</p>
+
+                <div class="stats-content" id="statsContent">
+                    <!-- Peso -->
+                    <div class="stat-row">
+                        <div class="stat-icon icon-peso"><i class="fas fa-weight"></i></div>
+                        <div class="stat-data">
+                            <h4>Peso Corporal</h4>
+                            <p>{{ data.stats.peso.value }}{{ data.stats.peso.unit }}</p>
+                        </div>
+                        <div class="stat-trend {{ data.stats.peso.trend }}">
+                            {{ data.stats.peso.change }}
+                        </div>
                     </div>
-                    <div
-                        class="stat-trend {{ 'trend-up' if data.stats.grasa.trend == 'up' else ('trend-down' if data.stats.grasa.trend == 'down' else 'trend-neutral') }}">
-                        {{ data.stats.grasa.change }}
+                    <!-- Musculo -->
+                    {% if data.stats.musculo %}
+                    <div class="stat-row">
+                        <div class="stat-icon icon-musculo"><i class="fas fa-dumbbell"></i></div>
+                        <div class="stat-data">
+                            <h4>Músculo</h4>
+                            <p>{{ data.stats.musculo.value }}{{ data.stats.musculo.unit }}</p>
+                        </div>
+                        <div class="stat-trend {{ data.stats.musculo.trend }}">
+                            {{ data.stats.musculo.change }}
+                        </div>
                     </div>
+                    {% endif %}
+                    <!-- Agua -->
+                    {% if data.stats.agua %}
+                    <div class="stat-row">
+                        <div class="stat-icon icon-agua"><i class="fas fa-water"></i></div>
+                        <div class="stat-data">
+                            <h4>Porcentaje de Agua</h4>
+                            <p>{{ data.stats.agua.value }}{{ data.stats.agua.unit }}</p>
+                        </div>
+                        <div class="stat-trend {{ data.stats.agua.trend }}">
+                            {{ data.stats.agua.change }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <!-- Grasa -->
+                    <div class="stat-row">
+                        <div class="stat-icon icon-grasa"><i class="fas fa-tint"></i></div>
+                        <div class="stat-data">
+                            <h4>Porcentaje de Grasa</h4>
+                            <p>{{ data.stats.grasa.value }}{{ data.stats.grasa.unit }}</p>
+                        </div>
+                        <div class="stat-trend {{ data.stats.grasa.trend }}">
+                            {{ data.stats.grasa.change }}
+                        </div>
+                    </div>
+                    <!-- IMC -->
+                    {% if data.stats.imc %}
+                    <div class="stat-row">
+                        <div class="stat-icon icon-imc"><i class="fas fa-calculator"></i></div>
+                        <div class="stat-data">
+                            <h4>Índice de Masa Corporal (IMC)</h4>
+                            <p>{{ data.stats.imc.value }}</p>
+                        </div>
+                        <div class="stat-trend {{ data.stats.imc.trend }}">
+                            {{ data.stats.imc.change }}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                <!-- Musculo (Example extra data) -->
-                {% if data.stats.musculo %}
-                <div class="stat-row">
-                    <div class="stat-icon icon-musculo"><i class="fas fa-dumbbell"></i></div>
-                    <div class="stat-data">
-                        <h4>Músculo</h4>
-                        <p>{{ data.stats.musculo.value }}{{ data.stats.musculo.unit }}</p>
-                    </div>
-                    <div
-                        class="stat-trend {{ 'trend-up' if data.stats.musculo.trend == 'up' else ('trend-down' if data.stats.musculo.trend == 'down' else 'trend-neutral') }}">
-                        {{ data.stats.musculo.change }}
-                    </div>
-                </div>
-                {% endif %}
             </div>
             {% endif %}
 
@@ -724,6 +834,10 @@
                     <div class="menu-item" onclick="openSideModal('Tríceps')">
                         <span class="menu-label">TRÍCEPS</span>
                         <div class="menu-icon"><img src="/static/images/muscles/tri.png" alt="Tríceps"></div>
+                    </div>
+                    <div class="menu-item" onclick="openSideModal('Muslo')">
+                        <span class="menu-label">MUSLO</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Muslo"></div>
                     </div>
                     <div class="menu-item" onclick="openSideModal('Cuádriceps')">
                         <span class="menu-label">CUÁDRICEPS</span>
@@ -772,6 +886,7 @@
             <div class="value-picker-header">
                 <div style="color: var(--text-dim); font-size: 0.8rem;">ACTUAL</div>
                 <h3 class="picker-title" id="valueModalTitle">MEDIDA DE CADERA</h3>
+                <div class="picker-side" id="valueModalSideDesc"></div>
                 <div class="picker-date" id="currentDateDisplay">10.01.2026, 5:08 A.M.</div>
             </div>
 
@@ -793,6 +908,33 @@
         let currentPart = null;
         let currentSide = null;
 
+        // Gender Toggle
+        let currentGender = 'male'; // Default
+        const imgMale = '/static/images/examples/ref1.png';
+        const imgFemale = '/static/images/examples/rf4.png';
+
+        function toggleGender() {
+            const img = document.getElementById('bodyImage');
+            const icon = document.getElementById('genderToggleIcon');
+
+            if (currentGender === 'male') {
+                currentGender = 'female';
+                img.src = imgFemale;
+                // Increase scale (~1.08) and move down 20px
+                img.style.transform = "scale(1.08) translateY(20px)";
+                // Switch icon to Male (to switch back)
+                icon.classList.remove('fa-female');
+                icon.classList.add('fa-male');
+            } else {
+                currentGender = 'male';
+                img.src = imgMale;
+                img.style.transform = "none";
+                // Switch icon to Female
+                icon.classList.remove('fa-male');
+                icon.classList.add('fa-female');
+            }
+        }
+
         // Elementos DOM
         const fabContainer = document.getElementById('fabContainer');
         const fabButton = document.getElementById('fabButton');
@@ -800,10 +942,63 @@
         const valueModal = document.getElementById('valueModal');
         const sideModalTitle = document.getElementById('sideModalTitle');
         const valueModalTitle = document.getElementById('valueModalTitle');
+        const valueModalSideDesc = document.getElementById('valueModalSideDesc');
         const measurementInput = document.getElementById('measurementValueBtn');
         const currentDateDisplay = document.getElementById('currentDateDisplay');
         const imageOpacity = document.getElementById('imageOpacity');
         const bodyImageContainer = document.querySelector('.body-image-container');
+
+        // Stats Toggle
+        function toggleStats() {
+            const content = document.getElementById('statsContent');
+            const chevron = document.getElementById('statsChevron');
+            const header = chevron.parentElement;
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                header.classList.add('collapsed');
+            }
+        }
+
+        const partDisplayMap = {
+            cuello: 'Cuello',
+            torax: 'Torax',
+            pecho: 'Torax',
+            cintura: 'Cintura',
+            cadera: 'Cadera',
+            abdomen: 'Abdomen',
+            espalda: 'Espalda',
+            hombro: 'Hombro',
+            gluteos: 'Gluteos',
+            biceps: 'Biceps',
+            triceps: 'Triceps',
+            antebrazo: 'Antebrazo',
+            muslo: 'Muslo',
+            cuadriceps: 'Cuadriceps',
+            femoral: 'Femoral',
+            pantorrilla: 'Pantorrilla'
+        };
+
+        function resolvePartMeta(partName, side) {
+            let resolvedSide = side || null;
+            let baseKey = partName || '';
+            if (typeof partName === 'string') {
+                const lower = partName.toLowerCase();
+                if (lower.endsWith('_izq')) {
+                    baseKey = partName.slice(0, -4);
+                    if (!resolvedSide) resolvedSide = 'Izquierda';
+                } else if (lower.endsWith('_der')) {
+                    baseKey = partName.slice(0, -4);
+                    if (!resolvedSide) resolvedSide = 'Derecha';
+                }
+            }
+            const displayKey = (baseKey || '').toString().toLowerCase();
+            const displayName = partDisplayMap[displayKey] || baseKey || partName || '';
+            return { displayName, baseKey, resolvedSide };
+        }
 
         // Initial Date
         const now = new Date();
@@ -837,7 +1032,8 @@
         // Flujo 1: Abrir modal de selección de lado
         window.openSideModal = function (partName) {
             currentPart = partName;
-            sideModalTitle.textContent = `CIRCUNFERENCIA DE ${partName.toUpperCase()}`;
+            const meta = resolvePartMeta(partName, null);
+            sideModalTitle.textContent = `CIRCUNFERENCIA DE ${meta.displayName.toUpperCase()}`;
             sideModal.classList.add('active');
         }
 
@@ -850,14 +1046,18 @@
 
         // Flujo 2: Abrir modal de valor
         window.openValueModal = function (partName, side, initialValue) {
-            currentPart = partName;
-            currentSide = side;
+            const meta = resolvePartMeta(partName, side);
+            currentPart = meta.baseKey || partName;
+            currentSide = meta.resolvedSide || side;
 
-            let title = `MEDIDA DE ${partName.toUpperCase()}`;
-            if (side && side !== 'Ambos') {
-                title += ` (${side.toUpperCase()})`;
+            let title = `MEDIDA DE ${meta.displayName.toUpperCase()}`;
+            if (currentSide && currentSide !== 'Ambos') {
+                title += ` (${currentSide.toUpperCase()})`;
             }
             valueModalTitle.textContent = title;
+            if (valueModalSideDesc) {
+                valueModalSideDesc.textContent = currentSide ? `Lado: ${currentSide}` : '';
+            }
             measurementInput.value = initialValue || "0.0";
             valueModal.classList.add('active');
         }

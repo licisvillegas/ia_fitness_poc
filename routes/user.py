@@ -522,48 +522,87 @@ def body_tracking_page():
             prev_input = (previous or {}).get("input") or {}
             prev_meas = prev_input.get("measurements") or {}
 
-            def format_change(curr, prev, unit):
+            def format_change_data(curr, prev, unit):
                 if curr is None or prev is None:
-                    return ""
+                    return {"text": "", "trend": "neutral"}
                 try:
                     delta = float(curr) - float(prev)
                 except (TypeError, ValueError):
-                    return ""
-                sign = "+" if delta >= 0 else "-"
-                return f"{sign}{abs(delta):.1f}{unit}"
+                    return {"text": "", "trend": "neutral"}
+                
+                if abs(delta) < 0.1:
+                    # Neutral but with + sign as requested: (+) = (0.0)
+                    return {"text": f"+0.0{unit}", "trend": "neutral"}
+                
+                if delta > 0:
+                    return {"text": f"+{abs(delta):.1f}{unit}", "trend": "pos"}
+                else:
+                    return {"text": f"-{abs(delta):.1f}{unit}", "trend": "neg"}
 
             def map_measure(key, value, unit="cm"):
                 prev_val = prev_meas.get(key)
-                change = format_change(value, prev_val, unit)
-                return {"value": value, "change": change}
+                
+                # Fallback: if specific key (e.g. thigh_left) not in prev, try singular (thigh)
+                if prev_val is None:
+                    singular_key = key.replace("_left", "").replace("_right", "")
+                    prev_val = prev_meas.get(singular_key)
+
+                data = format_change_data(value, prev_val, unit)
+                return {"value": value, "change": data["text"], "trend": data["trend"]}
 
             if latest_meas:
                 arm_key = "arm_flexed" if latest_meas.get("arm_flexed") is not None else "arm_relaxed"
+                # Fallback to Biceps if generic arm is missing
+                if latest_meas.get(arm_key) is None and latest_meas.get("biceps") is not None:
+                     arm_key = "biceps"
+
                 mapping = {
                     "cuello": ("neck", "cm"),
                     "torax": ("chest", "cm"),
-                    "biceps_izq": (arm_key, "cm"),
                     "cintura": ("waist", "cm"),
                     "cadera": ("hip", "cm"),
-                    "muslo_izq": ("thigh", "cm"),
-                    "pantorrilla_izq": ("calf", "cm"),
-                    "antebrazo_izq": ("forearm", "cm"),
+                    
+                    # Bilaterales (con fallbacks)
+                    "biceps_izq": (f"{arm_key}_left", "cm"),
+                    "biceps_der": (f"{arm_key}_right", "cm"),
+                    
+                    "muslo_izq": ("thigh_left", "cm"),
+                    "muslo_der": ("thigh_right", "cm"),
+                    
+                    "pantorrilla_izq": ("calf_left", "cm"),
+                    "pantorrilla_der": ("calf_right", "cm"),
+                    
+                    "antebrazo_izq": ("forearm_left", "cm"),
+                    "antebrazo_der": ("forearm_right", "cm"),
                 }
+                
+                # Helper to find value with fallback to singular
                 for label_key, (source_key, unit) in mapping.items():
                     value = latest_meas.get(source_key)
-                    if value is not None:
-                        user_data["measurements"][label_key] = map_measure(source_key, value, unit)
+                    
+                    # Try singular fallback if specific side is missing
+                    if value is None:
+                        # e.g. "thigh_left" -> "thigh"
+                        singular_key = source_key.replace("_left", "").replace("_right", "")
+                        value = latest_meas.get(singular_key)
+
+                    # Default to 0.0 if missing so label appears (clickable)
+                    if value is None:
+                        value = 0.0
+
+                    user_data["measurements"][label_key] = map_measure(source_key, value, unit)
 
             # Stats (peso, grasa, musculo, agua, imc)
             stats = {}
             weight = latest_meas.get("weight_kg")
             prev_weight = prev_meas.get("weight_kg")
             if weight is not None:
+                w_data = format_change_data(weight, prev_weight, "kg")
                 stats["peso"] = {
                     "value": weight,
                     "unit": "kg",
-                    "change": format_change(weight, prev_weight, "kg"),
-                    "trend": "up" if (prev_weight is not None and weight >= prev_weight) else "down"
+                    "change": w_data["text"],
+                    "trend": w_data["trend"]
                 }
 
             latest_out = (latest or {}).get("output") or {}
@@ -574,26 +613,49 @@ def body_tracking_page():
             body_fat = latest_comp.get("body_fat_percent")
             prev_fat = prev_comp.get("body_fat_percent")
             if body_fat is not None:
+                bf_data = format_change_data(body_fat, prev_fat, "%")
                 stats["grasa"] = {
                     "value": body_fat,
                     "unit": "%",
-                    "change": format_change(body_fat, prev_fat, "%"),
-                    "trend": "up" if (prev_fat is not None and body_fat >= prev_fat) else "down"
+                    "change": bf_data["text"],
+                    "trend": bf_data["trend"]
                 }
 
             muscle = latest_comp.get("muscle_mass_percent")
             prev_muscle = prev_comp.get("muscle_mass_percent")
             if muscle is not None:
+                m_data = format_change_data(muscle, prev_muscle, "%")
                 stats["musculo"] = {
                     "value": muscle,
                     "unit": "%",
-                    "change": format_change(muscle, prev_muscle, "%"),
-                    "trend": "up" if (prev_muscle is not None and muscle >= prev_muscle) else "down"
+                    "change": m_data["text"],
+                    "trend": m_data["trend"]
                 }
+            
+            # Water (Estimation: often ~73% of lean mass or just 100 - fat in simplistic models, 
+            # but usually provided by scale or user input. If strict calc needed: 
+            # TBW = Weight * (100 - Fat%) * 0.73 roughly. 
+            # For now, check if context or measurements have it, else derive simple approximation or skip)
+            # Water
+            water = latest_input.get("measurements", {}).get("water_percent")
+            prev_water = prev_meas.get("water_percent")
+            # Default to 0.0 to ensure input/display row exists
+            if water is None:
+                water = 0.0
+            
+            wa_data = format_change_data(water, prev_water, "%")
+            stats["agua"] = {
+                "value": water,
+                "unit": "%",
+                "change": wa_data["text"],
+                "trend": wa_data["trend"]
+            }
 
             bmi = (latest_input.get("calculations") or {}).get("bmi")
-            if bmi is not None:
-                stats["imc"] = {"value": bmi, "unit": "", "change": "", "trend": "neutral"}
+            if bmi is None:
+                bmi = 0.0
+            
+            stats["imc"] = {"value": bmi, "unit": "", "change": "", "trend": "neutral"}
 
             if stats:
                 user_data["stats"] = stats

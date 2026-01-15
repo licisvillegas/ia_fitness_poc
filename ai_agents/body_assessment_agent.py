@@ -239,10 +239,23 @@ class BodyAssessmentAgent:
         hip = self._safe_float(measurements.get("hip"))
         neck = self._safe_float(measurements.get("neck"))
         
-        arm_relaxed = self._safe_float(measurements.get("arm_relaxed"))
-        arm_flexed = self._safe_float(measurements.get("arm_flexed"))
-        thigh = self._safe_float(measurements.get("thigh"))
-        calf = self._safe_float(measurements.get("calf"))
+        # Bilateral Helpers
+        def _get_avg(base_key):
+             val = self._safe_float(measurements.get(base_key))
+             if val is not None: return val
+             
+             left = self._safe_float(measurements.get(f"{base_key}_left"))
+             right = self._safe_float(measurements.get(f"{base_key}_right"))
+             
+             if left and right: return (left + right) / 2
+             if left: return left
+             if right: return right
+             return None
+
+        arm_relaxed = _get_avg("arm_relaxed")
+        arm_flexed = _get_avg("arm_flexed")
+        thigh = _get_avg("thigh")
+        calf = _get_avg("calf")
 
         age = self._safe_float(context.get("age"), default=30.0)
         sex = str(context.get("sex", "male")).lower()

@@ -191,8 +191,15 @@
         }
 
         .l-torax {
+            top: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .l-hombros {
             top: 20%;
-            left: 65%;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .l-biceps-izq {
@@ -386,7 +393,7 @@
         .fab-container {
             position: fixed;
             bottom: 30px;
-            right: 30px;
+            right: 12%;
             z-index: 100;
         }
 
@@ -464,6 +471,46 @@
             height: 26px;
             object-fit: contain;
             display: block;
+        }
+
+        /* --- MENÚ IZQUIERDO (Counterpart) --- */
+        .fab-menu-left {
+            position: fixed;
+            bottom: 30px;
+            /* Same baseline as FAB container */
+            left: 12%;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            transform: translateY(20px);
+        }
+
+        .fab-menu-left.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .menu-item-left .menu-label-left {
+            background: var(--accent-green);
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 10px;
+            text-transform: uppercase;
         }
 
         /* --- Modales --- */
@@ -652,10 +699,7 @@
                     <div class="brand-custom">
                         <!-- Logo removed as requested -->
                     </div>
-                    <div onclick="toggleGender()" class="text-secondary" style="cursor: pointer;"
-                        title="Cambiar Género">
-                        <i class="fas fa-female" id="genderToggleIcon" style="font-size: 1.5rem;"></i>
-                    </div>
+                    <!-- Icon moved to dashboard-container -->
                 </div>
 
                 <nav class="header-nav">
@@ -668,6 +712,12 @@
             </div>
 
             <div class="dashboard-container">
+                <!-- Gender Toggle (Moved here) -->
+                <div onclick="toggleGender()" class="text-secondary"
+                    style="position: absolute; top: 20px; left: 20px; z-index: 10; cursor: pointer; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                    title="Cambiar Género">
+                    <i class="fas fa-female" id="genderToggleIcon" style="font-size: 1.2rem; color: #fff;"></i>
+                </div>
                 <div class="opacity-control">
                     <span>Opacidad</span>
                     <input type="range" id="imageOpacity" min="0.1" max="1" step="0.05" value="0.6"
@@ -688,7 +738,7 @@
                 'cuello': 'l-cuello', 'torax': 'l-torax', 'pecho': 'l-torax',
                 'biceps_izq': 'l-biceps-izq', 'biceps_der': 'l-biceps-der',
                 'antebrazo_izq': 'l-ant-izq', 'antebrazo_der': 'l-ant-der',
-                'cintura': 'l-cintura', 'cadera': 'l-cadera',
+                'cintura': 'l-cintura', 'cadera': 'l-cadera', 'hombros': 'l-hombros',
                 'muslo_izq': 'l-muslo-izq', 'muslo_der': 'l-muslo-der',
                 'pantorrilla_izq': 'l-pant-izq', 'pantorrilla_der': 'l-pant-der'
                 } %}
@@ -696,7 +746,7 @@
                 'cuello': 'CUELLO', 'torax': 'TORAX', 'pecho': 'TORAX',
                 'biceps_izq': 'BICEPS', 'biceps_der': 'BICEPS',
                 'antebrazo_izq': 'ANTEBRAZO', 'antebrazo_der': 'ANTEBRAZO',
-                'cintura': 'CINTURA', 'cadera': 'CADERA',
+                'cintura': 'CINTURA', 'cadera': 'CADERA', 'hombros': 'HOMBROS',
                 'muslo_izq': 'MUSLO', 'muslo_der': 'MUSLO',
                 'pantorrilla_izq': 'PANTORRILLA', 'pantorrilla_der': 'PANTORRILLA'
                 } %}
@@ -803,61 +853,76 @@
             </div>
             {% endif %}
 
+            <!-- Left Side Menu (Toggled by FAB) -->
+            <div class="fab-menu-left" id="fabMenuLeft">
+                <!-- 1. Grasa -->
+                <div class="menu-item-left" onclick="openValueModal('body_fat_percent', null, '0.0')" title="Grasa (%)">
+                    <div class="menu-icon" style="background-color: #e6c345;"><i class="fas fa-tint"></i></div>
+                </div>
+                <!-- 2. Agua -->
+                <div class="menu-item-left" onclick="openValueModal('water_percent', null, '0.0')" title="Agua (%)">
+                    <div class="menu-icon" style="background-color: var(--accent-blue); color: white;"><i
+                            class="fas fa-water"></i></div>
+                </div>
+                <!-- 3. Musculos -->
+                <div class="menu-item-left" onclick="openValueModal('muscle_mass_percent', null, '0.0')"
+                    title="Músculos (%)">
+                    <div class="menu-icon" style="background-color: var(--accent-red); color: white;"><i
+                            class="fas fa-dumbbell"></i></div>
+                </div>
+                <!-- 4. Peso -->
+                <div class="menu-item-left" onclick="openValueModal('weight_kg', null, '0.0')" title="Peso (kg)">
+                    <div class="menu-icon" style="background-color: #ccc;"><i class="fas fa-weight"></i></div>
+                </div>
+            </div>
+
             <!-- FAB -->
             <div class="fab-container" id="fabContainer">
                 <div class="fab-menu">
+                    <!-- 1. Pantorrilla -->
                     <div class="menu-item" onclick="openSideModal('Pantorrilla')">
                         <span class="menu-label">PANTORRILLA</span>
                         <div class="menu-icon"><img src="/static/images/muscles/gem.png" alt="Pantorrilla"></div>
                     </div>
-                    <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
-                        <span class="menu-label">CADERA</span>
-                        <div class="menu-icon" style="background-color:#e6c345"><i class="fas fa-ruler-horizontal"></i>
-                        </div>
-                    </div>
-                    <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
-                        <span class="menu-label">PECHO</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/pec.png" alt="Pecho"></div>
-                    </div>
-                    <div class="menu-item" onclick="openValueModal('Espalda', null, '0.0')">
-                        <span class="menu-label">ESPALDA</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/esp.png" alt="Espalda"></div>
-                    </div>
-                    <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
-                        <span class="menu-label">HOMBRO</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/hom.png" alt="Hombro"></div>
-                    </div>
-                    <div class="menu-item" onclick="openSideModal('Bíceps')">
-                        <span class="menu-label">BÍCEPS</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/bic.png" alt="Bíceps"></div>
-                    </div>
-                    <div class="menu-item" onclick="openSideModal('Tríceps')">
-                        <span class="menu-label">TRÍCEPS</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/tri.png" alt="Tríceps"></div>
-                    </div>
+                    <!-- 2. Muslos (using Muslo logic) -->
                     <div class="menu-item" onclick="openSideModal('Muslo')">
-                        <span class="menu-label">MUSLO</span>
+                        <span class="menu-label">MUSLOS</span>
                         <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Muslo"></div>
                     </div>
-                    <div class="menu-item" onclick="openSideModal('Cuádriceps')">
-                        <span class="menu-label">CUÁDRICEPS</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/cua.png" alt="Cuádriceps"></div>
+                    <!-- 3. Cadera -->
+                    <div class="menu-item" onclick="openValueModal('Cadera', null, '96.5')">
+                        <span class="menu-label">CADERA</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/glu.png" alt="Cadera"></div>
                     </div>
-                    <div class="menu-item" onclick="openSideModal('Femoral')">
-                        <span class="menu-label">FEMORAL</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/isq.png" alt="Femoral"></div>
-                    </div>
-                    <div class="menu-item" onclick="openValueModal('Glúteos', null, '0.0')">
-                        <span class="menu-label">GLÚTEOS</span>
-                        <div class="menu-icon"><img src="/static/images/muscles/glu.png" alt="Glúteos"></div>
-                    </div>
+                    <!-- 4. Abdomen/Cintura (using Abdomen logic) -->
                     <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
-                        <span class="menu-label">ABDÓMEN</span>
+                        <span class="menu-label">ABDOMEN/CINTURA</span>
                         <div class="menu-icon"><img src="/static/images/muscles/abs.png" alt="Abdomen"></div>
                     </div>
+                    <!-- 5. Antebrazo -->
                     <div class="menu-item" onclick="openSideModal('Antebrazo')">
                         <span class="menu-label">ANTEBRAZO</span>
                         <div class="menu-icon"><img src="/static/images/muscles/ant.png" alt="Antebrazo"></div>
+                    </div>
+                    <!-- 6. Brazo Superior (using Biceps logic) -->
+                    <div class="menu-item" onclick="openSideModal('Bíceps')">
+                        <span class="menu-label">BRAZO SUPERIOR</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/bic.png" alt="Biceps"></div>
+                    </div>
+                    <!-- 7. Toráx (using Pecho logic) -->
+                    <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
+                        <span class="menu-label">TORÁX</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/pec.png" alt="Pecho"></div>
+                    </div>
+                    <!-- 8. Hombros (using Hombro logic) -->
+                    <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
+                        <span class="menu-label">HOMBROS</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/hom.png" alt="Hombro"></div>
+                    </div>
+                    <!-- 9. Cuello -->
+                    <div class="menu-item" onclick="openValueModal('Cuello', null, '0.0')">
+                        <span class="menu-label">CUELLO</span>
+                        <div class="menu-icon"><img src="/static/images/muscles/esp.png" alt="Cuello"></div>
                     </div>
                 </div>
 
@@ -972,6 +1037,7 @@
             abdomen: 'Abdomen',
             espalda: 'Espalda',
             hombro: 'Hombro',
+            hombros: 'Ancho de Hombros',
             gluteos: 'Gluteos',
             biceps: 'Biceps',
             triceps: 'Triceps',
@@ -979,7 +1045,12 @@
             muslo: 'Muslo',
             cuadriceps: 'Cuadriceps',
             femoral: 'Femoral',
-            pantorrilla: 'Pantorrilla'
+            pantorrilla: 'Pantorrilla',
+            // Stat keys for display
+            body_fat_percent: 'Grasa Corp.',
+            water_percent: 'Agua Corp.',
+            muscle_mass_percent: 'Musculo Corp.',
+            weight_kg: 'Peso Corp.'
         };
 
         function resolvePartMeta(partName, side) {
@@ -1012,9 +1083,11 @@
         }
 
 
-        // Toggle FAB Menu
+        // Toggle FAB Menu (Both sides)
         fabButton.addEventListener('click', () => {
             fabContainer.classList.toggle('active');
+            const leftMenu = document.getElementById('fabMenuLeft');
+            if (leftMenu) leftMenu.classList.toggle('active');
         });
 
         // Cerrar todos los modales
@@ -1022,6 +1095,8 @@
             if (sideModal) sideModal.classList.remove('active');
             if (valueModal) valueModal.classList.remove('active');
             if (fabContainer) fabContainer.classList.remove('active');
+            const leftMenu = document.getElementById('fabMenuLeft');
+            if (leftMenu) leftMenu.classList.remove('active');
             currentPart = null;
             currentSide = null;
         }
@@ -1059,6 +1134,17 @@
                 valueModalSideDesc.textContent = currentSide ? `Lado: ${currentSide}` : '';
             }
             measurementInput.value = initialValue || "0.0";
+
+            // Set Unit Logic
+            const unitEl = document.querySelector('.picker-unit');
+            if (['weight_kg'].includes(currentPart)) {
+                unitEl.textContent = 'kg';
+            } else if (['body_fat_percent', 'water_percent', 'muscle_mass_percent'].includes(currentPart)) {
+                unitEl.textContent = '%';
+            } else {
+                unitEl.textContent = 'cm';
+            }
+
             valueModal.classList.add('active');
         }
 

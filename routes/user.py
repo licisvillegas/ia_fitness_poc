@@ -561,6 +561,8 @@ def body_tracking_page():
                     "torax": ("chest", "cm"),
                     "cintura": ("waist", "cm"),
                     "cadera": ("hip", "cm"),
+                    "hombros": ("shoulders", "cm"),
+                    
                     
                     # Bilaterales (con fallbacks)
                     "biceps_izq": (f"{arm_key}_left", "cm"),
@@ -611,26 +613,38 @@ def body_tracking_page():
             prev_comp = prev_out.get("body_composition") or {}
 
             body_fat = latest_comp.get("body_fat_percent")
-            prev_fat = prev_comp.get("body_fat_percent")
-            if body_fat is not None:
-                bf_data = format_change_data(body_fat, prev_fat, "%")
-                stats["grasa"] = {
-                    "value": body_fat,
-                    "unit": "%",
-                    "change": bf_data["text"],
-                    "trend": bf_data["trend"]
-                }
+            if body_fat is None:
+                 body_fat = latest_meas.get("body_fat_percent")
+            prev_fat = prev_comp.get("body_fat_percent") or prev_meas.get("body_fat_percent")
+            
+            # Default to 0.0 to ensure display
+            if body_fat is None:
+                body_fat = 0.0
+
+            bf_data = format_change_data(body_fat, prev_fat, "%")
+            stats["grasa"] = {
+                "value": body_fat,
+                "unit": "%",
+                "change": bf_data["text"],
+                "trend": bf_data["trend"]
+            }
 
             muscle = latest_comp.get("muscle_mass_percent")
-            prev_muscle = prev_comp.get("muscle_mass_percent")
-            if muscle is not None:
-                m_data = format_change_data(muscle, prev_muscle, "%")
-                stats["musculo"] = {
-                    "value": muscle,
-                    "unit": "%",
-                    "change": m_data["text"],
-                    "trend": m_data["trend"]
-                }
+            if muscle is None:
+                muscle = latest_meas.get("muscle_mass_percent")
+            prev_muscle = prev_comp.get("muscle_mass_percent") or prev_meas.get("muscle_mass_percent")
+            
+            # Default to 0.0
+            if muscle is None:
+                muscle = 0.0
+
+            m_data = format_change_data(muscle, prev_muscle, "%")
+            stats["musculo"] = {
+                "value": muscle,
+                "unit": "%",
+                "change": m_data["text"],
+                "trend": m_data["trend"]
+            }
             
             # Water (Estimation: often ~73% of lean mass or just 100 - fat in simplistic models, 
             # but usually provided by scale or user input. If strict calc needed: 

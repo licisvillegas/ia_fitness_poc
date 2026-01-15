@@ -1000,7 +1000,7 @@
 
             <div class="picker-container-custom">
                 <input type="number" id="measurementValueBtn" class="picker-input" value="0.0" step="0.1" min="0"
-                    max="300"
+                    max="300" inputmode="decimal"
                     onkeydown="return event.key != 'e' && event.key != 'E' && event.key != '-' && event.key != '+'"
                     oninput="if(parseFloat(this.value)>300) this.value=300; if(this.value.length > 6) this.value=this.value.slice(0,6);">
                 <span class="picker-unit">cm</span>

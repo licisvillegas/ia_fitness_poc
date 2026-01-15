@@ -110,6 +110,7 @@
             background: var(--bg-body);
         }
 
+
         .details-content::-webkit-scrollbar-thumb {
             background-color: var(--border-color);
             border-radius: 4px;
@@ -117,6 +118,173 @@
 
         .details-content::-webkit-scrollbar-thumb:hover {
             background-color: var(--text-muted);
+        }
+
+        /* Muscle Card Styles (Moved from inline) */
+        .muscle-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .muscle-card:hover {
+            transform: scale(1.05);
+            background-color: var(--bg-card-hover);
+        }
+
+        .muscle-icon-img {
+            width: 100%;
+            max-width: 120px;
+            height: auto;
+            display: block;
+            margin: 0 auto 0.5rem auto;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
+        }
+
+        .muscle-name {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+            text-transform: capitalize;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+        }
+
+        .navbar-brand {
+            color: var(--primary) !important;
+            font-weight: 700;
+        }
+
+        .glossary-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .glossary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .glossary-title {
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .glossary-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Accordion Custom Styles */
+        details {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        details summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            list-style: none;
+            /* Hide default triangle */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details summary::after {
+            content: '\f078';
+            /* fa-chevron-down */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            transition: transform 0.3s;
+        }
+
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        details[open] {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .details-content {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-body);
+            max-height: 60vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--bg-body);
+        }
+
+        .details-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .details-content::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+
+        .details-content::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .details-content::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-muted);
+        }
+
+        /* Muscle Card Styles (Moved from inline) */
+        .muscle-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .muscle-card:hover {
+            transform: scale(1.05);
+            background-color: var(--bg-card-hover);
+        }
+
+        .muscle-icon-img {
+            width: 100%;
+            max-width: 120px;
+            height: auto;
+            display: block;
+            margin: 0 auto 0.5rem auto;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
+        }
+
+        .muscle-name {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+            text-transform: capitalize;
         }
     </style>
 </head>
@@ -133,7 +301,7 @@
                 nivel.</p>
 
             <!-- Sección 1: Conceptos Clave -->
-            <details open>
+            <details>
                 <summary class="text-white fs-5">
                     <span><i class="fas fa-lightbulb text-warning me-2"></i>Conceptos de Entrenamiento</span>
                 </summary>
@@ -253,38 +421,6 @@
                     <span><i class="fas fa-running text-info me-2"></i>Grupos Musculares</span>
                 </summary>
                 <div class="details-content">
-                    <style>
-                        .muscle-card {
-                            background-color: var(--bg-card);
-                            border: 1px solid var(--border-color);
-                            border-radius: 12px;
-                            padding: 1rem;
-                            text-align: center;
-                            transition: all 0.2s;
-                        }
-
-                        .muscle-card:hover {
-                            transform: scale(1.05);
-                            background-color: var(--bg-card-hover);
-                        }
-
-                        .muscle-icon-img {
-                            width: 100%;
-                            max-width: 120px;
-                            height: auto;
-                            display: block;
-                            margin: 0 auto 0.5rem auto;
-                            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
-                        }
-
-                        .muscle-name {
-                            color: var(--text-main);
-                            font-weight: 600;
-                            font-size: 0.95rem;
-                            margin-top: 0.5rem;
-                            text-transform: capitalize;
-                        }
-                    </style>
                     <div class="row g-3 justify-content-center">
                         <div class="col-6 col-md-4 col-lg-2">
                             <div class="muscle-card">
@@ -368,6 +504,138 @@
                 </div>
             </details>
 
+            <!-- Sección 3: Circunferencias -->
+            <details>
+                <summary class="text-white fs-5">
+                    <span><i class="fas fa-ruler-horizontal text-warning me-2"></i>Circunferencias</span>
+                </summary>
+                <div class="details-content">
+                    <h5 class="text-secondary mb-3">Hombre</h5>
+                    <div class="row g-3 justify-content-center mb-4">
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card"
+                                data-desc="Medir alrededor de la base del cuello, justo por encima de la clavícula.">
+                                <img src="/static/images/icon/male/cu.png" alt="Cuello (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Cuello</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de los hombros.">
+                                <img src="/static/images/icon/male/hm.png" alt="Hombros (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Hombros</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card"
+                                data-desc="Medir a la altura de los pezones, pasando la cinta por debajo de las axilas.">
+                                <img src="/static/images/icon/male/tx1.png" alt="Pecho (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Pecho</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del brazo relajado.">
+                                <img src="/static/images/icon/male/bic.png" alt="Bíceps (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Bíceps</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del antebrazo.">
+                                <img src="/static/images/icon/male/ant.png" alt="Antebrazo (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Antebrazo</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir a la altura del ombligo.">
+                                <img src="/static/images/icon/male/cn.png" alt="Cintura (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Cintura</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de los glúteos.">
+                                <img src="/static/images/icon/male/cd2.png" alt="Cadera (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Cadera</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del muslo.">
+                                <img src="/static/images/icon/male/mus.png" alt="Muslo (H)" class="muscle-icon-img">
+                                <div class="muscle-name">Muslo</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de la pantorrilla.">
+                                <img src="/static/images/icon/male/pan.png" alt="Pantorrilla (H)"
+                                    class="muscle-icon-img">
+                                <div class="muscle-name">Pantorrilla</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="text-secondary mb-3">Mujer</h5>
+                    <div class="row g-3 justify-content-center">
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card"
+                                data-desc="Medir alrededor de la base del cuello, justo por encima de la clavícula.">
+                                <img src="/static/images/icon/female/cu.png" alt="Cuello (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Cuello</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de los hombros.">
+                                <img src="/static/images/icon/female/hm.png" alt="Hombros (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Hombros</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card"
+                                data-desc="Medir a la altura de los pezones (o busto), pasando la cinta por debajo de las axilas.">
+                                <img src="/static/images/icon/female/tx1.png" alt="Pecho (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Pecho</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del brazo relajado.">
+                                <img src="/static/images/icon/female/bic.png" alt="Bíceps (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Bíceps</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del antebrazo.">
+                                <img src="/static/images/icon/female/ant.png" alt="Antebrazo (M)"
+                                    class="muscle-icon-img">
+                                <div class="muscle-name">Antebrazo</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card"
+                                data-desc="Medir en la parte más estrecha del torso (cintura natural).">
+                                <img src="/static/images/icon/female/cn.png" alt="Cintura (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Cintura</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de las caderas/glúteos.">
+                                <img src="/static/images/icon/female/cd2.png" alt="Cadera (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Cadera</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha del muslo.">
+                                <img src="/static/images/icon/female/mus.png" alt="Muslo (M)" class="muscle-icon-img">
+                                <div class="muscle-name">Muslo</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="muscle-card" data-desc="Medir en la parte más ancha de la pantorrilla.">
+                                <img src="/static/images/icon/female/pan.png" alt="Pantorrilla (M)"
+                                    class="muscle-icon-img">
+                                <div class="muscle-name">Pantorrilla</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
             <!-- Sección 3: Referencias de Medidas -->
             <details>
                 <summary class="text-white fs-5">
@@ -438,44 +706,44 @@
                             background-color: #f2f2f2;
                         }
 
-        .image-zoom-light .btn-close {
-            filter: none;
-        }
+                        .image-zoom-light .btn-close {
+                            filter: none;
+                        }
 
-        .image-nav {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            pointer-events: none;
-            padding: 0 1rem;
-        }
+                        .image-nav {
+                            position: absolute;
+                            inset: 0;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            pointer-events: none;
+                            padding: 0 1rem;
+                        }
 
-        .image-nav button {
-            pointer-events: auto;
-            border: 1px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.45);
-            color: var(--text-main);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease, background 0.2s ease;
-        }
+                        .image-nav button {
+                            pointer-events: auto;
+                            border: 1px solid var(--border-color);
+                            background: rgba(15, 23, 42, 0.45);
+                            color: var(--text-main);
+                            width: 44px;
+                            height: 44px;
+                            border-radius: 50%;
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: transform 0.2s ease, background 0.2s ease;
+                        }
 
-        .image-nav button:hover {
-            transform: scale(1.05);
-            background: rgba(15, 23, 42, 0.7);
-        }
+                        .image-nav button:hover {
+                            transform: scale(1.05);
+                            background: rgba(15, 23, 42, 0.7);
+                        }
 
-        .image-nav button:disabled {
-            opacity: 0.4;
-            transform: none;
-            cursor: not-allowed;
-        }
+                        .image-nav button:disabled {
+                            opacity: 0.4;
+                            transform: none;
+                            cursor: not-allowed;
+                        }
                     </style>
                     <div class="row g-4">
                         <!-- Images from static/images/examples -->
@@ -502,22 +770,22 @@
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card ref-card-light">
-                                <img src="/static/images/examples/rf6.png"
-                                    loading="lazy" class="ref-img" alt="Referencia Visual 4">
+                                <img src="/static/images/examples/rf6.png" loading="lazy" class="ref-img"
+                                    alt="Referencia Visual 4">
                                 <div class="ref-caption">Guía Visual - Perfil M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card ref-card-light">
-                                <img src="/static/images/examples/rf4.png"
-                                    loading="lazy" class="ref-img" alt="Referencia Visual 5">
+                                <img src="/static/images/examples/rf4.png" loading="lazy" class="ref-img"
+                                    alt="Referencia Visual 5">
                                 <div class="ref-caption">Guía Visual - Frente M</div>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4">
                             <div class="ref-card ref-card-light">
-                                <img src="/static/images/examples/rf5.png"
-                                    loading="lazy" class="ref-img" alt="Referencia Visual 6">
+                                <img src="/static/images/examples/rf5.png" loading="lazy" class="ref-img"
+                                    alt="Referencia Visual 6">
                                 <div class="ref-caption">Guía Visual - Poterior M</div>
                             </div>
                         </div>
@@ -541,9 +809,11 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <div class="modal-body d-flex align-items-center justify-content-center p-0">
-                    <img src="" id="modalImage" class="img-fluid"
-                        style="max-height: 90vh; max-width: 90vw; object-fit: contain;" alt="Fullscreen Image">
+                <div class="modal-body d-flex flex-column align-items-center justify-content-center p-0">
+                    <img src="" id="modalImage" class="img-fluid mb-3"
+                        style="max-height: 70vh; max-width: 90vw; object-fit: contain;" alt="Fullscreen Image">
+                    <p id="modalDescription" class="text-white text-center px-4 pb-4 bg-dark"
+                        style="margin-bottom: 0; width: 100%; font-size: 1.1rem;"></p>
                     <div class="image-nav" id="imageNav">
                         <button type="button" id="prevImageBtn" aria-label="Anterior">
                             <i class="fas fa-chevron-left"></i>
@@ -590,12 +860,41 @@
             const modalElement = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             const modalTitle = document.getElementById('imageModalLabel');
+            const modalDesc = document.getElementById('modalDescription');
             const nav = document.getElementById('imageNav');
             const prevBtn = document.getElementById('prevImageBtn');
             const nextBtn = document.getElementById('nextImageBtn');
             const modal = new bootstrap.Modal(modalElement);
             const isLightZoom = (src) => /\/static\/images\/examples\/(ref[123]|rf[456])\.png$/i.test(src || "");
             let currentRefIndex = -1;
+
+            const muscleDescriptions = {
+                "hombros": `<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripción y Partes:</strong> Músculo que envuelve la articulación del hombro, dando forma redondeada.<br>• <strong>Deltoides Anterior:</strong> Parte frontal (empujes).<br>• <strong>Deltoides Lateral (Medial):</strong> Parte lateral (anchura).<br>• <strong>Deltoides Posterior:</strong> Parte trasera (tracción).`,
+
+                "pectorales": `<strong>Nombres alternativos:</strong> Pectorales, "Pecs", Torso anterior.<br><br><strong>Descripción y Partes:</strong> Músculo grande en la parte frontal de la caja torácica. Es clave para movimientos de empuje.<br>• <strong>Pectoral Mayor:</strong> Se divide funcionalmente en Fascículo Clavicular (parte superior), Esternocostal (parte media) y Abdominal (parte inferior).<br>• <strong>Pectoral Menor:</strong> Situado debajo del mayor.`,
+
+                "espalda": `<strong>Nombres alternativos:</strong> Dorsales, Espalda alta/media/baja.<br><br><strong>Descripción y Partes:</strong> Grupo complejo que cubre la parte posterior del tronco.<br>• <strong>Dorsal Ancho (Lats):</strong> Da la forma de "V".<br>• <strong>Trapecios:</strong> Parte superior (cuello/hombros), media e inferior.<br>• <strong>Romboides:</strong> Entre los omóplatos.<br>• <strong>Erectores espinales / Lumbares:</strong> Zona baja de la espalda (estabilidad).`,
+
+                "bíceps": `<strong>Nombres alternativos:</strong> Bíceps braquial, "Conejos" (coloquial).<br><br><strong>Descripción y Partes:</strong> Músculo de dos cabezas en la parte frontal del brazo.<br>• <strong>Cabeza Larga:</strong> Parte externa.<br>• <strong>Cabeza Corta:</strong> Parte interna.<br>• <strong>Braquial:</strong> Músculo profundo situado bajo el bíceps (da volumen).`,
+
+                "tríceps": `<strong>Nombres alternativos:</strong> Tríceps braquial.<br><br><strong>Descripción y Partes:</strong> Músculo de tres cabezas en la parte posterior del brazo. Ocupa 2/3 del volumen del brazo.<br>• <strong>Cabeza Larga:</strong> La más grande, parte interna.<br>• <strong>Cabeza Lateral:</strong> La parte externa visible.<br>• <strong>Cabeza Medial:</strong> Situada más abajo, cerca del codo.`,
+
+                "antebrazos": `<strong>Nombres alternativos:</strong> Flexores/Extensores de la muñeca.<br><br><strong>Descripción y Partes:</strong> Conjunto de múltiples músculos pequeños responsables del agarre.<br>• <strong>Braquiorradial:</strong> El músculo más visible en la parte superior del antebrazo.<br>• <strong>Flexores y Extensores:</strong> Grupos musculares para mover dedos y muñeca.`,
+
+                "abdominales": `<strong>Nombres alternativos:</strong> Core, Recto abdominal, "Six-pack", Abdominales.<br><br><strong>Descripción y Partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>• <strong>Recto Abdominal:</strong> La "tableta" frontal.<br>• <strong>Oblicuos (Externos e Internos):</strong> Los laterales del torso.<br>• <strong>Transverso:</strong> Músculo profundo (faja natural).<br>• <strong>Serratos:</strong> Músculos en forma de "dientes" sobre las costillas.`,
+
+                "glúteos": `<strong>Nombres alternativos:</strong> Nalgas, Trasero.<br><br><strong>Descripción y Partes:</strong> El grupo muscular más grande y fuerte del cuerpo.<br>• <strong>Glúteo Mayor:</strong> La parte principal y más visible.<br>• <strong>Glúteo Medio:</strong> Parte lateral superior (estabilidad de cadera).<br>• <strong>Glúteo Menor:</strong> Profundo, bajo el medio.`,
+
+                "cuádriceps": `<strong>Nombres alternativos:</strong> Cuádriceps femoral, Muslo anterior.<br><br><strong>Descripción y Partes:</strong> Grupo de cuatro músculos en la parte frontal del muslo.<br>• <strong>Recto Femoral:</strong> El músculo central que cruza la cadera.<br>• <strong>Vasto Lateral:</strong> Parte externa (da la curva exterior).<br>• <strong>Vasto Medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>• <strong>Vasto Intermedio:</strong> Profundo, bajo el recto femoral.`,
+
+                "femoral": `<strong>Nombres alternativos:</strong> Femorales, Isquiosurales, Isquios, Parte posterior del muslo.<br><br><strong>Descripción y Partes:</strong> Grupo muscular en la parte trasera del muslo.<br>• <strong>Bíceps Femoral:</strong> Parte externa (cabeza larga y corta).<br>• <strong>Semitendinoso y Semimembranoso:</strong> Parte interna.`,
+
+                "gemelos": `<strong>Nombres alternativos:</strong> Tríceps sural, Gemelos, Chamorros (coloquial en MX).<br><br><strong>Descripción y Partes:</strong> Parte posterior de la pierna baja.<br>• <strong>Gastrocnemio (Gemelos):</strong> El músculo visible con forma de diamante (cabeza interna y externa).<br>• <strong>Sóleo:</strong> Músculo plano situado debajo de los gemelos (visible a los lados del tobillo).`,
+
+                "aductores": `<strong>Nombres alternativos:</strong> Aductores.<br><br><strong>Descripción y Partes:</strong> Músculos situados en la parte interna del muslo, encargados de cerrar las piernas.`,
+
+                "abductores": `<strong>Nombres alternativos:</strong> Abductores.<br><br><strong>Descripción y Partes:</strong> Músculos situados en la parte externa de la cadera/muslo (incluyendo el tensor de la fascia lata), encargados de abrir las piernas.`,
+            };
 
             function updateNav() {
                 if (!nav) return;
@@ -614,6 +913,7 @@
                 modalImage.alt = img.alt;
                 const titleEl = img.closest('.ref-card')?.querySelector('.ref-caption');
                 modalTitle.textContent = titleEl ? titleEl.textContent : '';
+                modalDesc.style.display = 'none'; // Hide description for ref images
                 updateNav();
             }
 
@@ -624,6 +924,7 @@
                     // title might be in .muscle-name or .ref-caption
                     const titleEl = this.querySelector('.muscle-name') || this.querySelector('.ref-caption');
                     const name = titleEl ? titleEl.textContent : '';
+                    const desc = this.getAttribute('data-desc');
 
                     if (!img) return;
                     if (this.classList.contains('ref-card')) {
@@ -635,6 +936,24 @@
                         modalImage.src = img.src;
                         modalImage.alt = img.alt;
                         modalTitle.textContent = name;
+
+                        // Look for rich description first, then fallback to data-desc
+                        const key = name.trim().toLowerCase();
+                        const richInfo = muscleDescriptions[key];
+
+                        let finalDesc = "";
+                        if (richInfo) {
+                            finalDesc = richInfo;
+                        } else if (desc) {
+                            finalDesc = desc; // Fallback to data attribute
+                        }
+
+                        if (finalDesc) {
+                            modalDesc.innerHTML = finalDesc;
+                            modalDesc.style.display = 'block';
+                        } else {
+                            modalDesc.style.display = 'none';
+                        }
                         updateNav();
                     }
                     modal.show();

@@ -792,12 +792,12 @@
 
                 {% if data and data.stats %}
                 <div class="stats-container collapsible-panel">
-                    <div class="stats-header" onclick="toggleStats()">
+                    <div class="stats-header collapsed" onclick="toggleStats()">
                         <h3>INDICADORES CORPORALES</h3>
                         <i class="fas fa-chevron-down" id="statsChevron"></i>
                     </div>
 
-                    <div class="stats-content" id="statsContent">
+                    <div class="stats-content collapsed" id="statsContent">
                         <!-- Peso -->
                         <div class="stat-row" onclick="activateTab('peso')" style="cursor: pointer;">
                             <div class="stat-icon icon-peso"><i class="fas fa-weight"></i></div>

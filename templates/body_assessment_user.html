@@ -359,8 +359,8 @@
 
                                 <section class="mb-4">
                                     <div class="d-flex justify-content-end mb-2">
-                                        <button class="btn btn-outline-info btn-sm" type="button"
-                                            data-bs-toggle="modal" data-bs-target="#bodyTrackingModal">
+                                        <button class="btn btn-outline-info btn-sm" type="button" data-bs-toggle="modal"
+                                            data-bs-target="#bodyTrackingModal">
                                             Ver seguimiento corporal
                                         </button>
                                     </div>
@@ -504,8 +504,8 @@
 
                             <!-- Visual Report Container -->
                             <div id="result-container" class="d-none flex-column h-100">
-                                <ul class="nav nav-tabs border-secondary mb-3 flex-nowrap overflow-auto"
-                                    role="tablist" style="white-space: nowrap;">
+                                <ul class="nav nav-tabs border-secondary mb-3 flex-nowrap overflow-auto" role="tablist"
+                                    style="white-space: nowrap;">
                                     <li class="nav-item">
                                         <button class="nav-link active text-theme bg-transparent" data-bs-toggle="tab"
                                             data-bs-target="#tab-visual">Reporte Visual</button>
@@ -675,7 +675,8 @@
                                                         <textarea id="admin-notes-internal" class="form-control"
                                                             rows="4"
                                                             placeholder="Notas internas para el equipo admin"></textarea>
-                                                        <div class="text-secondary small mt-2">Solo visible para administradores.</div>
+                                                        <div class="text-secondary small mt-2">Solo visible para
+                                                            administradores.</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -696,17 +697,20 @@
                                             <div class="card-body">
                                                 <h6 class="section-title h6 mb-3">Ajustes manuales</h6>
                                                 <div class="mb-3">
-                                                    <label class="form-label" for="admin-tdee-select">Seleccionar TDEE</label>
+                                                    <label class="form-label" for="admin-tdee-select">Seleccionar
+                                                        TDEE</label>
                                                     <select id="admin-tdee-select" class="form-select"></select>
                                                 </div>
                                                 <div class="row g-3">
                                                     <div class="col-12 col-md-6">
-                                                        <label class="form-label" for="admin-tdee-kcal">TDEE (kcal)</label>
+                                                        <label class="form-label" for="admin-tdee-kcal">TDEE
+                                                            (kcal)</label>
                                                         <input id="admin-tdee-kcal" type="number" class="form-control"
                                                             placeholder="Ej: 2200" min="0" step="1">
                                                     </div>
                                                     <div class="col-12 col-md-6">
-                                                        <label class="form-label" for="admin-kcal-target">Ajustar kcal</label>
+                                                        <label class="form-label" for="admin-kcal-target">Ajustar
+                                                            kcal</label>
                                                         <input id="admin-kcal-target" type="number" class="form-control"
                                                             placeholder="Ej: 2000" min="0" step="1">
                                                     </div>
@@ -799,6 +803,64 @@
                     if (nextSrc) img.src = nextSrc;
                 });
             };
+
+            const syncFromTracking = () => {
+                try {
+                    const stored = localStorage.getItem('updated_body_measurements');
+                    if (!stored) return;
+                    const data = JSON.parse(stored);
+
+                    // Map tracking keys to form IDs
+                    const map = {
+                        'weight_kg': 'weight_kg',
+                        'waist': 'waist',
+                        'chest': 'chest',
+                        'neck': 'neck',
+                        'hips': 'hip',
+                        'thigh': 'thigh',
+                        'thigh_left': 'thigh',
+                        'thigh_right': 'thigh',
+                        'calf': 'calf',
+                        'calf_left': 'calf',
+                        'calf_right': 'calf',
+                        'forearm': 'forearm',
+                        'forearm_left': 'forearm',
+                        'forearm_right': 'forearm',
+                        'biceps': 'arm_flexed',
+                        'biceps_left': 'arm_flexed',
+                        'biceps_right': 'arm_flexed',
+                    };
+
+                    Object.keys(data).forEach(key => {
+                        // Handle side specific keys first by checking exact match, then base key
+                        let targetId = map[key];
+                        // If key has side (e.g. thigh_left) and not mapped directly, try stripping side
+                        if (!targetId && (key.includes('_left') || key.includes('_right'))) {
+                            const baseKey = key.replace('_left', '').replace('_right', '');
+                            targetId = map[baseKey];
+                            // Also map 'biceps' -> 'arm_flexed' logic if needed
+                            if (baseKey === 'biceps') targetId = 'arm_flexed';
+                        }
+
+                        if (targetId) {
+                            const el = document.getElementById(targetId);
+                            if (el && data[key] && data[key] !== "0.0") {
+                                el.value = data[key];
+                                el.style.borderColor = "var(--primary)";
+                            }
+                        }
+                    });
+                } catch (e) { console.error("Sync Error", e); }
+            };
+
+            // Independent listener for sync
+            document.addEventListener('DOMContentLoaded', () => {
+                syncFromTracking();
+                const modalParams = document.getElementById('bodyTrackingModal');
+                if (modalParams) {
+                    modalParams.addEventListener('hidden.bs.modal', syncFromTracking);
+                }
+            });
 
             // --- Auto-Load User Data (Standard User Mode) ---
             document.addEventListener('DOMContentLoaded', async () => {

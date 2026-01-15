@@ -627,7 +627,7 @@
             border: none;
             color: white;
             font-size: 3rem;
-            width: 140px;
+            width: 180px;
             text-align: right;
             border-bottom: 2px solid var(--accent-green);
         }
@@ -774,14 +774,14 @@
                         <!-- Left side labels logic (visual tweak) -->
                         {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq', 'antebrazo_izq'] %}
                         {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
-                        <span class="val">{{ item.value }}</span>cm
+                        <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
                         {% else %}
-                        <span class="val">{{ item.value }}</span>cm {% if item.change %}<span
+                        <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm {% if item.change %}<span
                             class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                         {% endif %}
                         {% else %}
                         {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
-                        <span class="val">{{ item.value }}</span>cm
+                        <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
                         {% endif %}
                     </div>
                     {% endif %}
@@ -802,7 +802,7 @@
                             <div class="stat-icon icon-peso"><i class="fas fa-weight"></i></div>
                             <div class="stat-data">
                                 <h4>Peso Corporal</h4>
-                                <p>{{ data.stats.peso.value }}{{ data.stats.peso.unit }}</p>
+                                <p id="val-peso">{{ data.stats.peso.value }}{{ data.stats.peso.unit }}</p>
                             </div>
                             <div class="stat-trend {{ data.stats.peso.trend }}">
                                 {{ data.stats.peso.change }}
@@ -814,7 +814,7 @@
                             <div class="stat-icon icon-musculo"><i class="fas fa-dumbbell"></i></div>
                             <div class="stat-data">
                                 <h4>Músculo</h4>
-                                <p>{{ data.stats.musculo.value }}{{ data.stats.musculo.unit }}</p>
+                                <p id="val-musculo">{{ data.stats.musculo.value }}{{ data.stats.musculo.unit }}</p>
                             </div>
                             <div class="stat-trend {{ data.stats.musculo.trend }}">
                                 {{ data.stats.musculo.change }}
@@ -827,7 +827,7 @@
                             <div class="stat-icon icon-agua"><i class="fas fa-water"></i></div>
                             <div class="stat-data">
                                 <h4>Porcentaje de Agua</h4>
-                                <p>{{ data.stats.agua.value }}{{ data.stats.agua.unit }}</p>
+                                <p id="val-agua">{{ data.stats.agua.value }}{{ data.stats.agua.unit }}</p>
                             </div>
                             <div class="stat-trend {{ data.stats.agua.trend }}">
                                 {{ data.stats.agua.change }}
@@ -839,7 +839,7 @@
                             <div class="stat-icon icon-grasa"><i class="fas fa-tint"></i></div>
                             <div class="stat-data">
                                 <h4>Porcentaje de Grasa</h4>
-                                <p>{{ data.stats.grasa.value }}{{ data.stats.grasa.unit }}</p>
+                                <p id="val-grasa">{{ data.stats.grasa.value }}{{ data.stats.grasa.unit }}</p>
                             </div>
                             <div class="stat-trend {{ data.stats.grasa.trend }}">
                                 {{ data.stats.grasa.change }}
@@ -999,7 +999,10 @@
             </div>
 
             <div class="picker-container-custom">
-                <input type="number" id="measurementValueBtn" class="picker-input" value="0.0" step="0.1">
+                <input type="number" id="measurementValueBtn" class="picker-input" value="0.0" step="0.1" min="0"
+                    max="300"
+                    onkeydown="return event.key != 'e' && event.key != 'E' && event.key != '-' && event.key != '+'"
+                    oninput="if(parseFloat(this.value)>300) this.value=300; if(this.value.length > 6) this.value=this.value.slice(0,6);">
                 <span class="picker-unit">cm</span>
             </div>
 
@@ -1305,11 +1308,94 @@
             }
 
             valueModal.classList.add('active');
+            setTimeout(() => {
+                measurementInput.focus();
+                measurementInput.select();
+            }, 100);
+        }
+
+        // Helper to update UI label
+        function updateLabelUI(part, side, value) {
+            // Map part/side to ID
+            // Common IDs: val-cuello, val-hombros, val-torax, val-biceps_izq, val-biceps_der, val-cintura...
+            // currentPart might be internal key like 'neck', 'shoulders'.
+            // Mappings based on template inspection or knowledge:
+            const partMap = {
+                // Internal keys
+                'neck': 'cuello',
+                'shoulders': 'hombros',
+                'chest': 'torax',
+                'waist': 'cintura',
+                'hips': 'cadera',
+                'thigh': 'muslo',
+                'calf': 'pantorrilla',
+                'biceps': 'biceps',
+                'forearm': 'antebrazo',
+                'weight_kg': 'peso',
+                'body_fat_percent': 'grasa',
+                'muscle_mass_percent': 'musculo',
+                'water_percent': 'agua',
+
+                // Spanish Display Names (from FAB)
+                'Cuello': 'cuello',
+                'Hombro': 'hombros', 'Hombros': 'hombros',
+                'Pecho': 'torax', 'Torax': 'torax',
+                'Abdomen': 'cintura', 'Cintura': 'cintura',
+                'Cadera': 'cadera',
+                'Muslo': 'muslo', 'Muslos': 'muslo',
+                'Pantorrilla': 'pantorrilla',
+                'Bíceps': 'biceps', 'Biceps': 'biceps',
+                'Antebrazo': 'antebrazo'
+            };
+
+            let baseIds = [];
+            const pKey = partMap[part] || part; // Fallback to part if match
+
+            const s = (side || '').toLowerCase();
+            if (s === 'left' || s === 'izquierda') {
+                baseIds.push(`val-${pKey}_izq`);
+            } else if (s === 'right' || s === 'derecha' || s === 'derecho') {
+                baseIds.push(`val-${pKey}_der`);
+            } else if (s === 'both' || s === 'ambos') {
+                baseIds.push(`val-${pKey}_izq`);
+                baseIds.push(`val-${pKey}_der`);
+            } else {
+                // Singular (e.g., neck, waist, chest)
+                baseIds.push(`val-${pKey}`);
+
+                // Edge case: If no side provided but part is bilateral, ideally do nothing or default? 
+                // User said: "only update pairs if Both selected".
+                // So we do NOT push _izq/_der here.
+            }
+
+            baseIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // Start of text node usually contains number + unit. 
+                    // Or check structure: innerHTML typically `{{ val }}<small>cm</small>` or just text.
+                    // Previous template view showed: `(measurements['biceps_izq'].value)<small>cm</small>`
+                    // So we should replace the text content but keep the unit? Or overwrite innerHTML?
+                    // Safest: Overwrite text of first child or just innerHTML with value + generic unit
+
+                    // Determine unit
+                    let unit = 'cm';
+                    if (part === 'weight_kg') unit = 'kg';
+                    if (part.includes('percent')) unit = '%';
+
+                    el.innerHTML = `${value}<small>${unit}</small>`;
+
+                    // Also update potential delta label if we had it? (Maybe too complex for quick fix)
+                }
+            });
         }
 
         // Guardar datos
         window.saveData = function () {
-            const value = measurementInput.value;
+            let rawVal = parseFloat(measurementInput.value);
+            if (isNaN(rawVal)) rawVal = 0.0;
+            // Enforce constraints
+            rawVal = Math.max(0, Math.min(300, rawVal));
+            const value = parseFloat(rawVal.toFixed(1)).toString();
 
             const payload = {
                 part: currentPart,
@@ -1319,6 +1405,16 @@
             };
 
             console.log("Enviando datos:", payload);
+
+            // 1. Update LocalStorage for cross-page sync
+            try {
+                const existing = JSON.parse(localStorage.getItem('updated_body_measurements') || '{}');
+                // Create a unique key for the map
+                let key = currentPart;
+                if (currentSide) key += `_${currentSide}`;
+                existing[key] = value; // Store raw value
+                localStorage.setItem('updated_body_measurements', JSON.stringify(existing));
+            } catch (e) { console.error("LS Error", e); }
 
             fetch('/api/user/measurement/save', { // Updated API endpoint
                 method: 'POST',
@@ -1335,12 +1431,16 @@
                     const originalText = btn.textContent;
                     btn.textContent = "GUARDADO!";
                     btn.style.background = "#fff";
+
+                    // 2. Update UI in runtime (Instant Feedback)
+                    updateLabelUI(currentPart, currentSide, value);
+
                     setTimeout(() => {
                         closeModals();
                         btn.textContent = originalText;
                         btn.style.background = "";
-                        location.reload(); // Reload to show stats update if real
-                    }, 1000);
+                        // NO LOAD RELOAD
+                    }, 500);
                 })
                 .catch((error) => {
                     console.error('Error:', error);

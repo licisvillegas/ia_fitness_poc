@@ -550,62 +550,74 @@ def body_tracking_page():
                 data = format_change_data(value, prev_val, unit)
                 return {"value": value, "change": data["text"], "trend": data["trend"]}
 
-            if latest_meas:
-                arm_key = "arm_flexed" if latest_meas.get("arm_flexed") is not None else "arm_relaxed"
-                # Fallback to Biceps if generic arm is missing
-                if latest_meas.get(arm_key) is None and latest_meas.get("biceps") is not None:
-                     arm_key = "biceps"
+            # Determine Arm key fallback
+            arm_key = "arm_flexed"
+            if latest_meas and latest_meas.get("arm_relaxed") is not None and latest_meas.get("arm_flexed") is None:
+                 arm_key = "arm_relaxed"
+            # Fallback to Biceps if generic arm is missing
+            if latest_meas and latest_meas.get(arm_key) is None and latest_meas.get("biceps") is not None:
+                 arm_key = "biceps"
 
-                mapping = {
-                    "cuello": ("neck", "cm"),
-                    "torax": ("chest", "cm"),
-                    "cintura": ("waist", "cm"),
-                    "cadera": ("hip", "cm"),
-                    "hombros": ("shoulders", "cm"),
-                    
-                    
-                    # Bilaterales (con fallbacks)
-                    "biceps_izq": (f"{arm_key}_left", "cm"),
-                    "biceps_der": (f"{arm_key}_right", "cm"),
-                    
-                    "muslo_izq": ("thigh_left", "cm"),
-                    "muslo_der": ("thigh_right", "cm"),
-                    
-                    "pantorrilla_izq": ("calf_left", "cm"),
-                    "pantorrilla_der": ("calf_right", "cm"),
-                    
-                    "antebrazo_izq": ("forearm_left", "cm"),
-                    "antebrazo_der": ("forearm_right", "cm"),
-                }
+            mapping = {
+                "cuello": ("neck", "cm"),
+                "torax": ("chest", "cm"),
+                "cintura": ("waist", "cm"),
+                "cadera": ("hip", "cm"),
+                "hombros": ("shoulders", "cm"),
                 
-                # Helper to find value with fallback to singular
-                for label_key, (source_key, unit) in mapping.items():
-                    value = latest_meas.get(source_key)
-                    
-                    # Try singular fallback if specific side is missing
-                    if value is None:
-                        # e.g. "thigh_left" -> "thigh"
-                        singular_key = source_key.replace("_left", "").replace("_right", "")
-                        value = latest_meas.get(singular_key)
+                # Bilaterales (con fallbacks)
+                "biceps_izq": (f"{arm_key}_left", "cm"),
+                "biceps_der": (f"{arm_key}_right", "cm"),
+                
+                "muslo_izq": ("thigh_left", "cm"),
+                "muslo_der": ("thigh_right", "cm"),
+                
+                "pantorrilla_izq": ("calf_left", "cm"),
+                "pantorrilla_der": ("calf_right", "cm"),
+                
+                "antebrazo_izq": ("forearm_left", "cm"),
+                "antebrazo_der": ("forearm_right", "cm"),
+            }
+            
+            # Helper to find value with fallback to singular
+            for label_key, (source_key, unit) in mapping.items():
+                value = latest_meas.get(source_key)
+                
+                # Try singular fallback if specific side is missing
+                if value is None:
+                    # e.g. "thigh_left" -> "thigh"
+                    singular_key = source_key.replace("_left", "").replace("_right", "")
+                    value = latest_meas.get(singular_key)
 
-                    # Default to 0.0 if missing so label appears (clickable)
-                    if value is None:
-                        value = 0.0
+                # Default to 0 if missing so label appears (clickable)
+                if value is None:
+                    value = 0
 
-                    user_data["measurements"][label_key] = map_measure(source_key, value, unit)
+                # Format value to remove .0 if integer
+                try:
+                    formatted_val = float(value)
+                    if formatted_val.is_integer():
+                        formatted_val = int(formatted_val)
+                except (ValueError, TypeError):
+                    formatted_val = value
+
+                user_data["measurements"][label_key] = map_measure(source_key, formatted_val, unit)
 
             # Stats (peso, grasa, musculo, agua, imc)
             stats = {}
             weight = latest_meas.get("weight_kg")
             prev_weight = prev_meas.get("weight_kg")
-            if weight is not None:
-                w_data = format_change_data(weight, prev_weight, "kg")
-                stats["peso"] = {
-                    "value": weight,
-                    "unit": "kg",
-                    "change": w_data["text"],
-                    "trend": w_data["trend"]
-                }
+            
+            # Ensure weight is not None for display
+            display_weight = weight if weight is not None else 0.0
+            
+            w_data = format_change_data(display_weight, prev_weight, "kg")
+            stats["peso"] = {
+                "value": display_weight,
+                "unit": "kg",
+                "change": w_data["text"],
+                "trend": w_data["trend"]
+            }
 
             latest_out = (latest or {}).get("output") or {}
             prev_out = (previous or {}).get("output") or {}

@@ -4,6 +4,9 @@ Middleware de autenticación y perfiles
 from flask import request, redirect
 import extensions
 from extensions import logger
+from utils.cache import cache_get, cache_set
+
+_USER_CTX_TTL_SEC = 60
 
 
 def check_user_profile():
@@ -54,6 +57,10 @@ def inject_user_role():
     user_data = None
     
     if user_id and extensions.db is not None:
+        cache_key = f"user_ctx:{user_id}"
+        cached = cache_get(cache_key)
+        if cached:
+            return cached
         try:
             # 1. Fetch User Role
             role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
@@ -88,12 +95,15 @@ def inject_user_role():
     token_cookie = request.cookies.get("admin_token")
     has_admin_token = bool(token_cookie and token_cookie == real_token)
 
-    return dict(
+    payload = dict(
         current_user_role=user_role,
         user_data=user_data,
         is_impersonating=is_impersonating,
         has_admin_token=has_admin_token
     )
+    if user_id and extensions.db is not None:
+        cache_set(cache_key, payload, _USER_CTX_TTL_SEC)
+    return payload
 
 
 def check_workout_lock():

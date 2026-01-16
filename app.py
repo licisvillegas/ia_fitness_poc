@@ -17,7 +17,12 @@ from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.admin import admin_bp
 from routes.nutrition import nutrition_bp
-from routes.ai import ai_bp
+from routes.ai_reasoning import ai_reasoning_bp
+from routes.ai_body_assessment import ai_body_assessment_bp
+from routes.ai_adjustments import ai_adjustments_bp
+from routes.ai_routines import ai_routines_bp
+from routes.ai_diagnostics import ai_diagnostics_bp
+from routes.ai_plans import ai_plans_bp
 from routes.workout import workout_bp
 
 # ======================================================
@@ -46,7 +51,12 @@ def create_app():
     app.register_blueprint(user_bp) # Rutas raiz como /dashboard, /profile
     app.register_blueprint(admin_bp) # Rutas /admin/*
     app.register_blueprint(nutrition_bp) # Rutas mixing /ai/nutrition y /meal_plans
-    app.register_blueprint(ai_bp) # Rutas /ai/*, /api/generate_routine
+    app.register_blueprint(ai_reasoning_bp)
+    app.register_blueprint(ai_body_assessment_bp)
+    app.register_blueprint(ai_adjustments_bp)
+    app.register_blueprint(ai_routines_bp)
+    app.register_blueprint(ai_diagnostics_bp)
+    app.register_blueprint(ai_plans_bp)
     app.register_blueprint(workout_bp) # Rutas /api/workout/* (asumo definidos en workout.py)
 
     return app

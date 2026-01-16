@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
@@ -280,16 +280,56 @@ def get_progress(user_id):
     try:
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-            
+
+        limit = request.args.get("limit")
+        days = request.args.get("days")
+        start = request.args.get("start")
+        end = request.args.get("end")
+
+        date_filter = {}
+        if days:
+            try:
+                cutoff = datetime.utcnow() - timedelta(days=int(days))
+                date_filter["$gte"] = cutoff
+            except (TypeError, ValueError):
+                pass
+        if start:
+            try:
+                date_filter["$gte"] = datetime.fromisoformat(start.replace("Z", "+00:00"))
+            except Exception:
+                pass
+        if end:
+            try:
+                date_filter["$lte"] = datetime.fromisoformat(end.replace("Z", "+00:00"))
+            except Exception:
+                pass
+
+        progress_query = {"user_id": user_id}
+        assess_query = {"user_id": user_id}
+        if date_filter:
+            progress_query["date"] = date_filter
+            assess_query["created_at"] = date_filter
+
         # 1. Fetch Legacy Progress
-        progress_records = list(extensions.db.progress.find({"user_id": user_id}))
+        progress_cursor = extensions.db.progress.find(progress_query)
+        if limit:
+            try:
+                progress_cursor = progress_cursor.sort("date", -1).limit(int(limit))
+            except (TypeError, ValueError):
+                pass
+        progress_records = list(progress_cursor)
         
         # 2. Fetch Body Assessments
         # We project only needed fields to match progress structure
         assess_cursor = extensions.db.body_assessments.find(
-            {"user_id": user_id},
+            assess_query,
             {"created_at": 1, "input": 1, "output": 1}
         )
+        if limit:
+            try:
+                assess_cursor = assess_cursor.sort("created_at", -1).limit(int(limit))
+            except (TypeError, ValueError):
+                pass
         assess_records = []
         for a in assess_cursor:
             # Normalize assessment to progress format

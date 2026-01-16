@@ -7,6 +7,7 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 import extensions
 from extensions import logger
+from utils.cache import cache_get, cache_set
 
 # Crear blueprint
 workout_bp = Blueprint('workout', __name__, url_prefix='/workout')
@@ -16,6 +17,29 @@ print("LOADING WORKOUT_PY MODULE...", flush=True)
 # Helper para obtener la DB inicializada (evita capturar None en import)
 def get_db():
     return extensions.db
+
+def _get_body_parts_map(db):
+    cache_key = "body_parts_map"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    parts = list(db.body_parts.find({}, {"key": 1, "label": 1, "label_es": 1}))
+    mapping = {}
+    for p in parts:
+        key = (p.get("key") or "").strip()
+        if not key:
+            continue
+        label = (p.get("label") or "").strip()
+        label_es = (p.get("label_es") or "").strip()
+        mapping[key.lower()] = key
+        if label:
+            mapping[label.lower()] = key
+        if label_es:
+            mapping[label_es.lower()] = key
+
+    cache_set(cache_key, mapping, 300)
+    return mapping
 
 @workout_bp.route("/dashboard")
 def dashboard():
@@ -64,10 +88,37 @@ def list_public_exercises():
     db = get_db()
     if db is None: return jsonify({"error": "DB not ready"}), 503
     try:
-        # Fetch all exercises
-        # Optionally filter or hide internal fields?
-        # For now, return same structure as admin but read-only usage
-        docs = list(db.exercises.find({}))
+        limit = int(request.args.get("limit", 50))
+        page = int(request.args.get("page", 1))
+        if limit < 1:
+            limit = 50
+        if limit > 200:
+            limit = 200
+        if page < 1:
+            page = 1
+        skip = (page - 1) * limit
+
+        docs = list(
+            db.exercises.find(
+                {},
+                {
+                    "exercise_id": 1,
+                    "name": 1,
+                    "body_part": 1,
+                    "difficulty": 1,
+                    "equipment": 1,
+                    "video_url": 1,
+                    "description": 1,
+                    "image_url": 1,
+                    "substitutes": 1,
+                    "equivalents": 1,
+                    "equivalent_exercises": 1,
+                },
+            )
+            .sort("name", 1)
+            .skip(skip)
+            .limit(limit)
+        )
         for d in docs:
             d["_id"] = str(d["_id"])
         return jsonify(docs), 200
@@ -131,6 +182,11 @@ def api_filter_exercises():
     muscles_arg = request.args.get("muscles", "")
     equipment_arg = request.args.get("equipment", "").strip()
     query_term = request.args.get("q", "").strip()
+    limit = int(request.args.get("limit", 50))
+    if limit < 1:
+        limit = 50
+    if limit > 200:
+        limit = 200
     
     query = {}
     
@@ -140,26 +196,12 @@ def api_filter_exercises():
         raw_parts = [m.strip() for m in muscles_arg.split(",") if m.strip()]
         
         resolved_parts = set()
+        parts_map = _get_body_parts_map(db)
         for p in raw_parts:
-            # 1. Check if p is a key (case-insensitive check)
-            # Assuming keys are stored capitalized or we check regex, 
-            # but simpler: check if any body_part has key=p or label_es=p
-            
-            # Efficient lookup:
-            # Find body_part where key=p OR label=p OR label_es=p
-            bp = db.body_parts.find_one({
-                "$or": [
-                    {"key": {"$regex": f"^{p}$", "$options": "i"}},
-                    {"label": {"$regex": f"^{p}$", "$options": "i"}},
-                    {"label_es": {"$regex": f"^{p}$", "$options": "i"}}
-                ]
-            })
-            
-            if bp:
-                resolved_parts.add(bp["key"]) # Use the internal key
+            key = parts_map.get(p.lower())
+            if key:
+                resolved_parts.add(key)
             else:
-                # If not found in body_parts, assume it might be a direct key use by exercise
-                # (fallback)
                 resolved_parts.add(p)
                 
         if resolved_parts:
@@ -180,7 +222,7 @@ def api_filter_exercises():
             "difficulty": 1, "equipment": 1, "video_url": 1,
             "description": 1, "image_url": 1,
             "substitutes": 1, "equivalents": 1, "equivalent_exercises": 1
-        }).sort("name", 1).limit(50)
+        }).sort("name", 1).limit(limit)
         
         results = list(cursor)
         for r in results:
@@ -190,21 +232,6 @@ def api_filter_exercises():
     except Exception as e:
         logger.error(f"Error filtering exercises: {e}")
         return jsonify({"error": str(e)}), 500
-
-
-@workout_bp.get("/api/exercises")
-def api_list_exercises():
-    """Listado publico de ejercicios para el builder del usuario."""
-    try:
-        db = get_db()
-        if db is None: return jsonify({"error": "DB not ready"}), 503
-        docs = list(db.exercises.find({}))
-        for d in docs:
-            d["_id"] = str(d["_id"])
-        return jsonify(docs), 200
-    except Exception as e:
-        logger.error(f"Error listing exercises (workout): {e}")
-        return jsonify({"error": "Error interno"}), 500
 
 
 @workout_bp.get("/api/body-parts")

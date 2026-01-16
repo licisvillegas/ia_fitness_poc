@@ -113,7 +113,8 @@
 
         {{ macros.nav_link('/ai/body_assessment/user', 'Evaluación Corporal', 'fas fa-camera') }}
         <li>
-            <a href="/ai/body_assessment/history/view/{{ user_data.user_id if user_data else '' }}"
+            {% set history_user_id = (user_data.user_id if user_data and user_data.user_id else request.cookies.get('user_session', '')) %}
+            <a href="/ai/body_assessment/history/view/{{ history_user_id }}"
                 class="nav-link {% if 'history/view' in request.path %}active{% endif %}" title="Historial">
                 <i class="fas fa-history me-2 nav-icon"></i>
                 <span>Historial</span>
@@ -705,6 +706,18 @@
 
                 window.location.href = '/';
             });
+        }
+
+        // 3. Ensure history link includes user_id when missing.
+        const historyLink = document.querySelector('a[href^="/ai/body_assessment/history/view/"]');
+        if (historyLink && historyLink.getAttribute('href').endsWith('/view/')) {
+            const uid =
+                localStorage.getItem('admin_working_user_id') ||
+                localStorage.getItem('ai_fitness_uid') ||
+                "";
+            if (uid) {
+                historyLink.setAttribute('href', '/ai/body_assessment/history/view/' + encodeURIComponent(uid));
+            }
         }
     });
 </script>

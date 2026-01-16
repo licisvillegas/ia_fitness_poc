@@ -10,12 +10,12 @@ Este documento lista objetos (archivos, modulos o endpoints) con oportunidades d
 - `routes/ai.py` `ai_body_assessment`: base64 de imagenes en memoria y subida a Cloudinary en el mismo request; limitar tamano, streaming/chunking, y subir en background.
 
 ## Mantenimiento y modularizacion
-- `routes/ai.py`: archivo muy grande con multiples responsabilidades (reasoning, body assessment, rutina, planes). Dividir en blueprints o modulos por feature.
+- `routes/ai.py`: archivo muy grande con multiples responsabilidades (reasoning, body assessment, rutina, planes). Dividido en modulos por feature.
 - `routes/workout.py`: mezcla dashboard, runner, sesiones, stats y ejercicios. Separar en submodulos (`workout_sessions`, `workout_stats`, `workout_exercises`).
 - `extensions.py`: side effects en import (logging y chequeos de env); mover a factory o inicializador para controlar orden de carga.
 - `routes/*`: validaciones repetidas (JSON, campos requeridos, errores) y manejo de respuestas similar; crear helpers de validacion/respuesta.
 - `utils/auth_helpers.py` y `routes/auth.py`: logica de autenticacion dispersa; centralizar en un servicio.
-- Tipos de `user_id` mezclados (string y ObjectId) en varias rutas; normalizar el tipo y documentar el contrato.
+- Tipos de `user_id` mezclados (string y ObjectId) en varias rutas; normalizado y documentado el contrato.
 
 ## UX
 - `middleware/auth_middleware.py` `check_workout_lock`: redireccion forzado al runner puede romper navegacion; agregar UI para reanudar/cancelar, y permitir excepciones configurables.

@@ -6,6 +6,7 @@ from extensions import logger
 from utils.auth_helpers import check_admin_access
 from utils.db_helpers import log_agent_execution
 from ai_agents.meal_plan_agent import MealPlanAgent
+from utils.id_helpers import normalize_user_id, maybe_object_id
 
 nutrition_bp = Blueprint('nutrition', __name__)
 
@@ -13,6 +14,7 @@ nutrition_bp = Blueprint('nutrition', __name__)
 def ai_nutrition_plan(user_id: str):
     """Genera un plan diario de comidas usando el plan activo (kcal/macros)."""
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
 
@@ -74,14 +76,13 @@ def ai_nutrition_plan(user_id: str):
 def get_active_meal_plan(user_id: str):
     """Obtiene el plan de nutrición activo del usuario, si existe."""
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
         search_ids = [user_id]
-        try:
-            if len(user_id) == 24:
-                search_ids.append(ObjectId(user_id))
-        except Exception:
-            pass
+        oid = maybe_object_id(user_id)
+        if oid:
+            search_ids.append(oid)
 
         doc = extensions.db.meal_plans.find_one({"user_id": {"$in": search_ids}, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
         if not doc:
@@ -108,7 +109,7 @@ def save_meal_plan():
         if not request.is_json:
             return jsonify({"error": "El cuerpo debe ser JSON"}), 415
         data = request.get_json() or {}
-        user_id = (data.get("user_id") or "").strip()
+        user_id = normalize_user_id(data.get("user_id"))
         output = data.get("output") or {}
         input_ctx = data.get("input") or {}
         backend = data.get("backend") or "unknown"
@@ -141,6 +142,7 @@ def save_meal_plan():
 def list_meal_plans(user_id: str):
     """Lista meal_plans del usuario (ordenados por fecha desc)."""
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
         raw_limit = request.args.get("limit")
@@ -153,11 +155,9 @@ def list_meal_plans(user_id: str):
                 pass
 
         search_ids = [user_id]
-        try:
-            if len(user_id) == 24:
-                search_ids.append(ObjectId(user_id))
-        except Exception:
-            pass
+        oid = maybe_object_id(user_id)
+        if oid:
+            search_ids.append(oid)
 
         cursor = extensions.db.meal_plans.find({"user_id": {"$in": search_ids}}).sort("created_at", -1).limit(limit)
         items = []
@@ -264,14 +264,11 @@ def activate_meal_plan(plan_id: str):
             return jsonify({"error": "Meal plan no encontrado"}), 404
         
         # FIX: Define user_id from the document
-        user_id = mp.get("user_id")
-        user_id_str = str(user_id)
-        search_ids = [user_id_str]
-        try:
-            if len(user_id_str) == 24:
-                search_ids.append(ObjectId(user_id_str))
-        except Exception:
-            pass
+        user_id = normalize_user_id(mp.get("user_id"))
+        search_ids = [user_id]
+        oid = maybe_object_id(user_id)
+        if oid:
+            search_ids.append(oid)
 
         try:
             extensions.db.meal_plans.update_many({"user_id": {"$in": search_ids}}, {"$set": {"active": False}})

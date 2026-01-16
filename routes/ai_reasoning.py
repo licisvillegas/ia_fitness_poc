@@ -5,6 +5,7 @@ import os
 import extensions
 from extensions import logger
 from utils.helpers import fetch_user_progress_for_agent
+from utils.id_helpers import normalize_user_id
 from utils.db_helpers import log_agent_execution
 
 from ai_agents.reasoning_agent import ReasoningAgent
@@ -16,6 +17,7 @@ ai_reasoning_bp = Blueprint("ai_reasoning", __name__)
 def ai_reason_for_user(user_id: str):
     """Ejecuta el agente AI usando el progreso del usuario desde MongoDB."""
     try:
+        user_id = normalize_user_id(user_id)
         raw_limit = request.args.get("limit")
         limit = None
         if raw_limit:

@@ -95,7 +95,7 @@
     <!-- Right: Exercise Picker -->
     <div class="col-lg-4 mobile-view-pane" id="builderSidebarCol">
         <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card"
-            style="top: 80px; max-height: 85vh;">
+            style="top: 80px; height: 85vh;">
             <div class="card-header border-secondary pb-0">
                 <ul class="nav nav-tabs border-0" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -160,7 +160,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body p-0 overflow-auto" id="exercisePicker" style="height: 60vh;">
+                    <div class="card-body p-0 overflow-auto" id="exercisePicker">
                         <!-- Loaded via JS -->
                     </div>
                 </div>
@@ -380,8 +380,8 @@
         /* Added routineList */
         flex: 1;
         overflow-y: auto;
-        height: auto !important;
-        /* Override inline styles */
+        min-height: 0;
+        /* Override inline styles and ensure flex filling */
     }
 
     /* Keep transition icon logic */
@@ -823,28 +823,65 @@
         });
     }
 
+    // Function to load more exercises for a specific body part
+    function showMoreExercises(bodyPart, type, btn) {
+        const list = window.__lastFilteredExercises || [];
+        // Re-filter to get the correct subset
+        let subset = list.filter(ex => {
+            const bp = ex.body_part || "Other";
+            return bp === bodyPart;
+        });
+
+        if (type === 'strength') {
+            subset = subset.filter(ex => ex.type !== "cardio");
+        } else if (type === 'cardio') {
+            subset = subset.filter(ex => ex.type === "cardio");
+        }
+
+        const LIMIT = 20;
+        const remaining = subset.slice(LIMIT);
+
+        const rows = remaining.map(ex => `
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg" data-ex-id="${ex._id}">
+            <div>
+                <div class="fw-bold text-white">${ex.name}</div>
+                <small class="text-secondary">${translateBodyPart(ex.body_part)} | ${ex.equipment || 'N/A'} | ${ex.type || 'N/A'}</small>
+            </div>
+            <button class="btn btn-sm btn-outline-success" type="button" data-ex-id="${ex._id}">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        `).join("");
+
+        const btnContainer = btn.closest('.show-more-container');
+        if (btnContainer) {
+            btnContainer.insertAdjacentHTML('beforebegin', rows);
+            btnContainer.remove();
+        }
+    }
+
     function renderExercisePicker(list) {
         const container = document.getElementById("exercisePicker");
         window.__lastFilteredExercises = list;
         const strength = list.filter(ex => ex.type !== "cardio");
         const cardio = list.filter(ex => ex.type === "cardio");
 
-        const strengthHtml = renderByBodyPart(strength);
-        const cardioHtml = renderByBodyPart(cardio);
+        const strengthHtml = renderByBodyPart(strength, 'strength');
+        const cardioHtml = renderByBodyPart(cardio, 'cardio');
 
         container.innerHTML = `
-        <div class="px-3 py-2 border-bottom border-secondary">
+        <div class="px-3 py-2 border-bottom border-secondary bg-dark-elem" style="position: sticky; top: 0; z-index: 20; background-color: var(--bg-panel);">
             <span class="text-cyber-green fw-bold">Fuerza</span>
         </div>
         ${strengthHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
-        <div class="px-3 py-2 border-bottom border-secondary mt-2">
+        <div class="px-3 py-2 border-bottom border-secondary mt-2 bg-dark-elem" style="position: sticky; top: 0; z-index: 20; background-color: var(--bg-panel);">
             <span class="text-danger fw-bold">Cardio</span>
         </div>
         ${cardioHtml || '<div class="p-3 text-muted">Sin resultados.</div>'}
         `;
     }
 
-    function renderByBodyPart(items) {
+    function renderByBodyPart(items, type) {
         if (!items.length) return "";
         const grouped = items.reduce((acc, ex) => {
             const key = ex.body_part || "Other";
@@ -857,7 +894,13 @@
             const list = grouped[bodyPart];
             const isCollapsed = collapsedBodyParts.has(bodyPart);
             const collapseId = `bp-collapse-${bodyPart.replace(/\s+/g, '-')}`;
-            const rows = list.map(ex => `
+
+            // Pagination Logic
+            const LIMIT = 20;
+            const visibleList = list.slice(0, LIMIT);
+            const hasMore = list.length > LIMIT;
+
+            const rows = visibleList.map(ex => `
         <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg" data-ex-id="${ex._id}">
             <div>
                 <div class="fw-bold text-white">${ex.name}</div>
@@ -868,13 +911,27 @@
             </button>
         </div>
     `).join("");
+
+            let moreHtml = "";
+            if (hasMore) {
+                // Pass single quotes for strings
+                moreHtml = `
+                <div class="p-2 text-center show-more-container">
+                    <button class="btn btn-sm btn-link text-info w-100 text-decoration-none" onclick="showMoreExercises('${bodyPart}', '${type}', this)">
+                        Ver todos (${list.length}) <i class="fas fa-chevron-down ms-1"></i>
+                    </button>
+                </div>
+                `;
+            }
+
             return `
-        <div class="px-3 py-2 border-bottom border-secondary d-flex align-items-center justify-content-between cursor-pointer" data-bodypart-toggle="${bodyPart}">
+        <div class="px-3 py-2 border-bottom border-secondary d-flex align-items-center justify-content-between cursor-pointer sticky-header-bp" data-bodypart-toggle="${bodyPart}" style="position: sticky; top: 0; z-index: 10; background-color: var(--bg-panel);">
             <span class="text-secondary fw-bold">${translateBodyPart(bodyPart)}</span>
             <i class="fas ${isCollapsed ? "fa-chevron-down" : "fa-chevron-up"} text-secondary transition-icon"></i>
         </div>
         <div class="collapse ${isCollapsed ? "" : "show"}" id="${collapseId}">
             ${rows}
+            ${moreHtml}
         </div>
     `;
         }).join("");

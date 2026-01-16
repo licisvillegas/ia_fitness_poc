@@ -4,6 +4,7 @@ from bson import ObjectId
 
 import extensions
 from extensions import logger
+from utils.id_helpers import normalize_user_id
 
 ai_adjustments_bp = Blueprint("ai_adjustments", __name__)
 
@@ -12,6 +13,7 @@ ai_adjustments_bp = Blueprint("ai_adjustments", __name__)
 def ai_get_adjustments(user_id: str):
     """Devuelve el historial de ajustes AI para un usuario."""
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
         raw_limit = request.args.get("limit")
@@ -110,6 +112,7 @@ def ai_save_adjustment_as_plan(adjustment_id: str):
 def ai_apply_latest_adjustment(user_id: str):
     """Convierte el ajuste AI mas reciente en plan y lo activa."""
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
         adj = list(extensions.db.ai_adjustments.find({"user_id": user_id}).sort("created_at", -1).limit(1))

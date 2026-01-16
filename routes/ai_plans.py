@@ -4,6 +4,7 @@ from datetime import datetime
 import extensions
 from extensions import logger
 from utils.helpers import validate_user_input
+from utils.id_helpers import normalize_user_id
 
 ai_plans_bp = Blueprint("ai_plans", __name__)
 
@@ -20,6 +21,7 @@ def generate_plan():
         if not valid:
             return jsonify({"error": message}), 400
 
+        user_id = normalize_user_id(user.get("user_id"))
         weight = float(user["weight_kg"])
         goal = user["goal"]
         now = datetime.utcnow()
@@ -38,7 +40,7 @@ def generate_plan():
             routines = ["Upper Body", "Lower Body", "Core"]
 
         plan_doc = {
-            "user_id": user["user_id"],
+            "user_id": user_id,
             "goal": goal,
             "source": "base_generator",
             "nutrition_plan": {
@@ -58,7 +60,7 @@ def generate_plan():
         }
 
         try:
-            extensions.db.plans.update_many({"user_id": user["user_id"]}, {"$set": {"active": False}})
+            extensions.db.plans.update_many({"user_id": user_id}, {"$set": {"active": False}})
         except Exception:
             pass
 
@@ -66,7 +68,7 @@ def generate_plan():
         plan_doc["_id"] = str(result.inserted_id)
         plan_doc["plan_id"] = plan_doc["_id"]
 
-        logger.info(f"Plan generado correctamente para {user['user_id']}")
+        logger.info(f"Plan generado correctamente para {user_id}")
         return jsonify(plan_doc), 201
 
     except Exception as e:

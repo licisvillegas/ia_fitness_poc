@@ -14,6 +14,7 @@ from utils.helpers import normalize_measurements, sanitize_photos
 from utils.db_helpers import log_agent_execution
 from utils.auth_helpers import check_admin_access
 from ai_agents.body_assessment_agent import BodyAssessmentAgent
+from utils.id_helpers import normalize_user_id, maybe_object_id
 
 # Configuracion Cloudinary
 cloudinary.config(
@@ -156,7 +157,7 @@ def ai_body_assessment():
 
         measurements = normalize_measurements(measurements_raw)
         context = {
-            "user_id": (payload or {}).get("user_id"),
+            "user_id": normalize_user_id((payload or {}).get("user_id")),
             "sex": ((payload or {}).get("sex") or "male").lower(),
             "age": (payload or {}).get("age"),
             "goal": (payload or {}).get("goal"),
@@ -224,11 +225,16 @@ def ai_body_assessment():
 
 @ai_body_assessment_bp.get("/ai/body_assessment/history/view/<user_id>")
 def body_assessment_history_view(user_id):
+    user_id = normalize_user_id(user_id)
     user_name = user_id
     try:
         logger.info(f"Viewing history for user_id: {user_id}")
         if extensions.db is not None:
-            user = extensions.db.users.find_one({"_id": ObjectId(user_id)})
+            oid = maybe_object_id(user_id)
+            if oid:
+                user = extensions.db.users.find_one({"_id": oid})
+            else:
+                user = extensions.db.users.find_one({"user_id": user_id})
             if user:
                 user_name = user.get("name") or user.get("username") or user_id
                 logger.info("Found user name for history view")
@@ -243,12 +249,13 @@ def body_assessment_history_view(user_id):
 @ai_body_assessment_bp.get("/ai/body_assessment/history/<user_id>")
 def get_body_assessment_history(user_id):
     try:
+        user_id = normalize_user_id(user_id)
         if extensions.db is None:
             return jsonify({"error": "DB not ready"}), 503
 
         cursor = (
             extensions.db.body_assessments.find(
-                {"user_id": user_id},
+            {"user_id": user_id},
                 {"created_at": 1, "output": 1, "backend": 1, "input": 1},
             )
             .sort("created_at", -1)

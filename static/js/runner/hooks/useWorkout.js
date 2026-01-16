@@ -166,31 +166,37 @@
         useEffect(() => {
             let isMounted = true;
             const routineId = routine?.id || routine?._id;
-            // CURRENT_USER_ID is a global variable from Jinja
-            if (!window.CURRENT_USER_ID || !routineId) return;
+            // currentUserId is a global variable from Jinja (see workout_runner.html)
+            const userId = window.currentUserId || window.CURRENT_USER_ID;
+            if (!userId || !routineId) return;
 
             const loadHistoryMax = async () => {
                 if (window.showLoader) window.showLoader("Sincronizando historial...");
                 try {
-                    const res = await fetch(`/workout/api/sessions?user_id=${encodeURIComponent(window.CURRENT_USER_ID)}&limit=50`);
+                    const res = await fetch(`/workout/api/sessions?user_id=${encodeURIComponent(userId)}&limit=50`);
                     if (!res.ok) return;
                     const sessions = await res.json();
                     if (!isMounted || !Array.isArray(sessions)) return;
 
                     const maxByExercise = {};
-                    sessions.forEach(session => {
-                        if (!session || session.routine_id !== routineId) return;
-                        const sets = Array.isArray(session.sets) ? session.sets : [];
+                    // Find the LAST (most recent) session for this routine
+                    const lastSession = sessions.find(s => s && s.routine_id === routineId);
+
+                    if (lastSession) {
+                        const sets = Array.isArray(lastSession.sets) ? lastSession.sets : [];
                         sets.forEach(set => {
                             const exId = set.exerciseId || set.exercise_id;
                             if (!exId) return;
                             const weightVal = parseFloat(set.weight);
                             if (!Number.isFinite(weightVal) || weightVal <= 0) return;
-                            if (maxByExercise[exId] == null || weightVal > maxByExercise[exId]) {
-                                maxByExercise[exId] = weightVal;
+
+                            // We take the max weight performed in THAT session for the exercise
+                            // (e.g. if they did 3 sets: 100, 110, 105, we take 110)
+                            if (maxByExercise[exId] == null || weightVal > maxByExercise[exId].weight) {
+                                maxByExercise[exId] = { weight: weightVal, reps: set.reps || 0 };
                             }
                         });
-                    });
+                    }
 
                     setHistoryMaxByExercise(maxByExercise);
                 } catch (e) {

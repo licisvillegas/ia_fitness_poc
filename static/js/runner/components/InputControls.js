@@ -43,8 +43,9 @@
                 }
                 if (!lastMatch && step.setNumber === 1) {
                     const historyMax = historyMaxByExercise[exerciseId];
-                    if (historyMax != null && historyMax !== '') {
-                        nextWeight = String(historyMax);
+                    if (historyMax) {
+                        nextWeight = String(historyMax.weight);
+                        if (historyMax.reps) nextReps = String(historyMax.reps);
                     }
                 }
             }

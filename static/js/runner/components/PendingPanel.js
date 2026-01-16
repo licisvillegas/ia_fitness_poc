@@ -75,7 +75,8 @@
                     if (lastMatch.reps != null) nextR = lastMatch.reps;
                 } else {
                     if (exId && historyMaxByExercise[exId]) {
-                        nextW = String(historyMaxByExercise[exId]);
+                        nextW = String(historyMaxByExercise[exId].weight);
+                        if (historyMaxByExercise[exId].reps) nextR = String(historyMaxByExercise[exId].reps);
                     }
                 }
 

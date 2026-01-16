@@ -1543,6 +1543,7 @@
             const idx = currentLog.findIndex(l => l.stepId === stepId);
             if (idx === -1) return;
 
+            // Round to nearest 0.5 for internal consistency if passed from quick log
             let finalWeight = parseFloat(data.weight) || 0;
             const dataUnit = data.unit || unit;
             if (dataUnit === 'lb') {
@@ -1558,6 +1559,17 @@
 
             const newLog = [...currentLog];
             newLog[idx] = updatedEntry;
+            setSessionLog(newLog);
+            sessionLogRef.current = newLog;
+            syncProgress(cursor, newLog);
+        };
+
+        const removeLoggedStep = (stepId) => {
+            if (!stepId) return;
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            const newLog = currentLog.filter(l => l.stepId !== stepId);
+            if (newLog.length === currentLog.length) return;
+
             setSessionLog(newLog);
             sessionLogRef.current = newLog;
             syncProgress(cursor, newLog);
@@ -1684,7 +1696,6 @@
 
         const addRestTime = (seconds) => {
             setStepTimer(t => {
-                if (seconds < 0 && t < 10) return t;
                 const nextValue = t + seconds;
                 return Math.max(0, nextValue);
             });
@@ -1884,6 +1895,7 @@
             logSet,
             logSpecificStep,
             updateLoggedStep,
+            removeLoggedStep,
             isStepLogged,
             sessionLog,
             unit,
@@ -2428,38 +2440,13 @@
         );
     };
 
-    const InputControls = ({ step, compact = false, hideRPE = false }) => {
-        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit } = useWorkout();
-        // Local state for inputs so we can edit before committing
-        const [weight, setWeight] = useState(step.target.weight || '');
-        const [reps, setReps] = useState(step.target.reps || '');
-        const [rpe, setRpe] = useState(8);
-        const [plateModalOpen, setPlateModalOpen] = useState(false);
+    const PlateCalculatorModal = ({ isOpen, onClose, onApply, unit }) => {
         const [plateCounts, setPlateCounts] = useState({
-            2.5: 0,
-            5: 0,
-            10: 0,
-            25: 0,
-            35: 0,
-            45: 0
+            2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0
         });
-        const [showTapHint, setShowTapHint] = useState(false);
         const [plateCountMode, setPlateCountMode] = useState('per_side');
-
-        // Reset plates when modal opens or step changes
-        useEffect(() => {
-            if (plateModalOpen) {
-                setPlateCounts({
-                    2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0
-                });
-                setIncludeBar(false); // Optional: also reset bar toggle? User asked to "reset to zero"
-            }
-        }, [plateModalOpen]);
         const [includeBar, setIncludeBar] = useState(false);
         const [barWeight, setBarWeight] = useState(20);
-        const weightInputRef = useRef(null);
-        const repsInputRef = useRef(null);
-        const rpe8Ref = useRef(null);
 
         const plateOptions = [
             { value: 2.5, label: "2.5", src: "/static/images/disc/2_5.png" },
@@ -2470,22 +2457,17 @@
             { value: 45, label: "45", src: "/static/images/disc/45.png" }
         ];
 
-        const plateMultiplier = plateCountMode === 'per_side' ? 2 : 1;
-        const totalPlatesLb = plateOptions.reduce((acc, plate) => {
-            const count = plateCounts[plate.value] || 0;
-            return acc + (count * plate.value * plateMultiplier);
-        }, 0);
-        const totalWithBarLb = totalPlatesLb + (includeBar ? (parseFloat(barWeight) || 0) : 0);
-
-        const applyPlateTotal = () => {
-            const total = totalWithBarLb;
-            let nextWeight = total;
-            if (unit === 'kg') {
-                nextWeight = total / 2.20462;
+        // Reset when opening
+        useEffect(() => {
+            if (isOpen) {
+                setPlateCounts({ 2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0 });
+                setIncludeBar(false);
             }
-            const rounded = Math.round(nextWeight * 10) / 10;
-            setWeight(rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1));
-            setPlateModalOpen(false);
+        }, [isOpen]);
+
+        const formatWeight = (val) => {
+            const rounded = Math.round(val * 10) / 10;
+            return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
         };
 
         const updatePlateCount = (value, delta) => {
@@ -2496,6 +2478,100 @@
                 return next;
             });
         };
+
+        const plateMultiplier = plateCountMode === 'per_side' ? 2 : 1;
+        const totalPlatesLb = plateOptions.reduce((acc, plate) => {
+            const count = plateCounts[plate.value] || 0;
+            return acc + (count * plate.value * plateMultiplier);
+        }, 0);
+        const totalWithBarLb = totalPlatesLb + (includeBar ? (parseFloat(barWeight) || 0) : 0);
+
+        const handleApply = () => {
+            if (unit === 'kg') {
+                // Convert result (always calculated in LB here) to KG
+                const valKg = totalWithBarLb / 2.20462;
+                onApply(formatWeight(valKg));
+            } else {
+                onApply(formatWeight(totalWithBarLb));
+            }
+            onClose();
+        };
+
+        if (!isOpen) return null;
+
+        return (
+            <div className="plate-modal-backdrop" onClick={onClose}>
+                <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="plate-modal-header">
+                        <div className="fw-bold">Discos (lb)</div>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div className="plate-modal-body">
+                        <div className="plate-mode-row">
+                            <div className="plate-mode-label">Conteo</div>
+                            <div className="btn-group btn-group-sm" role="group">
+                                <button type="button" className={`btn ${plateCountMode === 'per_side' ? 'btn-info text-dark' : 'btn-outline-secondary'}`} onClick={() => setPlateCountMode('per_side')}>Por lado</button>
+                                <button type="button" className={`btn ${plateCountMode === 'total' ? 'btn-info text-dark' : 'btn-outline-secondary'}`} onClick={() => setPlateCountMode('total')}>Total</button>
+                            </div>
+                        </div>
+                        <div className="plate-grid">
+                            {plateOptions.map(plate => (
+                                <div key={plate.value} className="plate-tile">
+                                    <img src={plate.src} alt={`${plate.label} lb`} />
+                                    <div className="text-secondary small">{plate.label} lb</div>
+                                    <div className="plate-counter">
+                                        <button type="button" onClick={() => updatePlateCount(plate.value, -1)}>-</button>
+                                        <div className="fw-bold text-theme" style={{ minWidth: '18px' }}>{plateCounts[plate.value] || 0}</div>
+                                        <button type="button" onClick={() => updatePlateCount(plate.value, 1)}>+</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-3 d-flex align-items-center justify-content-between">
+                            <div className="text-secondary small">Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}</div>
+                            <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
+                        </div>
+
+                        <div className="mt-3 d-flex align-items-center justify-content-between">
+                            <div className="text-secondary small">Peso de barra</div>
+                            <div className="d-flex align-items-center gap-2">
+                                <div className="form-check form-switch m-0">
+                                    <input className="form-check-input" type="checkbox" checked={includeBar} onChange={(e) => setIncludeBar(e.target.checked)} />
+                                </div>
+                                <input type="number" min="0" className="form-control form-control-sm border-secondary" style={{ width: '80px' }} value={barWeight} onChange={(e) => setBarWeight(e.target.value)} disabled={!includeBar} />
+                                <span className="text-secondary small">lb</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-3 d-flex align-items-center justify-content-between">
+                            <div className="text-secondary small">Total</div>
+                            <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
+                        </div>
+                    </div>
+                    <div className="plate-modal-footer">
+                        <button className="btn btn-outline-secondary" onClick={onClose}>Cancelar</button>
+                        <button className="btn btn-info text-dark fw-bold" onClick={handleApply}>Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const InputControls = ({ step, compact = false, hideRPE = false }) => {
+        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit } = useWorkout();
+        // Local state for inputs so we can edit before committing
+        const [weight, setWeight] = useState(step.target.weight || '');
+        const [reps, setReps] = useState(step.target.reps || '');
+        const [rpe, setRpe] = useState(8);
+        const [plateModalOpen, setPlateModalOpen] = useState(false);
+        const [showTapHint, setShowTapHint] = useState(false);
+
+        const weightInputRef = useRef(null);
+        const repsInputRef = useRef(null);
+        const rpe8Ref = useRef(null);
 
         // Pre-fill from history and AUTO-FOCUS
         const focusWeightInput = (selectAll = true) => {
@@ -2581,6 +2657,7 @@
             const current = parseInt(reps, 10);
             const base = Number.isFinite(current) ? current : 0;
             const nextValue = Math.max(0, base + delta);
+            if (nextValue >= 1000) return;
             setReps(String(nextValue));
         };
 
@@ -2618,6 +2695,8 @@
         const adjustWeight = (delta) => {
             let val = parseFloat(weight) || 0;
             const newVal = Math.max(0, val + delta);
+            // Limit check: integer part max 3 digits ( < 1000 )
+            if (newVal >= 1000) return;
             setWeight(newVal.toFixed(1));
         };
 
@@ -2765,98 +2844,12 @@
                     </button>
                 </div>
 
-                {plateModalOpen && (
-                    <div className="plate-modal-backdrop" onClick={() => setPlateModalOpen(false)}>
-                        <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="plate-modal-header">
-                                <div className="fw-bold">Discos (lb)</div>
-                                <button className="btn btn-sm btn-outline-secondary" onClick={() => setPlateModalOpen(false)}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div className="plate-modal-body">
-                                <div className="plate-mode-row">
-                                    <div className="plate-mode-label">Conteo</div>
-                                    <div className="btn-group btn-group-sm" role="group" aria-label="Conteo de discos">
-                                        <button
-                                            type="button"
-                                            className={`btn ${plateCountMode === 'per_side' ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
-                                            onClick={() => setPlateCountMode('per_side')}
-                                        >
-                                            Por lado
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={`btn ${plateCountMode === 'total' ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
-                                            onClick={() => setPlateCountMode('total')}
-                                        >
-                                            Total
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="plate-grid">
-                                    {plateOptions.map(plate => (
-                                        <div key={plate.value} className="plate-tile">
-                                            <img src={plate.src} alt={`${plate.label} lb`} />
-                                            <div className="text-secondary small">{plate.label} lb</div>
-                                            <div className="plate-counter">
-                                                <button type="button" onClick={() => updatePlateCount(plate.value, -1)}>-</button>
-                                                <div className="fw-bold text-theme" style={{ minWidth: '18px' }}>
-                                                    {plateCounts[plate.value] || 0}
-                                                </div>
-                                                <button type="button" onClick={() => updatePlateCount(plate.value, 1)}>+</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="mt-3 d-flex align-items-center justify-content-between">
-                                    <div className="text-secondary small">
-                                        Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}
-                                    </div>
-                                    <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
-                                </div>
-
-                                <div className="mt-3 d-flex align-items-center justify-content-between">
-                                    <div className="text-secondary small">Peso de barra</div>
-                                    <div className="d-flex align-items-center gap-2">
-                                        <div className="form-check form-switch m-0">
-                                            <input
-                                                className="form-check-input"
-                                                type="checkbox"
-                                                checked={includeBar}
-                                                onChange={(e) => setIncludeBar(e.target.checked)}
-                                            />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="form-control form-control-sm border-secondary"
-                                            style={{ width: '80px' }}
-                                            value={barWeight}
-                                            onChange={(e) => setBarWeight(e.target.value)}
-                                            disabled={!includeBar}
-                                        />
-                                        <span className="text-secondary small">lb</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-3 d-flex align-items-center justify-content-between">
-                                    <div className="text-secondary small">Total</div>
-                                    <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
-                                </div>
-                            </div>
-                            <div className="plate-modal-footer">
-                                <button className="btn btn-outline-secondary" onClick={() => setPlateModalOpen(false)}>
-                                    Cancelar
-                                </button>
-                                <button className="btn btn-info text-dark fw-bold" onClick={applyPlateTotal}>
-                                    Aplicar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <PlateCalculatorModal
+                    isOpen={plateModalOpen}
+                    onClose={() => setPlateModalOpen(false)}
+                    onApply={(newWeight) => setWeight(newWeight)}
+                    unit={unit}
+                />
             </div>
         );
     };
@@ -2893,7 +2886,7 @@
     };
 
     const RestOverlay = ({ nextStep, showPending, onTogglePending }) => {
-        const { currentStep, skipRest, stepTimer } = useWorkout();
+        const { currentStep, skipRest, stepTimer, addRestTime } = useWorkout();
 
         if (currentStep.type !== 'rest') return null;
 
@@ -2938,6 +2931,15 @@
                             <i className="fas fa-info-circle me-2"></i>{nextNote}
                         </div>
                     )}
+                </div>
+
+                <div className="d-flex justify-content-center gap-2 mb-4">
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(-60)} disabled={stepTimer < 60}>-60s</button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(-30)} disabled={stepTimer < 30}>-30s</button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(-5)} disabled={stepTimer < 5}>-5s</button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(5)}>+5s</button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(30)}>+30s</button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => addRestTime(60)}>+60s</button>
                 </div>
 
                 <button className="btn btn-outline-secondary rounded-pill px-5 py-3" onClick={skipRest}>
@@ -3104,7 +3106,7 @@
     };
 
     const PendingPanel = ({ isOpen, onClose }) => {
-        const { queue, cursor, status, logSpecificStep, updateLoggedStep, isStepLogged, sessionLog, unit } = useWorkout();
+        const { queue, cursor, status, logSpecificStep, updateLoggedStep, removeLoggedStep, isStepLogged, sessionLog, unit, showConfirm, historyMaxByExercise } = useWorkout();
         const [activeTab, setActiveTab] = React.useState('pending');
         const [expandedStepId, setExpandedStepId] = React.useState(null);
         const [expandedCompletedId, setExpandedCompletedId] = React.useState(null);
@@ -3115,19 +3117,45 @@
         const [completedWeight, setCompletedWeight] = React.useState('0');
         const [completedReps, setCompletedReps] = React.useState('0');
 
+        const [calcState, setCalcState] = React.useState({ isOpen: false, isCompletedMode: false });
+
+        const openCalculator = (isCompletedMode) => {
+            setCalcState({ isOpen: true, isCompletedMode });
+        };
+
+        const handleCalcApply = (val) => {
+            if (calcState.isCompletedMode) {
+                setCompletedWeight(val);
+            } else {
+                setWeight(val);
+            }
+        };
+
         if (status === 'LOADING' || status === 'IDLE' || status === 'FINISHED') return null;
+
+        const roundToHalf = (val) => Math.round((parseFloat(val) || 0) * 2) / 2;
 
         const allWorkSteps = queue.filter(step => step.type === 'work');
         const pendingSteps = allWorkSteps.filter(step => !isStepLogged(step.id));
         const completedSteps = allWorkSteps.filter(step => isStepLogged(step.id));
 
         const handleQuickLog = (step) => {
-            logSpecificStep(step, {
-                weight: parseFloat(weight) || 0,
-                reps: reps,
-                unit: unit
-            });
-            setExpandedStepId(null);
+            const finalWeight = roundToHalf(weight);
+            const finalReps = roundToHalf(reps);
+
+            showConfirm(
+                "Confirmar registro",
+                `¿Registrar ${finalWeight} ${unit} x ${finalReps} reps?`,
+                () => {
+                    logSpecificStep(step, {
+                        weight: finalWeight,
+                        reps: finalReps,
+                        unit: unit
+                    });
+                    setExpandedStepId(null);
+                },
+                "success"
+            );
         };
 
         const toggleExpand = (step) => {
@@ -3136,14 +3164,51 @@
                 setExpandedStepId(null);
             } else {
                 setExpandedStepId(step.id);
-                setWeight(step.target?.weight || '0');
-                setReps(step.target?.reps || '0');
+                // Pre-fill logic
+                let nextW = step.target?.weight || '0';
+                let nextR = step.target?.reps || '0';
+
+                // 1. Try last set in current session
+                const exId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
+                const lastMatch = [...sessionLog].reverse().find(l => {
+                    const lId = l.exerciseId || l.exercise_id;
+                    return exId && lId && String(lId) === String(exId);
+                });
+
+                if (lastMatch) {
+                    if (lastMatch.weight != null) nextW = lastMatch.weight;
+                    if (lastMatch.reps != null) nextR = lastMatch.reps;
+                } else {
+                    // 2. Try History Max
+                    if (exId && historyMaxByExercise[exId]) {
+                        nextW = String(historyMaxByExercise[exId]);
+                    }
+                }
+
+                // Format if using LB
+                if (unit === 'lb' && nextW) {
+                    const valKg = parseFloat(nextW);
+                    if (!isNaN(valKg)) {
+                        const valLb = valKg * 2.20462;
+                        const result = Math.round(valLb * 2) / 2;
+                        nextW = result % 1 === 0 ? result.toString() : result.toFixed(1);
+                    }
+                }
+
+                setWeight(nextW);
+                setReps(nextR);
             }
         };
 
         const formatWeight = (kg) => {
-            if (unit === 'lb') return (parseFloat(kg) * 2.20462).toFixed(1);
-            return parseFloat(kg).toFixed(1);
+            let val = parseFloat(kg);
+            if (unit === 'lb') {
+                val = val * 2.20462;
+            }
+            // Round to nearest 0.5
+            val = Math.round(val * 2) / 2;
+            // Return integer string if whole number
+            return val % 1 === 0 ? val.toString() : val.toFixed(1);
         };
 
         const toggleCompletedExpand = (step) => {
@@ -3159,12 +3224,34 @@
         };
 
         const handleUpdateCompleted = (step) => {
-            updateLoggedStep(step.id, {
-                weight: parseFloat(completedWeight) || 0,
-                reps: completedReps,
-                unit: unit
-            });
-            setExpandedCompletedId(null);
+            const finalWeight = roundToHalf(completedWeight);
+            const finalReps = roundToHalf(completedReps);
+
+            showConfirm(
+                "Confirmar actualización",
+                `¿Actualizar a ${finalWeight} ${unit} x ${finalReps} reps?`,
+                () => {
+                    updateLoggedStep(step.id, {
+                        weight: finalWeight,
+                        reps: finalReps,
+                        unit: unit
+                    });
+                    setExpandedCompletedId(null);
+                },
+                "warning"
+            );
+        };
+
+        const handleReleaseStep = (step) => {
+            showConfirm(
+                "Liberar serie",
+                "¿Devolver esta serie a pendientes? Se borrará el registro actual.",
+                () => {
+                    removeLoggedStep(step.id);
+                    setExpandedCompletedId(null);
+                },
+                "warning"
+            );
         };
 
         return (
@@ -3235,16 +3322,32 @@
                                                     <div className="row g-2 mb-2">
                                                         <div className="col-6">
                                                             <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Peso ({unit})</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
-                                                                value={weight}
-                                                                onChange={e => setWeight(e.target.value)}
-                                                                onFocus={e => e.target.select()}
-                                                                inputMode="decimal"
-                                                                pattern="[0-9]*[.,]?[0-9]*"
-                                                                autoFocus
-                                                            />
+                                                            <div className="input-group input-group-sm">
+                                                                <button
+                                                                    className="btn btn-outline-secondary px-2"
+                                                                    type="button"
+                                                                    onClick={() => openCalculator(false)}
+                                                                    title="Calculadora de discos"
+                                                                >
+                                                                    <img src="/static/images/disc/45.png" style={{ width: '18px', height: '18px' }} />
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control bg-black border-secondary text-white text-center fw-bold"
+                                                                    value={weight}
+                                                                    onChange={e => {
+                                                                        const val = e.target.value;
+                                                                        // Regex: optional decimal, max 3 integer digits
+                                                                        if (val === '' || /^\d{0,3}(\.\d{0,2})?$/.test(val)) {
+                                                                            setWeight(val);
+                                                                        }
+                                                                    }}
+                                                                    onFocus={e => e.target.select()}
+                                                                    inputMode="decimal"
+                                                                    pattern="[0-9]*[.,]?[0-9]*"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div className="col-6">
                                                             <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Reps</label>
@@ -3309,16 +3412,26 @@
                                                     <div className="row g-2 mb-2">
                                                         <div className="col-6">
                                                             <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Peso ({unit})</label>
-                                                            <input
-                                                                type="number"
-                                                                className="form-control form-control-sm bg-black border-secondary text-white text-center fw-bold"
-                                                                value={completedWeight}
-                                                                onChange={e => setCompletedWeight(e.target.value)}
-                                                                onFocus={e => e.target.select()}
-                                                                inputMode="decimal"
-                                                                pattern="[0-9]*[.,]?[0-9]*"
-                                                                autoFocus
-                                                            />
+                                                            <div className="input-group input-group-sm">
+                                                                <button
+                                                                    className="btn btn-outline-secondary px-2"
+                                                                    type="button"
+                                                                    onClick={() => openCalculator(true)}
+                                                                    title="Calculadora de discos"
+                                                                >
+                                                                    <img src="/static/images/disc/45.png" style={{ width: '18px', height: '18px' }} />
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control bg-black border-secondary text-white text-center fw-bold"
+                                                                    value={completedWeight}
+                                                                    onChange={e => setCompletedWeight(e.target.value)}
+                                                                    onFocus={e => e.target.select()}
+                                                                    inputMode="decimal"
+                                                                    pattern="[0-9]*[.,]?[0-9]*"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div className="col-6">
                                                             <label className="text-muted small d-block mb-1 text-uppercase" style={{ fontSize: '0.6rem' }}>Reps</label>
@@ -3333,12 +3446,21 @@
                                                             />
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        className="btn btn-success btn-sm w-100 fw-bold py-2 shadow-sm"
-                                                        onClick={() => handleUpdateCompleted(step)}
-                                                    >
-                                                        ACTUALIZAR SERIE
-                                                    </button>
+                                                    <div className="d-flex gap-2">
+                                                        <button
+                                                            className="btn btn-outline-danger btn-sm w-25"
+                                                            title="Liberar serie"
+                                                            onClick={(e) => { e.stopPropagation(); handleReleaseStep(step); }}
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-success btn-sm w-75 fw-bold py-2 shadow-sm"
+                                                            onClick={() => handleUpdateCompleted(step)}
+                                                        >
+                                                            ACTUALIZAR
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -3348,6 +3470,12 @@
                         )}
                     </div>
                 </div>
+                <PlateCalculatorModal
+                    isOpen={calcState.isOpen}
+                    onClose={() => setCalcState({ ...calcState, isOpen: false })}
+                    onApply={handleCalcApply}
+                    unit={unit}
+                />
             </>
         );
     };

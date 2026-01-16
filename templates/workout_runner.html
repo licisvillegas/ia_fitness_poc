@@ -721,18 +721,16 @@
 <script type="text/javascript">
     function setAppHeight() {
         const doc = document.documentElement;
-        const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        // Use innerHeight directly. This changes when the keyboard opens, causing the app to shrink.
+        // But with interactive-widget=resizes-content, the OS should handle the Viewport resizing gracefully.
+        // We want the app to take the FULL VISIBLE height, so the keyboard allows scrolling to the input.
+        const height = window.innerHeight;
         doc.style.setProperty('--app-height', `${height}px`);
     }
 
     window.addEventListener('resize', setAppHeight);
     window.addEventListener('orientationchange', setAppHeight);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', setAppHeight);
-        window.visualViewport.addEventListener('scroll', setAppHeight);
-    }
-    document.addEventListener('focusin', setAppHeight);
-    document.addEventListener('focusout', () => setTimeout(setAppHeight, 50));
+    // Removed strict visualViewport syncing and focus listeners to prevent jumpy layout.
     setAppHeight();
 
     // Inject server-side data from Jinja OUTSIDE the raw block
@@ -1176,6 +1174,7 @@
         const [showCountdown, setShowCountdown] = useState(false);
         const [countdownValue, setCountdownValue] = useState(3);
         const [unit, setUnit] = useState('lb');
+        const [notificationPermission, setNotificationPermission] = useState('default'); // default, granted, denied
 
 
         // Timers
@@ -1198,6 +1197,33 @@
         const stepTimerRef = useRef(stepTimer);
         const globalTimeRef = useRef(globalTime);
         const currentStepRef = useRef(null);
+
+        // Notification Logic
+        const requestNotificationPermission = async () => {
+            if (!("Notification" in window)) return;
+            try {
+                const permission = await Notification.requestPermission();
+                setNotificationPermission(permission);
+            } catch (e) {
+                console.error("Notification permission error", e);
+            }
+        };
+
+        const sendNotification = (title, body) => {
+            if (notificationPermission === 'granted' && document.visibilityState === 'hidden') {
+                try {
+                    new Notification(title, { body, icon: '/static/icons/icon-192x192.png' });
+                } catch (e) {
+                    console.error("Notification error", e);
+                }
+            }
+        };
+
+        useEffect(() => {
+            if ("Notification" in window) {
+                setNotificationPermission(Notification.permission);
+            }
+        }, []);
 
 
         // INITIALIZE
@@ -1409,6 +1435,7 @@
                             // TIMER DONE
                             playAlarm();
                             triggerHaptic([200, 100, 200, 100, 500]); // Strong vibration pattern
+                            sendNotification("Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!");
                             setIsTimerRunning(false);
                             completeStepTimer(); // Auto-advance logic
                             return 0;
@@ -1952,7 +1979,11 @@
             applySubstitute,
             showCompletionIcon,
             showCountdown,
-            countdownValue
+            showCompletionIcon,
+            showCountdown,
+            countdownValue,
+            notificationPermission,
+            requestNotificationPermission
         };
 
 
@@ -2950,7 +2981,7 @@
     };
 
     const TimerControls = ({ step }) => {
-        const { stepTimer, isTimerRunning, setIsTimerRunning, next, logSet } = useWorkout();
+        const { stepTimer, isTimerRunning, setIsTimerRunning, next, logSet, notificationPermission, requestNotificationPermission } = useWorkout();
 
         const toggle = () => setIsTimerRunning(!isTimerRunning);
         const finish = () => {
@@ -2975,13 +3006,19 @@
                         <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
                     )}
                     <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>Terminar Manualmente</button>
+
+                    {notificationPermission === 'default' && (
+                        <button className="btn btn-sm btn-link text-secondary mt-2 text-decoration-none" onClick={requestNotificationPermission}>
+                            <i className="fas fa-bell me-1"></i> Activar Notificaciones
+                        </button>
+                    )}
                 </div>
             </div>
         );
     };
 
     const RestOverlay = ({ nextStep, showPending, onTogglePending }) => {
-        const { currentStep, skipRest, stepTimer, addRestTime } = useWorkout();
+        const { currentStep, skipRest, stepTimer, addRestTime, notificationPermission, requestNotificationPermission } = useWorkout();
 
         if (currentStep.type !== 'rest') return null;
 
@@ -2995,7 +3032,13 @@
 
         return (
             <div className="rest-overlay position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center p-4" style={{ zIndex: 2000, backgroundColor: 'var(--bg-body)' }}>
-                <div className="position-absolute top-0 end-0 p-3">
+                <div className="position-absolute top-0 end-0 p-3 d-flex align-items-center gap-3">
+                    {/* Notification Toggle for Rest */}
+                    {notificationPermission === 'default' && (
+                        <button className="btn btn-sm btn-outline-secondary rounded-circle" onClick={requestNotificationPermission} title="Activar Notificaciones">
+                            <i className="fas fa-bell"></i>
+                        </button>
+                    )}
                     <div className="d-flex align-items-center gap-2">
                         <button
                             className="btn btn-sm btn-outline-secondary rounded-circle"

@@ -489,7 +489,7 @@
         container.innerHTML = muscleIcons.map(m => `
             <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
                 <div class="muscle-icon skeleton-pulse" id="icon-${m.key}">
-                    <img src="/static/images/muscles/${m.img}" alt="${m.label}" onload="this.classList.add('loaded'); this.parentElement.classList.remove('skeleton-pulse')">
+                    <img src="/static/images/muscles/male/${m.img}" alt="${m.label}" onload="this.classList.add('loaded'); this.parentElement.classList.remove('skeleton-pulse')">
                 </div>
                 <!-- Show mapped label if available, otherwise default -->
                 <span class="muscle-label">${m.mappedLabel || m.label}</span>

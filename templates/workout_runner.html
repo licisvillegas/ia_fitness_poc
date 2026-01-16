@@ -715,6 +715,7 @@
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <!-- REACT APP -->
 <script type="text/javascript">
@@ -760,6 +761,16 @@
 
     const getAudio = () => {
         return new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    };
+
+    const triggerHaptic = (pattern) => {
+        if (navigator.vibrate) {
+            try {
+                navigator.vibrate(pattern);
+            } catch (e) {
+                // Ignore errors (some browsers restrict vibration)
+            }
+        }
     };
 
     const getReturnUrl = () => {
@@ -1397,6 +1408,7 @@
                         if (prev <= 1) {
                             // TIMER DONE
                             playAlarm();
+                            triggerHaptic([200, 100, 200, 100, 500]); // Strong vibration pattern
                             setIsTimerRunning(false);
                             completeStepTimer(); // Auto-advance logic
                             return 0;
@@ -1497,6 +1509,7 @@
         };
 
         const logSpecificStep = (step, data, isMeasured = false) => {
+            triggerHaptic(50); // Haptic feedback on log
             if (!step || !step.exercise) return;
             const exerciseId = step.exercise.exercise_id || step.exercise._id || step.exercise.id;
             const exerciseName = step.exercise.exercise_name || step.exercise.name;
@@ -1706,6 +1719,25 @@
 
             // 1. Show Icon
             setShowCompletionIcon(true);
+
+            // Celebration Trigger
+            triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
+            try {
+                const count = 200;
+                const defaults = { origin: { y: 0.7 } };
+                function fire(particleRatio, opts) {
+                    confetti(Object.assign({}, defaults, opts, {
+                        particleCount: Math.floor(count * particleRatio)
+                    }));
+                }
+                fire(0.25, { spread: 26, startVelocity: 55 });
+                fire(0.2, { spread: 60 });
+                fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                fire(0.1, { spread: 120, startVelocity: 45 });
+            } catch (e) {
+                console.log("Confetti error", e);
+            }
 
             // 2. Wait 2 seconds then show modal
             setTimeout(() => {
@@ -2440,6 +2472,58 @@
         );
     };
 
+    const RPEHelpModal = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+        return (
+            <div className="plate-modal-backdrop" onClick={onClose}>
+                <div className="plate-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '350px' }}>
+                    <div className="plate-modal-header">
+                        <div className="fw-bold text-info">Guia RPE (Intensidad)</div>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div className="plate-modal-body p-3">
+                        <table className="table table-dark table-sm small mb-0">
+                            <thead>
+                                <tr>
+                                    <th>RPE</th>
+                                    <th>Reserva</th>
+                                    <th>Sensacion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="text-danger fw-bold">10</td>
+                                    <td>0 (Fallo)</td>
+                                    <td>Maximo esfuerzo</td>
+                                </tr>
+                                <tr>
+                                    <td className="text-warning fw-bold">9</td>
+                                    <td>1 Rep</td>
+                                    <td>Muy dificil</td>
+                                </tr>
+                                <tr>
+                                    <td className="text-cyber-green fw-bold">8</td>
+                                    <td>2 Reps</td>
+                                    <td>Dificil pero controlable</td>
+                                </tr>
+                                <tr>
+                                    <td className="text-white">7</td>
+                                    <td>3 Reps</td>
+                                    <td>Vigoroso</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div className="text-muted small mt-2 fst-italic">
+                            * Reps en Reserva: Cuantas repeticiones mas podrias haber hecho con buena tecnica.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const PlateCalculatorModal = ({ isOpen, onClose, onApply, unit }) => {
         const [plateCounts, setPlateCounts] = useState({
             2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0
@@ -2567,6 +2651,7 @@
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
         const [plateModalOpen, setPlateModalOpen] = useState(false);
+        const [rpeHelpOpen, setRpeHelpOpen] = useState(false);
         const [showTapHint, setShowTapHint] = useState(false);
 
         const weightInputRef = useRef(null);
@@ -2824,7 +2909,12 @@
 
                 {!compact && !hideRPE && (
                     <div className="mb-3">
-                        <label className="text-secondary small fw-bold mb-1 d-block text-center" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
+                        <div className="d-flex align-items-center justify-content-center gap-2 mb-1">
+                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>RPE (1-10)</label>
+                            <button className="btn btn-sm text-secondary p-0" title="Guia de Intensidad" onClick={() => setRpeHelpOpen(true)}>
+                                <i className="fas fa-question-circle" style={{ fontSize: '0.8rem' }}></i>
+                            </button>
+                        </div>
                         <div className="d-flex justify-content-center gap-1">
                             {[7, 8, 9, 10].map(val => (
                                 <button key={val}
@@ -2849,6 +2939,11 @@
                     onClose={() => setPlateModalOpen(false)}
                     onApply={(newWeight) => setWeight(newWeight)}
                     unit={unit}
+                />
+
+                <RPEHelpModal
+                    isOpen={rpeHelpOpen}
+                    onClose={() => setRpeHelpOpen(false)}
                 />
             </div>
         );

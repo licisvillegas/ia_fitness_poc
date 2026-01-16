@@ -7,11 +7,19 @@
 # ======================================================
 
 import json
+import os
+from dotenv import load_dotenv
 from pymongo import MongoClient
 from datetime import datetime
 
+# Cargar variables de entorno
+load_dotenv()
+
 # === CONFIGURACIÓN DE CONEXIÓN === #
-MONGO_URI="mongodb+srv://1smaelV:fGLlKX8lKwT1SsAa@mongofree.vxtfsny.mongodb.net/?retryWrites=true&w=majority&appName=MongoFree"
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    print("❌ Error: MONGO_URI no encontrada en variables de entorno.")
+    exit(1)
 DATABASE_NAME = "ia_fitness_db"
 COLLECTION_NAME = "progress"
 

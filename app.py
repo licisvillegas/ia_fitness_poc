@@ -109,7 +109,8 @@ if __name__ == "__main__":
     # Solo ejecutar inicializacion DB en el proceso hijo del reloader
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         create_indexes(extensions.db)
-        seed_user_statuses()
+        # seed_user_statuses()  # OPTIMIZACIÓN: Deshabilitado para mejorar inicio. 
+        # Ejecutar manualmente si es necesario.
     
     use_reloader = False if os.name == "nt" else True
     # Nota: Windows socket error con reloader a veces. 

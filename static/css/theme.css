@@ -701,3 +701,36 @@ textarea::-ms-input-placeholder {
 .border-cyber {
     border: 1px solid var(--accent-cyan-border) !important;
 }
+
+/* Sidebar Utilities (Extracted from inline styles) */
+.sidebar-panel {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    z-index: 1030;
+}
+
+.sidebar-logo {
+    height: 70px;
+    width: auto;
+}
+
+.nav-icon {
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-section {
+    color: var(--bs-secondary);
+    font-size: 0.75rem;
+    /* small + extra */
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}

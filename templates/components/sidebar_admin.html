@@ -36,12 +36,12 @@
 
     /* Smart Workout links stay in the root list. */
 </style>
-<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
-    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
+{% import 'components/macros.html' as macros %}
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed sidebar-panel">
 
     <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
         <a href="/admin" class="text-decoration-none brand-text">
-            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 70px; width: auto;">
+            <img src="/static/images/logo.png" alt="AI Fitness" class="sidebar-logo">
         </a>
         <div class="d-flex align-items-center gap-2">
             <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
@@ -60,9 +60,11 @@
             style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
             <img id="sidebar-admin-avatar-img" alt="Administrador"
                 src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
-                style="width: 100%; height: 100%; object-fit: cover; {{ 'display: block;' if user_data and user_data.profile_image_url else 'display: none;' }}">
-            <i id="sidebar-admin-avatar-icon" class="fas fa-user-shield"
-                style="{{ 'display: none;' if user_data and user_data.profile_image_url else '' }}"></i>
+                class="{{ 'd-block' if user_data and user_data.profile_image_url else 'd-none' }}"
+                style="width: 100%; height: 100%; object-fit: cover;"
+                onerror="this.classList.add('d-none'); document.getElementById('sidebar-admin-avatar-icon').classList.remove('d-none');">
+            <i id="sidebar-admin-avatar-icon"
+                class="fas fa-user-shield {{ 'd-none' if user_data and user_data.profile_image_url else '' }}"></i>
         </div>
         <strong><span id="sidebar-username">Administrador</span></strong>
     </div>
@@ -93,120 +95,41 @@
         <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
             Plataforma
         </li>
-        <li>
-            <a href="/admin/users" class="nav-link {% if request.path == '/admin/users' %}active{% endif %}"
-                title="Usuarios">
-                <i class="fas fa-users me-2" style="width: 24px; text-align: center;"></i>
-                <span>Gestor Usuarios</span>
-            </a>
-        </li>
-        <li>
-            <a href="/admin/profiles" class="nav-link {% if request.path == '/admin/profiles' %}active{% endif %}"
-                title="Perfiles">
-                <i class="fas fa-id-card-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Gestor Perfiles</span>
-            </a>
-        </li>
-        <li>
-            <a href="/admin/privileges" class="nav-link {% if request.path == '/admin/privileges' %}active{% endif %}"
-                title="Roles">
-                <i class="fas fa-user-shield me-2" style="width: 24px; text-align: center;"></i>
-                <span>Gestor Roles</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/admin/users', 'Gestor Usuarios', 'fas fa-users') }}
+        {{ macros.nav_link('/admin/profiles', 'Gestor Perfiles', 'fas fa-id-card-alt') }}
+        {{ macros.nav_link('/admin/privileges', 'Gestor Roles', 'fas fa-user-shield') }}
 
         <!-- Section: Modules -->
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Inteligencia Artificial
         </li>
-        <li>
-            <a href="/ai/body_assessment/tester"
-                class="nav-link {% if request.path == '/ai/body_assessment/tester' %}active{% endif %}"
-                title="Evaluaciones">
-                <i class="fas fa-camera-retro me-2" style="width: 24px; text-align: center;"></i>
-                <span>Evaluaciones</span>
-            </a>
-        </li>
-        <li>
-            <a href="/ai/routine/generator"
-                class="nav-link {% if request.path == '/ai/routine/generator' %}active{% endif %}" title="Rutinas AI">
-                <i class="fas fa-robot me-2" style="width: 24px; text-align: center;"></i>
-                <span>Rutinas AI</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/ai/body_assessment/tester', 'Evaluaciones', 'fas fa-camera-retro') }}
+        {{ macros.nav_link('/ai/routine/generator', 'Rutinas AI', 'fas fa-robot') }}
 
         <!-- Section: Workout -->
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Entrenamiento
         </li>
-        <li>
-            <a href="/admin/routines/builder"
-                class="nav-link {% if request.path == '/admin/routines/builder' %}active{% endif %}"
-                title="Constructor">
-                <i class="fas fa-hammer me-2" style="width: 24px; text-align: center;"></i>
-                <span>Constructor Rutinas</span>
-            </a>
-        </li>
-        <li>
-            <a href="/admin/exercises" class="nav-link {% if request.path == '/admin/exercises' %}active{% endif %}"
-                title="Ejercicios">
-                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
-                <span>Catalogo Ejercicios</span>
-            </a>
-        </li>
-        <li>
-            <a href="/admin/routines" class="nav-link {% if request.path == '/admin/routines' %}active{% endif %}"
-                title="Rutinas">
-                <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
-                <span>Catalogo Rutinas</span>
-            </a>
-        </li>
-        <li>
-            <a href="/workout/dashboard" class="nav-link {% if request.path == '/workout/dashboard' %}active{% endif %}"
-                title="Runner / Historial">
-                <i class="fas fa-running me-2" style="width: 24px; text-align: center;"></i>
-                <span>Runner / Historial</span>
-            </a>
-        </li>
-        <li>
-            <a href="/admin/plans" class="nav-link {% if request.path == '/admin/plans' %}active{% endif %}"
-                title="Planes (Gym)">
-                <i class="fas fa-clipboard-check me-2" style="width: 24px; text-align: center;"></i>
-                <span>Planes (Gym)</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/admin/routines/builder', 'Constructor Rutinas', 'fas fa-hammer') }}
+        {{ macros.nav_link('/admin/exercises', 'Catalogo Ejercicios', 'fas fa-dumbbell') }}
+        {{ macros.nav_link('/admin/routines', 'Catalogo Rutinas', 'fas fa-clipboard-list') }}
+        {{ macros.nav_link('/workout/dashboard', 'Runner / Historial', 'fas fa-running') }}
+        {{ macros.nav_link('/admin/plans', 'Planes (Gym)', 'fas fa-clipboard-check') }}
 
         <!-- Section: Nutrition -->
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Nutrición
         </li>
-        <li>
-            <a href="/admin/meal_plans" class="nav-link {% if request.path == '/admin/meal_plans' %}active{% endif %}"
-                title="Meal Plans">
-                <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
-                <span>Meal Plans</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/admin/meal_plans', 'Meal Plans', 'fas fa-utensils') }}
 
         <!-- Section: Reports -->
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Reportes
         </li>
-        <li>
-            <a href="/admin/body_assessments"
-                class="nav-link {% if request.path == '/admin/body_assessments' %}active{% endif %}" title="Informes">
-                <i class="fas fa-file-medical-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Informes</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/admin/body_assessments', 'Informes', 'fas fa-file-medical-alt') }}
 
         <hr class="sidebar-divider my-2">
-        <li>
-            <a href="/admin/logout" class="nav-link" title="Volver al Sitio">
-                <i class="fas fa-sign-out-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Salir de Admin</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/admin/logout', 'Salir de Admin', 'fas fa-sign-out-alt') }}
     </ul>
 
     <!-- Sidebar Settings (Only visible when expanded) -->
@@ -240,128 +163,17 @@
 <!-- Sidebar Overlay (Backdrop for mobile) -->
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
+<script src="/static/js/user_search.js"></script>
+<script src="/static/js/sidebar_ui.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const body = document.body;
-        const sidebarToggle = document.getElementById("sidebar-toggle");
-        const toggleIcon = sidebarToggle.querySelector("i");
-        const posButtons = document.querySelectorAll(".pos-toggle-btn");
-
-
-        // 1. Cargar preferencias
-        const savedCollapsed = localStorage.getItem("sidebar_admin_collapsed") === "true";
-        const savedRight = localStorage.getItem("sidebar_admin_right") === "true";
-
-        function updateToggleIcon() {
-            if (body.classList.contains("sb-collapsed")) {
-                toggleIcon.className = "fas fa-bars";
-            } else {
-                toggleIcon.className = "fas fa-arrow-left transition-icon";
-                if (body.classList.contains("sb-right")) {
-                    toggleIcon.className = "fas fa-arrow-right transition-icon";
-                }
-            }
-        }
-
-        function updatePosButtons(isRight) {
-            posButtons.forEach(btn => {
-                const isBtnRight = btn.dataset.pos === "right";
-                if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
-                }
-            });
-        }
-
-        if (savedCollapsed) body.classList.add("sb-collapsed");
-        if (savedRight) {
-            body.classList.add("sb-right");
-            updatePosButtons(true);
-        } else {
-            updatePosButtons(false);
-        }
-        updateToggleIcon();
-
-
-        // 2. Toggle Sidebar
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener("click", () => {
-                body.classList.toggle("sb-collapsed");
-                const isCollapsed = body.classList.contains("sb-collapsed");
-                localStorage.setItem("sidebar_admin_collapsed", isCollapsed);
-                updateToggleIcon();
-            });
-        }
-
-        // 3. Toggle Position via Buttons
-        posButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                const targetPos = btn.dataset.pos; // 'left' or 'right'
-                if (targetPos === "right") {
-                    body.classList.add("sb-right");
-                    localStorage.setItem("sidebar_admin_right", "true");
-                    updatePosButtons(true);
-                } else {
-                    body.classList.remove("sb-right");
-                    localStorage.setItem("sidebar_admin_right", "false");
-                    updatePosButtons(false);
-                }
-                updateToggleIcon();
-            });
+        // 1. Initialize Sidebar UI
+        initSidebar({
+            collapsedKey: "sidebar_admin_collapsed",
+            rightKey: "sidebar_admin_right"
         });
 
-        // Mobile Sidebar Logic
-        const mobileToggle = document.getElementById("mobile-sidebar-toggle");
-        const sidebarFixed = document.querySelector(".sidebar-fixed");
-        const sidebarOverlay = document.getElementById("sidebar-overlay");
-
-        function closeMobileSidebar() {
-            if (sidebarFixed) sidebarFixed.classList.remove("show-mobile");
-            if (sidebarOverlay) sidebarOverlay.classList.remove("show");
-        }
-
-        if (mobileToggle) {
-            mobileToggle.addEventListener("click", function () {
-                if (sidebarFixed) sidebarFixed.classList.toggle("show-mobile");
-                if (sidebarOverlay) sidebarOverlay.classList.toggle("show");
-            });
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener("click", closeMobileSidebar);
-        }
-
-        // Close sidebar when clicking a link on mobile
-        const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
-        navLinks.forEach(link => {
-            link.addEventListener("click", () => {
-                if (window.innerWidth < 992) {
-                    closeMobileSidebar();
-                }
-            });
-        });
-
-        // Avatar from profile image if available
-        try {
-            const userJson = localStorage.getItem('ai_fitness_user');
-            const user = userJson ? JSON.parse(userJson) : null;
-            const avatarUrl = user ? user.profile_image_url : '';
-            const avatarImg = document.getElementById('sidebar-admin-avatar-img');
-            const avatarIcon = document.getElementById('sidebar-admin-avatar-icon');
-            if (avatarImg && avatarIcon) {
-                if (avatarUrl) {
-                    avatarImg.src = avatarUrl;
-                    avatarImg.style.display = 'block';
-                    avatarIcon.style.display = 'none';
-                } else {
-                    avatarImg.removeAttribute('src');
-                    avatarImg.style.display = 'none';
-                    avatarIcon.style.display = 'block';
-                }
-            }
-        } catch (e) { }
-
+        // 2. Admin User Search Logic
         function initSidebarUserSearch() {
             if (typeof window.initUserSearch !== "function") return;
             const msgEl = document.getElementById("sidebarUserSearchMsg");
@@ -413,7 +225,5 @@
             script.onload = initSidebarUserSearch;
             document.head.appendChild(script);
         }
-
-        // Theme Toggle Logic now handled by static/js/theme.js
     });
 </script>

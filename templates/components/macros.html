@@ -1,0 +1,18 @@
+{% macro nav_link(endpoint, text, icon_class, active_check=None) %}
+{% set is_active = False %}
+{% if active_check %}
+{% if active_check in request.path %}
+{% set is_active = True %}
+{% endif %}
+{% else %}
+{% if request.path == endpoint %}
+{% set is_active = True %}
+{% endif %}
+{% endif %}
+<li>
+    <a href="{{ endpoint }}" class="nav-link {{ 'active' if is_active else '' }}" title="{{ text }}">
+        <i class="{{ icon_class }} me-2 nav-icon"></i>
+        <span>{{ text }}</span>
+    </a>
+</li>
+{% endmacro %}

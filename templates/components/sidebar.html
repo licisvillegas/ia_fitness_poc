@@ -1,9 +1,9 @@
 <link href="/static/css/theme.css" rel="stylesheet">
-<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed"
-    style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 1030;">
+{% import 'components/macros.html' as macros %}
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed sidebar-panel">
     <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
         <a href="/landing" class="text-decoration-none brand-text">
-            <img src="/static/images/logo.png" alt="AI Fitness" style="height: 70px; width: auto;">
+            <img src="/static/images/logo.png" alt="AI Fitness" class="sidebar-logo">
         </a>
         <div class="d-flex align-items-center gap-2">
             <button id="theme-toggle" class="btn btn-link p-0 fs-5 text-secondary" title="Cambiar Tema">
@@ -22,10 +22,11 @@
             style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
             <img id="sidebar-avatar-img" alt="Usuario"
                 src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
-                style="width: 100%; height: 100%; object-fit: cover; {{ 'display: block;' if user_data and user_data.profile_image_url else 'display: none;' }}"
+                class="{{ 'd-block' if user_data and user_data.profile_image_url else 'd-none' }}"
+                style="width: 100%; height: 100%; object-fit: cover;"
                 data-profile-url="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}">
-            <i id="sidebar-avatar-icon" class="fas fa-user"
-                style="{{ 'display: none;' if user_data and user_data.profile_image_url else '' }}"></i>
+            <i id="sidebar-avatar-icon"
+                class="fas fa-user {{ 'd-none' if user_data and user_data.profile_image_url else '' }}"></i>
         </div>
         <strong><span id="sidebar-username">{{ user_data.name if user_data and user_data.name else (user_data.username
                 if user_data and user_data.username else 'Usuario') }}</span></strong>
@@ -92,143 +93,53 @@
     <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item">
-            <a href="/landing" class="nav-link {% if request.path == '/landing' %}active{% endif %}" aria-current="page"
-                title="Inicio">
-                <i class="fas fa-home me-2" style="width: 24px; text-align: center;"></i>
-                <span>Inicio</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/landing', 'Inicio', 'fas fa-home') }}
+        {{ macros.nav_link('/dashboard', 'Dashboard', 'fas fa-tachometer-alt') }}
+        {{ macros.nav_link('/plan', 'Mi Plan', 'fas fa-dumbbell') }}
+        {{ macros.nav_link('/nutrition', 'Nutrición', 'fas fa-utensils') }}
 
-        <li>
-            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"
-                title="Dashboard">
-                <i class="fas fa-tachometer-alt me-2" style="width: 24px; text-align: center;"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/plan" class="nav-link {% if request.path == '/plan' %}active{% endif %}" title="Mi Plan">
-                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
-                <span>Mi Plan</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/nutrition" class="nav-link {% if request.path == '/nutrition' %}active{% endif %}"
-                title="Nutrición">
-                <i class="fas fa-utensils me-2" style="width: 24px; text-align: center;"></i>
-                <span>Nutrición</span>
-            </a>
-        </li>
-
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Entrenamiento
         </li>
 
-        <li>
-            <a href="/workout/routines" class="nav-link {% if request.path == '/workout/routines' %}active{% endif %}"
-                title="Mis Rutinas">
-                <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
-                <span>Mis Rutinas</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/workout/routines', 'Mis Rutinas', 'fas fa-clipboard-list') }}
+        {{ macros.nav_link('/workout/routines/builder', 'Crear Rutina', 'fas fa-layer-group') }}
+        {{ macros.nav_link('/workout/exercises', 'Ejercicios', 'fas fa-book') }}
+        {{ macros.nav_link('/workout/rm-calculator', 'Calculadora RM', 'fas fa-calculator') }}
 
-        <li>
-            <a href="/workout/routines/builder"
-                class="nav-link {% if request.path == '/workout/routines/builder' %}active{% endif %}"
-                title="Crear Rutina">
-                <i class="fas fa-layer-group me-2" style="width: 24px; text-align: center;"></i>
-                <span>Crear Rutina</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/workout/exercises" class="nav-link {% if request.path == '/workout/exercises' %}active{% endif %}"
-                title="Ejercicios">
-                <i class="fas fa-book me-2" style="width: 24px; text-align: center;"></i>
-                <span>Ejercicios</span>
-            </a>
-        </li>
-
-        <li>
-            <a href="/workout/rm-calculator"
-                class="nav-link {% if request.path == '/workout/rm-calculator' %}active{% endif %}"
-                title="Calculadora RM">
-                <i class="fas fa-calculator me-2" style="width: 24px; text-align: center;"></i>
-                <span>Calculadora RM</span>
-            </a>
-        </li>
-
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Progreso
         </li>
 
+        {{ macros.nav_link('/ai/body_assessment/user', 'Evaluación Corporal', 'fas fa-camera') }}
         <li>
-            <a href="/ai/body_assessment/user"
-                class="nav-link {% if request.path == '/ai/body_assessment/user' %}active{% endif %}"
-                title="Evaluación Corporal">
-                <i class="fas fa-camera me-2" style="width: 24px; text-align: center;"></i>
-                <span>Evaluación Corporal</span>
-            </a>
-        </li>
-        <li>
-            <a href="#"
-                onclick="const u=JSON.parse(localStorage.getItem('ai_fitness_user')||'{}'); if(u.user_id) window.location.href='/ai/body_assessment/history/view/'+u.user_id; else alert('Debes iniciar sesión'); return false;"
+            <a href="/ai/body_assessment/history/view/{{ user_data.user_id if user_data else '' }}"
                 class="nav-link {% if 'history/view' in request.path %}active{% endif %}" title="Historial">
-                <i class="fas fa-history me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-history me-2 nav-icon"></i>
                 <span>Historial</span>
             </a>
         </li>
 
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+        <li class="nav-item sidebar-section">
             Recursos
         </li>
 
-        <li>
-            <a href="/muscle-map" class="nav-link {% if request.path == '/muscle-map' %}active{% endif %}"
-                title="Mapa Muscular">
-                <i class="fas fa-project-diagram me-2" style="width: 24px; text-align: center;"></i>
-                <span>Mapa Muscular</span>
-            </a>
-        </li>
-        <li>
-            <a href="/glossary" class="nav-link {% if request.path == '/glossary' %}active{% endif %}" title="Glosario">
-                <i class="fas fa-book-open me-2" style="width: 24px; text-align: center;"></i>
-                <span>Glosario</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/muscle-map', 'Mapa Muscular', 'fas fa-project-diagram') }}
+        {{ macros.nav_link('/glossary', 'Glosario', 'fas fa-book-open') }}
 
         <hr class="sidebar-divider my-2">
 
-        <li>
-            <a href="/about" class="nav-link {% if request.path == '/about' %}active{% endif %}" title="Acerca de">
-                <i class="fas fa-info-circle me-2" style="width: 24px; text-align: center;"></i>
-                <span>Acerca de</span>
-            </a>
-        </li>
+        {{ macros.nav_link('/about', 'Acerca de', 'fas fa-info-circle') }}
+
         {% if current_user_role == 'admin' %}
         <li class="mt-3 border-top border-secondary pt-3">
             <a href="/admin/login" class="nav-link text-warning" title="Panel Admin">
-                <i class="fas fa-user-shield me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-user-shield me-2 nav-icon"></i>
                 <span>Panel Admin</span>
             </a>
         </li>
         {% endif %}
     </ul>
-
-    {% if current_user_role != 'admin' %}
-    <div class="mb-4">
-        <small class="text-secondary text-uppercase fw-bold mb-2 d-block"
-            style="font-size: 0.75rem; letter-spacing: 0.05em;">Idioma</small>
-        <div class="d-flex w-100" id="lang-toggle-group">
-            <button id="lang-es" class="btn btn-sm pos-toggle-btn active" data-lang="es"
-                title="Español (ES)">ES</button>
-            <button id="lang-en" class="btn btn-sm pos-toggle-btn" data-lang="en" title="English (EN)">EN</button>
-        </div>
-    </div>
-    {% endif %}
 
     <!-- Sidebar Settings (Only visible when expanded) -->
     <div class="mb-3 px-1" id="sidebar-settings">
@@ -769,149 +680,16 @@
 <!-- Sidebar Overlay (Backdrop for mobile) -->
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
+<script src="/static/js/sidebar_ui.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const body = document.body;
-        const sidebarToggle = document.getElementById("sidebar-toggle");
-        const toggleIcon = sidebarToggle ? sidebarToggle.querySelector("i") : null;
-        const posButtons = document.querySelectorAll("#pos-toggle-group .pos-toggle-btn");
-
-        // 1. Cargar preferencias
-        const savedCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
-        const savedRight = localStorage.getItem("sidebar_right") === "true";
-
-        function updateToggleIcon() {
-            if (!toggleIcon) return;
-            if (body.classList.contains("sb-collapsed")) {
-                toggleIcon.className = "fas fa-bars";
-            } else {
-                toggleIcon.className = "fas fa-arrow-left transition-icon";
-                if (body.classList.contains("sb-right")) {
-                    toggleIcon.className = "fas fa-arrow-right transition-icon";
-                }
-            }
-        }
-
-        function updatePosButtons(isRight) {
-            posButtons.forEach(btn => {
-                const isBtnRight = btn.dataset.pos === "right";
-                if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
-                }
-            });
-        }
-
-        if (savedCollapsed) body.classList.add("sb-collapsed");
-
-        if (savedRight) {
-            body.classList.add("sb-right");
-            updatePosButtons(true);
-        } else {
-            updatePosButtons(false);
-        }
-        updateToggleIcon();
-
-
-        // 2. Toggle Sidebar
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener("click", () => {
-                body.classList.toggle("sb-collapsed");
-                const isCollapsed = body.classList.contains("sb-collapsed");
-                localStorage.setItem("sidebar_collapsed", isCollapsed);
-                updateToggleIcon();
-            });
-        }
-
-        // 3. Toggle Position via Buttons
-        posButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                const targetPos = btn.dataset.pos; // 'left' or 'right'
-                if (targetPos === "right") {
-                    body.classList.add("sb-right");
-                    localStorage.setItem("sidebar_right", "true");
-                    updatePosButtons(true);
-                } else {
-                    body.classList.remove("sb-right");
-                    localStorage.setItem("sidebar_right", "false");
-                    updatePosButtons(false);
-                }
-                updateToggleIcon();
-            });
+        // 1. Initialize Sidebar UI (Toggle, Mobile, Position)
+        initSidebar({
+            collapsedKey: "sidebar_collapsed",
+            rightKey: "sidebar_right"
         });
 
-
-        // Mobile Sidebar Logic
-        const mobileToggle = document.getElementById("mobile-sidebar-toggle");
-        const sidebarFixed = document.querySelector(".sidebar-fixed");
-        const sidebarOverlay = document.getElementById("sidebar-overlay");
-
-        function closeMobileSidebar() {
-            if (sidebarFixed) sidebarFixed.classList.remove("show-mobile");
-            if (sidebarOverlay) sidebarOverlay.classList.remove("show");
-        }
-
-        if (mobileToggle) {
-            mobileToggle.addEventListener("click", function () {
-                if (sidebarFixed) sidebarFixed.classList.toggle("show-mobile");
-                if (sidebarOverlay) sidebarOverlay.classList.toggle("show");
-            });
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener("click", closeMobileSidebar);
-        }
-
-        // Close sidebar when clicking a link on mobile
-        const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
-        navLinks.forEach(link => {
-            link.addEventListener("click", () => {
-                if (window.innerWidth < 992) {
-                    closeMobileSidebar();
-                }
-            });
-        });
-
-
-        // 4. Mostrar nombre de usuario y avatar
-        const userJson = localStorage.getItem('ai_fitness_user');
-        if (userJson) {
-            try {
-                const user = JSON.parse(userJson);
-                const displayName = user.name || user.username || 'Usuario';
-                const userEl = document.getElementById('sidebar-username');
-                if (userEl) userEl.textContent = displayName;
-
-                const avatarImg = document.getElementById('sidebar-avatar-img');
-                const avatarIcon = document.getElementById('sidebar-avatar-icon');
-                const avatarUrl = user.profile_image_url || (avatarImg ? avatarImg.dataset.profileUrl : '');
-                if (avatarImg && avatarIcon) {
-                    if (avatarUrl) {
-                        avatarImg.src = avatarUrl;
-                        avatarImg.style.display = 'block';
-                        avatarIcon.style.display = 'none';
-                    } else {
-                        avatarImg.removeAttribute('src');
-                        avatarImg.style.display = 'none';
-                        avatarIcon.style.display = 'block';
-                    }
-                }
-            } catch (e) { console.error(e); }
-        } else {
-            const avatarImg = document.getElementById('sidebar-avatar-img');
-            const avatarIcon = document.getElementById('sidebar-avatar-icon');
-            const avatarUrl = avatarImg ? avatarImg.dataset.profileUrl : '';
-            if (avatarImg && avatarIcon) {
-                if (avatarUrl) {
-                    avatarImg.src = avatarUrl;
-                    avatarImg.style.display = 'block';
-                    avatarIcon.style.display = 'none';
-                }
-            }
-        }
-
-        // 5. Logout
+        // 2. Logout Logic (User Sidebar specific)
         const logoutBtn = document.getElementById('sidebar-logout');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async function (e) {
@@ -919,20 +697,14 @@
                 try {
                     await fetch('/auth/logout', { method: 'POST' });
                 } catch (e) { console.error(e); }
+
+                // Clear User Session Data
                 localStorage.removeItem('ai_fitness_user');
                 localStorage.removeItem('ai_fitness_uid');
                 sessionStorage.removeItem('admin_unlocked');
+
                 window.location.href = '/';
             });
         }
-        // 6. Redirect Home/Brand logic if logged in
-        const redirectIfLogged = (e) => {
-            try {
-                if (localStorage.getItem('ai_fitness_user')) {
-                    e.preventDefault();
-                    window.location.href = '/dashboard';
-                }
-            } catch (ex) { }
-        };
     });
 </script>

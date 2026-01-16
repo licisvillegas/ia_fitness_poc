@@ -1,0 +1,119 @@
+/**
+ * Reusable Sidebar Logic for User and Admin panels.
+ * Handles:
+ * 1. Collapse/Expand state (persisted via localStorage)
+ * 2. Position Left/Right (persisted via localStorage)
+ * 3. Mobile Sidebar toggle and overlay
+ * 
+ * Usage:
+ * initSidebar({
+ *   collapsedKey: 'sidebar_collapsed', 
+ *   rightKey: 'sidebar_right'
+ * });
+ */
+function initSidebar(config) {
+    const collapsedKey = config.collapsedKey || "sidebar_collapsed";
+    const rightKey = config.rightKey || "sidebar_right";
+
+    const body = document.body;
+    const sidebarToggle = document.getElementById("sidebar-toggle");
+    const toggleIcon = sidebarToggle ? sidebarToggle.querySelector("i") : null;
+    const posButtons = document.querySelectorAll(".pos-toggle-btn");
+
+    // --- 1. Load Preferences ---
+    const savedCollapsed = localStorage.getItem(collapsedKey) === "true";
+    const savedRight = localStorage.getItem(rightKey) === "true";
+
+    function updateToggleIcon() {
+        if (!toggleIcon) return;
+
+        if (body.classList.contains("sb-collapsed")) {
+            toggleIcon.className = "fas fa-bars";
+        } else {
+            toggleIcon.className = "fas fa-arrow-left transition-icon";
+            if (body.classList.contains("sb-right")) {
+                toggleIcon.className = "fas fa-arrow-right transition-icon";
+            }
+        }
+    }
+
+    function updatePosButtons(isRight) {
+        posButtons.forEach(btn => {
+            const isBtnRight = btn.dataset.pos === "right";
+            if ((isRight && isBtnRight) || (!isRight && !isBtnRight)) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+    }
+
+    // Apply initial state
+    if (savedCollapsed) body.classList.add("sb-collapsed");
+
+    if (savedRight) {
+        body.classList.add("sb-right");
+        updatePosButtons(true);
+    } else {
+        updatePosButtons(false);
+    }
+    updateToggleIcon();
+
+    // --- 2. Toggle Sidebar Event ---
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", () => {
+            body.classList.toggle("sb-collapsed");
+            const isCollapsed = body.classList.contains("sb-collapsed");
+            localStorage.setItem(collapsedKey, isCollapsed);
+            updateToggleIcon();
+        });
+    }
+
+    // --- 3. Position Toggle Events ---
+    posButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetPos = btn.dataset.pos; // 'left' or 'right'
+            if (targetPos === "right") {
+                body.classList.add("sb-right");
+                localStorage.setItem(rightKey, "true");
+                updatePosButtons(true);
+            } else {
+                body.classList.remove("sb-right");
+                localStorage.setItem(rightKey, "false");
+                updatePosButtons(false);
+            }
+            updateToggleIcon();
+        });
+    });
+
+    // --- 4. Mobile Sidebar Logic ---
+    const mobileToggle = document.getElementById("mobile-sidebar-toggle");
+    const sidebarFixed = document.querySelector(".sidebar-fixed");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+    function closeMobileSidebar() {
+        if (sidebarFixed) sidebarFixed.classList.remove("show-mobile");
+        if (sidebarOverlay) sidebarOverlay.classList.remove("show");
+    }
+
+    if (mobileToggle) {
+        mobileToggle.addEventListener("click", function () {
+            if (sidebarFixed) sidebarFixed.classList.toggle("show-mobile");
+            if (sidebarOverlay) sidebarOverlay.classList.toggle("show");
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeMobileSidebar);
+    }
+
+    // Close sidebar when clicking a link on mobile (UX improvement)
+    const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
+    navLinks.forEach(link => {
+        link.addEventListener("click", () => {
+            if (window.innerWidth < 992) {
+                closeMobileSidebar();
+            }
+        });
+    });
+}

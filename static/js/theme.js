@@ -43,4 +43,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (themeToggle) {
         themeToggle.addEventListener('click', window.toggleTheme);
     }
+    // Image Protection: Prevent context menu on images
+    document.addEventListener('contextmenu', function (e) {
+        if (e.target.tagName === 'IMG') {
+            e.preventDefault();
+        }
+    });
 });

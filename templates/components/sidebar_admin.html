@@ -71,8 +71,8 @@
     <div class="px-2 mb-2 sidebar-section position-relative">
         <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
         <div class="input-group input-group-sm">
-            <input type="text" class="form-control bg-dark text-white border-secondary"
-                id="sidebarUserSearchTerm" placeholder="Nombre, Email o ID...">
+            <input type="text" class="form-control bg-dark text-white border-secondary" id="sidebarUserSearchTerm"
+                placeholder="Nombre, Email o ID...">
             <button class="btn btn-outline-primary" type="button" id="sidebarBtnLookupUser">
                 <i class="fas fa-search"></i>
             </button>
@@ -80,8 +80,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="sidebarUserSearchResults"
-            class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+        <div id="sidebarUserSearchResults" class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
             style="display: none; z-index: 1050;"></div>
         <input type="hidden" id="sidebarAdminUserId">
         <div id="sidebarUserSearchMsg" class="text-info small mt-2 fst-italic"></div>
@@ -90,72 +89,74 @@
     <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-1 mb-2 px-2 sidebar-section">
+        <!-- Section: Platform -->
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
             Plataforma
         </li>
         <li>
             <a href="/admin/users" class="nav-link {% if request.path == '/admin/users' %}active{% endif %}"
-                title="Gestor Usuarios">
+                title="Usuarios">
                 <i class="fas fa-users me-2" style="width: 24px; text-align: center;"></i>
                 <span>Gestor Usuarios</span>
             </a>
         </li>
         <li>
             <a href="/admin/profiles" class="nav-link {% if request.path == '/admin/profiles' %}active{% endif %}"
-                title="Gestor Perfiles">
-                <i class="fas fa-id-card me-2" style="width: 24px; text-align: center;"></i>
+                title="Perfiles">
+                <i class="fas fa-id-card-alt me-2" style="width: 24px; text-align: center;"></i>
                 <span>Gestor Perfiles</span>
             </a>
         </li>
         <li>
             <a href="/admin/privileges" class="nav-link {% if request.path == '/admin/privileges' %}active{% endif %}"
-                title="Gestor Roles">
-                <i class="fas fa-user-tag me-2" style="width: 24px; text-align: center;"></i>
+                title="Roles">
+                <i class="fas fa-user-shield me-2" style="width: 24px; text-align: center;"></i>
                 <span>Gestor Roles</span>
             </a>
         </li>
-        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-2 sidebar-section">
-            Modulos
+
+        <!-- Section: Modules -->
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+            Inteligencia Artificial
         </li>
         <li>
             <a href="/ai/body_assessment/tester"
                 class="nav-link {% if request.path == '/ai/body_assessment/tester' %}active{% endif %}"
                 title="Evaluaciones">
-                <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-camera-retro me-2" style="width: 24px; text-align: center;"></i>
                 <span>Evaluaciones</span>
             </a>
         </li>
         <li>
             <a href="/ai/routine/generator"
                 class="nav-link {% if request.path == '/ai/routine/generator' %}active{% endif %}" title="Rutinas AI">
-                <i class="fas fa-running me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-robot me-2" style="width: 24px; text-align: center;"></i>
                 <span>Rutinas AI</span>
             </a>
         </li>
-        <!-- SECCION ENTRENAMIENTO (Modulo Nuevo) -->
-        <hr class="sidebar-divider my-2">
-        <div class="sidebar-heading">
-            Entrenamiento
-        </div>
 
+        <!-- Section: Workout -->
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+            Entrenamiento
+        </li>
         <li>
             <a href="/admin/routines/builder"
                 class="nav-link {% if request.path == '/admin/routines/builder' %}active{% endif %}"
-                title="Constructor Rutinas">
-                <i class="fas fa-layer-group me-2" style="width: 24px; text-align: center;"></i>
+                title="Constructor">
+                <i class="fas fa-hammer me-2" style="width: 24px; text-align: center;"></i>
                 <span>Constructor Rutinas</span>
             </a>
         </li>
         <li>
             <a href="/admin/exercises" class="nav-link {% if request.path == '/admin/exercises' %}active{% endif %}"
-                title="Catalogo Ejercicios">
-                <i class="fas fa-book-medical me-2" style="width: 24px; text-align: center;"></i>
+                title="Ejercicios">
+                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
                 <span>Catalogo Ejercicios</span>
             </a>
         </li>
         <li>
             <a href="/admin/routines" class="nav-link {% if request.path == '/admin/routines' %}active{% endif %}"
-                title="Catalogo Rutinas">
+                title="Rutinas">
                 <i class="fas fa-clipboard-list me-2" style="width: 24px; text-align: center;"></i>
                 <span>Catalogo Rutinas</span>
             </a>
@@ -167,21 +168,18 @@
                 <span>Runner / Historial</span>
             </a>
         </li>
-
         <li>
             <a href="/admin/plans" class="nav-link {% if request.path == '/admin/plans' %}active{% endif %}"
                 title="Planes (Gym)">
-                <i class="fas fa-dumbbell me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-clipboard-check me-2" style="width: 24px; text-align: center;"></i>
                 <span>Planes (Gym)</span>
             </a>
         </li>
 
-        <!-- SECCIÓN NUTRICIÓN -->
-        <hr class="sidebar-divider my-2">
-        <div class="sidebar-heading">
+        <!-- Section: Nutrition -->
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
             Nutrición
-        </div>
-
+        </li>
         <li>
             <a href="/admin/meal_plans" class="nav-link {% if request.path == '/admin/meal_plans' %}active{% endif %}"
                 title="Meal Plans">
@@ -190,21 +188,19 @@
             </a>
         </li>
 
-        <hr class="sidebar-divider my-2">
-
+        <!-- Section: Reports -->
+        <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
+            Reportes
         </li>
         <li>
             <a href="/admin/body_assessments"
                 class="nav-link {% if request.path == '/admin/body_assessments' %}active{% endif %}" title="Informes">
-                <i class="fas fa-file-invoice me-2" style="width: 24px; text-align: center;"></i>
+                <i class="fas fa-file-medical-alt me-2" style="width: 24px; text-align: center;"></i>
                 <span>Informes</span>
             </a>
         </li>
-    </ul>
 
-    <hr class="border-theme" style="margin: 1rem 0;">
-
-    <ul class="nav nav-pills flex-column">
+        <hr class="sidebar-divider my-2">
         <li>
             <a href="/admin/logout" class="nav-link" title="Volver al Sitio">
                 <i class="fas fa-sign-out-alt me-2" style="width: 24px; text-align: center;"></i>

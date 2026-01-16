@@ -325,16 +325,10 @@ def api_get_user_routines():
 
 @workout_bp.route("/routines/builder")
 def user_routine_builder_page():
-    user_id = request.cookies.get("user_session")
-    if not user_id:
-        return redirect("/")
     return render_template("routine_builder_user.html")
 
 @workout_bp.route("/routines")
 def user_routines_catalog_page():
-    user_id = request.cookies.get("user_session")
-    if not user_id:
-        return redirect("/")
     return render_template("routines_catalog_user.html")
 
 @workout_bp.get("/api/my-routines")

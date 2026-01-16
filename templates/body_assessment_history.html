@@ -741,11 +741,26 @@
                 document.getElementById('no-photos-msg').classList.add('d-none');
                 photos.forEach(ph => {
                     if (ph.url) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'photo-thumb img-loading-container skeleton-pulse p-0';
+                        wrapper.style.cursor = 'zoom-in';
+
                         const img = document.createElement('img');
                         img.src = ph.url;
-                        img.className = 'photo-thumb';
-                        img.onclick = () => openZoom(ph.url);
-                        photosContainer.appendChild(img);
+                        img.className = 'img-skeleton w-100 h-100';
+                        img.style.objectFit = 'contain';
+                        
+                        const openFn = () => openZoom(ph.url);
+                        img.onclick = openFn;
+                        wrapper.onclick = openFn;
+
+                        img.onload = () => {
+                            wrapper.classList.remove('skeleton-pulse');
+                            img.classList.add('loaded');
+                        };
+
+                        wrapper.appendChild(img);
+                        photosContainer.appendChild(wrapper);
                     }
                 });
                 if (photosContainer.children.length === 0) {

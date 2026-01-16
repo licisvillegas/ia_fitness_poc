@@ -18,11 +18,11 @@
     <!-- User Identity -->
     <a href="#" class="d-flex align-items-center text-theme text-decoration-none dropdown-toggle-user"
         data-bs-toggle="collapse" data-bs-target="#user-collapse" aria-expanded="false" title="Usuario">
-        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
+        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container {{ 'skeleton-pulse' if user_data and user_data.profile_image_url else '' }}"
             style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
             <img id="sidebar-avatar-img" alt="Usuario"
                 src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
-                class="{{ 'd-block' if user_data and user_data.profile_image_url else 'd-none' }}"
+                class="{{ 'd-block img-skeleton' if user_data and user_data.profile_image_url else 'd-none' }}" onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
                 style="width: 100%; height: 100%; object-fit: cover;"
                 data-profile-url="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}">
             <i id="sidebar-avatar-icon"

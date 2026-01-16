@@ -191,9 +191,10 @@
 
                             <!-- Muscle Image Card -->
                             <div id="muscleImageCard"
-                                class="muscle-card-mini mt-3 p-2 rounded-3 border border-secondary border-opacity-25 bg-black d-none"
+                                class="muscle-card-mini mt-3 p-2 rounded-3 border border-secondary border-opacity-25 bg-black d-none skeleton-pulse"
                                 style="cursor: pointer;">
-                                <img id="muscleImage" src="" alt="Musculo" class="img-fluid"
+                                <img id="muscleImage" src="" alt="Musculo" class="img-fluid img-skeleton"
+                                    onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
                                     style="max-height: 100px; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));">
                                 <div class="text-center mt-1"><small class="text-muted" style="font-size: 0.6rem;"><i
                                             class="fas fa-search-plus me-1"></i>Click para ampliar</small></div>
@@ -554,6 +555,10 @@
 
                         // Update Image
                         if (muscleImages[name]) {
+                            // Reset skeleton state
+                            muscleImage.classList.remove('loaded');
+                            muscleImageCard.classList.add('skeleton-pulse');
+
                             muscleImage.src = `/static/images/muscles/male/${muscleImages[name]}`;
                             muscleImageCard.classList.remove("d-none");
                         } else {

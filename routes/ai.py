@@ -342,7 +342,7 @@ def body_assessment_history_view(user_id):
              user = extensions.db.users.find_one({"_id": ObjectId(user_id)})
              if user:
                  user_name = user.get("name") or user.get("username") or user_id
-                 logger.info(f"Found user name: {user_name}")
+                 logger.info("Found user name for history view")
              else:
                  logger.warning("User not found in DB")
     except Exception as e:

@@ -10,7 +10,7 @@
 <div class="row align-items-center mb-4">
     <div class="col-lg-8">
         <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-project-diagram me-2"></i>Mapa Muscular</h2>
-        <p class="text-secondary mb-2">Selecciona un musculo para ver informacion rapida y enfocarte en el grupo.</p>
+        <p class="text-secondary mb-2">Selecciona un músculo para ver información rápida y enfocarte en el grupo.</p>
         <div class="d-flex flex-wrap gap-1 mb-2">
             <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click</div>
             <div class="info-pill active-pill"><i class="fas fa-highlighter me-1"></i>Activo</div>
@@ -43,7 +43,6 @@
                         </button>
                     </li>
                 </ul>
-                </ul>
             </div>
             <div class="card-body p-0">
                 <div class="row g-0 h-100">
@@ -51,10 +50,12 @@
                         style="position: relative;">
                         <!-- Floating Controls -->
                         <div class="map-controls">
-                            <button class="btn btn-glass btn-icon mb-2" id="toggleViewBtn" title="Rotar vista">
+                            <button class="btn btn-glass btn-icon mb-2" id="toggleViewBtn" title="Rotar vista"
+                                aria-label="Rotar vista">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
-                            <button class="btn btn-glass btn-icon" id="clearSelection" title="Limpiar seleccion">
+                            <button class="btn btn-glass btn-icon" id="clearSelection" title="Limpiar selección"
+                                aria-label="Limpiar selección">
                                 <i class="fas fa-undo"></i>
                             </button>
                         </div>
@@ -177,15 +178,15 @@
                     <!-- Info Panel (Right Side) -->
                     <div class="col-md-5 p-3 d-flex flex-column justify-content-center bg-panel-soft">
                         <div class="info-integrated text-center">
-                            <div class="info-label mb-2">Musculo seleccionado</div>
+                            <div class="info-label mb-2">Músculo seleccionado</div>
                             <div id="muscleName" class="info-title mb-3">Ninguno</div>
 
                             <div
                                 class="suggestion-box p-3 rounded-3 border border-secondary border-opacity-25 bg-opacity-10 bg-black">
                                 <div class="text-secondary x-small fw-bold mb-1 text-uppercase text-start"><i
-                                        class="fas fa-lightbulb text-cyber-yellow me-1"></i>Tip Rapido</div>
+                                        class="fas fa-lightbulb text-cyber-yellow me-1"></i>Tip rápido</div>
                                 <div class="suggestion-text small text-start text-white" id="muscleTip">
-                                    Selecciona un musculo para mostrar tips de entrenamiento.
+                                    Selecciona un músculo para mostrar tips de entrenamiento.
                                 </div>
                             </div>
 
@@ -193,7 +194,7 @@
                             <div id="muscleImageCard"
                                 class="muscle-card-mini mt-3 p-2 rounded-3 border border-secondary border-opacity-25 bg-black d-none skeleton-pulse"
                                 style="cursor: pointer;">
-                                <img id="muscleImage" src="" alt="Musculo" class="img-fluid img-skeleton"
+                                <img id="muscleImage" src="" alt="Músculo" class="img-fluid img-skeleton"
                                     onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
                                     style="max-height: 100px; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));">
                                 <div class="text-center mt-1"><small class="text-muted" style="font-size: 0.6rem;"><i
@@ -316,6 +317,11 @@
                     fill: rgba(239, 68, 68, 0.8);
                     stroke: #ef4444;
                     filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+                }
+
+                .muscle:focus-visible {
+                    outline: 2px solid rgba(0, 210, 255, 0.8);
+                    outline-offset: 2px;
                 }
 
                 .muscle-tooltip {
@@ -465,6 +471,7 @@
                 const muscleImage = document.getElementById("muscleImage");
                 const clearBtn = document.getElementById("clearSelection");
                 const toggleViewBtn = document.getElementById("toggleViewBtn");
+                const mapContainer = document.querySelector(".tab-content");
 
                 // ... (muscleImages and muscleTips objects remain the same) ...
 
@@ -491,21 +498,21 @@
                     "Biceps": "Combina curl con barra y curl martillo para variedad.",
                     "Abdominales": "Alterna planchas con crunches controlados.",
                     "Cuadriceps": "Sentadillas y prensa son claves para fuerza frontal.",
-                    "Trapecios": "Encogimientos y remo al menton ayudan a activar trapecios.",
+                    "Trapecios": "Encogimientos y remo al mentón ayudan a activar trapecios.",
                     "Oblicuos": "Twists y planchas laterales son ideales para oblicuos.",
                     "Antebrazos": "Farmer walks y curls inversos fortalecen el agarre.",
-                    "Gemelos": "Elevaciones de talon ayudan a fortalecer los gemelos.",
-                    "Gluteos": "Hip thrust y sentadillas profundas activan gluteos.",
+                    "Gemelos": "Elevaciones de talón ayudan a fortalecer los gemelos.",
+                    "Gluteos": "Hip thrust y sentadillas profundas activan glúteos.",
                     "Dorsal ancho": "Dominadas y remos son fundamentales para la amplitud.",
                     "Lumbares": "Hiperextensiones y peso muerto fortalecen la zona baja.",
                     "Isquiotibiales": "Peso muerto rumano y curl femoral para la parte posterior.",
-                    "Triceps": "Fondos y extensiones de polea para dar tamano al brazo."
+                    "Triceps": "Fondos y extensiones de polea para dar tamaño al brazo."
                 };
 
                 function clearSelection() {
                     muscles.forEach(m => m.classList.remove("active"));
                     muscleName.textContent = "Ninguno";
-                    muscleTip.textContent = "Selecciona un musculo para mostrar tips de entrenamiento.";
+                    muscleTip.textContent = "Selecciona un músculo para mostrar tips de entrenamiento.";
                     muscleImageCard.classList.add("d-none");
                 }
 
@@ -532,61 +539,115 @@
                     tooltip.classList.add("show");
                 }
 
-                function moveTooltip(event) {
-                    tooltip.style.left = `${event.clientX}px`;
-                    tooltip.style.top = `${event.clientY}px`;
-                }
-
                 function hideTooltip() {
                     tooltip.classList.remove("show");
                 }
 
                 muscles.forEach(muscle => {
-                    const nameAttr = muscle.getAttribute("data-name");
-                    muscle.addEventListener("click", () => {
-                        muscles.forEach(m => m.classList.remove("active"));
-                        const name = muscle.getAttribute("data-name") || "Musculo";
-                        document.querySelectorAll(`.muscle[data-name="${name}"]`).forEach(m => {
-                            m.classList.add("active");
-                        });
-                        muscleName.textContent = name;
-                        // muscleDescription.textContent = `Seleccionaste ${name}. Puedes filtrar tus entrenamientos por este grupo.`;
-                        muscleTip.textContent = muscleTips[name] || "Explora ejercicios enfocados en este musculo.";
+                    const nameAttr = muscle.getAttribute("data-name") || "Músculo";
+                    muscle.setAttribute("tabindex", "0");
+                    muscle.setAttribute("role", "button");
+                    muscle.setAttribute("aria-label", nameAttr);
+                });
 
-                        // Update Image
-                        if (muscleImages[name]) {
-                            // Reset skeleton state
-                            muscleImage.classList.remove('loaded');
-                            muscleImageCard.classList.add('skeleton-pulse');
-
-                            muscleImage.src = `/static/images/muscles/male/${muscleImages[name]}`;
-                            muscleImageCard.classList.remove("d-none");
-                        } else {
-                            muscleImageCard.classList.add("d-none");
-                        }
+                function selectMuscle(name) {
+                    muscles.forEach(m => m.classList.remove("active"));
+                    document.querySelectorAll(`.muscle[data-name="${name}"]`).forEach(m => {
+                        m.classList.add("active");
                     });
+                    muscleName.textContent = name;
+                    // muscleDescription.textContent = `Seleccionaste ${name}. Puedes filtrar tus entrenamientos por este grupo.`;
+                    muscleTip.textContent = muscleTips[name] || "Explora ejercicios enfocados en este músculo.";
 
-                    if (nameAttr) {
-                        muscle.addEventListener("mouseenter", (event) => showTooltip(nameAttr, event));
-                        muscle.addEventListener("mousemove", moveTooltip);
-                        muscle.addEventListener("mouseleave", hideTooltip);
+                    // Update Image
+                    if (muscleImages[name]) {
+                        // Reset skeleton state
+                        muscleImage.classList.remove('loaded');
+                        muscleImageCard.classList.add('skeleton-pulse');
+
+                        muscleImage.src = `/static/images/muscles/male/${muscleImages[name]}`;
+                        muscleImageCard.classList.remove("d-none");
+                    } else {
+                        muscleImageCard.classList.add("d-none");
                     }
+                }
+
+                mapContainer?.addEventListener("click", (event) => {
+                    const target = event.target;
+                    if (!(target instanceof Element)) {
+                        return;
+                    }
+                    const muscle = target.closest(".muscle");
+                    if (!muscle) {
+                        return;
+                    }
+                    const name = muscle.getAttribute("data-name") || "Músculo";
+                    selectMuscle(name);
+                });
+
+                let tooltipRaf = 0;
+                mapContainer?.addEventListener("pointerenter", (event) => {
+                    const target = event.target;
+                    if (!(target instanceof Element)) {
+                        return;
+                    }
+                    const muscle = target.closest(".muscle");
+                    if (!muscle) {
+                        return;
+                    }
+                    const nameAttr = muscle.getAttribute("data-name");
+                    if (nameAttr) {
+                        showTooltip(nameAttr, event);
+                    }
+                }, true);
+
+                mapContainer?.addEventListener("pointermove", (event) => {
+                    if (!tooltip.classList.contains("show")) {
+                        return;
+                    }
+                    if (tooltipRaf) {
+                        cancelAnimationFrame(tooltipRaf);
+                    }
+                    tooltipRaf = requestAnimationFrame(() => {
+                        tooltip.style.left = `${event.clientX}px`;
+                        tooltip.style.top = `${event.clientY}px`;
+                    });
+                });
+
+                mapContainer?.addEventListener("pointerleave", hideTooltip, true);
+                window.addEventListener("scroll", hideTooltip, true);
+
+                document.addEventListener("keydown", (event) => {
+                    if (event.key !== "Enter" && event.key !== " ") {
+                        return;
+                    }
+                    const target = event.target;
+                    if (!(target instanceof Element)) {
+                        return;
+                    }
+                    const muscle = target.closest(".muscle");
+                    if (!muscle) {
+                        return;
+                    }
+                    const name = muscle.getAttribute("data-name") || "Músculo";
+                    event.preventDefault();
+                    selectMuscle(name);
                 });
 
                 clearBtn?.addEventListener("click", clearSelection);
 
                 const muscleDescriptions = {
-                    "hombros": `<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripción y Partes:</strong> Músculo que envuelve la articulación del hombro, dando forma redondeada.<br>• <strong>Deltoides Anterior:</strong> Parte frontal (empujes).<br>• <strong>Deltoides Lateral (Medial):</strong> Parte lateral (anchura).<br>• <strong>Deltoides Posterior:</strong> Parte trasera (tracción).`,
-                    "pectorales": `<strong>Nombres alternativos:</strong> Pectorales, "Pecs", Torso anterior.<br><br><strong>Descripción y Partes:</strong> Músculo grande en la parte frontal de la caja torácica. Es clave para movimientos de empuje.<br>• <strong>Pectoral Mayor:</strong> Se divide funcionalmente en Fascículo Clavicular (parte superior), Esternocostal (parte media) y Abdominal (parte inferior).<br>• <strong>Pectoral Menor:</strong> Situado debajo del mayor.`,
-                    "espalda": `<strong>Nombres alternativos:</strong> Dorsales, Espalda alta/media/baja.<br><br><strong>Descripción y Partes:</strong> Grupo complejo que cubre la parte posterior del tronco.<br>• <strong>Dorsal Ancho (Lats):</strong> Da la forma de "V".<br>• <strong>Trapecios:</strong> Parte superior (cuello/hombros), media e inferior.<br>• <strong>Romboides:</strong> Entre los omóplatos.<br>• <strong>Erectores espinales / Lumbares:</strong> Zona baja de la espalda (estabilidad).`,
-                    "bíceps": `<strong>Nombres alternativos:</strong> Bíceps braquial, "Conejos" (coloquial).<br><br><strong>Descripción y Partes:</strong> Músculo de dos cabezas en la parte frontal del brazo.<br>• <strong>Cabeza Larga:</strong> Parte externa.<br>• <strong>Cabeza Corta:</strong> Parte interna.<br>• <strong>Braquial:</strong> Músculo profundo situado bajo el bíceps (da volumen).`,
-                    "tríceps": `<strong>Nombres alternativos:</strong> Tríceps braquial.<br><br><strong>Descripción y Partes:</strong> Músculo de tres cabezas en la parte posterior del brazo. Ocupa 2/3 del volumen del brazo.<br>• <strong>Cabeza Larga:</strong> La más grande, parte interna.<br>• <strong>Cabeza Lateral:</strong> La parte externa visible.<br>• <strong>Cabeza Medial:</strong> Situada más abajo, cerca del codo.`,
-                    "antebrazos": `<strong>Nombres alternativos:</strong> Flexores/Extensores de la muñeca.<br><br><strong>Descripción y Partes:</strong> Conjunto de múltiples músculos pequeños responsables del agarre.<br>• <strong>Braquiorradial:</strong> El músculo más visible en la parte superior del antebrazo.<br>• <strong>Flexores y Extensores:</strong> Grupos musculares para mover dedos y muñeca.`,
-                    "abdominales": `<strong>Nombres alternativos:</strong> Core, Recto abdominal, "Six-pack", Abdominales.<br><br><strong>Descripción y Partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>• <strong>Recto Abdominal:</strong> La "tableta" frontal.<br>• <strong>Oblicuos (Externos e Internos):</strong> Los laterales del torso.<br>• <strong>Transverso:</strong> Músculo profundo (faja natural).<br>• <strong>Serratos:</strong> Músculos en forma de "dientes" sobre las costillas.`,
-                    "glúteos": `<strong>Nombres alternativos:</strong> Nalgas, Trasero.<br><br><strong>Descripción y Partes:</strong> El grupo muscular más grande y fuerte del cuerpo.<br>• <strong>Glúteo Mayor:</strong> La parte principal y más visible.<br>• <strong>Glúteo Medio:</strong> Parte lateral superior (estabilidad de cadera).<br>• <strong>Glúteo Menor:</strong> Profundo, bajo el medio.`,
-                    "cuádriceps": `<strong>Nombres alternativos:</strong> Cuádriceps femoral, Muslo anterior.<br><br><strong>Descripción y Partes:</strong> Grupo de cuatro músculos en la parte frontal del muslo.<br>• <strong>Recto Femoral:</strong> El músculo central que cruza la cadera.<br>• <strong>Vasto Lateral:</strong> Parte externa (da la curva exterior).<br>• <strong>Vasto Medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>• <strong>Vasto Intermedio:</strong> Profundo, bajo el recto femoral.`,
-                    "femoral": `<strong>Nombres alternativos:</strong> Femorales, Isquiosurales, Isquios, Parte posterior del muslo.<br><br><strong>Descripción y Partes:</strong> Grupo muscular en la parte trasera del muslo.<br>• <strong>Bíceps Femoral:</strong> Parte externa (cabeza larga y corta).<br>• <strong>Semitendinoso y Semimembranoso:</strong> Parte interna.`,
-                    "gemelos": `<strong>Nombres alternativos:</strong> Tríceps sural, Gemelos, Chamorros (coloquial en MX).<br><br><strong>Descripción y Partes:</strong> Parte posterior de la pierna baja.<br>• <strong>Gastrocnemio (Gemelos):</strong> El músculo visible con forma de diamante (cabeza interna y externa).<br>• <strong>Sóleo:</strong> Músculo plano situado debajo de los gemelos (visible a los lados del tobillo).`
+                    "hombros": `<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripción y partes:</strong> Músculo que envuelve la articulación del hombro, dando forma redondeada.<br>• <strong>Deltoides anterior:</strong> Parte frontal (empujes).<br>• <strong>Deltoides lateral (medial):</strong> Parte lateral (anchura).<br>• <strong>Deltoides posterior:</strong> Parte trasera (tracción).`,
+                    "pectorales": `<strong>Nombres alternativos:</strong> Pectorales, "Pecs", torso anterior.<br><br><strong>Descripción y partes:</strong> Músculo grande en la parte frontal de la caja torácica. Es clave para movimientos de empuje.<br>• <strong>Pectoral mayor:</strong> Se divide funcionalmente en fascículo clavicular (parte superior), esternocostal (parte media) y abdominal (parte inferior).<br>• <strong>Pectoral menor:</strong> Situado debajo del mayor.`,
+                    "espalda": `<strong>Nombres alternativos:</strong> Dorsales, espalda alta/media/baja.<br><br><strong>Descripción y partes:</strong> Grupo complejo que cubre la parte posterior del tronco.<br>• <strong>Dorsal ancho (lats):</strong> Da la forma de "V".<br>• <strong>Trapecios:</strong> Parte superior (cuello/hombros), media e inferior.<br>• <strong>Romboides:</strong> Entre los omóplatos.<br>• <strong>Erectores espinales / lumbares:</strong> Zona baja de la espalda (estabilidad).`,
+                    "biceps": `<strong>Nombres alternativos:</strong> Bíceps braquial, "conejos" (coloquial).<br><br><strong>Descripción y partes:</strong> Músculo de dos cabezas en la parte frontal del brazo.<br>• <strong>Cabeza larga:</strong> Parte externa.<br>• <strong>Cabeza corta:</strong> Parte interna.<br>• <strong>Braquial:</strong> Músculo profundo situado bajo el bíceps (da volumen).`,
+                    "triceps": `<strong>Nombres alternativos:</strong> Tríceps braquial.<br><br><strong>Descripción y partes:</strong> Músculo de tres cabezas en la parte posterior del brazo. Ocupa 2/3 del volumen del brazo.<br>• <strong>Cabeza larga:</strong> La más grande, parte interna.<br>• <strong>Cabeza lateral:</strong> La parte externa visible.<br>• <strong>Cabeza medial:</strong> Situada más abajo, cerca del codo.`,
+                    "antebrazos": `<strong>Nombres alternativos:</strong> Flexores/extensores de la muñeca.<br><br><strong>Descripción y partes:</strong> Conjunto de múltiples músculos pequeños responsables del agarre.<br>• <strong>Braquiorradial:</strong> El músculo más visible en la parte superior del antebrazo.<br>• <strong>Flexores y extensores:</strong> Grupos musculares para mover dedos y muñeca.`,
+                    "abdominales": `<strong>Nombres alternativos:</strong> Core, recto abdominal, "six-pack", abdominales.<br><br><strong>Descripción y partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>• <strong>Recto abdominal:</strong> La "tableta" frontal.<br>• <strong>Oblicuos (externos e internos):</strong> Los laterales del torso.<br>• <strong>Transverso:</strong> Músculo profundo (faja natural).<br>• <strong>Serratos:</strong> Músculos en forma de "dientes" sobre las costillas.`,
+                    "gluteos": `<strong>Nombres alternativos:</strong> Nalgas, trasero.<br><br><strong>Descripción y partes:</strong> El grupo muscular más grande y fuerte del cuerpo.<br>• <strong>Glúteo mayor:</strong> La parte principal y más visible.<br>• <strong>Glúteo medio:</strong> Parte lateral superior (estabilidad de cadera).<br>• <strong>Glúteo menor:</strong> Profundo, bajo el medio.`,
+                    "cuadriceps": `<strong>Nombres alternativos:</strong> Cuádriceps femoral, muslo anterior.<br><br><strong>Descripción y partes:</strong> Grupo de cuatro músculos en la parte frontal del muslo.<br>• <strong>Recto femoral:</strong> El músculo central que cruza la cadera.<br>• <strong>Vasto lateral:</strong> Parte externa (da la curva exterior).<br>• <strong>Vasto medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>• <strong>Vasto intermedio:</strong> Profundo, bajo el recto femoral.`,
+                    "femoral": `<strong>Nombres alternativos:</strong> Femorales, isquiosurales, isquios, parte posterior del muslo.<br><br><strong>Descripción y partes:</strong> Grupo muscular en la parte trasera del muslo.<br>• <strong>Bíceps femoral:</strong> Parte externa (cabeza larga y corta).<br>• <strong>Semitendinoso y semimembranoso:</strong> Parte interna.`,
+                    "gemelos": `<strong>Nombres alternativos:</strong> Tríceps sural, gemelos, chamorros (coloquial en MX).<br><br><strong>Descripción y partes:</strong> Parte posterior de la pierna baja.<br>• <strong>Gastrocnemio (gemelos):</strong> El músculo visible con forma de diamante (cabeza interna y externa).<br>• <strong>Sóleo:</strong> Músculo plano situado debajo de los gemelos (visible a los lados del tobillo).`
                 };
 
                 const glossaryMap = {
@@ -595,18 +656,18 @@
                     "Trapecios": "espalda",
                     "Dorsal ancho": "espalda",
                     "Lumbares": "espalda",
-                    "Biceps": "bíceps",
-                    "Triceps": "tríceps",
+                    "Biceps": "biceps",
+                    "Triceps": "triceps",
                     "Antebrazos": "antebrazos",
                     "Abdominales": "abdominales",
                     "Oblicuos": "abdominales",
-                    "Cuadriceps": "cuádriceps",
+                    "Cuadriceps": "cuadriceps",
                     "Gemelos": "gemelos",
-                    "Gluteos": "glúteos",
+                    "Gluteos": "gluteos",
                     "Isquiotibiales": "femoral"
                 };
 
-                // Modal Zoom Logic
+                // Modal Zoom Logic// Modal Zoom Logic
                 document.addEventListener('DOMContentLoaded', function () {
                     const modalElement = document.getElementById('imageModal');
                     if (modalElement) {
@@ -682,7 +743,7 @@
                             <div class="flex-grow-1 d-flex align-items-center justify-content-center p-3 relative-position"
                                 style="min-height: 0; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%);">
                                 <img src="" id="modalImage" class="img-fluid"
-                                    style="max-height: 100%; max-width: 100%; object-fit: contain;" alt="Muscle Image">
+                                    style="max-height: 100%; max-width: 100%; object-fit: contain;" alt="Imagen del músculo">
                             </div>
                         </div>
                     </div>

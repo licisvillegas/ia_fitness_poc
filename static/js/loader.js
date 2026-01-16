@@ -44,4 +44,23 @@
         barEl.classList.add('deterministic');
         barEl.style.width = `${percentage}%`;
     };
+
+    // Global Link Interceptor for Page Transitions
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        // Ignore if modifier keys are pressed (new tab)
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+
+        // Ignore if target is blank or download
+        if (link.target === '_blank' || link.hasAttribute('download')) return;
+
+        // Ignore anchors on the same page
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+        // Show loader
+        window.showLoader("Cargando...", null);
+    });
 })();

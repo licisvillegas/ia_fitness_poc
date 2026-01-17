@@ -108,6 +108,10 @@
                                                     d="M175 350 L215 350 L210 450 L185 450 Q165 400 175 350 Z" />
                                                 <path id="quads-right" class="muscle" data-name="Cuadriceps"
                                                     d="M325 350 L285 350 L290 450 L315 450 Q335 400 325 350 Z" />
+                                                <path id="adductors-left" class="muscle" data-name="Aductores"
+                                                    d="M220 381 Q210 411 220 451 Q240 431 235 381 Z" />
+                                                <path id="adductors-right" class="muscle" data-name="Aductores"
+                                                    d="M280 381 Q290 411 280 451 Q260 431 265 381 Z" />
 
                                                 <path id="calves-left" class="muscle" data-name="Gemelos"
                                                     d="M175 508 Q165 538 175 578 Q195 558 190 508 Z" />
@@ -157,11 +161,19 @@
                                                     d="M195 300 L240 300 L240 370 Q195 360 195 300 Z" />
                                                 <path id="glutes-right" class="muscle" data-name="Gluteos"
                                                     d="M305 300 L260 300 L260 370 Q305 360 305 300 Z" />
+                                                <path id="abductors-back-left" class="muscle" data-name="Abductores"
+                                                    d="M185 335 L195 335 L190 385 L170 375 Z" />
+                                                <path id="abductors-back-right" class="muscle" data-name="Abductores"
+                                                    d="M315 335 L305 335 L310 385 L330 375 Z" />
 
                                                 <path id="hamstrings-left" class="muscle" data-name="Isquiotibiales"
                                                     d="M180 385 L215 385 L210 470 L185 470 Z" />
                                                 <path id="hamstrings-right" class="muscle" data-name="Isquiotibiales"
                                                     d="M320 385 L285 385 L290 470 L315 470 Z" />
+                                                <path id="adductors-back-left" class="muscle" data-name="Aductores"
+                                                    d="M225 395 Q215 420 225 460 Q245 440 240 395 Z" />
+                                                <path id="adductors-back-right" class="muscle" data-name="Aductores"
+                                                    d="M275 395 Q285 420 275 460 Q255 440 260 395 Z" />
 
                                                 <path id="calves-back-left" class="muscle" data-name="Gemelos"
                                                     d="M185 520 L210 520 Q205 560 190 570 L185 520 Z" />
@@ -487,6 +499,8 @@
                     "Abdominales": "abs.png",
                     "Oblicuos": "abs.png",
                     "Cuadriceps": "cua.png",
+                    "Abductores": "abd.png",
+                    "Aductores": "adc.png",
                     "Gemelos": "gem.png",
                     "Gluteos": "glu.png",
                     "Isquiotibiales": "isq.png"
@@ -503,6 +517,8 @@
                     "Antebrazos": "Farmer walks y curls inversos fortalecen el agarre.",
                     "Gemelos": "Elevaciones de talón ayudan a fortalecer los gemelos.",
                     "Gluteos": "Hip thrust y sentadillas profundas activan glúteos.",
+                    "Abductores": "Abducciones con banda y pasos laterales activan los abductores.",
+                    "Aductores": "Sentadillas sumo y aducciones con polea activan la zona interna.",
                     "Dorsal ancho": "Dominadas y remos son fundamentales para la amplitud.",
                     "Lumbares": "Hiperextensiones y peso muerto fortalecen la zona baja.",
                     "Isquiotibiales": "Peso muerto rumano y curl femoral para la parte posterior.",
@@ -646,6 +662,7 @@
                     "abdominales": `<strong>Nombres alternativos:</strong> Core, recto abdominal, "six-pack", abdominales.<br><br><strong>Descripción y partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>• <strong>Recto abdominal:</strong> La "tableta" frontal.<br>• <strong>Oblicuos (externos e internos):</strong> Los laterales del torso.<br>• <strong>Transverso:</strong> Músculo profundo (faja natural).<br>• <strong>Serratos:</strong> Músculos en forma de "dientes" sobre las costillas.`,
                     "gluteos": `<strong>Nombres alternativos:</strong> Nalgas, trasero.<br><br><strong>Descripción y partes:</strong> El grupo muscular más grande y fuerte del cuerpo.<br>• <strong>Glúteo mayor:</strong> La parte principal y más visible.<br>• <strong>Glúteo medio:</strong> Parte lateral superior (estabilidad de cadera).<br>• <strong>Glúteo menor:</strong> Profundo, bajo el medio.`,
                     "cuadriceps": `<strong>Nombres alternativos:</strong> Cuádriceps femoral, muslo anterior.<br><br><strong>Descripción y partes:</strong> Grupo de cuatro músculos en la parte frontal del muslo.<br>• <strong>Recto femoral:</strong> El músculo central que cruza la cadera.<br>• <strong>Vasto lateral:</strong> Parte externa (da la curva exterior).<br>• <strong>Vasto medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>• <strong>Vasto intermedio:</strong> Profundo, bajo el recto femoral.`,
+                    "abductores": `<strong>Nombres alternativos:</strong> Abducción de cadera, muslo externo.<br><br><strong>Descripción y partes:</strong> Grupo muscular en la parte externa de la cadera y muslo que estabiliza la pelvis.<br>• <strong>Glúteo medio:</strong> Principal abductor de la cadera.<br>• <strong>Tensor de la fascia lata:</strong> Aporta estabilidad lateral.`,
                     "femoral": `<strong>Nombres alternativos:</strong> Femorales, isquiosurales, isquios, parte posterior del muslo.<br><br><strong>Descripción y partes:</strong> Grupo muscular en la parte trasera del muslo.<br>• <strong>Bíceps femoral:</strong> Parte externa (cabeza larga y corta).<br>• <strong>Semitendinoso y semimembranoso:</strong> Parte interna.`,
                     "gemelos": `<strong>Nombres alternativos:</strong> Tríceps sural, gemelos, chamorros (coloquial en MX).<br><br><strong>Descripción y partes:</strong> Parte posterior de la pierna baja.<br>• <strong>Gastrocnemio (gemelos):</strong> El músculo visible con forma de diamante (cabeza interna y externa).<br>• <strong>Sóleo:</strong> Músculo plano situado debajo de los gemelos (visible a los lados del tobillo).`
                 };
@@ -662,6 +679,7 @@
                     "Abdominales": "abdominales",
                     "Oblicuos": "abdominales",
                     "Cuadriceps": "cuadriceps",
+                    "Abductores": "abductores",
                     "Gemelos": "gemelos",
                     "Gluteos": "gluteos",
                     "Isquiotibiales": "femoral"

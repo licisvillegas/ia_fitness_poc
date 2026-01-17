@@ -1,0 +1,377 @@
+{% extends "layout.html" %}
+
+{% block title %}Generador de Rutinas AI (Mongo){% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-theme fw-bold">Generador de Rutinas AI (Mongo)</h2>
+        <p class="text-secondary">Genera rutinas usando ejercicios de MongoDB con estructura compatible con routines.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Formulario de Entrada -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm border-0 bg-panel h-100">
+            <div class="card-body">
+                <h5 class="card-title text-theme mb-3">Configuracion</h5>
+                <form id="routineForm">
+                    <div class="mb-3">
+                        <label for="level" class="form-label text-secondary">Nivel</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="level">
+                            <option value="Principiante">Principiante</option>
+                            <option value="Intermedio" selected>Intermedio</option>
+                            <option value="Avanzado">Avanzado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="goal" class="form-label text-secondary">Objetivo</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="goal">
+                            <option value="Hipertrofia" selected>Hipertrofia</option>
+                            <option value="Fuerza">Fuerza</option>
+                            <option value="Perdida de Grasa">Perdida de Grasa</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="frequency" class="form-label text-secondary">Dias Disponibles</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="frequency">
+                            <option value="2">2 dias</option>
+                            <option value="3">3 dias</option>
+                            <option value="4" selected>4 dias</option>
+                            <option value="5">5 dias</option>
+                            <option value="6">6 dias</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="equipment" class="form-label text-secondary">Equipo Disponible</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="equipment">
+                            <option value="" selected>Sin filtro</option>
+                            <option value="barbell">Barra</option>
+                            <option value="dumbbell">Mancuernas</option>
+                            <option value="machine">Maquina</option>
+                            <option value="cable">Polea / Cable</option>
+                            <option value="bodyweight">Peso Corporal</option>
+                            <option value="other">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger text-white">
+                            <i class="fas fa-magic me-2"></i> Generar Rutina
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 bg-panel" style="min-height: 400px;">
+            <div class="card-body">
+                <div id="loadingState" class="d-none text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Generando...</span>
+                    </div>
+                    <p class="mt-3 text-secondary">Construyendo tu rutina...</p>
+                </div>
+
+                <div id="resultState" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 id="routineName" class="text-theme fw-bold mb-0">Rutina Generada</h4>
+                        <span id="routineMeta" class="badge bg-warning text-dark">Meta</span>
+                    </div>
+
+                    <ul class="nav nav-tabs border-secondary" id="daysTabs" role="tablist"></ul>
+                    <div class="tab-content mt-3" id="daysTabContent"></div>
+
+                    <div class="mt-4 text-end">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showJsonModal()">
+                            <i class="fas fa-code me-1"></i> Ver JSON del dia
+                        </button>
+                        <button id="saveRoutineBtn" class="btn btn-success btn-sm ms-2" onclick="saveActiveRoutine()">
+                            <i class="fas fa-save me-1"></i> Guardar Rutina
+                        </button>
+                    </div>
+                </div>
+
+                <div id="emptyState" class="text-center py-5">
+                    <i class="fas fa-dumbbell text-secondary opacity-25" style="font-size: 4rem;"></i>
+                    <p class="mt-3 text-secondary">Configura los parametros y genera tu rutina.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal JSON -->
+<div class="modal fade" id="jsonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">JSON de la Rutina (dia activo)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="jsonTextarea" class="form-control bg-dark text-white border-secondary" rows="15"
+                    style="font-family: monospace; font-size: 0.9em;"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="copyJsonFromModal()">Copiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRoutineData = null;
+
+    document.getElementById('routineForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        document.getElementById('emptyState').classList.add('d-none');
+        document.getElementById('resultState').classList.add('d-none');
+        document.getElementById('loadingState').classList.remove('d-none');
+
+        const data = {
+            level: document.getElementById('level').value,
+            goal: document.getElementById('goal').value,
+            frequency: document.getElementById('frequency').value,
+            equipment: document.getElementById('equipment').value
+        };
+
+        try {
+            const response = await fetch('/api/generate_routine_mongo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                currentRoutineData = result;
+                renderRoutine(result);
+                toggleSaveButton(true);
+            } else {
+                showAlertModal("Error", result.error || "Unknown error", "danger");
+                currentRoutineData = null;
+                toggleSaveButton(false);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlertModal("Error", "Error conectando con el servidor", "danger");
+            currentRoutineData = null;
+            toggleSaveButton(false);
+        } finally {
+            document.getElementById('loadingState').classList.add('d-none');
+        }
+    });
+
+    function renderRoutine(data) {
+        document.getElementById('resultState').classList.remove('d-none');
+        document.getElementById('routineName').innerText = data.routine_name || 'Rutina Generada';
+        document.getElementById('routineMeta').innerText = `${data.level || ''} | ${data.goal || ''}`.trim() || 'General';
+
+        const tabs = document.getElementById('daysTabs');
+        const panes = document.getElementById('daysTabContent');
+        tabs.innerHTML = '';
+        panes.innerHTML = '';
+
+        if (!data.days || !Array.isArray(data.days) || data.days.length === 0) {
+            panes.innerHTML = '<div class="text-secondary">Sin dias generados.</div>';
+            toggleSaveButton(false);
+            return;
+        }
+
+        data.days.forEach((day, index) => {
+            const activeClass = index === 0 ? 'active' : '';
+            const showClass = index === 0 ? 'show active' : '';
+            const tabId = `day-tab-${index}`;
+            const paneId = `day-pane-${index}`;
+            const label = day.day_label || `Dia ${index + 1}`;
+
+            tabs.innerHTML += `
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link ${activeClass}" id="${tabId}" data-bs-toggle="tab"
+                        data-bs-target="#${paneId}" type="button" role="tab">${label}</button>
+                </li>
+            `;
+
+            panes.innerHTML += `
+                <div class="tab-pane fade ${showClass}" id="${paneId}" role="tabpanel">
+                    ${renderDayTable(day)}
+                </div>
+            `;
+        });
+    }
+
+    function renderDayTable(day) {
+        const routine = day.routine || {};
+        const items = Array.isArray(routine.items) ? routine.items : [];
+        if (!items.length) {
+            return '<div class="text-secondary">Sin items para este dia.</div>';
+        }
+        const rows = items.map((item, idx) => renderItemRow(item, idx + 1)).join('');
+        return `
+            <div class="mb-2 text-secondary small">${routine.name || 'Rutina del dia'}</div>
+            <table class="table table-dark table-hover mb-0 small">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Item</th>
+                        <th scope="col">Sets</th>
+                        <th scope="col">Reps</th>
+                        <th scope="col">Rest</th>
+                        <th scope="col">Grupo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function renderItemRow(item, order) {
+        if (item.item_type === 'group') {
+            return `
+                <tr class="table-secondary">
+                    <td>${order}</td>
+                    <td><strong>Grupo:</strong> ${item.group_name || 'Grupo'}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>${item.group_type || '-'}</td>
+                </tr>
+            `;
+        }
+        if (item.item_type === 'rest') {
+            return `
+                <tr class="table-warning">
+                    <td>${order}</td>
+                    <td><strong>Descanso</strong></td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>${item.rest_seconds || 0}s</td>
+                    <td>${item.group_id || '-'}</td>
+                </tr>
+            `;
+        }
+        const reps = item.target_reps || (item.exercise_type === 'time' ? `${Math.round((item.target_time_seconds || 0) / 60)}m` : '-');
+        return `
+            <tr>
+                <td>${order}</td>
+                <td>
+                    <div class="fw-bold text-white">${item.exercise_name || 'Ejercicio'}</div>
+                    <div class="text-secondary x-small">${item.body_part || ''}</div>
+                </td>
+                <td>${item.target_sets || '-'}</td>
+                <td>${reps}</td>
+                <td>${item.rest_seconds || 0}s</td>
+                <td>${item.group_id || '-'}</td>
+            </tr>
+        `;
+    }
+
+    function toggleSaveButton(enable) {
+        const btn = document.getElementById('saveRoutineBtn');
+        if (btn) btn.disabled = !enable;
+    }
+
+    function showJsonModal() {
+        if (!currentRoutineData) return;
+        const activePane = document.querySelector('#daysTabContent .tab-pane.active');
+        const activeIndex = activePane ? Array.from(activePane.parentElement.children).indexOf(activePane) : 0;
+        const day = (currentRoutineData.days || [])[activeIndex] || {};
+        const routine = day.routine || {};
+
+        const textarea = document.getElementById('jsonTextarea');
+        textarea.value = JSON.stringify(routine, null, 4);
+
+        const modal = new bootstrap.Modal(document.getElementById('jsonModal'));
+        modal.show();
+    }
+
+    function copyJsonFromModal() {
+        const textarea = document.getElementById('jsonTextarea');
+        textarea.select();
+        document.execCommand('copy');
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                showAlertModal("Copiado", "JSON copiado al portapapeles", "success");
+            });
+        } else {
+            showAlertModal("Copiado", "JSON copiado (fallback)", "success");
+        }
+    }
+
+    function getActiveRoutine() {
+        if (!currentRoutineData || !Array.isArray(currentRoutineData.days)) return null;
+        const activePane = document.querySelector('#daysTabContent .tab-pane.active');
+        const activeIndex = activePane ? Array.from(activePane.parentElement.children).indexOf(activePane) : 0;
+        const day = currentRoutineData.days[activeIndex] || {};
+        return day.routine || null;
+    }
+
+    async function saveActiveRoutine() {
+        const routine = getActiveRoutine();
+        if (!routine) {
+            showAlertModal("Error", "No hay rutina activa para guardar", "warning");
+            return;
+        }
+
+        try {
+            const btn = document.getElementById('saveRoutineBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+            const response = await fetch('/api/save_routine_mongo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(routine)
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                showAlertModal("Guardado", "Rutina guardada correctamente", "success");
+            } else {
+                showAlertModal("Error", result.error || "No se pudo guardar", "danger");
+            }
+        } catch (e) {
+            console.error(e);
+            showAlertModal("Error", "Error de conexion", "danger");
+        } finally {
+            const btn = document.getElementById('saveRoutineBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-1"></i> Guardar Rutina';
+            }
+        }
+    }
+</script>
+
+<style>
+    .x-small {
+        font-size: 0.75rem;
+    }
+
+    .nav-tabs .nav-link {
+        color: #c7c7c7;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #fff;
+        background-color: #1f1f1f;
+        border-color: #444 #444 #1f1f1f;
+    }
+</style>
+{% endblock %}

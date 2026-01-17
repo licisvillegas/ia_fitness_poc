@@ -88,8 +88,11 @@
                     </div>
 
                     <div class="mt-4 text-end">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard()">
-                            <i class="fas fa-copy me-1"></i> Copiar JSON
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showJsonModal()">
+                            <i class="fas fa-code me-1"></i> Ver JSON
+                        </button>
+                        <button id="saveDemoBtn" class="btn btn-success btn-sm ms-2" onclick="saveDemoRoutine()">
+                            <i class="fas fa-save me-1"></i> Guardar Demo Rutina
                         </button>
                     </div>
                 </div>
@@ -103,7 +106,31 @@
     </div>
 </div>
 
+<!-- Modal JSON -->
+<div class="modal fade" id="jsonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">JSON de la Rutina</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="jsonTextarea" class="form-control bg-dark text-white border-secondary" rows="15"
+                    style="font-family: monospace; font-size: 0.9em;"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="copyJsonFromModal()">Copiar al
+                    Portapapeles</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    let currentRoutineData = null;
+
     document.getElementById('routineForm').addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -111,6 +138,9 @@
         document.getElementById('emptyState').classList.add('d-none');
         document.getElementById('resultState').classList.add('d-none');
         document.getElementById('loadingState').classList.remove('d-none');
+
+        // Disable save button until loaded
+        toggleSaveButton(false);
 
         const data = {
             level: document.getElementById('level').value,
@@ -129,13 +159,17 @@
             const result = await response.json();
 
             if (response.ok) {
+                currentRoutineData = result; // Store for JSON modal and saving
                 renderRoutine(result);
+                toggleSaveButton(true);
             } else {
                 showAlertModal("Error", result.error || "Unknown error", "danger");
+                currentRoutineData = null;
             }
         } catch (err) {
             console.error(err);
             showAlertModal("Error", "Error conectando con el servidor", "danger");
+            currentRoutineData = null;
         } finally {
             document.getElementById('loadingState').classList.add('d-none');
         }
@@ -198,9 +232,77 @@
         });
     }
 
-    function copyToClipboard() {
-        // Logic to copy JSON if needed, or just text summary
-        showAlertModal("Pendiente", "Función de copiar JSON pendiente de implementación completa.", "warning");
+    function toggleSaveButton(enable) {
+        const btn = document.getElementById('saveDemoBtn');
+        if (btn) {
+            btn.disabled = !enable;
+        }
+    }
+
+    function showJsonModal() {
+        if (!currentRoutineData) return;
+
+        const textarea = document.getElementById('jsonTextarea');
+        textarea.value = JSON.stringify(currentRoutineData, null, 4);
+
+        const modal = new bootstrap.Modal(document.getElementById('jsonModal'));
+        modal.show();
+    }
+
+    function copyJsonFromModal() {
+        const textarea = document.getElementById('jsonTextarea');
+        textarea.select();
+        document.execCommand('copy'); // Fallback
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                showAlertModal("Copiado", "JSON copiado al portapapeles", "success");
+            });
+        } else {
+            showAlertModal("Copiado", "JSON copiado (fallback)", "success");
+        }
+    }
+
+    async function saveDemoRoutine() {
+        if (!currentRoutineData) {
+            showAlertModal("Error", "No hay rutina para guardar", "warning");
+            return;
+        }
+
+        let dataToSave = currentRoutineData;
+        const textarea = document.getElementById('jsonTextarea');
+        // If modal has different content, maybe we should use it? 
+        // For now, adhering to safe path of using generate result.
+
+        try {
+            const btn = document.getElementById('saveDemoBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+            const response = await fetch('/api/save_demo_routine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSave)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showAlertModal("Guardado", "Rutina guardada en demos correctamente", "success");
+            } else {
+                showAlertModal("Error", result.error || "No se pudo guardar", "danger");
+            }
+        } catch (e) {
+            console.error(e);
+            showAlertModal("Error", "Error de conexión", "danger");
+        } finally {
+            const btn = document.getElementById('saveDemoBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-1"></i> Guardar Demo Rutina';
+            }
+        }
     }
 </script>
 

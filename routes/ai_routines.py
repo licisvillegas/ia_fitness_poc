@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify, render_template
-
+import extensions
 from extensions import logger
 from utils.db_helpers import log_agent_execution
 from ai_agents.routine_agent import RoutineAgent
+from datetime import datetime
+
+
 
 ai_routines_bp = Blueprint("ai_routines", __name__)
 
@@ -29,3 +32,25 @@ def api_generate_routine():
 @ai_routines_bp.get("/ai/routine/generator")
 def ai_routine_generator_page():
     return render_template("routine_generator.html")
+
+
+@ai_routines_bp.post("/api/save_demo_routine")
+def api_save_demo_routine():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No hay datos para guardar"}), 400
+
+        if extensions.db is None:
+            return jsonify({"error": "Base de datos no disponible"}), 503
+
+        # Add timestamp
+        data["created_at"] = datetime.utcnow()
+        
+        # Insert into demo_routines collection
+        result = extensions.db.demo_routines.insert_one(data)
+        
+        return jsonify({"message": "Demo guardada", "id": str(result.inserted_id)}), 200
+    except Exception as e:
+        logger.error(f"Error guardando demo rutina: {e}", exc_info=True)
+        return jsonify({"error": "Error interno guardando rutina"}), 500

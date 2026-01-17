@@ -7,7 +7,7 @@ import os
 
 import extensions
 from extensions import logger
-from utils.auth_helpers import ensure_user_status, get_admin_token, USER_STATUS_DEFAULT
+from utils.auth_helpers import ensure_user_status, get_admin_token, generate_admin_csrf, USER_STATUS_DEFAULT
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -166,6 +166,14 @@ def admin_login():
         resp = jsonify({"ok": True, "message": "Login admin OK"})
         # Cookie de sesión simple para navegación admin
         resp.set_cookie("admin_token", token, httponly=True, samesite="Lax")
+        resp.set_cookie(
+            "admin_csrf",
+            generate_admin_csrf(),
+            httponly=False,
+            samesite="Lax",
+            max_age=86400 * 7,
+            secure=request.is_secure,
+        )
         return resp, 200
     except Exception as e:
         logger.error(f"Error en /admin/login: {e}", exc_info=True)
@@ -184,7 +192,6 @@ def admin_validate():
         provided = (
             request.cookies.get("admin_token")
             or request.headers.get("X-Admin-Token")
-            or request.args.get("token")
         )
         if provided != admin_token:
             return jsonify({"ok": False, "error": "No autorizado"}), 403
@@ -195,11 +202,10 @@ def admin_validate():
 def verify_admin_token_endpoint():
     """Valida token para funciones avanzadas de admin (frontend)."""
     try:
-        from config import Config
         data = request.get_json() or {}
         token = data.get("token")
         
-        expected = Config.ADMIN_TOKEN
+        expected = get_admin_token()
         logger.info(f"DEBUG: Token check. Received: '{token}', Expected: '{expected}'")
 
         if not expected:
@@ -208,6 +214,14 @@ def verify_admin_token_endpoint():
         if token == expected:
             resp = jsonify({"ok": True})
             resp.set_cookie("admin_token", token, httponly=True, samesite="Lax", max_age=86400*7)
+            resp.set_cookie(
+                "admin_csrf",
+                generate_admin_csrf(),
+                httponly=False,
+                samesite="Lax",
+                max_age=86400 * 7,
+                secure=request.is_secure,
+            )
             from config import Config
             import time
             resp.set_cookie("admin_last_active", str(int(time.time())), httponly=True, samesite="Lax", max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS)
@@ -229,6 +243,8 @@ def auth_logout():
         resp.delete_cookie("admin_token")
         resp.delete_cookie("admin_last_active")
         resp.delete_cookie("admin_origin_session")
+        resp.delete_cookie("admin_csrf")
+        resp.delete_cookie("admin_impersonation_id")
         
         return resp, 200
     except Exception as e:

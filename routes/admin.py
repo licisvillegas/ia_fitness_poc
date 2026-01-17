@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash
 
 import extensions
 from extensions import logger
-from utils.auth_helpers import check_admin_access, ensure_user_status, USER_STATUS_DEFAULT   
+from utils.auth_helpers import check_admin_access, ensure_user_status, generate_admin_csrf, validate_admin_csrf, USER_STATUS_DEFAULT
 from utils.helpers import parse_birth_date, format_birth_date, compute_age, normalize_user_status
 
 admin_bp = Blueprint('admin', __name__)
@@ -30,12 +30,23 @@ def admin_login_action():
     data = request.get_json() or {}
     token = data.get("token")
     real_token = get_admin_token()
+
+    if not real_token:
+        return jsonify({"ok": False, "error": "ADMIN_TOKEN no configurado"}), 503
     
     if token == real_token:
         resp = jsonify({"ok": True})
         resp.set_cookie("admin_token", token, httponly=True, samesite="Lax", max_age=86400*7)
         resp.set_cookie("admin_last_active", str(int(time.time())), httponly=True, samesite="Lax",
                         max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS)
+        resp.set_cookie(
+            "admin_csrf",
+            generate_admin_csrf(),
+            httponly=False,
+            samesite="Lax",
+            max_age=86400 * 7,
+            secure=request.is_secure,
+        )
         return resp, 200
     else:
         return jsonify({"ok": False, "error": "Token incorrecto"}), 401
@@ -120,6 +131,9 @@ def admin_logout_action():
     resp.delete_cookie("admin_token")
     resp.set_cookie("admin_last_active", "", expires=0, max_age=0)
     resp.delete_cookie("admin_last_active")
+    resp.delete_cookie("admin_csrf")
+    resp.delete_cookie("admin_origin_session")
+    resp.delete_cookie("admin_impersonation_id")
     return resp
 
 @admin_bp.route("/admin")
@@ -241,7 +255,9 @@ def impersonate_user():
     """Permite al admin iniciar sesión como otro usuario."""
     ok, err = check_admin_access()
     if not ok: return err
-    
+    csrf_ok, csrf_err = validate_admin_csrf()
+    if not csrf_ok: return csrf_err
+
     try:
         data = request.get_json() or {}
         user_id = data.get("user_id")
@@ -256,6 +272,11 @@ def impersonate_user():
              
         target_uid = str(u.get("user_id") or u["_id"])
         
+        # Block impersonating other admins
+        role_doc = extensions.db.user_roles.find_one({"user_id": target_uid}) if extensions.db is not None else None
+        if role_doc and role_doc.get("role") == "admin":
+            return jsonify({"error": "No puedes impersonar a un administrador"}), 403
+
         resp = jsonify({"message": "Switching user context", "user_id": target_uid})
         
         # Save original session if not already saved
@@ -269,7 +290,23 @@ def impersonate_user():
             resp.set_cookie("admin_origin_session", current_session, httponly=True, samesite="Lax", max_age=86400*7)
         else:
             print("DEBUG IMPERSONATE: Skipping origin set (already set or no current session)")
-            
+
+        # Audit record
+        try:
+            if extensions.db is not None and current_session:
+                audit_doc = {
+                    "admin_user_id": current_session,
+                    "target_user_id": target_uid,
+                    "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+                    "user_agent": request.headers.get("User-Agent"),
+                    "created_at": datetime.utcnow(),
+                    "ended_at": None,
+                }
+                res = extensions.db.admin_impersonations.insert_one(audit_doc)
+                resp.set_cookie("admin_impersonation_id", str(res.inserted_id), httponly=True, samesite="Lax", max_age=86400*7)
+        except Exception as e:
+            logger.error(f"Error audit impersonation: {e}")
+
         # Set the HttpOnly session cookie
         resp.set_cookie("user_session", target_uid, httponly=True, samesite="Lax", max_age=86400*30)
         return resp, 200
@@ -285,6 +322,9 @@ def revert_impersonation():
     # es el impersonado (sin rol admin).
     # La seguridad recae en @admin_bp.before_request que verifica la cookie 'admin_token'.
     
+    csrf_ok, csrf_err = validate_admin_csrf()
+    if not csrf_ok: return csrf_err
+
     try:
         origin_uid = request.cookies.get("admin_origin_session")
         print(f"DEBUG REVERT: Origin Cookie={origin_uid}")
@@ -305,8 +345,23 @@ def revert_impersonation():
         }
             
         resp = jsonify({"message": "Session restored", "user": user_data})
+        try:
+            if extensions.db is not None:
+                imp_id = request.cookies.get("admin_impersonation_id")
+                update = {"$set": {"ended_at": datetime.utcnow()}}
+                if imp_id and ObjectId.is_valid(imp_id):
+                    extensions.db.admin_impersonations.update_one({"_id": ObjectId(imp_id)}, update)
+                else:
+                    current_imp = request.cookies.get("user_session")
+                    extensions.db.admin_impersonations.update_one(
+                        {"admin_user_id": origin_uid, "target_user_id": current_imp, "ended_at": None},
+                        update,
+                    )
+        except Exception as e:
+            logger.error(f"Error audit revert: {e}")
         resp.set_cookie("user_session", origin_uid, httponly=True, samesite="Lax", max_age=86400*30)
         resp.delete_cookie("admin_origin_session")
+        resp.delete_cookie("admin_impersonation_id")
         
         return resp, 200
     except Exception as e:
@@ -317,10 +372,14 @@ def revert_impersonation():
 @admin_bp.post("/admin/api/lock")
 def lock_admin_session():
     """Bloquea la sesión de admin eliminando el token."""
+    csrf_ok, csrf_err = validate_admin_csrf()
+    if not csrf_ok: return csrf_err
+
     try:
         resp = jsonify({"message": "Admin session locked"})
         resp.delete_cookie("admin_token")
         resp.delete_cookie("admin_last_active")
+        resp.delete_cookie("admin_csrf")
         return resp, 200
     except Exception as e:
         logger.error(f"Error locking admin: {e}")
@@ -365,13 +424,16 @@ def lookup_users():
         results = []
         for u in cursor:
             uid = u.get("user_id")
+            role_doc = extensions.db.user_roles.find_one({"user_id": uid}) if extensions.db is not None else None
+            role = role_doc.get("role") if role_doc else "user"
             has_p = extensions.db.user_profiles.find_one({"user_id": uid}) is not None
             results.append({
                 "user_id": uid,
                 "name": u.get("name"),
                 "email": u.get("email"),
                 "username": u.get("username"),
-                "has_profile": has_p
+                "has_profile": has_p,
+                "role": role
             })
         return jsonify(results), 200
     except Exception as e:

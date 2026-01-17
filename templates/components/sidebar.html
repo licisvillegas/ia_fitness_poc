@@ -251,6 +251,13 @@
 
 <script src="/static/js/user_search.js"></script>
 <script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return "";
+    }
+
     // 1. Admin Token Logic
     document.addEventListener('DOMContentLoaded', () => {
         const verifyBtn = document.getElementById('verifyTokenBtn');
@@ -281,9 +288,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: val })
                     });
-                    const data = await resp.json();
+                    const data = await resp.json().catch(() => ({}));
 
-                    if (data.ok) {
+                    if (resp.ok && data.ok) {
                         // Success
                         sessionStorage.setItem('admin_unlocked', 'true');
                         msg.className = 'mt-2 text-success small';
@@ -294,10 +301,12 @@
                             location.reload();
                         }, 800);
                     } else {
-                        msg.textContent = 'Token incorrecto';
+                        msg.className = 'mt-2 text-danger small';
+                        msg.textContent = data.error || data.message || 'Token incorrecto';
                     }
                 } catch (e) {
-                    msg.textContent = 'Error de conexión';
+                    msg.className = 'mt-2 text-danger small';
+                    msg.textContent = 'Error de conexion';
                 } finally {
                     verifyBtn.textContent = 'Verificar';
                     verifyBtn.disabled = false;
@@ -325,7 +334,8 @@
         let impModal = null;
 
         // Check if admin unlocked
-        if (sessionStorage.getItem('admin_unlocked') === 'true') {
+        const isAdminUnlocked = sessionStorage.getItem('admin_unlocked') === 'true';
+        if (isAdminUnlocked) {
             const cont = document.getElementById('admin-user-search-container');
             // Only show if available and not impersonating
             if (cont && cont.dataset.impersonating !== 'true') {
@@ -352,7 +362,7 @@
                 confirmLockBtn.disabled = true;
 
                 try {
-                    await fetch('/admin/api/lock', { method: 'POST' });
+                    await fetch('/admin/api/lock', { method: 'POST', headers: { 'X-CSRF-Token': getCookie('admin_csrf') } });
                 } catch (e) { console.error(e); }
 
                 sessionStorage.removeItem('admin_unlocked');
@@ -367,6 +377,22 @@
                 setTimeout(() => {
                     window.location.reload();
                 }, 300);
+            });
+        }
+
+        const searchBtn = document.getElementById('sidebar-search-user-btn');
+        if (!isAdminUnlocked && searchBtn) {
+            searchBtn.classList.add('disabled');
+            searchBtn.setAttribute('aria-disabled', 'true');
+            searchBtn.removeAttribute('data-bs-toggle');
+            searchBtn.removeAttribute('data-bs-target');
+            searchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.showAlertModal) {
+                    window.showAlertModal("Token requerido", "Valida el token admin para habilitar la busqueda de usuarios.", "warning");
+                } else {
+                    alert("Valida el token admin para habilitar la busqueda de usuarios.");
+                }
             });
         }
 
@@ -390,8 +416,13 @@
         }
 
         function openConfirmModal(u) {
-            pendingUser = u;
+            const isAdmin = u && u.role === "admin";
+            pendingUser = isAdmin ? null : u;
             targetNameEl.textContent = u.name || u.username;
+            if (confirmBtn) confirmBtn.disabled = !!isAdmin;
+            if (isAdmin && window.showAlertModal) {
+                window.showAlertModal("Impersonacion bloqueada", "No puedes impersonar a un administrador.", "warning");
+            }
             if (!impModal && modalEl) impModal = new bootstrap.Modal(modalEl);
             if (impModal) impModal.show();
         }
@@ -411,7 +442,7 @@
             try {
                 const res = await fetch('/admin/api/impersonate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCookie('admin_csrf') },
                     body: JSON.stringify({ user_id: u.user_id })
                 });
 
@@ -426,7 +457,13 @@
                     localStorage.setItem('ai_fitness_uid', u.user_id);
                     window.location.reload();
                 } else {
-                    alert("Error al cambiar de usuario");
+                    const err = await res.json().catch(() => ({}));
+                    const msg = err.error || "No se pudo cambiar de usuario.";
+                    if (window.showAlertModal) {
+                        window.showAlertModal("Impersonacion bloqueada", msg, "warning");
+                    } else {
+                        alert(msg);
+                    }
                 }
             } catch (e) {
                 console.error(e);
@@ -451,7 +488,7 @@
                 confirmRevertBtn.disabled = true;
 
                 try {
-                    const res = await fetch('/admin/api/revert_impersonation', { method: 'POST' });
+                    const res = await fetch('/admin/api/revert_impersonation', { method: 'POST', headers: { 'X-CSRF-Token': getCookie('admin_csrf') } });
                     const data = await res.json();
 
                     if (res.ok) {
@@ -479,21 +516,30 @@
             const hiddenEl = document.getElementById("modalAdminUserId");
             let pendingContextUser = null;
 
-            function setPendingUser(user, prefix) {
-                pendingContextUser = user || null;
-                if (hiddenEl) hiddenEl.value = user && user.user_id ? user.user_id : "";
-                if (confirmBtn) confirmBtn.disabled = !user;
+                        function setPendingUser(user, prefix) {
+                const isAdmin = user && user.role === "admin";
+                pendingContextUser = isAdmin ? null : (user || null);
+                if (hiddenEl) hiddenEl.value = pendingContextUser && pendingContextUser.user_id ? pendingContextUser.user_id : "";
+                if (confirmBtn) confirmBtn.disabled = !pendingContextUser;
                 if (modalMsgEl) {
-                    if (user) {
+                    if (isAdmin) {
+                        modalMsgEl.textContent = "No puedes impersonar a un administrador.";
+                        modalMsgEl.classList.remove("text-info");
+                        modalMsgEl.classList.add("text-warning");
+                    } else if (user) {
                         modalMsgEl.textContent = (prefix || "Usuario seleccionado: ") +
                             (user.name || user.username || user.user_id || "");
+                        modalMsgEl.classList.remove("text-warning");
+                        modalMsgEl.classList.add("text-info");
                     } else {
                         modalMsgEl.textContent = "";
+                        modalMsgEl.classList.remove("text-warning");
+                        modalMsgEl.classList.add("text-info");
                     }
                 }
             }
 
-            function confirmSelection() {
+function confirmSelection() {
                 if (!pendingContextUser) {
                     if (modalMsgEl) modalMsgEl.textContent = "Selecciona un usuario primero.";
                     return;
@@ -514,11 +560,15 @@
 
                 fetch('/admin/api/impersonate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCookie('admin_csrf') },
                     body: JSON.stringify({ user_id: pendingContextUser.user_id })
                 })
                     .then((res) => {
-                        if (!res.ok) throw new Error("No se pudo cambiar de usuario");
+                        if (!res.ok) {
+                            return res.json().then((data) => {
+                                throw new Error(data.error || "No se pudo cambiar de usuario");
+                            });
+                        }
                         const userData = {
                             user_id: pendingContextUser.user_id,
                             name: pendingContextUser.name,
@@ -535,7 +585,11 @@
                         window.location.reload();
                     })
                     .catch((e) => {
-                        if (modalMsgEl) modalMsgEl.textContent = e.message || "Error al cambiar de usuario.";
+                        const msg = e.message || "Error al cambiar de usuario.";
+                        if (modalMsgEl) modalMsgEl.textContent = msg;
+                        if (window.showAlertModal) {
+                            window.showAlertModal("Impersonacion bloqueada", msg, "warning");
+                        }
                     })
                     .finally(() => {
                         if (confirmBtn) confirmBtn.disabled = false;

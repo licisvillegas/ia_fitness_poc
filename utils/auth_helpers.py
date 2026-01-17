@@ -2,9 +2,13 @@
 Blueprint de Autenticación y Helpers
 """
 import os
+from dotenv import load_dotenv
+import secrets
 from flask import request, jsonify
 import extensions
 from extensions import logger, db
+
+load_dotenv()
 
 USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending"}
 USER_STATUS_DEFAULT = "active"
@@ -40,7 +44,19 @@ def is_user_active(user_id: str) -> bool:
 
 def get_admin_token():
     """Obtiene el token de administrador desde variables de entorno"""
-    return os.getenv("ADMIN_TOKEN", "admin15M9")
+    return os.getenv("ADMIN_TOKEN")
+
+def generate_admin_csrf():
+    """Genera un token CSRF para acciones admin."""
+    return secrets.token_urlsafe(32)
+
+def validate_admin_csrf():
+    """Valida el token CSRF enviado por header contra la cookie."""
+    header_token = request.headers.get("X-CSRF-Token") or request.headers.get("X-Admin-CSRF")
+    cookie_token = request.cookies.get("admin_csrf")
+    if not header_token or not cookie_token or header_token != cookie_token:
+        return False, (jsonify({"error": "CSRF invalido o ausente"}), 403)
+    return True, None
 
 def check_admin_access():
     """Valida token Y rol de administrador en DB.
@@ -53,8 +69,7 @@ def check_admin_access():
 
     # 1. Validar Token (Cookie, Header o Query)
     provided = (
-        request.args.get("token")
-        or request.cookies.get("admin_token")
+        request.cookies.get("admin_token")
         or request.headers.get("X-Admin-Token")
     )
     if provided != admin_token:

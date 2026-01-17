@@ -30,7 +30,7 @@ class Config:
     USER_STATUS_DEFAULT = "active"
     
     # Admin
-    ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "12345") # Token por defecto para desarrollo
+    ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
     ADMIN_IDLE_TIMEOUT_SECONDS = int(os.getenv("ADMIN_IDLE_TIMEOUT_SECONDS", "900"))
     
     # Server

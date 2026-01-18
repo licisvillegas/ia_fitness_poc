@@ -92,8 +92,8 @@ def list_public_exercises():
         page = int(request.args.get("page", 1))
         if limit < 1:
             limit = 50
-        if limit > 200:
-            limit = 200
+        if limit > 1000:
+            limit = 1000
         if page < 1:
             page = 1
         skip = (page - 1) * limit

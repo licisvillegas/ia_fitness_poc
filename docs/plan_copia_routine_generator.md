@@ -16,7 +16,7 @@ Regla operativa: **antes de ejecutar cualquier tarea del plan, se debe pedir con
 | 7 | Persistencia de rutinas | Guardar el JSON en la nueva collection de rutinas con estructura compatible | Insercion en MongoDB verificada | Completado |
 | 8 | Validaciones y edge cases | Verificar grupos de ejercicios, descansos, dias vacios, limites de ejercicios | Checklist de validaciones | Completado |
 | 9 | Pruebas basicas | Pruebas manuales y/o scripts minimos para validar UI y backend | Evidencia de pruebas | Completado |
-| 10 | Documentacion | Actualizar docs con uso y consideraciones | Nota de uso en docs | Pendiente |
+| 10 | Documentacion | Actualizar docs con uso y consideraciones | Nota de uso en docs | Completado |
 
 ## Notas
 - Cada actividad se ejecuta solo despues de tu confirmacion explicita.
@@ -176,3 +176,8 @@ Checklist manual sugerido (pendiente de ejecucion en entorno local):
 3. Abrir modal JSON del dia activo y revisar estructura compatible con `routines`.
 4. Guardar rutina y confirmar respuesta 200 en `POST /api/save_routine_mongo`.
 5. Reintentar guardar con rutina sin items y verificar error 400.
+
+## Nota de uso (Actividad 10)
+- UI: `GET /ai/routine/generator_mongo`.
+- Generacion: `POST /api/generate_routine_mongo` (usa ejercicios en MongoDB).
+- Guardado: `POST /api/save_routine_mongo` (guarda en `ai_routines`).

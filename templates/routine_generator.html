@@ -1,6 +1,6 @@
-{% extends "layout.html" %}
+﻿{% extends "layout.html" %}
 
-{% block title %}Generador de Rutinas AI{% endblock %}
+{% block title %}Generador de Rutinas AI {% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -61,6 +61,16 @@
                             <i class="fas fa-magic me-2"></i> Generar Rutina
                         </button>
                     </div>
+                    <div class="d-grid mt-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="showLoadDemoModal()">
+                            <i class="fas fa-cloud-download-alt me-2"></i> Cargar Demo
+                        </button>
+                    </div>
+                    <div class="d-grid mt-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetGenerator()">
+                            <i class="fas fa-plus me-2"></i> Nueva Rutina
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -74,12 +84,22 @@
                     <div class="spinner-border text-danger" role="status">
                         <span class="visually-hidden">Generando...</span>
                     </div>
-                    <p class="mt-3 text-secondary">Diseñando tu programa de entrenamiento...</p>
+                    <p class="mt-3 text-secondary">Diseñ±ando tu programa de entrenamiento...</p>
                 </div>
 
                 <div id="resultState" class="d-none">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 id="routineName" class="text-theme fw-bold mb-0">Nombre Rutina</h4>
+                        <div class="d-flex align-items-center gap-3">
+                            <h4 id="routineName" class="text-theme fw-bold mb-0">Nombre Rutina</h4>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleAllAccordions(true)" title="Expandir todo">
+                                    <i class="fas fa-expand-arrows-alt me-1"></i> Expandir
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleAllAccordions(false)" title="Colapsar todo">
+                                    <i class="fas fa-compress-arrows-alt me-1"></i> Colapsar
+                                </button>
+                            </div>
+                        </div>
                         <span id="microcyclePhase" class="badge bg-warning text-dark">Fase</span>
                     </div>
 
@@ -88,7 +108,13 @@
                     </div>
 
                     <div class="mt-4 text-end">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="showJsonModal()">
+                        <button class="btn btn-outline-info btn-sm" onclick="showValidationModal()">
+                            <i class="fas fa-check-double me-1"></i> Validar Ejercicios
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm ms-2" onclick="showDailyRoutinesModal()">
+                            <i class="fas fa-calendar-alt me-1"></i> Ver/Guardar por Días
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showJsonModal()">
                             <i class="fas fa-code me-1"></i> Ver JSON
                         </button>
                         <button id="saveDemoBtn" class="btn btn-success btn-sm ms-2" onclick="saveDemoRoutine()">
@@ -106,23 +132,116 @@
     </div>
 </div>
 
-<!-- Modal JSON -->
-<div class="modal fade" id="jsonModal" tabindex="-1" aria-hidden="true">
+
+
+<!-- Modal Validacion Ejercicios -->
+<div class="modal fade" id="validationModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">JSON de la Rutina</h5>
+                <h5 class="modal-title"><i class="fas fa-check-double me-2"></i>Validación de Ejercicios</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <textarea id="jsonTextarea" class="form-control bg-dark text-white border-secondary" rows="15"
-                    style="font-family: monospace; font-size: 0.9em;"></textarea>
+                <p class="text-secondary small mb-3">Verifica si los ejercicios generados existen en el catálogo de
+                    MongoDB.</p>
+                <div class="d-flex justify-content-between mb-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllNewExercises(true)">
+                        Seleccionar todos los nuevos
+                    </button>
+                    <span id="validationStats" class="text-info small"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover small">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAllEx"
+                                        onclick="toggleAllEx(this)"></th>
+                                <th>Ejercicio / Grupo</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validationTableBody">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="copyJsonFromModal()">Copiar al
-                    Portapapeles</button>
+                <button type="button" class="btn btn-success" id="btnAddSelectedToCatalog"
+                    onclick="addSelectedExercisesToCatalog()" disabled>
+                    <i class="fas fa-plus-circle me-1"></i> Agregar Seleccionados al Catálogo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rutinas por Dia -->
+<div class="modal fade" id="dailyRoutinesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="fas fa-calendar-alt me-2"></i>Rutinas por Día</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs border-secondary" id="daysTabs" role="tablist"></ul>
+                <div class="tab-content mt-3" id="daysTabContent"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <div class="me-auto d-flex gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="showDayJson()">
+                        <i class="fas fa-code me-1"></i> Ver JSON
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="addExerciseToActiveDay()">
+                        <i class="fas fa-plus me-1"></i> Agregar Ejercicio
+                    </button>
+                </div>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" id="btnSaveDailyRoutine"
+                    onclick="saveCurrentDayRoutine()">
+                    <i class="fas fa-save me-1"></i> Guardar Rutina
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Cargar Demo -->
+<div class="modal fade" id="loadDemoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="fas fa-cloud-download-alt me-2"></i>Cargar Rutina Demo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="filterDemoInput" class="form-control bg-dark text-white border-secondary"
+                        placeholder="Filtrar por nombre, nivel u objetivo..." onkeyup="filterDemoRoutines()">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover small">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Nivel / Objetivo</th>
+                                <th>Fecha</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="demoRoutinesTableBody">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -130,6 +249,14 @@
 
 <script>
     let currentRoutineData = null;
+
+    function resetGenerator() {
+        currentRoutineData = null;
+        document.getElementById('resultState').classList.add('d-none');
+        document.getElementById('emptyState').classList.remove('d-none');
+        document.getElementById('routineForm').reset();
+        toggleSaveButton(false);
+    }
 
     document.getElementById('routineForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -232,6 +359,30 @@
         });
     }
 
+    function toggleAllAccordions(expand) {
+
+        const accordionItems = document.querySelectorAll('#sessionsContainer .accordion-collapse');
+
+        accordionItems.forEach(item => {
+
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(item, { toggle: false });
+
+            if (expand) {
+
+                bsCollapse.show();
+
+            } else {
+
+                bsCollapse.hide();
+
+            }
+
+        });
+
+    }
+
+    
+
     function toggleSaveButton(enable) {
         const btn = document.getElementById('saveDemoBtn');
         if (btn) {
@@ -245,7 +396,8 @@
         const textarea = document.getElementById('jsonTextarea');
         textarea.value = JSON.stringify(currentRoutineData, null, 4);
 
-        const modal = new bootstrap.Modal(document.getElementById('jsonModal'));
+        const modalEl = document.getElementById('jsonModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 
@@ -304,6 +456,538 @@
             }
         }
     }
+
+    // --- Exercise Validation Logic ---
+    let exercisesValidationState = [];
+
+    async function showValidationModal() {
+        if (!currentRoutineData) {
+            showAlertModal("Error", "Primero genera una rutina", "warning");
+            return;
+        }
+
+        const modalEl = document.getElementById('validationModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        await refreshValidationData();
+    }
+
+    async function refreshValidationData() {
+        const tableBody = document.getElementById('validationTableBody');
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div> Cargando...</td></tr>';
+
+        const names = new Set();
+        const exMap = new Map();
+        currentRoutineData.sessions.forEach(s => {
+            s.exercises.forEach(ex => {
+                const cleanName = ex.name.trim();
+                names.add(cleanName);
+                // Store body_part and description (notes)
+                if (!exMap.has(cleanName)) {
+                    exMap.set(cleanName, {
+                        body_part: ex.muscleGroup || 'Other',
+                        description: ex.notes || ''
+                    });
+                }
+            });
+        });
+
+        try {
+            const resp = await fetch('/api/check_exercises', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ names: Array.from(names) })
+            });
+            const result = await resp.json();
+
+            if (resp.ok) {
+                exercisesValidationState = result.exercises.map(ex => {
+                    const extra = exMap.get(ex.name.trim()) || {};
+                    return {
+                        ...ex,
+                        body_part: extra.body_part || 'Other',
+                        description: extra.description || ''
+                    };
+                });
+                renderValidationTable();
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="3" class="text-danger">Error: ${result.error}</td></tr>`;
+            }
+        } catch (err) {
+            tableBody.innerHTML = `<tr><td colspan="3" class="text-danger">Error de conexión</td></tr>`;
+        }
+    }
+
+    function renderValidationTable() {
+        const tableBody = document.getElementById('validationTableBody');
+        tableBody.innerHTML = '';
+
+        let newCount = 0;
+        exercisesValidationState.forEach((ex, idx) => {
+            if (!ex.exists) newCount++;
+            const row = `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="ex-check" data-idx="${idx}" 
+                            ${ex.exists ? 'disabled' : ''} onchange="updateValidationUI()">
+                    </td>
+                    <td>
+                        <div class="fw-bold text-white">${ex.name}</div>
+                        <div class="text-info x-small fw-bold">${ex.body_part}</div>
+                        <div class="text-secondary x-small mt-1" style="font-style: italic; opacity: 0.8;">
+                            ${ex.description || '<span class="opacity-50">Sin notas adicionales</span>'}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        ${ex.exists
+                    ? '<span class="text-success" title="Existe en catálogo"><i class="fas fa-check-circle fs-5"></i></span>'
+                    : '<span class="text-warning" title="Nuevo (no existe)"><i class="fas fa-exclamation-triangle fs-5"></i></span>'}
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+
+        document.getElementById('validationStats').innerText = `${newCount} ejercicios nuevos.`;
+        updateValidationUI();
+    }
+
+    function toggleAllEx(el) {
+        document.querySelectorAll('.ex-check:not(:disabled)').forEach(cb => cb.checked = el.checked);
+        updateValidationUI();
+    }
+
+    function selectAllNewExercises(check) {
+        document.querySelectorAll('.ex-check:not(:disabled)').forEach(cb => cb.checked = check);
+        document.getElementById('selectAllEx').checked = check;
+        updateValidationUI();
+    }
+
+    function updateValidationUI() {
+        const selected = document.querySelectorAll('.ex-check:checked').length;
+        document.getElementById('btnAddSelectedToCatalog').disabled = selected === 0;
+    }
+
+    async function addSelectedExercisesToCatalog() {
+        const selectedIndices = Array.from(document.querySelectorAll('.ex-check:checked')).map(cb => parseInt(cb.dataset.idx));
+        const toAdd = selectedIndices.map(i => ({
+            name: exercisesValidationState[i].name,
+            body_part: exercisesValidationState[i].body_part,
+            description: exercisesValidationState[i].description
+        }));
+
+        if (toAdd.length === 0) return;
+
+        try {
+            const btn = document.getElementById('btnAddSelectedToCatalog');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Agregando...';
+
+            const resp = await fetch('/api/add_exercises', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exercises: toAdd })
+            });
+            const result = await resp.json();
+
+            if (resp.ok) {
+                showAlertModal("ñ‰xito", result.message, "success");
+                // Refresh list only (no need to open modal again)
+                refreshValidationData();
+            } else {
+                showAlertModal("Error", result.error, "danger");
+            }
+        } catch (err) {
+            showAlertModal("Error", "Error de conexión", "danger");
+        } finally {
+            const btn = document.getElementById('btnAddSelectedToCatalog');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus-circle me-1"></i> Agregar Seleccionados al Catálogo';
+        }
+    }
+
+    // --- Daily Routines Logic ---
+    let dailyRoutinesData = [];
+
+    async function showDailyRoutinesModal() {
+        if (!currentRoutineData) {
+            showAlertModal("Error", "Primero genera una rutina", "warning");
+            return;
+        }
+
+        const modalEl = document.getElementById('dailyRoutinesModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        // Convert currentRoutineData to daily routines format
+        dailyRoutinesData = await convertToDailyRoutines(currentRoutineData);
+        renderDailyTabs();
+    }
+
+    async function convertToDailyRoutines(data) {
+        const allNames = new Set();
+        data.sessions.forEach(s => s.exercises.forEach(ex => allNames.add(ex.name)));
+
+        let idMap = new Map();
+        try {
+            const resp = await fetch('/api/check_exercises', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ names: Array.from(allNames) })
+            });
+            const result = await resp.json();
+            if (resp.ok) {
+                result.exercises.forEach(ex => {
+                    if (ex.exercise_id) idMap.set(ex.name, ex.exercise_id);
+                });
+            }
+        } catch (e) { }
+
+        const days = data.sessions.map((session, sIdx) => {
+            const items = [];
+            let now = Date.now();
+
+            session.exercises.forEach((ex, exIdx) => {
+                items.push({
+                    item_type: 'exercise',
+                    _id: `temp_${now}_${sIdx}_${exIdx}`,
+                    exercise_id: idMap.get(ex.name) || null,
+                    exercise_name: ex.name,
+                    exercise_type: 'weight',
+                    equipment: '',
+                    video_url: '',
+                    body_part: ex.muscleGroup || '',
+                    substitutes: [],
+                    target_sets: parseInt(ex.sets) || 3,
+                    target_reps: ex.reps,
+                    rest_seconds: parseInt(ex.restSeconds) || 60,
+                    target_time_seconds: 0,
+                    group_id: '',
+                    comment: ex.notes || ''
+                });
+            });
+
+            return {
+                day_label: session.day,
+                routine: {
+                    name: `AI - ${session.day}`,
+                    description: `${data.routineName} | ${data.microcyclePhase}`,
+                    routine_day: session.day.split(' ')[0],
+                    routine_body_parts: Array.from(new Set(session.exercises.map(ex => ex.muscleGroup))),
+                    items: items
+                }
+            };
+        });
+
+        return days;
+    }
+
+    function renderDailyTabs() {
+        const tabs = document.getElementById('daysTabs');
+        const panes = document.getElementById('daysTabContent');
+        tabs.innerHTML = '';
+        panes.innerHTML = '';
+
+        dailyRoutinesData.forEach((day, index) => {
+            const activeClass = index === 0 ? 'active' : '';
+            const showClass = index === 0 ? 'show active' : '';
+            const tabId = `d-tab-${index}`;
+            const paneId = `d-pane-${index}`;
+            const label = day.day_label || `Día ${index + 1}`;
+
+            tabs.innerHTML += `
+                <li class="nav-item">
+                    <button class="nav-link ${activeClass}" id="${tabId}" data-bs-toggle="tab"
+                        data-bs-target="#${paneId}" type="button">${label}</button>
+                </li>
+            `;
+
+            panes.innerHTML += `
+                <div class="tab-pane fade ${showClass}" id="${paneId}">
+                    ${renderDailyDayTable(day.routine, index)}
+                </div>
+            `;
+        });
+    }
+
+    function renderDailyDayTable(routine, dayIndex) {
+        const items = routine.items || [];
+        if (!items.length) return '<div class="text-secondary p-3">Sin ejercicios. Haz clic en "Agregar Ejercicio".</div>';
+
+        const rows = items.map((item, idx) => `
+            <tr>
+                <td class="text-center align-middle">${idx + 1}</td>
+                <td class="align-middle">
+                    <div class="fw-bold text-white">${item.exercise_name}</div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="text-info x-small fw-bold text-uppercase">${item.body_part || 'Otros'}</span>
+                    </div>
+                    <div class="text-secondary x-small ${item.exercise_id ? 'text-success' : 'text-danger'}">
+                        ${item.exercise_id ? '<i class="fas fa-database me-1"></i>En catálogo' : '<i class="fas fa-times me-1"></i>No existe'}
+                    </div>
+                </td>
+                <td class="align-middle">${item.target_sets}</td>
+                <td class="align-middle">${item.target_reps}</td>
+                <td class="align-middle">${item.rest_seconds}s</td>
+                <td class="align-middle text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning" onclick="moveExerciseInDay(${dayIndex}, ${idx}, -1)" title="Subir">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="moveExerciseInDay(${dayIndex}, ${idx}, 1)" title="Bajar">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="openExerciseSearch(${dayIndex}, ${idx}, 'replace')" title="Cambiar">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="removeExerciseFromDay(${dayIndex}, ${idx})" title="Remover">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="p-2">
+                <div class="mb-2 text-info small border-bottom border-secondary pb-1">${routine.description}</div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 small">
+                        <thead>
+                            <tr>
+                                <th class="text-center">#</th>
+                                <th>Ejercicio / Grupo</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>Descanso</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    function showDayJson() {
+        const activePane = document.querySelector('#daysTabContent .tab-pane.active');
+        if (!activePane) return;
+        const activeIndex = Array.from(activePane.parentElement.children).indexOf(activePane);
+        const routine = dailyRoutinesData[activeIndex]?.routine;
+        if (!routine) return;
+
+        const textarea = document.getElementById('jsonTextarea');
+        textarea.value = JSON.stringify(routine, null, 4);
+
+        const modalEl = document.getElementById('jsonModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    async function saveCurrentDayRoutine() {
+        const activePane = document.querySelector('#daysTabContent .tab-pane.active');
+        if (!activePane) return;
+        const activeIndex = Array.from(activePane.parentElement.children).indexOf(activePane);
+        const routine = dailyRoutinesData[activeIndex]?.routine;
+
+        if (!routine) return;
+
+        const missing = routine.items.filter(it => !it.exercise_id);
+        if (missing.length > 0) {
+            showAlertModal("Atención", "Hay ejercicios que no existen en el catálogo. Debes agregarlos primero en 'Validar Ejercicios'.", "warning");
+            return;
+        }
+
+        try {
+            const btn = document.getElementById('btnSaveDailyRoutine');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+
+            // Actualizar body parts basado en los items actuales
+            routine.routine_body_parts = Array.from(new Set(routine.items.map(ex => ex.body_part).filter(Boolean)));
+
+            const resp = await fetch('/api/save_routine_mongo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(routine)
+            });
+            const result = await resp.json();
+
+            if (resp.ok) {
+                showAlertModal("Guardado", "Rutina de día guardada correctamente", "success");
+            } else {
+                showAlertModal("Error", result.error, "danger");
+            }
+        } catch (err) {
+            showAlertModal("Error", "Error de conexión", "danger");
+        } finally {
+            const btn = document.getElementById('btnSaveDailyRoutine');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i> Guardar Rutina (Día Activo)';
+        }
+    }
+    // --- Load Demo Filtering Logic ---
+    let allDemoRoutines = [];
+
+    async function showLoadDemoModal() {
+        const modalEl = document.getElementById('loadDemoModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        const tableBody = document.getElementById('demoRoutinesTableBody');
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div> Cargando...</td></tr>';
+        document.getElementById('filterDemoInput').value = '';
+
+        try {
+            const resp = await fetch('/api/demo_routines');
+            const result = await resp.json();
+
+            if (resp.ok) {
+                allDemoRoutines = result.routines;
+                renderDemoRoutinesTable(allDemoRoutines);
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-danger">Error: ${result.error}</td></tr>`;
+            }
+        } catch (err) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-danger">Error de conexión</td></tr>`;
+        }
+    }
+
+    function renderDemoRoutinesTable(routines) {
+        const tableBody = document.getElementById('demoRoutinesTableBody');
+        if (routines.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">No hay rutinas que coincidan.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = routines.map(r => {
+            const date = r.created_at ? new Date(r.created_at).toLocaleString() : '-';
+            return `
+                <tr>
+                    <td>${r.routineName || 'Sin nombre'}</td>
+                    <td>${r.level || '-'} / ${r.goal || '-'}</td>
+                    <td><span class="x-small text-secondary">${date}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-primary" onclick="loadDemoRoutine('${r._id}')">
+                            Cargar
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filterDemoRoutines() {
+        const query = document.getElementById('filterDemoInput').value.toLowerCase();
+        const filtered = allDemoRoutines.filter(r => {
+            const name = (r.routineName || '').toLowerCase();
+            const level = (r.level || '').toLowerCase();
+            const goal = (r.goal || '').toLowerCase();
+            return name.includes(query) || level.includes(query) || goal.includes(query);
+        });
+        renderDemoRoutinesTable(filtered);
+    }
+
+    async function loadDemoRoutine(id) {
+        try {
+            const resp = await fetch(`/api/demo_routines/${id}`);
+            const result = await resp.json();
+
+            if (resp.ok) {
+                currentRoutineData = result;
+                renderRoutine(result);
+                toggleSaveButton(true);
+
+                const modalEl = document.getElementById('loadDemoModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.hide();
+
+                showAlertModal("Cargado", "Rutina demo cargada correctamente", "success");
+            } else {
+                showAlertModal("Error", result.error, "danger");
+            }
+        } catch (err) {
+            showAlertModal("Error", "Error de conexión", "danger");
+        }
+    }
+    // --- Routine Editing Logic ---
+    let pendingExerciseSelection = null; // { dayIdx, exIdx, action }
+
+    function openExerciseSearch(dayIdx, exIdx, action) {
+        pendingExerciseSelection = { dayIdx, exIdx, action };
+        const modalEl = document.getElementById('exerciseSearchModal');
+        const frame = document.getElementById('exerciseSearchFrame');
+        if (!modalEl || !frame) return;
+
+        frame.src = "/workout/exercises?embed=1";
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            frame.src = "";
+        }, { once: true });
+    }
+
+    function addExerciseToActiveDay() {
+        const activePane = document.querySelector('#daysTabContent .tab-pane.active');
+        if (!activePane) return;
+        const activeIndex = Array.from(activePane.parentElement.children).indexOf(activePane);
+        openExerciseSearch(activeIndex, -1, 'add');
+    }
+
+    function removeExerciseFromDay(dayIdx, exIdx) {
+        if (!confirm('¿Seguro que deseas eliminar este ejercicio de la rutina?')) return;
+        dailyRoutinesData[dayIdx].routine.items.splice(exIdx, 1);
+        renderDailyTabs();
+    }
+
+    function moveExerciseInDay(dayIdx, exIdx, direction) {
+        const items = dailyRoutinesData[dayIdx].routine.items;
+        const newIdx = exIdx + direction;
+        if (newIdx < 0 || newIdx >= items.length) return;
+
+        // Swap
+        [items[exIdx], items[newIdx]] = [items[newIdx], items[exIdx]];
+        renderDailyTabs();
+    }
+
+    window.addEventListener("message", (event) => {
+        const data = event.data || {};
+        if (data.type === "rm-exercise-select" && data.exercise) {
+            handleExerciseSelection(data.exercise);
+        }
+    });
+
+    function handleExerciseSelection(ex) {
+        if (!pendingExerciseSelection) return;
+        const { dayIdx, exIdx, action } = pendingExerciseSelection;
+        const day = dailyRoutinesData[dayIdx];
+
+        const newItem = {
+            item_type: 'exercise',
+            exercise_id: ex.id,
+            exercise_name: ex.name,
+            body_part: ex.body_part,
+            target_sets: 3,
+            target_reps: "10-12",
+            rest_seconds: 60,
+            notes: "Cambio manual"
+        };
+
+        if (action === 'replace') {
+            day.routine.items[exIdx] = newItem;
+        } else if (action === 'add') {
+            day.routine.items.push(newItem);
+        }
+
+        renderDailyTabs();
+        const modalEl = document.getElementById('exerciseSearchModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.hide();
+        pendingExerciseSelection = null;
+    }
 </script>
 
 <style>
@@ -314,5 +998,43 @@
     .accordion-button::after {
         filter: invert(1);
     }
+    #jsonModal { z-index: 2050 !important; }
 </style>
+
+<!-- Modal Buscar Ejercicio (Catálogo) -->
+<div class="modal fade" id="exerciseSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary shadow-lg">
+            <div class="modal-header border-secondary text-white">
+                <h5 class="modal-title"><i class="fas fa-search me-2"></i>Seleccionar Ejercicio del Catálogo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="exerciseSearchFrame" src="" style="width: 100%; height: 75vh; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal JSON -->
+<div class="modal fade" id="jsonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">JSON de la Rutina</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="jsonTextarea" class="form-control bg-dark text-white border-secondary" rows="15"
+                    style="font-family: monospace; font-size: 0.9em;"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="copyJsonFromModal()">Copiar al
+                    Portapapeles</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

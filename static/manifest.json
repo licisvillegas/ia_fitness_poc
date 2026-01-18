@@ -1,0 +1,21 @@
+{
+    "name": "Synapse Fit",
+    "short_name": "SynapseFit",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/static/images/icon/synapse_fit_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/images/icon/synapse_fit_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

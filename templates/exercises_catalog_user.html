@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+﻿{% extends 'layout.html' %}
 
 {% block title %}AI Fitness - Ver Ejercicios{% endblock %}
 
@@ -293,7 +293,7 @@
     async function loadExercises() {
         showLoader("Sincronizando catálogo...");
         try {
-            const res = await fetch("/workout/api/exercises");
+            const res = await fetch("/workout/api/exercises?limit=1000");
             allExercises = await res.json();
             filterExercises();
         } catch (e) { console.error(e); }
@@ -568,7 +568,7 @@
 
     async function confirmSelection(ex) {
         const name = ex.name || "este ejercicio";
-        const message = `¿Usar "${name}" en la calculadora RM?`;
+        const message = `¿Deseas seleccionar "${name}"?`;
         if (window.showConfirmModal) {
             return await window.showConfirmModal("Confirmar ejercicio", message, "success");
         }
@@ -584,7 +584,8 @@
                 type: "rm-exercise-select",
                 exercise: {
                     name: ex.name,
-                    id: ex._id
+                    id: ex._id,
+                    body_part: ex.body_part
                 }
             }, "*");
         }

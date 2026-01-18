@@ -547,7 +547,7 @@
         renderExercises(filtered);
     }
 
-    function resetFilters() {
+    async function resetFilters() {
         const mainSearch = document.getElementById("mainSearch");
         const filterBodyPart = document.getElementById("filterBodyPart");
         const filterEquipment = document.getElementById("filterEquipment");
@@ -558,7 +558,8 @@
         if (filterEquipment) filterEquipment.value = "";
         if (filterType) filterType.value = "";
 
-        renderExercises(allExercises);
+        // Reload from database to ensure up-to-date data
+        await loadExercises();
     }
 
     function populateSubstitutes(exercises, currentId, selectedIds = [], bodyPart = null) {

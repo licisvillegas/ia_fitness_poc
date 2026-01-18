@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Oblicuos': 'Twists y planchas laterales son ideales para oblicuos.',
         'Antebrazos': 'Farmer walks y curls inversos fortalecen el agarre.',
         'Gemelos': 'Elevaciones de tal?n ayudan a fortalecer los gemelos.',
-        'Gluteos': 'Hip thrust y sentadillas profundas activan gl?teos.',
+        'Gluteos': 'Hip thrust y sentadillas profundas activan Glúteos.',
         'Abductores': 'Abducciones con banda y pasos laterales activan los abductores.',
         'Aductores': 'Sentadillas sumo y aducciones con polea activan la zona interna.',
         'Dorsal ancho': 'Dominadas y remos son fundamentales para la amplitud.',
@@ -51,19 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const muscleDescriptions = {
-        'hombros': '<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripci?n y partes:</strong> M?sculo que envuelve la articulaci?n del hombro, dando forma redondeada.<br>&bull; <strong>Deltoides anterior:</strong> Parte frontal (empujes).<br>&bull; <strong>Deltoides lateral (medial):</strong> Parte lateral (anchura).<br>&bull; <strong>Deltoides posterior:</strong> Parte trasera (tracci?n).',
-        'pectorales': '<strong>Nombres alternativos:</strong> Pectorales, "Pecs", torso anterior.<br><br><strong>Descripci?n y partes:</strong> M?sculo grande en la parte frontal de la caja tor?cica. Es clave para movimientos de empuje.<br>&bull; <strong>Pectoral mayor:</strong> Se divide funcionalmente en fasc?culo clavicular (parte superior), esternocostal (parte media) y abdominal (parte inferior).<br>&bull; <strong>Pectoral menor:</strong> Situado debajo del mayor.',
-        'espalda': '<strong>Nombres alternativos:</strong> Dorsales, espalda alta/media/baja.<br><br><strong>Descripci?n y partes:</strong> Grupo complejo que cubre la parte posterior del tronco.<br>&bull; <strong>Dorsal ancho (lats):</strong> Da la forma de "V".<br>&bull; <strong>Trapecios:</strong> Parte superior (cuello/hombros), media e inferior.<br>&bull; <strong>Romboides:</strong> Entre los om?platos.<br>&bull; <strong>Erectores espinales / lumbares:</strong> Zona baja de la espalda (estabilidad).',
-        'biceps': '<strong>Nombres alternativos:</strong> B?ceps braquial, "conejos" (coloquial).<br><br><strong>Descripci?n y partes:</strong> M?sculo de dos cabezas en la parte frontal del brazo.<br>&bull; <strong>Cabeza larga:</strong> Parte externa.<br>&bull; <strong>Cabeza corta:</strong> Parte interna.<br>&bull; <strong>Braquial:</strong> M?sculo profundo situado bajo el b?ceps (da volumen).',
-        'triceps': '<strong>Nombres alternativos:</strong> Tr?ceps braquial.<br><br><strong>Descripci?n y partes:</strong> M?sculo de tres cabezas en la parte posterior del brazo. Ocupa 2/3 del volumen del brazo.<br>&bull; <strong>Cabeza larga:</strong> La m?s grande, parte interna.<br>&bull; <strong>Cabeza lateral:</strong> La parte externa visible.<br>&bull; <strong>Cabeza medial:</strong> Situada m?s abajo, cerca del codo.',
-        'antebrazos': '<strong>Nombres alternativos:</strong> Flexores/extensores de la mu?eca.<br><br><strong>Descripci?n y partes:</strong> Conjunto de m?ltiples m?sculos peque?os responsables del agarre.<br>&bull; <strong>Braquiorradial:</strong> El m?sculo m?s visible en la parte superior del antebrazo.<br>&bull; <strong>Flexores y extensores:</strong> Grupos musculares para mover dedos y mu?eca.',
-        'abdominales': '<strong>Nombres alternativos:</strong> Core, recto abdominal, "six-pack", abdominales.<br><br><strong>Descripci?n y partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>&bull; <strong>Recto abdominal:</strong> La "tableta" frontal.<br>&bull; <strong>Oblicuos (externos e internos):</strong> Los laterales del torso.<br>&bull; <strong>Transverso:</strong> M?sculo profundo (faja natural).<br>&bull; <strong>Serratos:</strong> M?sculos en forma de "dientes" sobre las costillas.',
-        'gluteos': '<strong>Nombres alternativos:</strong> Nalgas, trasero.<br><br><strong>Descripci?n y partes:</strong> El grupo muscular m?s grande y fuerte del cuerpo.<br>&bull; <strong>Gl?teo mayor:</strong> La parte principal y m?s visible.<br>&bull; <strong>Gl?teo medio:</strong> Parte lateral superior (estabilidad de cadera).<br>&bull; <strong>Gl?teo menor:</strong> Profundo, bajo el medio.',
-        'cuadriceps': '<strong>Nombres alternativos:</strong> Cu?driceps femoral, muslo anterior.<br><br><strong>Descripci?n y partes:</strong> Grupo de cuatro m?sculos en la parte frontal del muslo.<br>&bull; <strong>Recto femoral:</strong> El m?sculo central que cruza la cadera.<br>&bull; <strong>Vasto lateral:</strong> Parte externa (da la curva exterior).<br>&bull; <strong>Vasto medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>&bull; <strong>Vasto intermedio:</strong> Profundo, bajo el recto femoral.',
-        'abductores': '<strong>Nombres alternativos:</strong> Abducci?n de cadera, muslo externo.<br><br><strong>Descripci?n y partes:</strong> Grupo muscular en la parte externa de la cadera y muslo que estabiliza la pelvis.<br>&bull; <strong>Gl?teo medio:</strong> Principal abductor de la cadera.<br>&bull; <strong>Tensor de la fascia lata:</strong> Aporta estabilidad lateral.',
-        'aductores': '<strong>Nombres alternativos:</strong> Aductores de cadera, muslo interno.<br><br><strong>Descripci?n y partes:</strong> Grupo muscular que aproxima la pierna al eje medio del cuerpo y estabiliza la pelvis.<br>&bull; <strong>Aductor largo:</strong> M?s superficial en el muslo interno.<br>&bull; <strong>Aductor mayor:</strong> Volumen principal en la parte interna.',
-        'femoral': '<strong>Nombres alternativos:</strong> Femorales, isquiosurales, isquios, parte posterior del muslo.<br><br><strong>Descripci?n y partes:</strong> Grupo muscular en la parte trasera del muslo.<br>&bull; <strong>B?ceps femoral:</strong> Parte externa (cabeza larga y corta).<br>&bull; <strong>Semitendinoso y semimembranoso:</strong> Parte interna.',
-        'gemelos': '<strong>Nombres alternativos:</strong> Tr?ceps sural, gemelos, chamorros (coloquial en MX).<br><br><strong>Descripci?n y partes:</strong> Parte posterior de la pierna baja.<br>&bull; <strong>Gastrocnemio (gemelos):</strong> El m?sculo visible con forma de diamante (cabeza interna y externa).<br>&bull; <strong>S?leo:</strong> M?sculo plano situado debajo de los gemelos (visible a los lados del tobillo).'
+        'hombros': '<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripción y partes:</strong> músculo que envuelve la articulación del hombro, dando forma redondeada.<br>&bull; <strong>Deltoides anterior:</strong> Parte frontal (empujes).<br>&bull; <strong>Deltoides lateral (medial):</strong> Parte lateral (anchura).<br>&bull; <strong>Deltoides posterior:</strong> Parte trasera (tracción).',
+        'pectorales': '<strong>Nombres alternativos:</strong> Pectorales, "Pecs", torso anterior.<br><br><strong>Descripción y partes:</strong> músculo grande en la parte frontal de la caja torácica. Es clave para movimientos de empuje.<br>&bull; <strong>Pectoral mayor:</strong> Se divide funcionalmente en fasc?culo clavicular (parte superior), esternocostal (parte media) y abdominal (parte inferior).<br>&bull; <strong>Pectoral menor:</strong> Situado debajo del mayor.',
+        'espalda': '<strong>Nombres alternativos:</strong> Dorsales, espalda alta/media/baja.<br><br><strong>Descripción y partes:</strong> Grupo complejo que cubre la parte posterior del tronco.<br>&bull; <strong>Dorsal ancho (lats):</strong> Da la forma de "V".<br>&bull; <strong>Trapecios:</strong> Parte superior (cuello/hombros), media e inferior.<br>&bull; <strong>Romboides:</strong> Entre los omóplatos.<br>&bull; <strong>Erectores espinales / lumbares:</strong> Zona baja de la espalda (estabilidad).',
+        'biceps': '<strong>Nombres alternativos:</strong> Bíceps braquial, "conejos" (coloquial).<br><br><strong>Descripción y partes:</strong> músculo de dos cabezas en la parte frontal del brazo.<br>&bull; <strong>Cabeza larga:</strong> Parte externa.<br>&bull; <strong>Cabeza corta:</strong> Parte interna.<br>&bull; <strong>Braquial:</strong> músculo profundo situado bajo el Bíceps (da volumen).',
+        'triceps': '<strong>Nombres alternativos:</strong> Tríceps braquial.<br><br><strong>Descripción y partes:</strong> músculo de tres cabezas en la parte posterior del brazo. Ocupa 2/3 del volumen del brazo.<br>&bull; <strong>Cabeza larga:</strong> La más grande, parte interna.<br>&bull; <strong>Cabeza lateral:</strong> La parte externa visible.<br>&bull; <strong>Cabeza medial:</strong> Situada más abajo, cerca del codo.',
+        'antebrazos': '<strong>Nombres alternativos:</strong> Flexores/extensores de la muñeca.<br><br><strong>Descripción y partes:</strong> Conjunto de múltiples músculos pequeños responsables del agarre.<br>&bull; <strong>Braquiorradial:</strong> El músculo más visible en la parte superior del antebrazo.<br>&bull; <strong>Flexores y extensores:</strong> Grupos musculares para mover dedos y muñeca.',
+        'abdominales': '<strong>Nombres alternativos:</strong> Core, recto abdominal, "six-pack", abdominales.<br><br><strong>Descripción y partes:</strong> Centro de gravedad y estabilidad del cuerpo.<br>&bull; <strong>Recto abdominal:</strong> La "tableta" frontal.<br>&bull; <strong>Oblicuos (externos e internos):</strong> Los laterales del torso.<br>&bull; <strong>Transverso:</strong> músculo profundo (faja natural).<br>&bull; <strong>Serratos:</strong> músculos en forma de "dientes" sobre las costillas.',
+        'gluteos': '<strong>Nombres alternativos:</strong> Nalgas, trasero.<br><br><strong>Descripción y partes:</strong> El grupo muscular más grande y fuerte del cuerpo.<br>&bull; <strong>Glúteo mayor:</strong> La parte principal y más visible.<br>&bull; <strong>Glúteo medio:</strong> Parte lateral superior (estabilidad de cadera).<br>&bull; <strong>Glúteo menor:</strong> Profundo, bajo el medio.',
+        'cuadriceps': '<strong>Nombres alternativos:</strong> Cu?driceps femoral, muslo anterior.<br><br><strong>Descripción y partes:</strong> Grupo de cuatro músculos en la parte frontal del muslo.<br>&bull; <strong>Recto femoral:</strong> El músculo central que cruza la cadera.<br>&bull; <strong>Vasto lateral:</strong> Parte externa (da la curva exterior).<br>&bull; <strong>Vasto medial:</strong> Parte interna (forma de gota cerca de la rodilla).<br>&bull; <strong>Vasto intermedio:</strong> Profundo, bajo el recto femoral.',
+        'abductores': '<strong>Nombres alternativos:</strong> Abducción de cadera, muslo externo.<br><br><strong>Descripción y partes:</strong> Grupo muscular en la parte externa de la cadera y muslo que estabiliza la pelvis.<br>&bull; <strong>Glúteo medio:</strong> Principal abductor de la cadera.<br>&bull; <strong>Tensor de la fascia lata:</strong> Aporta estabilidad lateral.',
+        'aductores': '<strong>Nombres alternativos:</strong> Aductores de cadera, muslo interno.<br><br><strong>Descripción y partes:</strong> Grupo muscular que aproxima la pierna al eje medio del cuerpo y estabiliza la pelvis.<br>&bull; <strong>Aductor largo:</strong> más superficial en el muslo interno.<br>&bull; <strong>Aductor mayor:</strong> Volumen principal en la parte interna.',
+        'femoral': '<strong>Nombres alternativos:</strong> Femorales, isquiosurales, isquios, parte posterior del muslo.<br><br><strong>Descripción y partes:</strong> Grupo muscular en la parte trasera del muslo.<br>&bull; <strong>Bíceps femoral:</strong> Parte externa (cabeza larga y corta).<br>&bull; <strong>Semitendinoso y semimembranoso:</strong> Parte interna.',
+        'gemelos': '<strong>Nombres alternativos:</strong> Tríceps sural, gemelos, chamorros (coloquial en MX).<br><br><strong>Descripción y partes:</strong> Parte posterior de la pierna baja.<br>&bull; <strong>Gastrocnemio (gemelos):</strong> El músculo visible con forma de diamante (cabeza interna y externa).<br>&bull; <strong>S?leo:</strong> músculo plano situado debajo de los gemelos (visible a los lados del tobillo).'
     };
 
     const glossaryMap = {
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             muscleName.textContent = 'Ninguno';
         }
         if (muscleTip) {
-            muscleTip.textContent = 'Selecciona un m?sculo para mostrar tips de entrenamiento.';
+            muscleTip.textContent = 'Selecciona un músculo para mostrar tips de entrenamiento.';
         }
         muscleImageCard?.classList.add('d-none');
     }
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     muscles.forEach(muscle => {
-        const nameAttr = muscle.getAttribute('data-name') || 'M?sculo';
+        const nameAttr = muscle.getAttribute('data-name') || 'músculo';
         muscle.setAttribute('tabindex', '0');
         muscle.setAttribute('role', 'button');
         muscle.setAttribute('aria-label', nameAttr);
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             muscleName.textContent = name;
         }
         if (muscleTip) {
-            muscleTip.textContent = muscleTips[name] || 'Explora ejercicios enfocados en este m?sculo.';
+            muscleTip.textContent = muscleTips[name] || 'Explora ejercicios enfocados en este músculo.';
         }
 
         if (muscleImages[name] && muscleImage && muscleImageCard) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!muscle) {
             return;
         }
-        const name = muscle.getAttribute('data-name') || 'M?sculo';
+        const name = muscle.getAttribute('data-name') || 'músculo';
         selectMuscle(name);
     });
 
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!muscle) {
             return;
         }
-        const name = muscle.getAttribute('data-name') || 'M?sculo';
+        const name = muscle.getAttribute('data-name') || 'músculo';
         event.preventDefault();
         selectMuscle(name);
     });
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const mapName = muscleName?.textContent || 'M?sculo';
+            const mapName = muscleName?.textContent || 'músculo';
             modalImage.src = muscleImage.src;
             modalTitle.textContent = mapName;
             modalTip.textContent = muscleTips[mapName] || '';

@@ -16,6 +16,11 @@
     <link href="/static/css/sidebar.css" rel="stylesheet">
     <link href="/static/css/loader.css" rel="stylesheet">
 
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/static/images/icon/synapse_fit_192.png">
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -207,6 +212,15 @@
                 setWorkingUser(null);
             });
         })();
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('PWA Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Error registrando PWA Service Worker:', err));
+            });
+        }
     </script>
 </body>
 

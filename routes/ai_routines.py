@@ -6,6 +6,7 @@ from utils.db_helpers import log_agent_execution
 from ai_agents.routine_agent import RoutineAgent
 from ai_agents.routine_agent_mongo import MongoRoutineAgent
 from datetime import datetime
+import re
 
 
 
@@ -190,3 +191,122 @@ def api_save_routine_mongo():
     except Exception as e:
         logger.error(f"Error guardando rutina mongo: {e}", exc_info=True)
         return jsonify({"error": "Error interno guardando rutina"}), 500
+
+@ai_routines_bp.post("/api/check_exercises")
+def api_check_exercises():
+    try:
+        data = request.get_json() or {}
+        exercise_names = data.get("names", [])
+        if not exercise_names:
+            return jsonify({"exercises": []}), 200
+
+        if extensions.db is None:
+            return jsonify({"error": "Base de datos no disponible"}), 503
+
+        results = []
+        for name in exercise_names:
+            clean_name = name.strip()
+            # Escape for regex and Case insensitive check, allow optional surrounding whitespace
+            escaped_name = re.escape(clean_name)
+            ex = extensions.db.exercises.find_one({"name": {"$regex": f"^\s*{escaped_name}\s*$", "$options": "i"}})
+            results.append({
+                "name": name,
+                "exists": bool(ex),
+                "exercise_id": str(ex["_id"]) if ex else None
+            })
+        
+        return jsonify({"exercises": results}), 200
+    except Exception as e:
+        logger.error(f"Error checking exercises: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+
+@ai_routines_bp.post("/api/add_exercises")
+def api_add_exercises():
+    # Only admins can add exercises to global catalog
+    from utils.auth_helpers import check_admin_access
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        data = request.get_json() or {}
+        exercises_to_add = data.get("exercises", [])
+        if not exercises_to_add:
+            return jsonify({"message": "Nada que agregar"}), 200
+
+        if extensions.db is None:
+            return jsonify({"error": "Base de datos no disponible"}), 503
+
+        added_count = 0
+        for item in exercises_to_add:
+            name = item.get("name") if isinstance(item, dict) else item
+            if not name: continue
+            
+            clean_name = name.strip()
+            escaped_name = re.escape(clean_name)
+            # Double check if exists with robust search
+            ex = extensions.db.exercises.find_one({"name": {"$regex": f"^\s*{escaped_name}\s*$", "$options": "i"}})
+            if not ex:
+                new_ex = {
+                    "name": name,
+                    "body_part": item.get("body_part", "Other") if isinstance(item, dict) else "Other",
+                    "type": "weight",
+                    "equipment": "dumbbell",
+                    "description": item.get("description") if (isinstance(item, dict) and item.get("description")) else "Agregado automaticamente desde IA Generator",
+                    "video_url": "",
+                    "substitutes": [],
+                    "is_custom": False,
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+                extensions.db.exercises.insert_one(new_ex)
+                added_count += 1
+        
+        return jsonify({"message": f"Se agregaron {added_count} ejercicios"}), 200
+    except Exception as e:
+        logger.error(f"Error adding exercises: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+@ai_routines_bp.get("/api/demo_routines")
+def api_list_demo_routines():
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "Base de datos no disponible"}), 503
+
+        # List basic info
+        cursor = extensions.db.demo_routines.find({}, {
+            "routineName": 1, 
+            "level": 1, 
+            "goal": 1, 
+            "created_at": 1
+        }).sort("created_at", -1)
+        
+        routines = []
+        for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            routines.append(doc)
+            
+        return jsonify({"routines": routines}), 200
+    except Exception as e:
+        logger.error(f"Error listing demo routines: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
+
+@ai_routines_bp.get("/api/demo_routines/<id>")
+def api_get_demo_routine(id):
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "Base de datos no disponible"}), 503
+
+        if not ObjectId.is_valid(id):
+            return jsonify({"error": "ID invalido"}), 400
+
+        doc = extensions.db.demo_routines.find_one({"_id": ObjectId(id)})
+        if not doc:
+            return jsonify({"error": "No encontrada"}), 404
+            
+        doc["_id"] = str(doc["_id"])
+        return jsonify(doc), 200
+    except Exception as e:
+        logger.error(f"Error getting demo routine: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500

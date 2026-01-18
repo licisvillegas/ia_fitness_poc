@@ -523,6 +523,7 @@
             }
 
             if (cursor >= queue.length - 1) {
+                setCursor(queue.length); // Advance to end
                 if (status === 'REST') {
                     setStatus('WORK');
                     setTimeout(checkPendingAndFinish, 100);
@@ -535,13 +536,24 @@
             let nextIdx = cursor + 1;
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
 
-            // Smart skip
-            while (nextIdx < queue.length && (queue[nextIdx].type === 'work' && isStepLogged(queue[nextIdx].id, currentLog))) {
-                console.log("DEBUG: Skipping step:", queue[nextIdx].id);
-                nextIdx++;
+            // Smart skip: Skip completed Work steps AND their following Rest steps
+            while (nextIdx < queue.length) {
+                const step = queue[nextIdx];
+                if (step.type === 'work' && isStepLogged(step.id, currentLog)) {
+                    console.log("DEBUG: Skipping completed step:", step.id);
+                    nextIdx++;
+                    // If the immediate next step is REST, skip it too because its work is done
+                    if (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
+                        console.log("DEBUG: Skipping orphan rest");
+                        nextIdx++;
+                    }
+                } else {
+                    break;
+                }
             }
 
             if (nextIdx >= queue.length) {
+                setCursor(queue.length); // Advance to end (trigger empty state)
                 if (status === 'REST') setStatus('WORK');
                 checkPendingAndFinish();
                 return;
@@ -566,6 +578,7 @@
         const skipToNextWork = () => {
             console.log("DEBUG: Skip to next work. Cursor:", cursor, "QueueLen:", queue.length);
             if (cursor >= queue.length - 1) {
+                setCursor(queue.length); // Advance to end
                 if (status === 'REST') {
                     setStatus('WORK');
                     setTimeout(checkPendingAndFinish, 100);
@@ -579,6 +592,7 @@
                 nextIdx += 1;
             }
             if (nextIdx >= queue.length) {
+                setCursor(queue.length); // Advance to end
                 if (status === 'REST') setStatus('WORK');
                 checkPendingAndFinish();
                 return;
@@ -604,6 +618,7 @@
                     // 1. Calculate next index
                     const nextIdx = cursor + 1;
                     if (nextIdx >= queue.length) {
+                        setCursor(queue.length); // Advance to end
                         if (status === 'REST') {
                             setStatus('WORK');
                             setTimeout(checkPendingAndFinish, 100);

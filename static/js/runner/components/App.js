@@ -4,7 +4,7 @@
 
     window.Runner.components.App = () => {
         const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal } = window.Runner.components;
-        const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending } = useWorkout();
+        const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending, finishWorkout } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
         // showPending state moved to context
 
@@ -16,10 +16,11 @@
         // Auto-Focus on Landscape
         React.useEffect(() => {
             const handleOrientationChange = () => {
-                // Only act if workout is active
-                if (status === 'IDLE' || status === 'FINISHED') return;
-
                 const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+                // Only enforce if different to prevent overriding user manual toggles needlessly
+                // setFocusMode(isLandscape); 
+                // However, simple binding is robust for rotation. 
+                // The key fix is removing [status] dependency so it doesn't fire on workout steps.
                 setFocusMode(isLandscape);
             };
 
@@ -28,10 +29,9 @@
 
             // Listeners
             window.addEventListener('resize', handleOrientationChange);
-            // Optional: window.screen.orientation.addEventListener('change', ...) if supported, but resize is robust enough for layout changes
 
             return () => window.removeEventListener('resize', handleOrientationChange);
-        }, [status]);
+        }, []); // Remove status dependency
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
 
@@ -73,7 +73,20 @@
                             {!focusMode && <MessageBar />}
                             {!focusMode && <NextUpBar />}
                             <NavigationWrapper>
-                                {currentStep && <ActiveExercise focusMode={focusMode} />}
+                                {currentStep ? (
+                                    <ActiveExercise focusMode={focusMode} />
+                                ) : (
+                                    <div className="d-flex flex-column h-100 justify-content-center align-items-center animate-entry">
+                                        <h3 className="text-white mb-3">¡Ejercicios completados!</h3>
+                                        <button
+                                            className="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow"
+                                            onClick={finishWorkout}
+                                        >
+                                            <i className="fas fa-flag-checkered me-2"></i>
+                                            FINALIZAR RUTINA
+                                        </button>
+                                    </div>
+                                )}
                             </NavigationWrapper>
                         </div>
 

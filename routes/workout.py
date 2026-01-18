@@ -819,12 +819,32 @@ def api_save_session():
              except: pass
              
         # Prepare document
+        rid = data.get("routine_id")
+        if rid and ObjectId.is_valid(rid):
+            rid = ObjectId(rid)
+
+        started_at = data.get("start_time")
+        if isinstance(started_at, str):
+            try:
+                started_at = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+            except:
+                pass
+
+        completed_at = data.get("end_time")
+        if completed_at and isinstance(completed_at, str):
+            try:
+                completed_at = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
+            except:
+                completed_at = datetime.utcnow()
+        elif not completed_at:
+             completed_at = datetime.utcnow()
+
         session_doc = {
             "user_id": user_id,
-            "routine_id": data.get("routine_id"),
-            "started_at": data.get("start_time"),
-            "completed_at": data.get("end_time") or datetime.now().isoformat(),
-            "created_at": datetime.now(),
+            "routine_id": rid,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "created_at": datetime.utcnow(),
             "sets": sets,
             "total_volume": round(total_volume, 2),
             "body_weight": 0

@@ -13,6 +13,26 @@
             return queue.slice(cursor + 1).find(s => s.type === 'work');
         }, [queue, cursor]);
 
+        // Auto-Focus on Landscape
+        React.useEffect(() => {
+            const handleOrientationChange = () => {
+                // Only act if workout is active
+                if (status === 'IDLE' || status === 'FINISHED') return;
+
+                const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+                setFocusMode(isLandscape);
+            };
+
+            // Initial check
+            handleOrientationChange();
+
+            // Listeners
+            window.addEventListener('resize', handleOrientationChange);
+            // Optional: window.screen.orientation.addEventListener('change', ...) if supported, but resize is robust enough for layout changes
+
+            return () => window.removeEventListener('resize', handleOrientationChange);
+        }, [status]);
+
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
 
         return (

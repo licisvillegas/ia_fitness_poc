@@ -28,7 +28,25 @@
 
         // Timers
         const [globalTime, setGlobalTime] = useState(0);
-        // ... (existing code)
+        const [stepTimer, setStepTimer] = useState(0); // For Rest or Time-based work
+        const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+        // Refs for Interval
+        const stepIntervalRef = useRef(null);
+        const resumeTimerRef = useRef(false);
+        const onConfirmRef = useRef(null);
+        const queueRef = useRef([]);
+        const sessionLogRef = useRef([]); // Fix for stale closure
+        const startTimeRef = useRef(Date.now()); // Track start time of current step
+        const visibilitySnapshotRef = useRef(null);
+        const completeStepTimerRef = useRef(null);
+        const statusRef = useRef(status);
+        const isPausedRef = useRef(isPaused);
+        const isTimerRunningRef = useRef(isTimerRunning);
+        const stepTimerRef = useRef(stepTimer);
+        const globalTimeRef = useRef(globalTime);
+        const currentStepRef = useRef(null);
+        const onCancelRef = useRef(null); // Add ref for onCancel
 
         // Notification Logic
         useEffect(() => {
@@ -958,7 +976,6 @@
             showCountdown,
             countdownValue,
             notificationPermission,
-            requestNotificationPermission,
             isNotificationsEnabled,
             toggleNotifications,
             showPending,

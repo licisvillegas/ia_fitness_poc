@@ -7,7 +7,7 @@
         const { routine, startWorkout } = useWorkout();
 
         return (
-            <div className="player-container">
+            <div className="player-container pre-start-container">
                 <Header focusMode={focusMode} onToggleFocus={onToggleFocus} showPending={showPending} onTogglePending={onTogglePending} />
                 <div className="visual-stage text-center">
                     <MessageBar />

@@ -612,7 +612,7 @@
             justify-content: center !important;
             order: 3;
         }
-        
+
         /* ... existing mobile styles ... */
         .pending-panel {
             top: auto;
@@ -641,26 +641,26 @@
             width: 85vw !important;
             max-width: 650px !important;
         }
-        
+
         .plate-modal-body {
             display: flex;
             gap: 20px;
             padding-bottom: 0;
         }
-        
+
         .plate-mode-row {
             /* Move mode switch to top of left column or absolute? 
                Keep simple: make it part of left column flow */
             width: 100%;
             padding-top: 0;
         }
-        
+
         /* Left Column: Grid + Mode Switch */
         /* Since structure is: ModeRow -> Grid -> DetailsWrapper */
         /* We want: LeftCol (Mode+Grid) | RightCol (Details) */
         /* Flex direction is row. We need to wrap Mode+Grid? No, HTML structure is flat. */
         /* Solution: Grid layout for body */
-        
+
         .plate-modal-body {
             display: grid;
             grid-template-columns: 1.2fr 1fr;
@@ -672,20 +672,22 @@
                 Area 3 (Right): Details Wrapper (Spans full height)
              */
         }
-        
+
         .plate-mode-row {
             grid-column: 1;
             grid-row: 1;
         }
-        
+
         .plate-grid {
             grid-column: 1;
             grid-row: 2;
-            gap: 8px; /* Tighter gap */
+            gap: 8px;
+            /* Tighter gap */
             overflow-y: auto;
-            max-height: 50vh; /* Scroll if needed */
+            max-height: 50vh;
+            /* Scroll if needed */
         }
-        
+
         .plate-calc-details {
             grid-column: 2;
             grid-row: 1 / span 2;
@@ -695,16 +697,17 @@
             border-left: 1px solid var(--border-color);
             padding-left: 20px;
         }
-        
+
         .plate-tile {
-            padding: 4px; /* Compact tiles */
+            padding: 4px;
+            /* Compact tiles */
         }
-        
+
         .plate-tile img {
             width: 30px;
             height: 30px;
         }
-        
+
         .plate-counter button {
             width: 24px;
             height: 24px;
@@ -786,6 +789,102 @@
         color: #00ff9d;
         text-shadow: 0 0 20px rgba(0, 255, 157, 0.8), 0 0 40px rgba(0, 255, 157, 0.4);
         letter-spacing: 5px;
+    }
+
+    /* Landscape Optimizations for PreStart and Countdown */
+    @media (orientation: landscape) and (max-height: 500px) {
+
+        /* Countdown Optimization */
+        .countdown-overlay {
+            flex-direction: row;
+            gap: 2rem;
+        }
+
+        /* Hide Focus Mode Toggle in Landscape to force-keep layout */
+        .focus-mode-toggle-btn {
+            display: none !important;
+        }
+
+        .countdown-image {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 0;
+        }
+
+        .countdown-text {
+            font-size: 4rem;
+        }
+
+        /* PreStart Optimization */
+        .pre-start-container .visual-stage {
+            /* Remove vertical centering to allow full usage or top alignment */
+            justify-content: center;
+            padding: 0;
+        }
+
+        .pre-start-container .card {
+            /* Expand card width and limit height */
+            width: 95% !important;
+            max-width: 800px;
+            margin: 0.5rem auto !important;
+            min-height: 200px;
+        }
+
+        .pre-start-container .card-body {
+            /* Grid Layout: Left (Header) | Right (List) */
+            display: grid;
+            grid-template-columns: 0.8fr 1.2fr;
+            grid-template-rows: 100%;
+            gap: 1.5rem;
+            padding: 1rem !important;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Target Routine Header (First child container) */
+        .pre-start-container .card-body>.text-center {
+            grid-column: 1;
+            margin-bottom: 0 !important;
+            text-align: left !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .pre-start-container .card-body>.text-center h2 {
+            font-size: 1.4rem !important;
+        }
+
+        .pre-start-container .card-body>.text-center p {
+            font-size: 0.9rem;
+        }
+
+        /* Target Routine List (Scrollable container) */
+        .pre-start-container .card-body>.custom-scroll {
+            grid-column: 2;
+            /* Override inline max-height of 240px to adapt to screen */
+            max-height: 55vh !important;
+            height: 100%;
+            margin-bottom: 0 !important;
+        }
+
+        .pre-start-container .controls-section {
+            padding: 4px;
+            /* Minimal padding */
+        }
+
+        .pre-start-container .btn-action {
+            /* Compact button */
+            padding: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        /* Hide extra subtitles if space is tight */
+        .pre-start-container .card-body .text-secondary.m-0 {
+            display: block;
+            /* Keep visible */
+        }
     }
 </style>
 

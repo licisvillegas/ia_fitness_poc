@@ -64,7 +64,7 @@
                         </button>
                     )}
                     <button
-                        className={`btn btn-sm rounded-pill px-3 ${focusMode ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                        className={`btn btn-sm rounded-pill px-3 focus-mode-toggle-btn ${focusMode ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
                         onClick={onToggleFocus}
                         title="Modo foco"
                     >

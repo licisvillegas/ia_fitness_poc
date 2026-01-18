@@ -740,10 +740,30 @@
                         window.location.href = getReturnUrl();
 
                     } catch (e) {
+                        console.error("Save error:", e);
+                        // Check if it's a network error or 5xx server error (indicating temporary failure)
+                        // A 401/403 would be an auth error, so we might NOT want to offline save that (it would just fail later),
+                        // but technically 'offline saving' is safe. Let's do it for robustness "si no hay red".
+
+                        if (window.offlineManager) {
+                            try {
+                                await window.offlineManager.saveSession(payload);
+                                if (window.showAlertModal) {
+                                    window.showAlertModal("Sin Conexión", "Sesión guardada localmente. Se sincronizará cuando vuelvas a estar en línea.", "warning");
+                                } else {
+                                    alert("Sin conexión. Guardado localmente.");
+                                }
+                                setTimeout(() => window.location.href = getReturnUrl(), 2000); // Redirect after short delay
+                                return; // Exit success path
+                            } catch (offlineErr) {
+                                console.error("Offline save failed too:", offlineErr);
+                            }
+                        }
+
                         if (window.showAlertModal) {
-                            window.showAlertModal("Error", "Error saving: " + e.message, "danger");
+                            window.showAlertModal("Error", "Error guardando: " + e.message, "danger");
                         } else {
-                            alert("Error saving: " + e.message);
+                            alert("Error guardando: " + e.message);
                         }
                     } finally {
                         if (window.hideLoader) window.hideLoader();

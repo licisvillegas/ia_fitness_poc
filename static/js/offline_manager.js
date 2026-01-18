@@ -144,6 +144,7 @@ class OfflineManager {
         const res = await fetch("/workout/api/session/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify(payload)
         });
 

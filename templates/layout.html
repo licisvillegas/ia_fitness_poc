@@ -21,11 +21,18 @@
     <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="/static/images/icon/synapse_fit_192.png">
 
+    <!-- iOS Specific PWA Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Synapse Fit">
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
+            overscroll-behavior-y: contain;
+            overscroll-behavior-x: none;
         }
 
         @keyframes alertSlideIn {
@@ -97,6 +104,66 @@
         .alert-tone-success {
             color: #00ff9d;
         }
+
+        /* iOS PWA Banner */
+        .ios-pwa-banner {
+            position: fixed;
+            bottom: 2rem;
+            left: 1rem;
+            right: 1rem;
+            background: #1c2432;
+            border: 1px solid #4f8df7;
+            border-radius: 12px;
+            padding: 1rem;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            animation: slideUpBanner 0.5s ease-out;
+        }
+
+        @keyframes slideUpBanner {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .ios-pwa-banner .banner-close {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .ios-pwa-banner .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .ios-pwa-banner .banner-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+        }
+
+        .ios-pwa-banner .banner-text {
+            font-size: 0.9rem;
+            color: #f8fafc;
+        }
+
+        .ios-pwa-banner .banner-text b {
+            color: #4f8df7;
+        }
     </style>
 </head>
 
@@ -113,6 +180,18 @@
     </div>
 
     {% include 'components/loader.html' %}
+
+    <!-- iOS Add to Home Screen Banner -->
+    <div id="iosPwaBanner" class="ios-pwa-banner">
+        <button class="banner-close" onclick="closeIosBanner()">&times;</button>
+        <div class="banner-content">
+            <img src="/static/images/icon/synapse_fit_192.png" alt="App Icon" class="banner-icon">
+            <div class="banner-text">
+                Para una mejor experiencia, instala <b>Synapse Fit</b> en tu inicio. <br>
+                Toca <i class="far fa-share-square"></i> y luego <b>"Agregar a inicio"</b>.
+            </div>
+        </div>
+    </div>
 
     <div id="appAlertModal" class="alert-modal-backdrop">
         <div class="alert-modal-card">
@@ -221,6 +300,24 @@
                     .catch(err => console.log('Error registrando PWA Service Worker:', err));
             });
         }
+
+        // iOS PWA Detection and Banner
+        function checkIosPwa() {
+            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.navigator.standalone === true;
+            const bannerDismissed = localStorage.getItem('iosPwaBannerDismissed');
+
+            if (isIos && !isStandalone && !bannerDismissed) {
+                document.getElementById('iosPwaBanner').style.display = 'block';
+            }
+        }
+
+        function closeIosBanner() {
+            document.getElementById('iosPwaBanner').style.display = 'none';
+            localStorage.setItem('iosPwaBannerDismissed', 'true');
+        }
+
+        window.addEventListener('load', checkIosPwa);
     </script>
 </body>
 

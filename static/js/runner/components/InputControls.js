@@ -264,7 +264,9 @@
 
                 <div className="d-grid px-3">
                     <button className="btn btn-action shadow-lg ripple py-3" onClick={handleSubmit}>
-                        COMPLETAR <i className="fas fa-check ms-2"></i>
+                        {useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work')
+                            ? "COMPLETAR"
+                            : "FINALIZAR"} <i className={`fas ${useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work') ? 'fa-check' : 'fa-flag-checkered'} ms-2`}></i>
                     </button>
                 </div>
 

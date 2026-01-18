@@ -15,13 +15,14 @@
         const [exerciseLookup, setExerciseLookup] = useState({});
         const [isPaused, setIsPaused] = useState(false);
         const [message, setMessage] = useState(null);
-        const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, type: "danger" }); // type: danger | warning | info
+        const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, onCancel: null, type: "danger" }); // type: danger | warning | info
         const [substituteModal, setSubstituteModal] = useState({ isOpen: false, stepIndex: null });
         const [showCompletionIcon, setShowCompletionIcon] = useState(false);
         const [showCountdown, setShowCountdown] = useState(false);
         const [countdownValue, setCountdownValue] = useState(3);
         const [unit, setUnit] = useState('lb');
         const [notificationPermission, setNotificationPermission] = useState('default'); // default, granted, denied
+        const [showPending, setShowPending] = useState(false); // New state lifted from App.js
 
 
         // Timers
@@ -44,6 +45,7 @@
         const stepTimerRef = useRef(stepTimer);
         const globalTimeRef = useRef(globalTime);
         const currentStepRef = useRef(null);
+        const onCancelRef = useRef(null); // Add ref for onCancel
 
         // Notification Logic
         const requestNotificationPermission = async () => {
@@ -508,7 +510,12 @@
             }
 
             if (cursor >= queue.length - 1) {
-                finishWorkout();
+                if (status === 'REST') {
+                    setStatus('WORK');
+                    setTimeout(checkPendingAndFinish, 100);
+                } else {
+                    checkPendingAndFinish();
+                }
                 return;
             }
 
@@ -522,7 +529,8 @@
             }
 
             if (nextIdx >= queue.length) {
-                finishWorkout();
+                if (status === 'REST') setStatus('WORK');
+                checkPendingAndFinish();
                 return;
             }
 
@@ -545,7 +553,12 @@
         const skipToNextWork = () => {
             console.log("DEBUG: Skip to next work. Cursor:", cursor, "QueueLen:", queue.length);
             if (cursor >= queue.length - 1) {
-                finishWorkout();
+                if (status === 'REST') {
+                    setStatus('WORK');
+                    setTimeout(checkPendingAndFinish, 100);
+                } else {
+                    checkPendingAndFinish();
+                }
                 return;
             }
             let nextIdx = cursor + 1;
@@ -553,7 +566,8 @@
                 nextIdx += 1;
             }
             if (nextIdx >= queue.length) {
-                finishWorkout();
+                if (status === 'REST') setStatus('WORK');
+                checkPendingAndFinish();
                 return;
             }
             const upcoming = queue[nextIdx];
@@ -562,6 +576,52 @@
             setStatus('WORK');
             setStepTimer(upcoming.isTimeBased ? upcoming.target.time : 0);
             setIsTimerRunning(upcoming.isTimeBased);
+        };
+
+        const deferExercise = () => {
+            console.log("DEBUG: Deferring exercise requested. Cursor:", cursor);
+
+            showConfirm(
+                "Dejar Pendiente",
+                "¿Quieres dejar este ejercicio para el final? No se registrará progreso ahora.",
+                () => {
+                    // Actual Defer Logic
+                    console.log("DEBUG: Executing Defer");
+
+                    // 1. Calculate next index
+                    const nextIdx = cursor + 1;
+                    if (nextIdx >= queue.length) {
+                        if (status === 'REST') {
+                            setStatus('WORK');
+                            setTimeout(checkPendingAndFinish, 100);
+                        } else {
+                            checkPendingAndFinish();
+                        }
+                        return;
+                    }
+
+                    // 2. Move cursor
+                    setCursor(nextIdx);
+                    setIsPaused(false);
+
+                    // 3. Determine if next step is rest or work
+                    const upcoming = queue[nextIdx];
+                    if (upcoming.type === 'rest') {
+                        setStatus('REST');
+                        setStepTimer(upcoming.duration);
+                        setIsTimerRunning(true);
+                    } else {
+                        setStatus('WORK');
+                        setStepTimer(upcoming.isTimeBased ? upcoming.target.time : 0);
+                        setIsTimerRunning(upcoming.isTimeBased);
+                    }
+
+                    // 4. Sync progress (cursor updated, but no new log entry)
+                    const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+                    syncProgress(nextIdx, currentLog);
+                },
+                "warning"
+            );
         };
 
         const prev = () => {
@@ -801,24 +861,58 @@
             }, 1000);
         };
 
-        const showConfirm = (title, message, onConfirm, type = "danger") => {
+        const showConfirm = (title, message, onConfirm, type = "danger", onCancel = null) => {
             console.log("DEBUG: showConfirm called", { title });
             onConfirmRef.current = onConfirm;
-            setConfirmModal({ isOpen: true, title, message, type });
+            onCancelRef.current = onCancel;
+            setConfirmModal({ isOpen: true, title, message, onConfirm, onCancel, type });
         };
 
         const closeConfirm = () => {
+            // If implicit cancel (via X or Cancel button in UI which calls closeConfirm)
+            if (onCancelRef.current) {
+                onCancelRef.current();
+            }
+            onConfirmRef.current = null;
+            onCancelRef.current = null;
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
-            // Optional: onConfirmRef.current = null; // Keep it or clear it.
         };
 
         const handleConfirmAction = () => {
-            console.log("DEBUG: handleConfirmAction called. Has Ref?", !!onConfirmRef.current);
-            if (onConfirmRef.current) {
-                console.log("DEBUG: Executing onConfirm callback via REF");
-                onConfirmRef.current();
+            // Confirm action overrides cancel
+            const action = onConfirmRef.current;
+
+            // Clear refs so closeConfirm doesn't trigger cancel
+            onConfirmRef.current = null;
+            onCancelRef.current = null;
+
+            if (action) action();
+
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        };
+
+        const checkPendingAndFinish = () => {
+            // Find pending steps
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            const pendingCount = queueRef.current.filter(step => step.type === 'work' && !isStepLogged(step.id, currentLog)).length;
+
+            if (pendingCount > 0) {
+                showConfirm(
+                    "Ejercicios Pendientes",
+                    `Tienes ${pendingCount} ejercicios pendientes. ¿Deseas realizarlos antes de finalizar?`,
+                    () => {
+                        // Confirm: Show Pending Panel
+                        setShowPending(true);
+                    },
+                    "warning",
+                    () => {
+                        // Cancel: Finish anyway
+                        finishWorkout();
+                    }
+                );
+            } else {
+                finishWorkout();
             }
-            closeConfirm();
         };
 
 
@@ -836,6 +930,7 @@
             next,
             prev,
             skipToNextWork,
+            deferExercise,
             skipRest,
             addRestTime,
             logSet,
@@ -868,7 +963,11 @@
             showCountdown,
             countdownValue,
             notificationPermission,
-            requestNotificationPermission
+            requestNotificationPermission,
+            showPending,
+            setShowPending,
+            checkPendingAndFinish,
+            handleCancelAction: closeConfirm
         };
 
 

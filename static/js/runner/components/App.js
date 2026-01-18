@@ -4,9 +4,9 @@
 
     window.Runner.components.App = () => {
         const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal } = window.Runner.components;
-        const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue } = useWorkout();
+        const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
-        const [showPending, setShowPending] = useState(false);
+        // showPending state moved to context
 
         const nextStep = useMemo(() => {
             if (!queue || cursor >= queue.length - 1) return null;
@@ -61,11 +61,13 @@
                             <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
                         )}
 
-                        <RestOverlay
-                            nextStep={nextStep}
-                            showPending={showPending}
-                            onTogglePending={() => setShowPending(prev => !prev)}
-                        />
+                        {status === 'REST' && (
+                            <RestOverlay
+                                nextStep={nextStep}
+                                showPending={showPending}
+                                onTogglePending={() => setShowPending(prev => !prev)}
+                            />
+                        )}
                     </div>
                 )}
                 <SubstitutesModal />

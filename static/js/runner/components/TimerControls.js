@@ -27,7 +27,11 @@
                     {isTimerRunning && (
                         <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
                     )}
-                    <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>Terminar Manualmente</button>
+                    <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>
+                        {useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work')
+                            ? "Terminar Manualmente"
+                            : "Finalizar Rutina"}
+                    </button>
 
                     {notificationPermission === 'default' && (
                         <button className="btn btn-sm btn-link text-secondary mt-2 text-decoration-none" onClick={requestNotificationPermission}>

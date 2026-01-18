@@ -5,7 +5,7 @@
 
     window.Runner.components.ActiveExercise = ({ focusMode }) => {
         const { TimerControls, InputControls } = window.Runner.components;
-        const { currentStep, exerciseLookup, openSubstituteModal } = useWorkout();
+        const { currentStep, exerciseLookup, openSubstituteModal, deferExercise } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
 
@@ -80,6 +80,15 @@
                                         <i className="fas fa-exchange-alt me-1"></i> Sustitutos
                                     </button>
                                 )}
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-warning rounded-pill px-3 py-0"
+                                    style={{ fontSize: '0.75rem' }}
+                                    onClick={deferExercise}
+                                    title="Saltar y dejar pendiente (sin omitir descanso)"
+                                >
+                                    <i className="fas fa-history me-1"></i> Dejar Pendiente
+                                </button>
                             </div>
                         </div>
                         <div className="mt-1 text-info fs-6">

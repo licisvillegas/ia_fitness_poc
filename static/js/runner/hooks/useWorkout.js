@@ -914,8 +914,20 @@
                     "Ejercicios Pendientes",
                     `Tienes ${pendingCount} ejercicios pendientes. ¿Deseas realizarlos antes de finalizar?`,
                     () => {
-                        // Confirm: Show Pending Panel
-                        setShowPending(true);
+                        // Confirm: Go to first pending exercise
+                        const firstPendingIdx = queueRef.current.findIndex(step => step.type === 'work' && !isStepLogged(step.id, currentLog));
+                        if (firstPendingIdx !== -1) {
+                            setCursor(firstPendingIdx);
+                            const step = queueRef.current[firstPendingIdx];
+                            setStatus('WORK'); // Force work mode
+                            setStepTimer(step.isTimeBased ? step.target.time : 0);
+                            setIsTimerRunning(step.isTimeBased);
+                            setIsPaused(false);
+                            console.log("Jumping to pending step:", firstPendingIdx);
+                        } else {
+                            // Should not happen given pendingCount check, but fallback
+                            setShowPending(true);
+                        }
                     },
                     "warning",
                     () => {

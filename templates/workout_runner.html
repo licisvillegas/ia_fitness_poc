@@ -50,6 +50,8 @@
         /* Prevent body scroll */
         overscroll-behavior: none;
         /* No bounce */
+        touch-action: pan-y;
+        /* Only allow vertical pans to prevent swipe-back gestures */
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
     }
@@ -738,6 +740,28 @@
     window.currentUserName = {{ current_user_name | default ('', true) | tojson }};
     window.currentUserId = {{ current_user_id | default ('', true) | tojson }};
     window.restoredState = {{ restored_state | tojson }};
+
+    // Navigation Guard (popstate)
+    (function initNavigationGuard() {
+        // Push an extra entry to historical stack to "capture" the first back gesture
+        window.history.pushState({ guard: true }, "", window.location.href);
+
+        window.addEventListener('popstate', function (event) {
+            // Check if we are in an active workout (this is a simple check, could be more robust)
+            // If the user tries to go back, we show a confirmation
+            const confirmExit = confirm("¿Estás seguro de que quieres salir del entrenamiento? Tu progreso actual podría no guardarse automáticamente.");
+
+            if (confirmExit) {
+                // If confirmed, allow the back navigation (the stack is already "back" one step)
+                // We might need to go back twice if we pushed one, or just let it happen.
+                // But popstate already happened.
+                window.history.back();
+            } else {
+                // If cancelled, push State again to keep "capturing"
+                window.history.pushState({ guard: true }, "", window.location.href);
+            }
+        });
+    })();
 </script>
 
 <!-- New Modular Architecture -->

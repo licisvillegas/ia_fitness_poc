@@ -13,34 +13,38 @@ class OfflineManager {
     async init() {
         if (!('indexedDB' in window)) {
             console.warn("IndexedDB not supported. Offline mode unavailable.");
-            return;
+            return null;
         }
 
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            try {
+                const request = indexedDB.open(this.dbName, 1);
 
-            request.onerror = (event) => {
-                console.error("IndexedDB error:", event.target.errorCode);
-                reject(event.target.errorCode);
-            };
+                request.onerror = (event) => {
+                    console.error("IndexedDB error:", event.target.errorCode);
+                    resolve(null);
+                };
 
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
-                    db.createObjectStore(this.storeName, { keyPath: "id", autoIncrement: true });
-                }
-            };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(this.storeName)) {
+                        db.createObjectStore(this.storeName, { keyPath: "id", autoIncrement: true });
+                    }
+                };
 
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                console.log("OfflineManager initialized.");
-                this.setupSyncListener();
-                // Try to sync on init if online
-                if (navigator.onLine) {
-                    this.sync();
-                }
-                resolve(this.db);
-            };
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    console.log("OfflineManager initialized.");
+                    this.setupSyncListener();
+                    if (navigator.onLine) {
+                        this.sync();
+                    }
+                    resolve(this.db);
+                };
+            } catch (e) {
+                console.error("IndexedDB init exception:", e);
+                resolve(null);
+            }
         });
     }
 
@@ -52,30 +56,45 @@ class OfflineManager {
     }
 
     async saveSession(payload) {
-        if (!this.db) await this.init();
+        try {
+            if (!this.db) {
+                await this.init();
+            }
 
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.storeName], "readwrite");
-            const store = transaction.objectStore(this.storeName);
+            if (!this.db) {
+                throw new Error("Offline database unavailable.");
+            }
 
-            // Add timestamp for sorting if needed
-            const record = {
-                ...payload,
-                storedAt: new Date().toISOString()
-            };
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction([this.storeName], "readwrite");
+                    const store = transaction.objectStore(this.storeName);
 
-            const request = store.add(record);
+                    const record = {
+                        ...payload,
+                        storedAt: new Date().toISOString()
+                    };
 
-            request.onsuccess = () => {
-                console.log("Session saved locally.");
-                resolve(true);
-            };
+                    const request = store.add(record);
 
-            request.onerror = (e) => {
-                console.error("Error saving locally:", e);
-                reject(e);
-            };
-        });
+                    request.onsuccess = () => {
+                        console.log("Session saved locally.");
+                        resolve(true);
+                    };
+
+                    request.onerror = (e) => {
+                        console.error("Error saving locally:", e);
+                        reject(e);
+                    };
+                } catch (txErr) {
+                    console.error("Transaction failed:", txErr);
+                    reject(txErr);
+                }
+            });
+        } catch (e) {
+            console.error("saveSession failed:", e);
+            throw e;
+        }
     }
 
     async sync() {

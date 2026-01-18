@@ -3,7 +3,7 @@
     const { formatTime } = window.Runner.utils;
 
     window.Runner.components.RestOverlay = ({ nextStep, showPending, onTogglePending }) => {
-        const { currentStep, skipRest, stepTimer, addRestTime, notificationPermission, requestNotificationPermission } = useWorkout();
+        const { currentStep, skipRest, stepTimer, addRestTime, notificationPermission, requestNotificationPermission, cancelWorkout } = useWorkout();
 
         if (currentStep.type !== 'rest') return null;
 
@@ -34,6 +34,15 @@
                             title="Pendientes"
                         >
                             <i className="fas fa-list"></i>
+                        </button>
+
+                        <button
+                            className="btn btn-sm btn-outline-danger rounded-circle ms-2"
+                            onClick={cancelWorkout}
+                            style={{ width: '32px', height: '32px', padding: 0 }}
+                            title="Cancelar Rutina"
+                        >
+                            <i className="fas fa-times"></i>
                         </button>
                     </div>
                 </div>

@@ -4,7 +4,10 @@
     const { formatTime } = window.Runner.utils;
 
     window.Runner.components.Header = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
-        const { routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout } = useWorkout();
+        const {
+            routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout,
+            notificationPermission, requestNotificationPermission
+        } = useWorkout();
 
         const workStats = useMemo(() => {
             if (!queue) return { passed: 0, total: 0 };
@@ -34,6 +37,19 @@
                 </div>
 
                 <div className="header-controls d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                    <button
+                        className="btn btn-sm btn-outline-secondary rounded-circle"
+                        onClick={() => {
+                            if (notificationPermission === 'default') {
+                                requestNotificationPermission();
+                            }
+                        }}
+                        title={notificationPermission === 'granted' ? "Notificaciones activas" : "Activar notificaciones"}
+                        disabled={notificationPermission === 'granted' || notificationPermission === 'denied'}
+                    >
+                        <i className={`fas ${notificationPermission === 'granted' ? 'fa-bell' : 'fa-bell-slash'}`}></i>
+                    </button>
+
                     <button
                         className="btn btn-sm btn-outline-secondary rounded-circle"
                         onClick={() => window.toggleTheme && window.toggleTheme()}
@@ -67,7 +83,14 @@
                             <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
                         </button>
                     )}
-                    <button className="btn btn-sm btn-outline-danger rounded-circle" onClick={cancelWorkout} style={{ width: '32px', height: '32px', padding: 0 }}>
+
+                    {/* Create explicit cancel button that shows up in WORK or REST */}
+                    <button
+                        className="btn btn-sm btn-outline-danger rounded-circle"
+                        onClick={cancelWorkout}
+                        style={{ width: '32px', height: '32px', padding: 0 }}
+                        title="Cancelar Rutina"
+                    >
                         <i className="fas fa-times"></i>
                     </button>
                 </div>

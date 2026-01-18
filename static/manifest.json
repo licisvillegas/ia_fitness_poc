@@ -6,16 +6,19 @@
     "background_color": "#000000",
     "theme_color": "#000000",
     "orientation": "any",
+    "id": "/",
     "icons": [
         {
             "src": "/static/images/icon/synapse_fit_192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "/static/images/icon/synapse_fit_512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }

@@ -27,18 +27,18 @@
     'loading_plan': { es: 'Generando tu plan personalizado...', en: 'Generating your personalized plan...' },
     'plan_ok': { es: '✔  Plan generado con éxito', en: '✔  Plan generated successfully' },
     'plan_error': { es: '❌ Ocurrió un error al generar el plan.', en: '❌ An error occurred while generating the plan.' },
-    'footer': { es: '© 2025 AI Fitness | Desarrollado por Ismael Villegas', en: '© 2025 AI Fitness | Developed by Ismael Villegas' }
+    'footer': { es: '© 2025 Synapse Fit | Desarrollado por Ismael Villegas', en: '© 2025 Synapse Fit | Developed by Ismael Villegas' }
   };
 
-  dict['ai_fitness_dashboard_de_progreso'] = { es: 'AI Fitness | Dashboard de Progreso', en: 'AI Fitness | Dashboard de Progreso' };
+  dict['ai_fitness_dashboard_de_progreso'] = { es: 'Synapse Fit | Dashboard de Progreso', en: 'Synapse Fit | Dashboard de Progreso' };
   dict['es'] = { es: 'ES', en: 'ES' };
   dict['en'] = { es: 'EN', en: 'EN' };
-  dict['2025_ai_fitness_dashboard_de_progreso_inteligente'] = { es: '© 2025 AI Fitness | Dashboard de Progreso Inteligente', en: '© 2025 AI Fitness | Dashboard de Progreso Inteligente' };
-  dict['ai_fitness_tu_entrenador_inteligente'] = { es: 'AI Fitness | Tu Entrenador Inteligente', en: 'AI Fitness | Tu Entrenador Inteligente' };
+  dict['2025_ai_fitness_dashboard_de_progreso_inteligente'] = { es: '© 2025 Synapse Fit | Dashboard de Progreso Inteligente', en: '© 2025 Synapse Fit | Dashboard de Progreso Inteligente' };
+  dict['ai_fitness_tu_entrenador_inteligente'] = { es: 'Synapse Fit | Tu Entrenador Inteligente', en: 'Synapse Fit | Tu Entrenador Inteligente' };
   dict['coach_ai_fitness'] = { es: '🤖 Coach AI Fitness', en: '🤖 Coach AI Fitness' };
   dict['enviar'] = { es: 'Enviar', en: 'Enviar' };
   dict['cargando'] = { es: 'Cargando...', en: 'Cargando...' };
-  dict['ai_fitness_nutrición_inteligente'] = { es: 'AI Fitness | Nutrición Inteligente', en: 'AI Fitness | Smart Nutrition' };
+  dict['ai_fitness_nutrición_inteligente'] = { es: 'Synapse Fit | Nutrición Inteligente', en: 'Synapse Fit | Smart Nutrition' };
   dict['avena_proteica'] = { es: 'Avena Proteica', en: 'Protein Oats' };
   dict['avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_'] = { es: 'Avena, proteína en polvo, banana y canela. Ideal para comenzar el día lleno de energía.', en: 'Oats, protein powder, banana and cinnamon. Ideal to start the day full of energy.' };
   dict['bowl_de_pollo_y_quinoa'] = { es: 'Bowl de Pollo y Quinoa', en: 'Chicken & Quinoa Bowl' };
@@ -62,8 +62,8 @@
   dict['1_pan_blanco'] = { es: '1 pan blanco', en: '1 white bread slice' };
   dict['1_pan_integral_o_de_centeno'] = { es: '1 pan integral o de centeno', en: '1 wholegrain or rye slice' };
   dict['más_fibra_y_saciedad'] = { es: 'Más fibra y saciedad', en: 'More fiber and satiety' };
-  dict['2025_ai_fitness_nutrición_inteligente_y_educación_alimentari'] = { es: '© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria', en: '© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria' };
-  dict['ai_fitness_plan_de_alimentación_y_entrenamiento'] = { es: 'AI Fitness | Plan de Alimentación y Entrenamiento', en: 'AI Fitness | Plan de Alimentación y Entrenamiento' };
+  dict['2025_ai_fitness_nutrición_inteligente_y_educación_alimentari'] = { es: '© 2025 Synapse Fit | Nutrición Inteligente y Educación Alimentaria', en: '© 2025 Synapse Fit | Nutrición Inteligente y Educación Alimentaria' };
+  dict['ai_fitness_plan_de_alimentación_y_entrenamiento'] = { es: 'Synapse Fit | Plan de Alimentación y Entrenamiento', en: 'Synapse Fit | Plan de Alimentación y Entrenamiento' };
   dict['una_alimentación_adecuada_no_solo_mejora_tu_rendimiento_físi'] = { es: 'Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación. En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.', en: 'Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación. En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.' };
   dict['balance_correcto_de_macronutrientes_proteínas_carbohidratos_'] = { es: 'Balance correcto de macronutrientes (proteínas, carbohidratos y grasas).', en: 'Balance correcto de macronutrientes (proteínas, carbohidratos y grasas).' };
   dict['planificación_personalizada_según_tus_objetivos_y_nivel_de_a'] = { es: 'Planificación personalizada según tus objetivos y nivel de actividad.', en: 'Planificación personalizada según tus objetivos y nivel de actividad.' };
@@ -78,7 +78,7 @@
   dict['desarrolla_equilibrio_y_fuerza_funcional_con_ejercicios_para'] = { es: 'Desarrolla equilibrio y fuerza funcional con ejercicios para el abdomen, la espalda baja y los hombros.', en: 'Develop balance and functional strength with exercises for the abs, lower back and shoulders.' };
   dict['entrenamiento_full_body'] = { es: 'Entrenamiento Full Body', en: 'Full Body Training' };
   dict['sesiones_completas_que_activan_todos_los_grupos_musculares_p'] = { es: 'Sesiones completas que activan todos los grupos musculares. Perfecto para mantenerte en forma cuando dispones de poco tiempo.', en: 'Full sessions that activate all muscle groups. Perfect for staying fit when you have little time.' };
-  dict['2025_ai_fitness_alimentación_y_entrenamiento_inteligente'] = { es: '© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente', en: '© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente' };
+  dict['2025_ai_fitness_alimentación_y_entrenamiento_inteligente'] = { es: '© 2025 Synapse Fit | Alimentación y Entrenamiento Inteligente', en: '© 2025 Synapse Fit | Alimentación y Entrenamiento Inteligente' };
   // Plan page extra keys
   dict['nutrition_intro'] = { es: 'Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación. En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.', en: 'A proper diet not only improves your physical performance but also boosts your mental well-being and recovery capacity. At AI Fitness we believe every body is unique, and our plans are AI-designed to adapt to you.' };
   // the list items keys already exist earlier; ensure they map (they do) but re-add safe defaults if missing
@@ -145,14 +145,14 @@
   dict['más_fibra_y_saciedad'] = dict['más_fibra_y_saciedad'] || { es: 'Más fibra y saciedad', en: 'More fiber and satiety' };
 
   // Fix/override some remaining entries where English was left equal to Spanish
-  dict['ai_fitness_dashboard_de_progreso'] = { es: 'AI Fitness | Dashboard de Progreso', en: 'AI Fitness | Progress Dashboard' };
-  dict['2025_ai_fitness_dashboard_de_progreso_inteligente'] = { es: '© 2025 AI Fitness | Dashboard de Progreso Inteligente', en: '© 2025 AI Fitness | Smart Progress Dashboard' };
-  dict['ai_fitness_tu_entrenador_inteligente'] = { es: 'AI Fitness | Tu Entrenador Inteligente', en: 'AI Fitness | Your Smart Coach' };
+  dict['ai_fitness_dashboard_de_progreso'] = { es: 'Synapse Fit | Dashboard de Progreso', en: 'Synapse Fit | Progress Dashboard' };
+  dict['2025_ai_fitness_dashboard_de_progreso_inteligente'] = { es: '© 2025 Synapse Fit | Dashboard de Progreso Inteligente', en: '© 2025 Synapse Fit | Smart Progress Dashboard' };
+  dict['ai_fitness_tu_entrenador_inteligente'] = { es: 'Synapse Fit | Tu Entrenador Inteligente', en: 'Synapse Fit | Your Smart Coach' };
   dict['coach_ai_fitness'] = { es: '🤖 Coach AI Fitness', en: '🤖 AI Fitness Coach' };
   dict['enviar'] = { es: 'Enviar', en: 'Send' };
   dict['cargando'] = { es: 'Cargando...', en: 'Loading...' };
-  dict['2025_ai_fitness_nutrición_inteligente_y_educación_alimentari'] = { es: '© 2025 AI Fitness | Nutrición Inteligente y Educación Alimentaria', en: '© 2025 AI Fitness | Smart Nutrition & Food Education' };
-  dict['ai_fitness_plan_de_alimentación_y_entrenamiento'] = { es: 'AI Fitness | Plan de Alimentación y Entrenamiento', en: 'AI Fitness | Nutrition & Training Plan' };
+  dict['2025_ai_fitness_nutrición_inteligente_y_educación_alimentari'] = { es: '© 2025 Synapse Fit | Nutrición Inteligente y Educación Alimentaria', en: '© 2025 Synapse Fit | Smart Nutrition & Food Education' };
+  dict['ai_fitness_plan_de_alimentación_y_entrenamiento'] = { es: 'Synapse Fit | Plan de Alimentación y Entrenamiento', en: 'Synapse Fit | Nutrition & Training Plan' };
   dict['una_alimentación_adecuada_no_solo_mejora_tu_rendimiento_físi'] = {
     es: 'Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación. En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.',
     en: 'A proper diet not only improves your physical performance but also boosts your mental well-being and recovery capacity. At AI Fitness we believe every body is unique, and our plans are AI-designed to adapt to you.'
@@ -169,7 +169,7 @@
     es: 'Recomendaciones de alimentos naturales y saludables.',
     en: 'Recommendations for natural and healthy foods.'
   };
-  dict['2025_ai_fitness_alimentación_y_entrenamiento_inteligente'] = { es: '© 2025 AI Fitness | Alimentación y Entrenamiento Inteligente', en: '© 2025 AI Fitness | Smart Nutrition & Training' };
+  dict['2025_ai_fitness_alimentación_y_entrenamiento_inteligente'] = { es: '© 2025 Synapse Fit | Alimentación y Entrenamiento Inteligente', en: '© 2025 Synapse Fit | Smart Nutrition & Training' };
 
   // Página: Plan
   dict['plan_hero_title'] = { es: 'Plan de Alimentación y Entrenamiento', en: 'Nutrition and Training Plan' };

@@ -492,6 +492,7 @@
                 await fetch("/workout/api/session/progress", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({
                         routine_id: routine.id,
                         cursor: idx,
@@ -729,33 +730,14 @@
                             sets: sessionLogRef.current // Use REF to ensure latest data
                         };
 
-                        // Try online save first
-                        try {
-                            const res = await fetch("/workout/api/session/save", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(payload)
-                            });
-                            if (!res.ok) throw new Error("Server returned " + res.status);
-                            window.location.href = getReturnUrl();
-                        } catch (fetchError) {
-                            console.warn("Online save failed, attempting local save...", fetchError);
-
-                            if (window.offlineManager) {
-                                await window.offlineManager.saveSession(payload);
-                                if (window.showToast) {
-                                    window.showToast("Sin conexión: Guardado localmente", "warning");
-                                } else {
-                                    alert("Sin conexión: Guardado localmente. Se sincronizará cuando recuperes la red.");
-                                }
-                                // Allow exit
-                                setTimeout(() => {
-                                    window.location.href = getReturnUrl();
-                                }, 1500);
-                            } else {
-                                throw fetchError; // Re-throw if no offline manager
-                            }
-                        }
+                        const res = await fetch("/workout/api/session/save", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include", // Keep credentials fix
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) throw new Error("Server returned " + res.status);
+                        window.location.href = getReturnUrl();
 
                     } catch (e) {
                         if (window.showAlertModal) {
@@ -773,7 +755,10 @@
         const cancelWorkout = () => {
             const doCancel = async () => {
                 try {
-                    await fetch("/workout/api/session/cancel", { method: "POST" });
+                    await fetch("/workout/api/session/cancel", {
+                        method: "POST",
+                        credentials: "include"
+                    });
                 } catch (e) { console.error("Error cancelling:", e); }
                 window.location.href = getReturnUrl();
             };
@@ -857,9 +842,11 @@
             setShowCountdown(true);
 
             // Fetch session start immediately to lock it
+            // Fetch session start immediately to lock it
             fetch("/workout/api/session/start", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ routine_id: routine.id })
             }).catch(e => console.error("Start session error", e));
 

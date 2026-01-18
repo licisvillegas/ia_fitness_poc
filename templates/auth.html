@@ -192,8 +192,8 @@
       text-align: center;
     }
 
-    /* iOS Install Prompt */
-    .ios-install-prompt {
+    /* PWA Install Prompt (Shared for iOS & Android) */
+    .pwa-install-prompt {
       position: fixed;
       bottom: -100%;
       left: 0;
@@ -211,18 +211,18 @@
       box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
     }
 
-    .ios-install-prompt.show {
+    .pwa-install-prompt.show {
       bottom: 0;
     }
 
-    .ios-prompt-header {
+    .pwa-prompt-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 0.5rem;
     }
 
-    .ios-prompt-title {
+    .pwa-prompt-title {
       font-weight: 700;
       font-size: 1.1rem;
       color: #fff;
@@ -231,7 +231,7 @@
       gap: 0.75rem;
     }
 
-    .ios-prompt-close {
+    .pwa-prompt-close {
       background: none;
       border: none;
       color: rgba(255, 255, 255, 0.6);
@@ -240,7 +240,7 @@
       line-height: 1;
     }
 
-    .ios-prompt-steps {
+    .pwa-prompt-content {
       color: #ccc;
       font-size: 0.95rem;
       line-height: 1.6;
@@ -434,20 +434,30 @@
       <small class="text-secondary d-block">v. beta 1.0.7</small>
     </p>
   </footer>
-  <div id="iosInstallPrompt" class="ios-install-prompt">
-    <div class="ios-prompt-header">
-      <div class="ios-prompt-title">
+  <div id="pwaInstallPrompt" class="pwa-install-prompt">
+    <div class="pwa-prompt-header">
+      <div class="pwa-prompt-title">
         <img src="/static/images/icon/synapse_fit_192.png" style="width: 32px; height: 32px; border-radius: 8px;">
         Instalar App
       </div>
-      <button class="ios-prompt-close" onclick="closeIosPrompt()">&times;</button>
+      <button class="pwa-prompt-close" onclick="closePwaPrompt()">&times;</button>
     </div>
-    <div class="ios-prompt-steps">
+
+    <!-- iOS Instructions -->
+    <div id="pwaIosContent" class="pwa-prompt-content" style="display: none;">
       Para la mejor experiencia, agrégala a tu inicio:
       <div class="mt-2">
         1. Toca el botón <strong>Compartir</strong> <i class="fas fa-share-square ios-icon-share"></i><br>
         2. Selecciona <strong>"Agregar a inicio"</strong> <i class="fas fa-plus-square"></i>
       </div>
+    </div>
+
+    <!-- Android Action -->
+    <div id="pwaAndroidContent" class="pwa-prompt-content" style="display: none;">
+      <p class="mb-3">Instala la aplicación para un acceso más rápido y mejor rendimiento.</p>
+      <button id="pwaInstallBtn" class="btn btn-primary w-100 py-2 fw-bold">
+        <i class="fas fa-download me-2"></i> Instalar Ahora
+      </button>
     </div>
   </div>
 
@@ -629,12 +639,26 @@
           }
         });
       }
-      // iOS Install Prompt Logic
-      const iosPrompt = document.getElementById('iosInstallPrompt');
+      // PWA Install Prompt Logic
+      const pwaPrompt = document.getElementById('pwaInstallPrompt');
+      const iosContent = document.getElementById('pwaIosContent');
+      const androidContent = document.getElementById('pwaAndroidContent');
+      const installBtn = document.getElementById('pwaInstallBtn');
+      let deferredPrompt;
 
-      window.closeIosPrompt = () => {
-        if (iosPrompt) iosPrompt.classList.remove('show');
-        localStorage.setItem('iosPromptDismissed', 'true');
+      window.closePwaPrompt = () => {
+        if (pwaPrompt) pwaPrompt.classList.remove('show');
+        localStorage.setItem('pwaPromptDismissed', 'true');
+      };
+
+      const showPrompt = () => {
+        const dismissed = localStorage.getItem('pwaPromptDismissed');
+        // For testing you might want to comment out the dismissed check
+        if (!dismissed && pwaPrompt) {
+          setTimeout(() => {
+            pwaPrompt.classList.add('show');
+          }, 3000);
+        }
       };
 
       const isIos = () => {
@@ -646,15 +670,45 @@
         return ('standalone' in window.navigator) && (window.navigator.standalone);
       };
 
+      // iOS Check
       if (isIos() && !isInStandaloneMode()) {
-        // Check if previously dismissed
-        const dismissed = localStorage.getItem('iosPromptDismissed');
-        if (!dismissed) {
-          // Show after a short delay
-          setTimeout(() => {
-            if (iosPrompt) iosPrompt.classList.add('show');
-          }, 3000);
-        }
+        if (iosContent) iosContent.style.display = 'block';
+        showPrompt();
+      }
+
+      // Android/Desktop Check (beforeinstallprompt)
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+
+        // Update UI notify the user they can install the PWA
+        if (androidContent) androidContent.style.display = 'block';
+
+        showPrompt();
+      });
+
+      // Handle Install Button Click
+      if (installBtn) {
+        installBtn.addEventListener('click', () => {
+          // Hide the custom prompt logic
+          window.closePwaPrompt();
+
+          // Show the install prompt
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+              } else {
+                console.log('User dismissed the install prompt');
+              }
+              deferredPrompt = null;
+            });
+          }
+        });
       }
 
     })();

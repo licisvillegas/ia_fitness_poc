@@ -6,7 +6,7 @@
     window.Runner.components.Header = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
         const {
             routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout,
-            notificationPermission, requestNotificationPermission
+            notificationPermission, requestNotificationPermission, isNotificationsEnabled, toggleNotifications
         } = useWorkout();
 
         const workStats = useMemo(() => {
@@ -38,16 +38,12 @@
 
                 <div className="header-controls d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
                     <button
-                        className="btn btn-sm btn-outline-secondary rounded-circle"
-                        onClick={() => {
-                            if (notificationPermission === 'default') {
-                                requestNotificationPermission();
-                            }
-                        }}
-                        title={notificationPermission === 'granted' ? "Notificaciones activas" : "Activar notificaciones"}
-                        disabled={notificationPermission === 'granted' || notificationPermission === 'denied'}
+                        className={`btn btn-sm rounded-circle ${isNotificationsEnabled ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+                        onClick={toggleNotifications}
+                        title={isNotificationsEnabled ? "Silenciar notificaciones" : "Activar notificaciones"}
+                        disabled={notificationPermission === 'denied'}
                     >
-                        <i className={`fas ${notificationPermission === 'granted' ? 'fa-bell' : 'fa-bell-slash'}`}></i>
+                        <i className={`fas ${isNotificationsEnabled ? 'fa-bell' : 'fa-bell-slash'}`}></i>
                     </button>
 
                     <button

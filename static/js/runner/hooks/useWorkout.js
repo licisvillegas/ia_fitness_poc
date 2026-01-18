@@ -22,44 +22,45 @@
         const [countdownValue, setCountdownValue] = useState(3);
         const [unit, setUnit] = useState('lb');
         const [notificationPermission, setNotificationPermission] = useState('default'); // default, granted, denied
+        const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
         const [showPending, setShowPending] = useState(false); // New state lifted from App.js
 
 
         // Timers
         const [globalTime, setGlobalTime] = useState(0);
-        const [stepTimer, setStepTimer] = useState(0); // For Rest or Time-based work
-        const [isTimerRunning, setIsTimerRunning] = useState(false);
-
-        // Refs for Interval
-        const stepIntervalRef = useRef(null);
-        const resumeTimerRef = useRef(false);
-        const onConfirmRef = useRef(null);
-        const queueRef = useRef([]);
-        const sessionLogRef = useRef([]); // Fix for stale closure
-        const startTimeRef = useRef(Date.now()); // Track start time of current step
-        const visibilitySnapshotRef = useRef(null);
-        const completeStepTimerRef = useRef(null);
-        const statusRef = useRef(status);
-        const isPausedRef = useRef(isPaused);
-        const isTimerRunningRef = useRef(isTimerRunning);
-        const stepTimerRef = useRef(stepTimer);
-        const globalTimeRef = useRef(globalTime);
-        const currentStepRef = useRef(null);
-        const onCancelRef = useRef(null); // Add ref for onCancel
+        // ... (existing code)
 
         // Notification Logic
-        const requestNotificationPermission = async () => {
+        useEffect(() => {
+            if ("Notification" in window) {
+                const perm = Notification.permission;
+                setNotificationPermission(perm);
+                // Default enabled if permission already granted
+                setIsNotificationsEnabled(perm === 'granted');
+            }
+        }, []);
+
+        const toggleNotifications = async () => {
             if (!("Notification" in window)) return;
-            try {
-                const permission = await Notification.requestPermission();
-                setNotificationPermission(permission);
-            } catch (e) {
-                console.error("Notification permission error", e);
+
+            if (notificationPermission === 'default') {
+                try {
+                    const permission = await Notification.requestPermission();
+                    setNotificationPermission(permission);
+                    setIsNotificationsEnabled(permission === 'granted');
+                } catch (e) {
+                    console.error("Notification permission error", e);
+                }
+            } else if (notificationPermission === 'granted') {
+                setIsNotificationsEnabled(prev => !prev);
+            } else {
+                // Denied: Could show a toast here if available mechanism
+                alert("Las notificaciones están bloqueadas por el navegador. Habilítalas en la configuración del sitio.");
             }
         };
 
         const sendNotification = (title, body) => {
-            if (notificationPermission === 'granted' && document.visibilityState === 'hidden') {
+            if (isNotificationsEnabled && notificationPermission === 'granted' && document.visibilityState === 'hidden') {
                 try {
                     new Notification(title, { body, icon: '/static/icons/icon-192x192.png' });
                 } catch (e) {
@@ -67,12 +68,6 @@
                 }
             }
         };
-
-        useEffect(() => {
-            if ("Notification" in window) {
-                setNotificationPermission(Notification.permission);
-            }
-        }, []);
 
 
         // INITIALIZE
@@ -964,6 +959,8 @@
             countdownValue,
             notificationPermission,
             requestNotificationPermission,
+            isNotificationsEnabled,
+            toggleNotifications,
             showPending,
             setShowPending,
             checkPendingAndFinish,

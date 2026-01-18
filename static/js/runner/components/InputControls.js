@@ -2,7 +2,7 @@
     const { useState, useEffect, useRef, useMemo } = React;
     const { useWorkout } = window.Runner.hooks;
 
-    window.Runner.components.InputControls = ({ step, compact = false, hideRPE = false }) => {
+    window.Runner.components.InputControls = ({ step, compact = false, hideRPE = false, focusMode = false }) => {
         const { PlateCalculatorModal, RPEHelpModal } = window.Runner.components;
         const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit } = useWorkout();
 
@@ -17,6 +17,8 @@
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
 
+        // ... (focusWeightInput and useEffects remain unchanged)
+
         const focusWeightInput = (selectAll = true) => {
             if (!weightInputRef.current) return false;
             weightInputRef.current.focus();
@@ -26,6 +28,7 @@
 
         useEffect(() => {
             const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
+            // ... (rest of useEffect logic)
             let nextWeight = step.target.weight || '';
             let nextReps = step.target.reps || '';
             if (exerciseId || step.exercise?.name) {
@@ -140,6 +143,19 @@
 
         return (
             <div className="py-1">
+                {/* Plate Calculator Icon - Focus Mode Only */}
+                {focusMode && (
+                    <button
+                        type="button"
+                        className="btn btn-sm text-secondary position-absolute top-0 start-0 m-2"
+                        title="Calculadora de discos"
+                        onClick={() => setPlateModalOpen(true)}
+                        style={{ zIndex: 10, opacity: 0.6 }}
+                    >
+                        <img src="/static/images/disc/45.png" alt="Plate Calc" style={{ width: '24px', height: '24px', filter: 'brightness(0.7)' }} />
+                    </button>
+                )}
+
                 <div className="row g-2 justify-content-center mb-2">
                     {!compact && (
                         <div className="col-6">

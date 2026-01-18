@@ -22,9 +22,20 @@
 
         if (focusMode) {
             return (
-                <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100`}>
+                <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100 position-relative`}>
+
+                    {/* Defer Button - Discrete top right */}
+                    <button
+                        className="btn btn-sm text-secondary position-absolute top-0 end-0 m-2"
+                        onClick={deferExercise}
+                        title="Dejar Pendiente"
+                        style={{ zIndex: 10, opacity: 0.6 }}
+                    >
+                        <i className="fas fa-history fa-lg"></i>
+                    </button>
+
                     <div className="d-flex flex-column justify-content-between h-100">
-                        <div className="text-center mb-2">
+                        <div className="text-center mb-2 pt-2">
                             <div className="text-info fs-6 mb-1">
                                 Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
                             </div>
@@ -37,7 +48,7 @@
                             {currentStep.isTimeBased ? (
                                 <TimerControls step={currentStep} />
                             ) : (
-                                <InputControls key={currentStep.id} step={currentStep} hideRPE />
+                                <InputControls key={currentStep.id} step={currentStep} hideRPE focusMode={focusMode} />
                             )}
                         </div>
                     </div>
@@ -46,7 +57,18 @@
         }
 
         return (
-            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100`}>
+            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100 position-relative`}>
+
+                {/* Defer Button - Discrete top right (Same as Focus Mode) */}
+                <button
+                    className="btn btn-sm text-secondary position-absolute top-0 end-0 m-2"
+                    onClick={deferExercise}
+                    title="Dejar Pendiente"
+                    style={{ zIndex: 10, opacity: 0.6 }}
+                >
+                    <i className="fas fa-history fa-lg"></i>
+                </button>
+
                 <div className="d-flex flex-column justify-content-between h-100">
 
                     <div className="text-center mobile-compact-mb mb-3">

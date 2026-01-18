@@ -488,7 +488,9 @@
         try {
             const uid = getActiveUserId();
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${uid}&timezone=${encodeURIComponent(tz)}`); // { "2025-01-01": 1 }
+            const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${uid}&timezone=${encodeURIComponent(tz)}`, {
+                credentials: "include"
+            });
             const hMap = await hRes.json();
             const grid = document.getElementById("heatmapGrid");
 

@@ -274,7 +274,10 @@
         if (!confirmed) return;
 
         try {
-            const res = await fetch(`/workout/api/sessions/${sessionId}`, { method: "DELETE" });
+            const res = await fetch(`/workout/api/sessions/${sessionId}`, {
+                method: "DELETE",
+                credentials: "include"
+            });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 if (typeof showAlertModal === 'function') {
@@ -302,7 +305,7 @@
     };
 
     const getSessionDate = (session) => {
-        const raw = session.start_time || session.created_at || session.date;
+        const raw = session.started_at || session.start_time || session.created_at || session.date;
         const d = raw ? new Date(raw) : null;
         if (!d || Number.isNaN(d.getTime())) return null;
         return d;
@@ -471,10 +474,8 @@
         // Month -> Current System Date (as requested)
         // Weekday -> Current System Date (or latest? defaulting to current for generic weekday)
 
-        let targetDate = new Date(); // Default for Month/Weekday
-        if (range === "day" || range === "week") {
-            targetDate = getLatestSessionDate();
-        }
+        let targetDate = getLatestSessionDate(); // Default to latest data for ALL ranges
+        // removing the conditional usage of new Date() allows us to always show relevant data
 
         if (range === "day") {
             const k = getDayKey(targetDate);
@@ -539,9 +540,10 @@
         try {
             const res = await fetch(`/workout/api/sessions?user_id=${userId}`);
             const data = await res.json();
+            console.log("DEBUG: Loaded sessions:", data);
             sessionData = Array.isArray(data) ? data : [];
-            // Apply default filter: Day (Latest)
-            window.setSessionFilterRange("day");
+            // Apply default filter: Month (Broader view)
+            window.setSessionFilterRange("month");
         } catch (e) {
             console.error("Error loading sessions:", e);
             container.innerHTML = `<p class="text-danger text-center m-0">Error cargando sesiones.</p>`;

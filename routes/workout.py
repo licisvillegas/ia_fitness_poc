@@ -582,20 +582,12 @@ def api_get_sessions():
         
         limit = int(request.args.get("limit", 20))
 
-        # Limit to last 2 months for performance
-        cutoff_date = datetime.utcnow() - timedelta(days=60)
+        # Limit to last 100 sessions (relaxed from 60 days)
+        # We remove strict date filtering to align with Heatmap visibility
         
-        # Try finding sessions by 'created_at' (or started_at) descending
-        # Filter filters strictly by date > 60 days ago
         cursor = db.workout_sessions.find(
-            {
-                "user_id": user_id,
-                "$or": [
-                    {"created_at": {"$gte": cutoff_date}},
-                    {"started_at": {"$gte": cutoff_date}}
-                ]
-            }
-        ).sort("created_at", -1).limit(limit)
+            { "user_id": user_id }
+        ).sort("created_at", -1).limit(100)
         
         sessions = []
         routine_ids = set()
@@ -605,6 +597,7 @@ def api_get_sessions():
             rid = s.get("routine_id")
             if rid:
                 routine_ids.add(rid)
+                s["routine_id"] = str(rid) # Fix: Convert ObjectId to string for JSON serialization
 
             # Normalize start time for frontend
             start_dt = s.get("started_at") or s.get("created_at")

@@ -60,7 +60,7 @@
 
         if (!isOpen) return null;
 
-        return (
+        return ReactDOM.createPortal(
             <div className="plate-modal-backdrop" onClick={onClose}>
                 <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
                     <div className="plate-modal-header">
@@ -119,7 +119,8 @@
                         <button className="btn btn-info text-dark fw-bold" onClick={handleApply}>Aplicar</button>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 })();

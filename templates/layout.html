@@ -146,6 +146,15 @@
     <script src="/static/js/lang.js"></script>
     <script src="/static/js/theme.js"></script>
     <script src="/static/js/loader.js"></script>
+    <!-- Offline Manager -->
+    <script src="/static/js/offline_manager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.offlineManager) {
+                window.offlineManager.init();
+            }
+        });
+    </script>
     <script>
         const appAlertModal = document.getElementById("appAlertModal");
         const appAlertTitle = document.getElementById("appAlertTitle");

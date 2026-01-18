@@ -640,12 +640,35 @@
                             end_time: new Date().toISOString(),
                             sets: sessionLogRef.current // Use REF to ensure latest data
                         };
-                        const res = await fetch("/workout/api/session/save", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload)
-                        });
-                        if (res.ok) window.location.href = getReturnUrl();
+
+                        // Try online save first
+                        try {
+                            const res = await fetch("/workout/api/session/save", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(payload)
+                            });
+                            if (!res.ok) throw new Error("Server returned " + res.status);
+                            window.location.href = getReturnUrl();
+                        } catch (fetchError) {
+                            console.warn("Online save failed, attempting local save...", fetchError);
+
+                            if (window.offlineManager) {
+                                await window.offlineManager.saveSession(payload);
+                                if (window.showToast) {
+                                    window.showToast("Sin conexión: Guardado localmente", "warning");
+                                } else {
+                                    alert("Sin conexión: Guardado localmente. Se sincronizará cuando recuperes la red.");
+                                }
+                                // Allow exit
+                                setTimeout(() => {
+                                    window.location.href = getReturnUrl();
+                                }, 1500);
+                            } else {
+                                throw fetchError; // Re-throw if no offline manager
+                            }
+                        }
+
                     } catch (e) {
                         if (window.showAlertModal) {
                             window.showAlertModal("Error", "Error saving: " + e.message, "danger");

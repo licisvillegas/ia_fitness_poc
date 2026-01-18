@@ -63,4 +63,16 @@
         // Show loader
         window.showLoader("Cargando...", null);
     });
+
+    // Fix for Back-Forward Cache (BF Cache) persisting the loader
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            window.hideLoader();
+        }
+    });
+
+    // Ensure loader is hidden on initial load
+    document.addEventListener('DOMContentLoaded', function () {
+        window.hideLoader();
+    });
 })();

@@ -612,7 +612,8 @@
             justify-content: center !important;
             order: 3;
         }
-
+        
+        /* ... existing mobile styles ... */
         .pending-panel {
             top: auto;
             bottom: 0;
@@ -631,6 +632,82 @@
 
         .pending-panel.open {
             transform: translateY(0);
+        }
+    }
+
+    /* Landscape Mode - Plate Calculator Optimization */
+    @media (orientation: landscape) and (max-height: 600px) {
+        .plate-modal {
+            width: 85vw !important;
+            max-width: 650px !important;
+        }
+        
+        .plate-modal-body {
+            display: flex;
+            gap: 20px;
+            padding-bottom: 0;
+        }
+        
+        .plate-mode-row {
+            /* Move mode switch to top of left column or absolute? 
+               Keep simple: make it part of left column flow */
+            width: 100%;
+            padding-top: 0;
+        }
+        
+        /* Left Column: Grid + Mode Switch */
+        /* Since structure is: ModeRow -> Grid -> DetailsWrapper */
+        /* We want: LeftCol (Mode+Grid) | RightCol (Details) */
+        /* Flex direction is row. We need to wrap Mode+Grid? No, HTML structure is flat. */
+        /* Solution: Grid layout for body */
+        
+        .plate-modal-body {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            grid-template-rows: auto 1fr;
+            column-gap: 20px;
+            /* 
+                Area 1 (Top Left): Mode Switch
+                Area 2 (Bot Left): Plates Grid
+                Area 3 (Right): Details Wrapper (Spans full height)
+             */
+        }
+        
+        .plate-mode-row {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        
+        .plate-grid {
+            grid-column: 1;
+            grid-row: 2;
+            gap: 8px; /* Tighter gap */
+            overflow-y: auto;
+            max-height: 50vh; /* Scroll if needed */
+        }
+        
+        .plate-calc-details {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 1px solid var(--border-color);
+            padding-left: 20px;
+        }
+        
+        .plate-tile {
+            padding: 4px; /* Compact tiles */
+        }
+        
+        .plate-tile img {
+            width: 30px;
+            height: 30px;
+        }
+        
+        .plate-counter button {
+            width: 24px;
+            height: 24px;
         }
     }
 

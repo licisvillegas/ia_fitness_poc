@@ -91,25 +91,27 @@
                             ))}
                         </div>
 
-                        <div className="mt-3 d-flex align-items-center justify-content-between">
-                            <div className="text-secondary small">Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}</div>
-                            <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
-                        </div>
-
-                        <div className="mt-3 d-flex align-items-center justify-content-between">
-                            <div className="text-secondary small">Peso de barra</div>
-                            <div className="d-flex align-items-center gap-2">
-                                <div className="form-check form-switch m-0">
-                                    <input className="form-check-input" type="checkbox" checked={includeBar} onChange={(e) => setIncludeBar(e.target.checked)} />
-                                </div>
-                                <input type="number" min="0" className="form-control form-control-sm border-secondary" style={{ width: '80px' }} value={barWeight} onChange={(e) => setBarWeight(e.target.value)} disabled={!includeBar} />
-                                <span className="text-secondary small">lb</span>
+                        <div className="plate-calc-details">
+                            <div className="mt-3 d-flex align-items-center justify-content-between">
+                                <div className="text-secondary small">Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}</div>
+                                <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
                             </div>
-                        </div>
 
-                        <div className="mt-3 d-flex align-items-center justify-content-between">
-                            <div className="text-secondary small">Total</div>
-                            <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
+                            <div className="mt-3 d-flex align-items-center justify-content-between">
+                                <div className="text-secondary small">Peso de barra</div>
+                                <div className="d-flex align-items-center gap-2">
+                                    <div className="form-check form-switch m-0">
+                                        <input className="form-check-input" type="checkbox" checked={includeBar} onChange={(e) => setIncludeBar(e.target.checked)} />
+                                    </div>
+                                    <input type="number" min="0" className="form-control form-control-sm border-secondary" style={{ width: '80px' }} value={barWeight} onChange={(e) => setBarWeight(e.target.value)} disabled={!includeBar} />
+                                    <span className="text-secondary small">lb</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 d-flex align-items-center justify-content-between">
+                                <div className="text-secondary small">Total</div>
+                                <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
+                            </div>
                         </div>
                     </div>
                     <div className="plate-modal-footer">

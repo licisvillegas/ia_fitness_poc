@@ -285,6 +285,14 @@
         .alert-tone-success {
             color: #00ff9d;
         }
+
+        .chevron-rotate {
+            transition: transform 0.2s ease;
+        }
+
+        .chevron-rotate.rotate-180 {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 
@@ -358,14 +366,25 @@
                                 </section>
 
                                 <section class="mb-4">
-                                    <div class="d-flex justify-content-end mb-2">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                        <button id="bodyMeasuresToggle"
+                                            class="btn btn-link text-decoration-none px-0 d-flex align-items-center gap-2"
+                                            type="button" aria-expanded="false" aria-controls="bodyMeasuresCollapse">
+                                            <span class="section-title h5 mb-0">Medidas corporales</span>
+                                            <i class="fas fa-chevron-down text-secondary chevron-rotate"
+                                                id="bodyMeasuresChevron"></i>
+                                        </button>
                                         <button class="btn btn-outline-info btn-sm" type="button" data-bs-toggle="modal"
                                             data-bs-target="#bodyTrackingModal">
-                                            Ver seguimiento corporal
+                                            Abrir seguimiento corporal
                                         </button>
                                     </div>
-                                    <h2 class="section-title h5 mb-3">Medidas corporales</h2>
-                                    <div class="row g-3">
+                                    <p class="text-secondary small mb-3">
+                                        Puedes abrir el seguimiento corporal para actualizar y al cerrar el modal se sincronizan los valores.
+                                        Tambien puedes escribir aqui.
+                                    </p>
+                                    <div class="collapse" id="bodyMeasuresCollapse">
+                                        <div class="row g-3">
                                         <div class="col-6 col-lg-4">
                                             <label class="form-label small" for="height_cm">Altura (cm)</label>
                                             <input class="form-control" data-measure="height_cm" id="height_cm"
@@ -441,6 +460,7 @@
                                             <input class="form-control" data-measure="pantorrilla_der" id="pantorrilla_der"
                                                 placeholder="38" type="number" step="0.1" />
                                         </div>
+                                        </div>
                                     </div>
 
                                     <!-- Visual Examples Carousel -->
@@ -474,16 +494,25 @@
                                 </section>
 
                                 <section class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h2 class="section-title h5 mb-0">Observaciones de fotos</h2>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <button id="photoObservationsToggle"
+                                            class="btn btn-link text-decoration-none px-0 d-flex align-items-center gap-2"
+                                            type="button" aria-expanded="false"
+                                            aria-controls="photoObservationsCollapse">
+                                            <span class="section-title h5 mb-0">Observaciones de fotos</span>
+                                            <i class="fas fa-chevron-down text-secondary chevron-rotate"
+                                                id="photoObservationsChevron"></i>
+                                        </button>
                                         <button class="btn btn-outline-light btn-sm" id="add-photo" type="button">
-                                            + Añadir vista
+                                            + Anadir vista
                                         </button>
                                     </div>
-                                    <p class="text-secondary small mb-3">
-                                        Sube tus fotos (frontal, perfil, posterior).
-                                    </p>
-                                    <div class="vstack gap-3" id="photo-list"></div>
+                                    <div class="collapse" id="photoObservationsCollapse">
+                                        <p class="text-secondary small mb-3">
+                                            Sube tus fotos (frontal, perfil, posterior).
+                                        </p>
+                                        <div class="vstack gap-3" id="photo-list"></div>
+                                    </div>
                                 </section>
 
                                 <div class="d-flex flex-wrap gap-2">
@@ -798,6 +827,7 @@
             const sexSelect = document.getElementById("sex");
             const exampleImages = Array.from(document.querySelectorAll(".example-img"));
             let zoomModal;
+            let photoObservationsApi = null;
 
             const isAdminUnlocked = () => {
                 try {
@@ -976,6 +1006,44 @@
                     updateExampleImages();
                 }
 
+                const measuresCollapse = document.getElementById('bodyMeasuresCollapse');
+                const measuresChevron = document.getElementById('bodyMeasuresChevron');
+                const measuresToggle = document.getElementById('bodyMeasuresToggle');
+                if (measuresCollapse && measuresChevron && measuresToggle) {
+                    const collapseApi = new bootstrap.Collapse(measuresCollapse, { toggle: false });
+                    measuresToggle.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        collapseApi.toggle();
+                    });
+                    measuresCollapse.addEventListener('show.bs.collapse', () => {
+                        measuresChevron.classList.add('rotate-180');
+                        measuresToggle.setAttribute('aria-expanded', 'true');
+                    });
+                    measuresCollapse.addEventListener('hide.bs.collapse', () => {
+                        measuresChevron.classList.remove('rotate-180');
+                        measuresToggle.setAttribute('aria-expanded', 'false');
+                    });
+                }
+
+                const photoObservationsCollapse = document.getElementById('photoObservationsCollapse');
+                const photoObservationsChevron = document.getElementById('photoObservationsChevron');
+                const photoObservationsToggle = document.getElementById('photoObservationsToggle');
+                if (photoObservationsCollapse && photoObservationsChevron && photoObservationsToggle) {
+                    photoObservationsApi = new bootstrap.Collapse(photoObservationsCollapse, { toggle: false });
+                    photoObservationsToggle.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        photoObservationsApi.toggle();
+                    });
+                    photoObservationsCollapse.addEventListener('show.bs.collapse', () => {
+                        photoObservationsChevron.classList.add('rotate-180');
+                        photoObservationsToggle.setAttribute('aria-expanded', 'true');
+                    });
+                    photoObservationsCollapse.addEventListener('hide.bs.collapse', () => {
+                        photoObservationsChevron.classList.remove('rotate-180');
+                        photoObservationsToggle.setAttribute('aria-expanded', 'false');
+                    });
+                }
+
                 const userJson = localStorage.getItem('ai_fitness_user');
                 let userId = null;
 
@@ -1121,6 +1189,10 @@
             }
 
             document.getElementById("add-photo").addEventListener("click", () => {
+                const photoObservationsCollapse = document.getElementById('photoObservationsCollapse');
+                if (photoObservationsApi && photoObservationsCollapse && !photoObservationsCollapse.classList.contains('show')) {
+                    photoObservationsApi.show();
+                }
                 photoList.appendChild(createPhotoRow());
             });
 

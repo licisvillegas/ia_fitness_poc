@@ -116,11 +116,11 @@ class OfflineManager {
             for (const record of records) {
                 try {
                     await this.uploadSession(record);
-                    await this.deleteRecord(record.id);
+                    await this.deleteSession(record.id);
                     console.log(`Synced session ${record.id}`);
 
                     // Optional: Show a toast/notification to user
-                    if (window.showToast) window.showToast("Sesión sincronizada exitosamente", "success");
+                    if (window.showToast) window.showToast("Sesion sincronizada exitosamente", "success");
 
                 } catch (e) {
                     console.error(`Failed to sync session ${record.id}`, e);
@@ -145,7 +145,7 @@ class OfflineManager {
         });
     }
 
-    deleteRecord(id) {
+    deleteSession(id) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], "readwrite");
             const store = transaction.objectStore(this.storeName);
@@ -154,6 +154,10 @@ class OfflineManager {
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
+    }
+
+    deleteRecord(id) {
+        return this.deleteSession(id);
     }
 
     async uploadSession(record) {

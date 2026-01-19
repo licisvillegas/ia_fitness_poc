@@ -720,15 +720,15 @@
                 setShowCompletionIcon(false);
                 showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
                     setStatus('FINISHED');
+                    const payload = {
+                        routine_id: routine.id,
+                        start_time: new Date(Date.now() - globalTime * 1000).toISOString(),
+                        end_time: new Date().toISOString(),
+                        sets: sessionLogRef.current // Use REF to ensure latest data
+                    };
                     if (window.showLoader) window.showLoader("Guardando sesión...");
                     // Save logic
                     try {
-                        const payload = {
-                            routine_id: routine.id,
-                            start_time: new Date(Date.now() - globalTime * 1000).toISOString(),
-                            end_time: new Date().toISOString(),
-                            sets: sessionLogRef.current // Use REF to ensure latest data
-                        };
 
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
@@ -760,9 +760,13 @@
                                 if (offlineResult) {
                                     offlineSaved = true;
                                     if (window.showAlertModal) {
-                                        window.showAlertModal("Sin Conexión", "Sesión guardada localmente. Se sincronizará luego.", "warning");
+                                        window.showAlertModal(
+                                            "Guardado localmente",
+                                            "La sesion se guardo en este dispositivo y se sincronizara cuando vuelva la conexion.",
+                                            "warning"
+                                        );
                                     } else {
-                                        alert("Sin Conexión. Guardado localmente.");
+                                        alert("Guardado localmente. Se sincronizara cuando vuelva la conexion.");
                                     }
                                     setTimeout(() => window.location.href = getReturnUrl(), 2000);
                                     return;

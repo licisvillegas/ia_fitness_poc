@@ -946,18 +946,19 @@
         };
 
         const closeConfirm = () => {
-            // If implicit cancel (via X or Cancel button in UI which calls closeConfirm)
-            if (onCancelRef.current) {
-                onCancelRef.current();
+            // Prioritize Ref, then State
+            const action = onCancelRef.current || confirmModal.onCancel;
+            if (action) {
+                action();
             }
             onConfirmRef.current = null;
             onCancelRef.current = null;
-            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null, onCancel: null }));
         };
 
         const handleConfirmAction = () => {
-            // Confirm action overrides cancel
-            const action = onConfirmRef.current;
+            // Prioritize Ref, then State
+            const action = onConfirmRef.current || confirmModal.onConfirm;
 
             // Clear refs so closeConfirm doesn't trigger cancel
             onConfirmRef.current = null;
@@ -965,7 +966,7 @@
 
             if (action) action();
 
-            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null, onCancel: null }));
         };
 
         const checkPendingAndFinish = () => {

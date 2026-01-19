@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash
 import extensions
 from extensions import logger
 from utils.auth_helpers import check_admin_access, ensure_user_status, generate_admin_csrf, validate_admin_csrf, USER_STATUS_DEFAULT
+from utils.cache import cache_delete
 from utils.helpers import parse_birth_date, format_birth_date, compute_age, normalize_user_status
 
 admin_bp = Blueprint('admin', __name__)
@@ -376,10 +377,13 @@ def lock_admin_session():
     if not csrf_ok: return csrf_err
 
     try:
+        user_id = request.cookies.get("user_session")
         resp = jsonify({"message": "Admin session locked"})
         resp.delete_cookie("admin_token")
         resp.delete_cookie("admin_last_active")
         resp.delete_cookie("admin_csrf")
+        if user_id:
+            cache_delete(f"user_ctx:{user_id}")
         return resp, 200
     except Exception as e:
         logger.error(f"Error locking admin: {e}")

@@ -59,3 +59,12 @@ def cache_set(key, value, ttl_seconds):
         "value": value,
         "expires_at": datetime.utcnow().timestamp() + ttl_seconds,
     }
+
+def cache_delete(key):
+    client = _get_redis_client()
+    if client:
+        try:
+            client.delete(key)
+        except Exception:
+            pass
+    _memory_cache.pop(key, None)

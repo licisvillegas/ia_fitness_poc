@@ -55,19 +55,18 @@
             <!-- Admin Token / Lock Logic -->
             {% if current_user_role == 'admin' and not is_impersonating %}
             <li>
-                {% if has_admin_token %}
                 <a href="#" id="sidebar-lock-btn"
                     class="d-flex align-items-center text-danger text-decoration-none py-1 hover-white"
-                    title="Bloquear sesión de admin">
+                    title="Bloquear sesi?n de admin"
+                    {% if not has_admin_token %}style="display:none"{% endif %}>
                     <i class="fas fa-lock me-2"></i> Bloquear Admin
                 </a>
-                {% else %}
                 <a href="#" id="sidebar-token-btn"
                     class="d-flex align-items-center text-warning text-decoration-none py-1 hover-white"
-                    data-bs-toggle="modal" data-bs-target="#adminTokenModal">
+                    data-bs-toggle="modal" data-bs-target="#adminTokenModal"
+                    {% if has_admin_token %}style="display:none"{% endif %}>
                     <i class="fas fa-key me-2"></i> Token Admin
                 </a>
-                {% endif %}
             </li>
             {% endif %}
 
@@ -258,6 +257,37 @@
         return "";
     }
 
+    function setAdminMenuState(isUnlocked) {
+        const lockBtn = document.getElementById('sidebar-lock-btn');
+        const tokenBtn = document.getElementById('sidebar-token-btn');
+        if (lockBtn) lockBtn.style.display = isUnlocked ? "" : "none";
+        if (tokenBtn) tokenBtn.style.display = isUnlocked ? "none" : "";
+
+        const searchBtn = document.getElementById('sidebar-search-user-btn');
+        if (!searchBtn) return;
+
+        if (isUnlocked) {
+            searchBtn.classList.remove('disabled');
+            searchBtn.removeAttribute('aria-disabled');
+            searchBtn.setAttribute('data-bs-toggle', 'modal');
+            searchBtn.setAttribute('data-bs-target', '#userContextModal');
+            searchBtn.onclick = null;
+        } else {
+            searchBtn.classList.add('disabled');
+            searchBtn.setAttribute('aria-disabled', 'true');
+            searchBtn.removeAttribute('data-bs-toggle');
+            searchBtn.removeAttribute('data-bs-target');
+            searchBtn.onclick = (e) => {
+                e.preventDefault();
+                if (window.showAlertModal) {
+                    window.showAlertModal("Token requerido", "Valida el token admin para habilitar la busqueda de usuarios.", "warning");
+                } else {
+                    alert("Valida el token admin para habilitar la busqueda de usuarios.");
+                }
+            };
+        }
+    }
+
     // 1. Admin Token Logic
     document.addEventListener('DOMContentLoaded', () => {
         const verifyBtn = document.getElementById('verifyTokenBtn');
@@ -298,7 +328,8 @@
                         setTimeout(() => {
                             if (!bootstrapModal && modalEl) bootstrapModal = bootstrap.Modal.getInstance(modalEl);
                             if (bootstrapModal) bootstrapModal.hide();
-                            location.reload();
+                            setAdminMenuState(true);
+                            if (window.checkAdminLockAndInit) window.checkAdminLockAndInit();
                         }, 800);
                     } else {
                         msg.className = 'mt-2 text-danger small';
@@ -375,26 +406,13 @@
 
                 // Slight delay to ensure modal transition finishes
                 setTimeout(() => {
-                    window.location.reload();
+                    setAdminMenuState(false);
                 }, 300);
             });
         }
 
         const searchBtn = document.getElementById('sidebar-search-user-btn');
-        if (!isAdminUnlocked && searchBtn) {
-            searchBtn.classList.add('disabled');
-            searchBtn.setAttribute('aria-disabled', 'true');
-            searchBtn.removeAttribute('data-bs-toggle');
-            searchBtn.removeAttribute('data-bs-target');
-            searchBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (window.showAlertModal) {
-                    window.showAlertModal("Token requerido", "Valida el token admin para habilitar la busqueda de usuarios.", "warning");
-                } else {
-                    alert("Valida el token admin para habilitar la busqueda de usuarios.");
-                }
-            });
-        }
+        setAdminMenuState(isAdminUnlocked);
 
         if (sInput && sResults) {
             function renderSidebarUserResult(u) {

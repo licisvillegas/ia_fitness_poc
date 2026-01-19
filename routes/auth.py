@@ -8,6 +8,7 @@ import os
 import extensions
 from extensions import logger
 from utils.auth_helpers import ensure_user_status, get_admin_token, generate_admin_csrf, USER_STATUS_DEFAULT
+from utils.cache import cache_delete
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -225,6 +226,9 @@ def verify_admin_token_endpoint():
             from config import Config
             import time
             resp.set_cookie("admin_last_active", str(int(time.time())), httponly=True, samesite="Lax", max_age=Config.ADMIN_IDLE_TIMEOUT_SECONDS)
+            user_id = request.cookies.get("user_session")
+            if user_id:
+                cache_delete(f"user_ctx:{user_id}")
             return resp, 200
         else:
             return jsonify({"ok": False, "error": "Token inválido"}), 403

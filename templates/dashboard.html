@@ -635,7 +635,7 @@
       loadProgress(targetId);
       loadActivePlanIndicator(targetId);
       if (window.loadCreatedRoutines) {
-        window.loadCreatedRoutines({ returnTo: '/dashboard' });
+        window.loadCreatedRoutines({ returnTo: '/dashboard', userId: targetId });
       }
       if (window.loadSessions) {
         window.loadSessions(targetId);
@@ -809,13 +809,13 @@
             loadProgress(loadId),
             loadActivePlanIndicator(loadId),
             window.loadRoutines ? window.loadRoutines(loadId) : Promise.resolve(),
-            window.loadCreatedRoutines ? window.loadCreatedRoutines({ returnTo: '/dashboard' }) : Promise.resolve(),
+            window.loadCreatedRoutines ? window.loadCreatedRoutines({ returnTo: '/dashboard', userId: loadId }) : Promise.resolve(),
             window.loadSessions ? window.loadSessions(loadId) : Promise.resolve(),
             loadHeatmap(loadId)
           ]);
         } catch (e) { } finally { hideLoader(); }
       } else {
-        if (window.loadCreatedRoutines) window.loadCreatedRoutines({ returnTo: '/dashboard' });
+        if (window.loadCreatedRoutines) window.loadCreatedRoutines({ returnTo: '/dashboard', userId: loadId });
       }
     });
 

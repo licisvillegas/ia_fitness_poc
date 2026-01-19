@@ -489,7 +489,7 @@ window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
   const listEl = document.getElementById("created-routines-list");
   const sectionEl = document.getElementById("my-created-routines");
   const returnTo = (options && options.returnTo) || "/dashboard";
-  const userId = options && options.userId;
+  const userId = (options && options.userId) || window.currentUserId;
 
   if (!listEl || !sectionEl) return;
   if (!userId) {

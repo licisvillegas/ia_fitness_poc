@@ -73,6 +73,13 @@
                         <option value="Sunday">Domingo</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Estado de la rutina</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="routineActive" checked>
+                        <label class="form-check-label text-secondary" for="routineActive">Mostrar en Rutinas creadas</label>
+                    </div>
+                </div>
 
                 <hr class="border-secondary">
 
@@ -604,7 +611,12 @@
         routineList.innerHTML = list.map(r => `
             <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center hover-bg ${selectedRoutineId === r._id ? 'border-info' : ''}">
                 <div>
-                    <div class="fw-bold text-white">${r.name || "Sin nombre"}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="fw-bold text-white">${r.name || "Sin nombre"}</div>
+                        <span class="badge ${r.is_active === false ? "bg-secondary" : "bg-success"} text-dark" style="font-size: 0.65rem;">
+                            ${r.is_active === false ? "Inactiva" : "Activa"}
+                        </span>
+                    </div>
                     ${r.description ? `<div class="small text-secondary">${r.description}</div>` : ""}
                 </div>
                 <div class="d-flex gap-2">
@@ -696,6 +708,7 @@
         document.getElementById("routineName").value = "";
         document.getElementById("routineDesc").value = "";
         document.getElementById("routineDay").value = "";
+        document.getElementById("routineActive").checked = true;
         document.querySelectorAll(".routine-bodypart").forEach(input => input.checked = false);
         activeGroupId = "";
         selectedRoutineId = "";
@@ -764,6 +777,10 @@
                 : (routine.name || "");
             document.getElementById("routineDesc").value = routine.description || "";
             document.getElementById("routineDay").value = routine.routine_day || "";
+            const routineActive = document.getElementById("routineActive");
+            if (routineActive) {
+                routineActive.checked = routine.is_active !== false;
+            }
             const selectedBodyParts = new Set(routine.routine_body_parts || []);
             document.querySelectorAll(".routine-bodypart").forEach(input => {
                 input.checked = selectedBodyParts.has(input.value);
@@ -1766,6 +1783,7 @@
         const desc = document.getElementById("routineDesc").value;
         const routineDay = document.getElementById("routineDay").value;
         const routineId = document.getElementById("routineId").value;
+        const isActive = document.getElementById("routineActive")?.checked ?? true;
 
         if (!name) return showAlertModal("Ponle un nombre a tu rutina", "warning");
         if (currentRoutineItems.length === 0) return showAlertModal("Agrega al menos un ejercicio", "warning");
@@ -1782,7 +1800,8 @@
             description: desc,
             items: currentRoutineItems,
             routine_body_parts: getRoutineBodyParts(),
-            routine_day: routineDay
+            routine_day: routineDay,
+            is_active: isActive
         };
 
         try {

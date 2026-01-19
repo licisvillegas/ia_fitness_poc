@@ -124,12 +124,14 @@
             });
         });
 
-        const pushRest = (restItem, key) => {
+        const pushRestIfPositive = (restItem, key, labelOverride) => {
+            const duration = parseInt(logic.getRestSeconds(restItem));
+            if (!duration || duration <= 0) return;
             queue.push({
                 id: `rest_${key}_${queue.length}`,
                 type: 'rest',
-                duration: parseInt(logic.getRestSeconds(restItem)),
-                label: restItem.note || 'Descansar'
+                duration,
+                label: labelOverride || restItem.note || 'Descansar'
             });
         };
 
@@ -168,11 +170,11 @@
             for (let s = 1; s <= exSets; s++) {
                 pushWorkStep(ex, key, s, exSets, groupInfo);
                 if (s < exSets) {
-                    queue.push({ type: 'rest', duration: parseInt(logic.getRestSeconds(ex)), label: 'Descansar' });
+                    pushRestIfPositive(ex, `${key}_${s}`, 'Descansar');
                 }
             }
             if (addPostRest && hasExplicitRest(ex)) {
-                queue.push({ type: 'rest', duration: parseInt(logic.getRestSeconds(ex)), label: 'Descansar' });
+                pushRestIfPositive(ex, `${key}_post`, 'Descansar');
             }
         };
 
@@ -189,7 +191,7 @@
             items.forEach((group, gIdx) => {
                 if (isGroupItem(group) && !Array.isArray(group.items)) return;
                 if (isRestItem(group)) {
-                    pushRest(group, gIdx);
+                    pushRestIfPositive(group, gIdx);
                     return;
                 }
 
@@ -197,41 +199,29 @@
                 const exerciseEntries = entries.filter(isExerciseItem);
                 const restEntries = entries.filter(isRestItem);
                 if (!exerciseEntries.length && restEntries.length) {
-                    restEntries.forEach((restItem, rIdx) => pushRest(restItem, `${gIdx}_${rIdx}`));
+                    restEntries.forEach((restItem, rIdx) => pushRestIfPositive(restItem, `${gIdx}_${rIdx}`));
                     return;
                 }
 
-                const isCircuit = group.item_type === 'group' || (group.items && group.items.length > 1);
                 const maxSets = Math.max(...exerciseEntries.map(ex => parseInt(ex.target_sets || ex.sets || 1)));
                 const groupInfo = {
                     name: group.name || group.group_name || 'Circuito',
                     note: group.note || ''
                 };
 
-                const hasNextWork = hasNextWorkAfterIndex(gIdx);
                 for (let s = 1; s <= maxSets; s++) {
                     entries.forEach((entry, exIdx) => {
                         if (isRestItem(entry)) {
-                            pushRest(entry, `${gIdx}_${exIdx}_${s}`);
+                            pushRestIfPositive(entry, `${gIdx}_${exIdx}_${s}`);
                             return;
                         }
                         if (!isExerciseItem(entry)) return;
                         const exSets = parseInt(entry.target_sets || entry.sets || 1);
                         if (s <= exSets) {
                             pushWorkStep(entry, `${gIdx}_${exIdx}`, s, exSets, groupInfo);
-
-                            const isLastInCircuit = exIdx === entries.length - 1;
-                            const isLastSet = s === maxSets;
                             const restTime = parseInt(logic.getRestSeconds(entry));
-
-                            if (isCircuit) {
-                                if (isLastInCircuit && !isLastSet) {
-                                    queue.push({ type: 'rest', duration: restTime, label: 'Descansar (Fin de Circuito)' });
-                                } else if (isLastInCircuit && isLastSet && hasNextWork) {
-                                    queue.push({ type: 'rest', duration: restTime, label: 'Descansar (Fin de Circuito)' });
-                                }
-                            } else if (!isLastSet) {
-                                queue.push({ type: 'rest', duration: restTime, label: 'Descansar' });
+                            if (hasExplicitRest(entry) && restTime > 0) {
+                                pushRestIfPositive({ rest_seconds: restTime }, `${gIdx}_${exIdx}_${s}_rest`, 'Descansar');
                             }
                         }
                     });
@@ -280,7 +270,7 @@
                 if (block.type === 'entry') {
                     const entry = block.entry;
                     if (isRestItem(entry)) {
-                        pushRest(entry, block.key);
+                        pushRestIfPositive(entry, block.key);
                     } else if (isExerciseItem(entry)) {
                         addStraightSets(entry, block.key, null, hasNextWorkBlock(blockIdx));
                     }
@@ -295,7 +285,7 @@
                 const exerciseEntries = entries.filter(isExerciseItem);
                 const restEntries = entries.filter(isRestItem);
                 if (!exerciseEntries.length && restEntries.length) {
-                    restEntries.forEach((restItem, rIdx) => pushRest(restItem, `group_${block.id}_${rIdx}`));
+                    restEntries.forEach((restItem, rIdx) => pushRestIfPositive(restItem, `group_${block.id}_${rIdx}`));
                     return;
                 }
 
@@ -303,39 +293,28 @@
                 const groupInfo = groupMeta.has(block.id)
                     ? groupMeta.get(block.id)
                     : { name: 'Grupo', note: '' };
-                const hasTrailingRest = entries.length > 0 && isRestItem(entries[entries.length - 1]);
-
-                const hasNextWork = hasNextWorkBlock(blockIdx);
                 for (let s = 1; s <= maxSets; s++) {
                     entries.forEach((entry, entryIdx) => {
                         if (isRestItem(entry)) {
-                            pushRest(entry, `group_${block.id}_${entryIdx}_${s}`);
+                            pushRestIfPositive(entry, `group_${block.id}_${entryIdx}_${s}`);
                             return;
                         }
                         if (!isExerciseItem(entry)) return;
                         const exSets = parseInt(entry.target_sets || entry.sets || 1);
                         if (s <= exSets) {
                             pushWorkStep(entry, `group_${block.id}_${entryIdx}`, s, exSets, groupInfo);
+                            const restTime = parseInt(logic.getRestSeconds(entry));
+                            if (hasExplicitRest(entry) && restTime > 0) {
+                                pushRestIfPositive(
+                                    { rest_seconds: restTime },
+                                    `group_${block.id}_${entryIdx}_${s}_rest`,
+                                    'Descansar'
+                                );
+                            }
                         }
                     });
 
-                    if (s < maxSets && !hasTrailingRest) {
-                        const lastExercise = exerciseEntries[exerciseEntries.length - 1];
-                        const restTime = parseInt(logic.getRestSeconds(lastExercise));
-                        queue.push({
-                            type: 'rest',
-                            duration: restTime,
-                            label: groupInfo && groupInfo.name ? `Descansar (${groupInfo.name})` : 'Descansar'
-                        });
-                    } else if (s === maxSets && !hasTrailingRest && hasNextWork) {
-                        const lastExercise = exerciseEntries[exerciseEntries.length - 1];
-                        const restTime = parseInt(logic.getRestSeconds(lastExercise));
-                        queue.push({
-                            type: 'rest',
-                            duration: restTime,
-                            label: groupInfo && groupInfo.name ? `Descansar (${groupInfo.name})` : 'Descansar'
-                        });
-                    }
+                    // Descansos del grupo se agregan por ejercicio o por items explícitos.
                 }
             });
         }

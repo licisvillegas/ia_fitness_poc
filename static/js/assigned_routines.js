@@ -504,7 +504,10 @@ window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
 
   try {
     await window.ensureRoutineDependencies();
-    const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
+    const queryParts = [];
+    if (userId) queryParts.push(`user_id=${encodeURIComponent(userId)}`);
+    queryParts.push("active_only=1");
+    const query = queryParts.length ? `?${queryParts.join("&")}` : "";
     const res = await fetch(`/workout/api/my-routines${query}`);
     const routines = await res.json();
     listEl.innerHTML = "";

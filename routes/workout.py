@@ -374,7 +374,12 @@ def api_list_my_routines():
         target_user_id = request.args.get("user_id") if is_admin else None
         user_id = target_user_id or current_user_id
 
-        cursor = db.routines.find({"user_id": user_id}).sort("created_at", -1)
+        active_only = request.args.get("active_only")
+        query = {"user_id": user_id}
+        if active_only in ("1", "true", "yes"):
+            query["$or"] = [{"is_active": {"$exists": False}}, {"is_active": True}]
+
+        cursor = db.routines.find(query).sort("created_at", -1)
         results = []
         for r in cursor:
             r["_id"] = str(r["_id"])
@@ -433,6 +438,8 @@ def api_save_my_routine():
             "updated_at": datetime.utcnow(),
             "user_id": user_id
         }
+        if "is_active" in data:
+            doc["is_active"] = bool(data.get("is_active"))
 
         if rid:
             if not ObjectId.is_valid(rid):
@@ -446,6 +453,8 @@ def api_save_my_routine():
             return jsonify({"message": "Rutina actualizada", "id": rid}), 200
         else:
             doc["created_at"] = datetime.utcnow()
+            if "is_active" not in doc:
+                doc["is_active"] = True
             res = db.routines.insert_one(doc)
             return jsonify({"message": "Rutina creada", "id": str(res.inserted_id)}), 200
     except Exception as e:

@@ -1,7 +1,7 @@
 (function () {
     let sessionData = [];
     let sessionWeightUnit = "lb";
-    let sessionFilterRange = "month";
+    let sessionFilterRange = "day";
     let sessionFilterValue = "";
     const sessionWeightUnitKey = "ai_fitness_session_unit";
 
@@ -542,8 +542,8 @@
             const data = await res.json();
             console.log("DEBUG: Loaded sessions:", data);
             sessionData = Array.isArray(data) ? data : [];
-            // Apply default filter: Month (Broader view)
-            window.setSessionFilterRange("month");
+            // Apply default filter: Day (most recent)
+            window.setSessionFilterRange("day");
         } catch (e) {
             console.error("Error loading sessions:", e);
             container.innerHTML = `<p class="text-danger text-center m-0">Error cargando sesiones.</p>`;

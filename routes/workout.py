@@ -580,14 +580,24 @@ def api_get_sessions():
         db = get_db()
         if db is None: return jsonify([]), 503
         
-        limit = int(request.args.get("limit", 20))
+        limit_param = request.args.get("limit")
+        limit = None
+        if limit_param:
+            try:
+                limit = int(limit_param)
+            except ValueError:
+                limit = 20
+            if limit < 1:
+                limit = 20
+            if limit > 1000:
+                limit = 1000
 
-        # Limit to last 100 sessions (relaxed from 60 days)
-        # We remove strict date filtering to align with Heatmap visibility
-        
+        # No strict date filtering; return full history unless a limit is provided.
         cursor = db.workout_sessions.find(
             { "user_id": user_id }
-        ).sort("created_at", -1).limit(100)
+        ).sort("created_at", -1)
+        if limit is not None:
+            cursor = cursor.limit(limit)
         
         sessions = []
         routine_ids = set()

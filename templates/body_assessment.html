@@ -396,49 +396,69 @@
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="waist">Cintura (cm)</label>
-                      <input class="form-control" data-measure="waist" id="waist" placeholder="82" type="number"
+                      <label class="form-label small" for="cuello">Cuello (cm)</label>
+                      <input class="form-control" data-measure="cuello" id="cuello" placeholder="39" type="number"
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="forearm">Antebrazo (cm)</label>
-                      <input class="form-control" data-measure="forearm" id="forearm" placeholder="28" type="number"
+                      <label class="form-label small" for="hombros">Hombros (cm)</label>
+                      <input class="form-control" data-measure="hombros" id="hombros" placeholder="112" type="number"
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="chest">Pecho (cm)</label>
-                      <input class="form-control" data-measure="chest" id="chest" placeholder="104" type="number"
+                      <label class="form-label small" for="torax">Torax (cm)</label>
+                      <input class="form-control" data-measure="torax" id="torax" placeholder="104" type="number"
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="hip">Cadera (cm)</label>
-                      <input class="form-control" data-measure="hip" id="hip" placeholder="98" type="number"
+                      <label class="form-label small" for="cintura">Cintura (cm)</label>
+                      <input class="form-control" data-measure="cintura" id="cintura" placeholder="82" type="number"
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="neck">Cuello (cm)</label>
-                      <input class="form-control" data-measure="neck" id="neck" placeholder="39" type="number"
+                      <label class="form-label small" for="cadera">Cadera (cm)</label>
+                      <input class="form-control" data-measure="cadera" id="cadera" placeholder="98" type="number"
                         step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="arm_relaxed">Brazo relajado (cm)</label>
-                      <input class="form-control" data-measure="arm_relaxed" id="arm_relaxed" placeholder="33"
+                      <label class="form-label small" for="biceps_izq">Biceps izq (cm)</label>
+                      <input class="form-control" data-measure="biceps_izq" id="biceps_izq" placeholder="36"
                         type="number" step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="arm_flexed">Brazo flex (cm)</label>
-                      <input class="form-control" data-measure="arm_flexed" id="arm_flexed" placeholder="36"
+                      <label class="form-label small" for="biceps_der">Biceps der (cm)</label>
+                      <input class="form-control" data-measure="biceps_der" id="biceps_der" placeholder="36"
                         type="number" step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="thigh">Muslo (cm)</label>
-                      <input class="form-control" data-measure="thigh" id="thigh" placeholder="58" type="number"
-                        step="0.1" />
+                      <label class="form-label small" for="antebrazo_izq">Antebrazo izq (cm)</label>
+                      <input class="form-control" data-measure="antebrazo_izq" id="antebrazo_izq" placeholder="28"
+                        type="number" step="0.1" />
                     </div>
                     <div class="col-6 col-lg-4">
-                      <label class="form-label small" for="calf">Pantorrilla (cm)</label>
-                      <input class="form-control" data-measure="calf" id="calf" placeholder="38" type="number"
-                        step="0.1" />
+                      <label class="form-label small" for="antebrazo_der">Antebrazo der (cm)</label>
+                      <input class="form-control" data-measure="antebrazo_der" id="antebrazo_der" placeholder="28"
+                        type="number" step="0.1" />
+                    </div>
+                    <div class="col-6 col-lg-4">
+                      <label class="form-label small" for="muslo_izq">Muslo izq (cm)</label>
+                      <input class="form-control" data-measure="muslo_izq" id="muslo_izq" placeholder="58"
+                        type="number" step="0.1" />
+                    </div>
+                    <div class="col-6 col-lg-4">
+                      <label class="form-label small" for="muslo_der">Muslo der (cm)</label>
+                      <input class="form-control" data-measure="muslo_der" id="muslo_der" placeholder="58"
+                        type="number" step="0.1" />
+                    </div>
+                    <div class="col-6 col-lg-4">
+                      <label class="form-label small" for="pantorrilla_izq">Pantorrilla izq (cm)</label>
+                      <input class="form-control" data-measure="pantorrilla_izq" id="pantorrilla_izq" placeholder="38"
+                        type="number" step="0.1" />
+                    </div>
+                    <div class="col-6 col-lg-4">
+                      <label class="form-label small" for="pantorrilla_der">Pantorrilla der (cm)</label>
+                      <input class="form-control" data-measure="pantorrilla_der" id="pantorrilla_der" placeholder="38"
+                        type="number" step="0.1" />
                     </div>
                   </div>
 
@@ -763,6 +783,34 @@
         });
       };
 
+      const measurementAliases = {
+        height_cm: ["height_cm", "altura_cm", "altura"],
+        weight_kg: ["weight_kg", "weight", "peso", "peso_kg"],
+        cuello: ["cuello", "neck"],
+        hombros: ["hombros", "shoulders"],
+        torax: ["torax", "chest", "pecho"],
+        cintura: ["cintura", "waist"],
+        cadera: ["cadera", "hip", "hips"],
+        biceps_izq: ["biceps_izq", "biceps_left", "arm_flexed_left", "arm_relaxed_left", "arm_left"],
+        biceps_der: ["biceps_der", "biceps_right", "arm_flexed_right", "arm_relaxed_right", "arm_right"],
+        antebrazo_izq: ["antebrazo_izq", "forearm_left"],
+        antebrazo_der: ["antebrazo_der", "forearm_right"],
+        muslo_izq: ["muslo_izq", "thigh_left"],
+        muslo_der: ["muslo_der", "thigh_right"],
+        pantorrilla_izq: ["pantorrilla_izq", "calf_left"],
+        pantorrilla_der: ["pantorrilla_der", "calf_right"],
+      };
+
+      const resolveMeasureValue = (measures, key) => {
+        const aliases = measurementAliases[key] || [key];
+        for (const alias of aliases) {
+          if (measures[alias] !== undefined && measures[alias] !== null && measures[alias] !== "") {
+            return measures[alias];
+          }
+        }
+        return null;
+      };
+
       // --- Admin User Search & Data Inheritance ---
       const searchInput = document.getElementById('userSearchTerm');
       const resultsConfig = document.getElementById('userSearchResults');
@@ -844,7 +892,8 @@
           const measures = data.measurements || {};
           document.querySelectorAll("[data-measure]").forEach(input => {
             const key = input.getAttribute("data-measure");
-            if (measures[key]) input.value = measures[key];
+            const value = resolveMeasureValue(measures, key);
+            if (value !== null) input.value = value;
           });
 
           // Show feedback
@@ -1094,15 +1143,19 @@
         measurements: {
           height_cm: 178,
           weight_kg: 80.5,
-          waist: 86,
-          abdomen: 88,
-          chest: 105,
-          hip: 99,
-          neck: 40,
-          arm_relaxed: 33,
-          arm_flexed: 36,
-          thigh: 59,
-          calf: 38,
+          cuello: 40,
+          hombros: 112,
+          torax: 105,
+          cintura: 86,
+          cadera: 99,
+          biceps_izq: 36,
+          biceps_der: 36,
+          antebrazo_izq: 28,
+          antebrazo_der: 28,
+          muslo_izq: 59,
+          muslo_der: 59,
+          pantorrilla_izq: 38,
+          pantorrilla_der: 38,
         },
         photos: [
           { view: "frontal", quality: "alta", notes: "Post entreno" },

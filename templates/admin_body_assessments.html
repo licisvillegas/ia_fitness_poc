@@ -527,7 +527,7 @@
                 sex: { "male": "Masculino", "female": "Femenino" },
                 activity: { "sedentary": "Sedentario", "light": "Ligero", "moderate": "Moderado", "active": "Activo", "very_active": "Muy Activo", "lightly_active": "Ligero", "moderately_active": "Moderado", "extra_active": "Muy Activo", "strong": "Fuerte", "very_strong": "Muy Fuerte" },
                 goal: { "lose_fat": "Perder Grasa", "build_muscle": "Ganar Músculo", "maintain": "Mantener", "maintenance": "Mantenimiento", "general": "General", "recomp": "Recomposición" },
-                measures: { "weight_kg": "Peso", "height_cm": "Altura", "neck": "Cuello", "shoulders": "Hombros", "chest": "Pecho", "waist": "Cintura", "abdomen": "Abdomen", "forearm": "Antebrazo", "hips": "Caderas", "hip": "Cadera", "arm_relaxed": "Brazo (Relajado)", "arm_flexed": "Brazo (Flex)", "biceps_l": "Bíceps (I)", "biceps_r": "Bíceps (D)", "thigh": "Muslo", "thigh_l": "Muslo (I)", "thigh_r": "Muslo (D)", "calf": "Pantorrilla", "calf_l": "Pantorrilla (I)", "calf_r": "Pantorrilla (D)" }
+                measures: { "weight_kg": "Peso", "height_cm": "Altura", "cuello": "Cuello", "neck": "Cuello", "hombros": "Hombros", "shoulders": "Hombros", "torax": "Torax", "chest": "Pecho", "cintura": "Cintura", "waist": "Cintura", "abdomen": "Abdomen", "cadera": "Cadera", "forearm": "Antebrazo", "forearm_left": "Antebrazo (Izq)", "forearm_right": "Antebrazo (Der)", "antebrazo_izq": "Antebrazo (Izq)", "antebrazo_der": "Antebrazo (Der)", "hips": "Caderas", "hip": "Cadera", "arm_relaxed": "Brazo (Relajado)", "arm_relaxed_left": "Brazo (Relajado Izq)", "arm_relaxed_right": "Brazo (Relajado Der)", "arm_flexed": "Brazo (Flex)", "arm_flexed_left": "Brazo (Flex Izq)", "arm_flexed_right": "Brazo (Flex Der)", "biceps_izq": "Biceps (Izq)", "biceps_der": "Biceps (Der)", "biceps_l": "Bíceps (I)", "biceps_r": "Bíceps (D)", "thigh": "Muslo", "thigh_left": "Muslo (Izq)", "thigh_right": "Muslo (Der)", "muslo_izq": "Muslo (Izq)", "muslo_der": "Muslo (Der)", "thigh_l": "Muslo (I)", "thigh_r": "Muslo (D)", "calf": "Pantorrilla", "calf_left": "Pantorrilla (Izq)", "calf_right": "Pantorrilla (Der)", "pantorrilla_izq": "Pantorrilla (Izq)", "pantorrilla_der": "Pantorrilla (Der)", "calf_l": "Pantorrilla (I)", "calf_r": "Pantorrilla (D)" }
             };
 
             // Header
@@ -570,7 +570,40 @@
             const measContainer = document.getElementById('det-measurements');
             measContainer.innerHTML = '';
             const m = input.measurements || {};
+            const hasKey = (key) => Object.prototype.hasOwnProperty.call(m, key);
+            const skipKeys = new Set();
+            if (hasKey("cuello")) skipKeys.add("neck");
+            if (hasKey("hombros")) skipKeys.add("shoulders");
+            if (hasKey("torax")) skipKeys.add("chest");
+            if (hasKey("cintura")) skipKeys.add("waist");
+            if (hasKey("cadera")) {
+                skipKeys.add("hip");
+                skipKeys.add("hips");
+            }
+            if (hasKey("biceps_izq")) skipKeys.add("biceps_l");
+            if (hasKey("biceps_der")) skipKeys.add("biceps_r");
+            if (hasKey("biceps_izq")) {
+                skipKeys.add("arm_relaxed_left");
+                skipKeys.add("arm_flexed_left");
+            }
+            if (hasKey("biceps_der")) {
+                skipKeys.add("arm_relaxed_right");
+                skipKeys.add("arm_flexed_right");
+            }
+            if (hasKey("antebrazo_izq")) skipKeys.add("forearm_left");
+            if (hasKey("antebrazo_der")) skipKeys.add("forearm_right");
+            if (hasKey("muslo_izq")) skipKeys.add("thigh_l");
+            if (hasKey("muslo_der")) skipKeys.add("thigh_r");
+            if (hasKey("muslo_izq")) skipKeys.add("thigh_left");
+            if (hasKey("muslo_der")) skipKeys.add("thigh_right");
+            if (hasKey("pantorrilla_izq")) skipKeys.add("calf_l");
+            if (hasKey("pantorrilla_der")) skipKeys.add("calf_r");
+            if (hasKey("pantorrilla_izq")) skipKeys.add("calf_left");
+            if (hasKey("pantorrilla_der")) skipKeys.add("calf_right");
             for (const [k, v] of Object.entries(m)) {
+                if (skipKeys.has(k)) {
+                    continue;
+                }
                 if (v && k !== 'unit_system') {
                     const label = DICT.measures[k] || k;
                     let unit = (k.includes('weight') || k === 'peso') ? "kg" : "cm";

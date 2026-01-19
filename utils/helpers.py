@@ -107,7 +107,7 @@ def normalize_measurements(raw: dict) -> Dict[str, Optional[float]]:
     """Normaliza claves comunes de medidas (soporta alias en español)."""
 
     aliases = {
-        "chest": ["chest", "pecho"],
+        "chest": ["chest", "pecho", "torax"],
         "waist": ["waist", "cintura"],
         "abdomen": ["abdomen"],
         "hip": ["hip", "cadera"],
@@ -120,6 +120,7 @@ def normalize_measurements(raw: dict) -> Dict[str, Optional[float]]:
         "forearm": ["forearm", "antebrazo"],
         "forearm_left": ["forearm_left", "antebrazo_izq"],
         "forearm_right": ["forearm_right", "antebrazo_der"],
+        "shoulders": ["shoulders", "hombros"],
         "thigh": ["thigh", "muslo"],
         "thigh_left": ["thigh_left", "muslo_izq"],
         "thigh_right": ["thigh_right", "muslo_der"],
@@ -151,6 +152,25 @@ def normalize_measurements(raw: dict) -> Dict[str, Optional[float]]:
             if alias in raw:
                 normalized[key] = to_float(raw.get(alias))
                 break
+    # Preserve tracking-friendly keys for history displays and UI parity.
+    passthrough_keys = [
+        "cuello",
+        "torax",
+        "hombros",
+        "cintura",
+        "cadera",
+        "biceps_izq",
+        "biceps_der",
+        "antebrazo_izq",
+        "antebrazo_der",
+        "muslo_izq",
+        "muslo_der",
+        "pantorrilla_izq",
+        "pantorrilla_der",
+    ]
+    for key in passthrough_keys:
+        if key in raw:
+            normalized[key] = to_float(raw.get(key))
     return normalized
 
 def sanitize_photos(raw: Any) -> list:

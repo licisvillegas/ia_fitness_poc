@@ -10,6 +10,26 @@ class OfflineManager {
         this.isSyncing = false;
     }
 
+    getPendingRedirect() {
+        try {
+            const raw = localStorage.getItem("offline_pending_session");
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    emitSyncEvent(detail) {
+        if (!detail) return;
+        try {
+            if (typeof CustomEvent === "function") {
+                window.dispatchEvent(new CustomEvent("offline-session-synced", { detail }));
+            }
+        } catch (e) {
+            console.warn("Failed to emit offline-session-synced", e);
+        }
+    }
+
     async init() {
         if (!('indexedDB' in window)) {
             console.warn("IndexedDB not supported. Offline mode unavailable.");
@@ -107,6 +127,10 @@ class OfflineManager {
             const records = await this.getAllRecords();
             if (records.length === 0) {
                 console.log("No pending sessions to sync.");
+                const pending = this.getPendingRedirect();
+                if (pending && pending.routine_id) {
+                    this.emitSyncEvent({ routine_id: pending.routine_id, empty: true });
+                }
                 this.isSyncing = false;
                 return;
             }
@@ -121,6 +145,9 @@ class OfflineManager {
 
                     // Optional: Show a toast/notification to user
                     if (window.showToast) window.showToast("Sesion sincronizada exitosamente", "success");
+                    if (record && record.routine_id) {
+                        this.emitSyncEvent({ routine_id: record.routine_id, session_id: record.id });
+                    }
 
                 } catch (e) {
                     console.error(`Failed to sync session ${record.id}`, e);

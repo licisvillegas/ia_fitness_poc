@@ -225,6 +225,42 @@
             return () => { isMounted = false; };
         }, [routine]);
 
+        useEffect(() => {
+            const handleOfflineSync = (event) => {
+                const detail = event && event.detail ? event.detail : {};
+                if (!detail.routine_id) return;
+                let pending = null;
+                try {
+                    pending = JSON.parse(localStorage.getItem("offline_pending_session") || "null");
+                } catch (e) {
+                    pending = null;
+                }
+                if (!pending || String(pending.routine_id) !== String(detail.routine_id)) return;
+
+                try {
+                    localStorage.removeItem("offline_pending_session");
+                } catch (e) { }
+
+                const targetUrl = pending.return_url || getReturnUrl();
+                if (window.showAlertModal) {
+                    window.showAlertModal(
+                        "Sesion sincronizada",
+                        "La rutina se cerro y regresaremos al dashboard.",
+                        "success"
+                    );
+                } else {
+                    alert("Sesion sincronizada. Regresando al dashboard.");
+                }
+                setTimeout(() => { window.location.href = targetUrl; }, 1200);
+            };
+
+            window.addEventListener("offline-session-synced", handleOfflineSync);
+            if (navigator.onLine && window.offlineManager && window.offlineManager.sync) {
+                window.offlineManager.sync();
+            }
+            return () => window.removeEventListener("offline-session-synced", handleOfflineSync);
+        }, []);
+
         // Wake Lock Implementation - Robust & Status Aware
         const isActive = status === 'WORK' || status === 'REST';
 
@@ -767,6 +803,15 @@
                                         );
                                     } else {
                                         alert("Guardado localmente. Se sincronizara cuando vuelva la conexion.");
+                                    }
+                                    try {
+                                        localStorage.setItem("offline_pending_session", JSON.stringify({
+                                            routine_id: payload.routine_id,
+                                            return_url: getReturnUrl(),
+                                            saved_at: new Date().toISOString()
+                                        }));
+                                    } catch (storageErr) {
+                                        console.warn("No se pudo guardar el estado offline en localStorage", storageErr);
                                     }
                                     setTimeout(() => window.location.href = getReturnUrl(), 2000);
                                     return;

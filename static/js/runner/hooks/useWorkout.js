@@ -730,43 +730,85 @@
                             sets: sessionLogRef.current // Use REF to ensure latest data
                         };
 
-                        const res = await fetch("/workout/api/session/save", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include", // Keep credentials fix
-                            body: JSON.stringify(payload)
-                        });
-                        if (!res.ok) throw new Error("Server returned " + res.status);
-                        window.location.href = getReturnUrl();
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+                        try {
+                            const res = await fetch("/workout/api/session/save", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                credentials: "include",
+                                body: JSON.stringify(payload),
+                                signal: controller.signal
+                            });
+                            clearTimeout(timeoutId);
+                            if (!res.ok) throw new Error("Server returned " + res.status);
+                            window.location.href = getReturnUrl();
+                        } catch (fetchErr) {
+                            clearTimeout(timeoutId);
+                            throw fetchErr;
+                        }
 
                     } catch (e) {
                         console.error("Save error:", e);
-                        // Check if it's a network error or 5xx server error (indicating temporary failure)
-                        // A 401/403 would be an auth error, so we might NOT want to offline save that (it would just fail later),
-                        // but technically 'offline saving' is safe. Let's do it for robustness "si no hay red".
 
+                        // Attempt offline save immediately if online save failed
+                        let offlineSaved = false;
                         if (window.offlineManager) {
                             try {
-                                await window.offlineManager.saveSession(payload);
-                                if (window.showAlertModal) {
-                                    window.showAlertModal("Sin Conexión", "Sesión guardada localmente. Se sincronizará cuando vuelvas a estar en línea.", "warning");
-                                } else {
-                                    alert("Sin conexión. Guardado localmente.");
+                                const offlineResult = await window.offlineManager.saveSession(payload);
+                                if (offlineResult) {
+                                    offlineSaved = true;
+                                    if (window.showAlertModal) {
+                                        window.showAlertModal("Sin Conexión", "Sesión guardada localmente. Se sincronizará luego.", "warning");
+                                    } else {
+                                        alert("Sin Conexión. Guardado localmente.");
+                                    }
+                                    setTimeout(() => window.location.href = getReturnUrl(), 2000);
+                                    return;
                                 }
-                                setTimeout(() => window.location.href = getReturnUrl(), 2000); // Redirect after short delay
-                                return; // Exit success path
                             } catch (offlineErr) {
-                                console.error("Offline save failed too:", offlineErr);
+                                console.error("Auto-offline save failed:", offlineErr);
                             }
                         }
 
-                        if (window.showAlertModal) {
-                            window.showAlertModal("Error", "Error guardando: " + e.message, "danger");
-                        } else {
-                            alert("Error guardando: " + e.message);
-                        }
-                    } finally {
+                        // If we are here, BOTH online and offline (auto) failed, or offlineManager missing.
+                        // Show Recovery Modal to user
                         if (window.hideLoader) window.hideLoader();
+
+                        setConfirmModal({
+                            isOpen: true,
+                            title: "Error al Guardar",
+                            message: "No se pudo guardar la sesión (ni en nube ni local). ¿Qué deseas hacer?",
+                            confirmText: "Reintentar Local",
+                            cancelText: "Salir sin Guardar",
+                            type: "danger",
+                            onConfirm: async () => {
+                                // Retry Offline Force
+                                try {
+                                    window.showLoader("Forzando guardado local...");
+                                    if (window.offlineManager) {
+                                        await window.offlineManager.saveSession(payload);
+                                        window.showAlertModal("Éxito", "Guardado localmente forzado.", "success");
+                                        setTimeout(() => window.location.href = getReturnUrl(), 1000);
+                                    } else {
+                                        throw new Error("Offline Manager no disponible");
+                                    }
+                                } catch (retryErr) {
+                                    window.hideLoader();
+                                    alert("Error final: " + retryErr.message + ". Se saldrá sin guardar.");
+                                    window.location.href = getReturnUrl();
+                                }
+                            },
+                            onCancel: () => {
+                                // Exit without saving
+                                if (confirm("¿Seguro que deseas perder los datos de esta sesión?")) {
+                                    window.location.href = getReturnUrl();
+                                }
+                            }
+                        });
+                    } finally {
+                        if (window.hideLoader && !confirmModal.isOpen) window.hideLoader();
                     }
                 }, "success");
             }, 2000);

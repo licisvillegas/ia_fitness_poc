@@ -355,6 +355,11 @@
               <div id="heatmapGrid" class="heatmap-grid"></div>
             </div>
           </div>
+          <div class="text-center mt-3">
+            <button id="btnRefreshDashboard" class="btn btn-outline-info">
+              <i class="fas fa-sync-alt me-1"></i> Actualizar dashboard
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -645,6 +650,39 @@
       }
       loadHeatmap(targetId);
     });
+
+    const refreshBtn = document.getElementById("btnRefreshDashboard");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        const typed = userIdInput.value.trim();
+        let targetId = typed;
+        try {
+          const raw = localStorage.getItem('ai_fitness_user');
+          if (raw) {
+            const u = JSON.parse(raw);
+            const loggedId = String(u.user_id || u._id || '').trim();
+            const uname = (u.username || '').trim();
+            const email = (u.email || '').trim().toLowerCase();
+            if (!typed || typed === uname || typed.toLowerCase() === email) {
+              targetId = loggedId || typed;
+            }
+          }
+        } catch (e) { }
+        if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
+        loadProgress(targetId);
+        loadActivePlanIndicator(targetId);
+        if (window.loadCreatedRoutines) {
+          window.loadCreatedRoutines({ returnTo: '/dashboard', userId: targetId });
+        }
+        if (window.loadSessions) {
+          window.loadSessions(targetId);
+        }
+        if (window.loadRoutines) {
+          window.loadRoutines(targetId);
+        }
+        loadHeatmap(targetId);
+      });
+    }
 
 
     async function loadHeatmap(userId) {

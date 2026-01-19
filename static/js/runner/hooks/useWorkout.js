@@ -778,6 +778,7 @@
 
                         setConfirmModal({
                             isOpen: true,
+
                             title: "Error al Guardar",
                             message: "No se pudo guardar la sesión (ni en nube ni local). ¿Qué deseas hacer?",
                             confirmText: "Reintentar Local",
@@ -795,14 +796,25 @@
                                         throw new Error("Offline Manager no disponible");
                                     }
                                 } catch (retryErr) {
+                                    console.error("Retry failed:", retryErr);
                                     window.hideLoader();
-                                    alert("Error final: " + retryErr.message + ". Se saldrá sin guardar.");
+                                    alert("Error final: " + retryErr.message + ". Se saldrá y cancelará la sesión.");
+
+                                    // FORCE CANCEL
+                                    try {
+                                        await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
+                                    } catch (e) { console.error("Cancel err", e); }
                                     window.location.href = getReturnUrl();
                                 }
                             },
-                            onCancel: () => {
+                            onCancel: async () => {
                                 // Exit without saving
                                 if (confirm("¿Seguro que deseas perder los datos de esta sesión?")) {
+                                    // FORCE CANCEL to unlock server
+                                    try {
+                                        window.showLoader("Cancelando...");
+                                        await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
+                                    } catch (e) { console.error("Cancel err", e); }
                                     window.location.href = getReturnUrl();
                                 }
                             }

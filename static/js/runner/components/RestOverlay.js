@@ -19,7 +19,9 @@
         const nextNote = isNextRest ? "" : (nextStep?.exercise?.comment || nextStep?.exercise?.note || nextStep?.exercise?.description || "");
         // const isNextTimeBased = nextStep?.isTimeBased || false; 
 
-        const restNote = currentStep?.label || currentStep?.note || "";
+        const restNoteRaw = currentStep?.label || currentStep?.note || "";
+        const restNote = restNoteRaw && restNoteRaw !== 'Descansar' ? restNoteRaw : "";
+        const hasNotes = Boolean(restNote || nextNote);
 
         useEffect(() => {
             const updateLayout = () => {
@@ -84,32 +86,21 @@
                 <div className={`text-center ${headerSpacing}`}>
                     <h2 className="display-1 fw-bold mb-0 text-success font-monospace" style={timeStyle}>{formatTime(stepTimer)}</h2>
                     <p className="text-secondary text-uppercase letter-spacing-2 mt-2">Descanso</p>
-                    {restNote && restNote !== 'Descansar' && (
-                        isLandscapeCompact ? (
-                            <button
-                                className="btn btn-outline-info btn-sm rounded-circle mt-2"
-                                style={{ width: '38px', height: '38px' }}
-                                onClick={() => setShowRestNote(true)}
-                                title="Ver nota"
-                            >
-                                <i className="fas fa-info"></i>
-                            </button>
-                        ) : (
-                            <div className="alert alert-dark border-secondary text-info d-inline-block mt-3 px-4 py-2" style={{ maxWidth: '90%' }}>
-                                <i className="fas fa-sticky-note me-2"></i>{restNote}
-                            </div>
-                        )
+                    {hasNotes && (
+                        <button
+                            className="btn btn-outline-info btn-sm rounded-circle mt-2"
+                            style={{ width: '38px', height: '38px' }}
+                            onClick={() => setShowRestNote(true)}
+                            title="Ver notas"
+                        >
+                            <i className="fas fa-info"></i>
+                        </button>
                     )}
                 </div>
 
                 <div className={`text-center ${nextSpacing} animate-pulse`}>
                     <p className="text-muted small mb-2 text-uppercase">A continuación</p>
                     <h3 className="h2 fw-bold mb-2">{nextExName}</h3>
-                    {nextNote && (
-                        <div className="alert alert-dark border-secondary text-info d-inline-block px-4 py-2" style={{ maxWidth: '90%' }}>
-                            <i className="fas fa-info-circle me-2"></i>{nextNote}
-                        </div>
-                    )}
                 </div>
 
                 <div className={`d-flex justify-content-center gap-2 ${controlsSpacing}`}>
@@ -125,23 +116,34 @@
                     SALTAR DESCANSO <i className="fas fa-forward ms-2"></i>
                 </button>
 
-                {showRestNote && (
+                {showRestNote && hasNotes && (
                     <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
                         style={{ background: "rgba(0,0,0,0.65)", zIndex: 2300, padding: "16px" }}
                         onClick={() => setShowRestNote(false)}
                     >
                         <div
-                            className="alert alert-dark border-secondary text-info m-0"
-                            style={{ maxWidth: "560px", width: "100%" }}
+                            className="alert border-secondary m-0"
+                            style={{ maxWidth: "560px", width: "100%", backgroundColor: "#0f1720", color: "#e8f4ff" }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="d-flex justify-content-between align-items-center mb-2">
-                                <strong className="text-info">Nota del descanso</strong>
+                                <strong className="text-info">Notas</strong>
                                 <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowRestNote(false)}>
                                     Cerrar
                                 </button>
                             </div>
-                            <div>{restNote}</div>
+                            {restNote && (
+                                <div className="mb-3">
+                                    <div className="text-uppercase text-secondary small mb-1">Descanso</div>
+                                    <div style={{ whiteSpace: "pre-wrap", color: "#8fe4ff" }}>{restNote}</div>
+                                </div>
+                            )}
+                            {nextNote && (
+                                <div>
+                                    <div className="text-uppercase text-secondary small mb-1">Siguiente ejercicio</div>
+                                    <div style={{ whiteSpace: "pre-wrap", color: "#ffe2a3" }}>{nextNote}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

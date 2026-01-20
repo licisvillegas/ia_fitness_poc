@@ -178,6 +178,32 @@
     updateProgressModal();
   };
 
+  const updateStep2Actions = () => {
+    const hasExercise = state.routine.items.some((item) => item.item_type === "exercise");
+    const hasGroup = state.routine.items.some((item) => item.item_type === "group");
+    const shouldDisable = hasExercise || hasGroup;
+    const addExerciseBtn = document.getElementById("guidedAddExerciseBtn");
+    const addGroupBtn = document.getElementById("guidedAddGroupBtnStep2");
+    const hint = document.getElementById("guidedStep2Hint");
+    if (addExerciseBtn) addExerciseBtn.disabled = shouldDisable;
+    if (addGroupBtn) addGroupBtn.disabled = shouldDisable;
+    if (hint) hint.style.display = shouldDisable ? "block" : "none";
+  };
+
+  const normalizeGroupName = (value) => {
+    return (value || "").trim().toLowerCase();
+  };
+
+  const isGroupNameTaken = (name, excludeId) => {
+    const target = normalizeGroupName(name);
+    if (!target) return false;
+    return state.routine.items.some((item) => {
+      if (item.item_type !== "group") return false;
+      if (excludeId && item._id === excludeId) return false;
+      return normalizeGroupName(item.group_name) === target;
+    });
+  };
+
   const renderBodyParts = () => {
     const container = document.getElementById("guidedBodyParts");
     if (!container) return;
@@ -339,17 +365,19 @@
     updateSummary();
     renderExerciseList();
     renderConfigList();
+    updateStep2Actions();
   };
 
   const addGroup = (name, type, note) => {
     state.routine.items.push({
       item_type: "group",
       _id: makeId("group"),
-      group_name: name || "Grupo",
+      group_name: name,
       group_type: type || "biserie",
       note: note || "",
     });
     renderConfigList();
+    updateStep2Actions();
   };
 
   const addRest = (groupId, seconds, note) => {
@@ -557,16 +585,21 @@
         <div class="guided-block">
           <div class="guided-block-header mb-3">
             <div>
-              <div class="text-info fw-bold">Grupo: ${group.group_name || "Grupo"}</div>
+              <div class="text-info fw-bold">Grupo</div>
               <div class="text-secondary small">${group.group_type || "biserie"} ${group.note ? "- " + group.note : ""}</div>
             </div>
             <div class="guided-inline-actions">
-                            <button class="btn btn-sm btn-outline-secondary" data-move-group="${group._id}" data-dir="-1"><i class="fas fa-arrow-up"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" data-move-group="${group._id}" data-dir="-1"><i class="fas fa-arrow-up"></i></button>
               <button class="btn btn-sm btn-outline-secondary" data-move-group="${group._id}" data-dir="1"><i class="fas fa-arrow-down"></i></button>
               <button class="btn btn-sm btn-outline-danger" data-remove-group="${group._id}"><i class="fas fa-times"></i></button>
             </div>
           </div>
           <div class="row g-2 mb-3">
+            <div class="col-12">
+              <label class="text-secondary small">Nombre del grupo</label>
+              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="group_name" data-idx="${groupIndex}" value="${group.group_name || ""}">
+              <div class="text-danger small mt-1" data-group-error="${group._id}" style="display:none;"></div>
+            </div>
             <div class="col-12">
               <label class="text-secondary small">Nota</label>
               <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${groupIndex}" value="${group.note || ""}">
@@ -1146,9 +1179,13 @@
           return;
         }
       }
-      if (state.step === 2 && state.routine.items.filter((i) => i.item_type === "exercise").length === 0) {
-        showMessage("Agrega al menos un ejercicio.", "warning");
-        return;
+      if (state.step === 2) {
+        const hasExercise = state.routine.items.some((i) => i.item_type === "exercise");
+        const hasGroup = state.routine.items.some((i) => i.item_type === "group");
+        if (!hasExercise && !hasGroup) {
+          showMessage("Agrega al menos un grupo o un ejercicio.", "warning");
+          return;
+        }
       }
       if (state.step === 3) {
         updateReview();
@@ -1227,6 +1264,7 @@
       renderExerciseList();
       renderConfigList();
       updateSummary();
+      updateStep2Actions();
     });
 
     document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
@@ -1236,6 +1274,27 @@
       const value = event.target.value;
       if (!state.routine.items[idx]) return;
       if (["group_name", "note", "comment"].includes(field)) {
+        if (field == "group_name") {
+          const groupId = state.routine.items[idx]._id;
+          const errorEl = document.querySelector(`[data-group-error="${groupId}"]`);
+          if (!value.trim()) {
+            if (errorEl) {
+              errorEl.textContent = "El nombre del grupo es obligatorio.";
+              errorEl.style.display = "block";
+            }
+            event.target.value = state.routine.items[idx][field] || "";
+            return;
+          }
+          if (isGroupNameTaken(value, groupId)) {
+            if (errorEl) {
+              errorEl.textContent = "Ya existe un grupo con ese nombre.";
+              errorEl.style.display = "block";
+            }
+            event.target.value = state.routine.items[idx][field] || "";
+            return;
+          }
+          if (errorEl) errorEl.style.display = "none";
+        }
         state.routine.items[idx][field] = value;
         return;
       }
@@ -1409,6 +1468,7 @@
         renderConfigList();
         renderExerciseList();
         updateSummary();
+        updateStep2Actions();
         return;
       }
 
@@ -1435,6 +1495,7 @@
       renderConfigList();
       renderExerciseList();
       updateSummary();
+      updateStep2Actions();
     });
 
     document.getElementById("guidedOpenExerciseModal")?.addEventListener("click", () => {
@@ -1453,6 +1514,11 @@
       modal.show();
     });
 
+    document.getElementById("guidedAddGroupBtnStep2")?.addEventListener("click", () => {
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedGroupModal"));
+      modal.show();
+    });
+
     document.getElementById("guidedAddExerciseBtnStep3")?.addEventListener("click", () => {
       openAddExerciseModal();
     });
@@ -1466,11 +1532,30 @@
     });
 
     document.getElementById("guidedGroupSave")?.addEventListener("click", () => {
-      const name = document.getElementById("guidedGroupName").value.trim();
+      const nameInput = document.getElementById("guidedGroupName");
+      const errorEl = document.getElementById("guidedGroupNameError");
+      const name = nameInput ? nameInput.value.trim() : "";
       const type = document.getElementById("guidedGroupType").value;
       const note = document.getElementById("guidedGroupNote").value.trim();
+
+      if (!name) {
+        if (errorEl) {
+          errorEl.textContent = "Debes ingresar un nombre para el grupo.";
+          errorEl.style.display = "block";
+        }
+        return;
+      }
+      if (isGroupNameTaken(name)) {
+        if (errorEl) {
+          errorEl.textContent = "Ya existe un grupo con ese nombre.";
+          errorEl.style.display = "block";
+        }
+        return;
+      }
+      if (errorEl) errorEl.style.display = "none";
+
       addGroup(name, type, note);
-      document.getElementById("guidedGroupName").value = "";
+      if (nameInput) nameInput.value = "";
       document.getElementById("guidedGroupNote").value = "";
       bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedGroupModal")).hide();
     });
@@ -1542,6 +1627,7 @@
   const init = async () => {
     updateHelpText();
     updateSummary();
+    updateStep2Actions();
     await Promise.all([loadBodyParts(), loadExercises(), loadRoutines()]);
     if (isAdminBuilder) {
       const activeWrap = document.getElementById("guidedActive")?.closest(".mb-3");

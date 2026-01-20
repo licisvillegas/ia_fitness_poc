@@ -1,0 +1,19 @@
+<div class="card bg-panel border-0 shadow h-100">
+    <div class="card-header border-secondary text-white fw-bold">
+        <i class="fas fa-th text-cyber-green me-2"></i>Mapa de constancia
+    </div>
+    <div class="card-body d-flex flex-column align-items-center">
+        <div class="d-flex justify-content-center gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-heatmap-range="30">30 días</button>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-heatmap-range="60">60 días</button>
+            <button class="btn btn-sm btn-outline-info text-dark" type="button" data-heatmap-range="90">90 días</button>
+        </div>
+        <div id="adherenceHeatmap" class="adherence-heatmap-grid mb-3"></div>
+        <div class="d-flex align-items-center gap-2 text-secondary small">
+            <span class="heatmap-cell level-0"></span>
+            <span class="heatmap-cell level-1"></span>
+            <span class="heatmap-cell level-2"></span>
+            <span class="heatmap-cell level-3"></span>
+        </div>
+    </div>
+</div>

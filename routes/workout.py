@@ -358,6 +358,12 @@ def user_routine_builder_page():
 def user_routines_catalog_page():
     return render_template("routines_catalog_user.html")
 
+@workout_bp.route("/adherence")
+def adherence_dashboard_page():
+    """Render adherence dashboard."""
+    user_id = request.cookies.get("user_session")
+    return render_template("adherence_dashboard.html", current_user_id=user_id)
+
 @workout_bp.get("/api/my-routines")
 def api_list_my_routines():
     """Lista las rutinas creadas por el usuario."""
@@ -387,6 +393,52 @@ def api_list_my_routines():
         return jsonify(results), 200
     except Exception as e:
         logger.error(f"Error listing user routines: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.get("/api/adherence/config")
+def api_get_adherence_config():
+    """Returns user adherence configuration (target frequency)."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        pref = db.user_preferences.find_one({"user_id": user_id}) or {}
+        target_frequency = pref.get("target_frequency", 3)
+        return jsonify({"target_frequency": target_frequency}), 200
+    except Exception as e:
+        logger.error(f"Error loading adherence config: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
+@workout_bp.post("/api/adherence/config")
+def api_save_adherence_config():
+    """Saves user adherence configuration (target frequency)."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.get_json() or {}
+        target_frequency = int(data.get("target_frequency", 3))
+        if target_frequency < 1 or target_frequency > 7:
+            return jsonify({"error": "target_frequency debe estar entre 1 y 7"}), 400
+
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        db.user_preferences.update_one(
+            {"user_id": user_id},
+            {"$set": {"user_id": user_id, "target_frequency": target_frequency}},
+            upsert=True
+        )
+        return jsonify({"success": True, "target_frequency": target_frequency}), 200
+    except Exception as e:
+        logger.error(f"Error saving adherence config: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
 @workout_bp.get("/api/my-routines/<routine_id>")

@@ -55,6 +55,8 @@
         const currentStepRef = useRef(null);
         const onCancelRef = useRef(null); // Add ref for onCancel
         const forceRestAfterLoggedRef = useRef(false);
+        const lastAnnouncementRef = useRef({ status: null, stepId: null });
+        const prevStatusRef = useRef(status);
 
         // Notification Logic
         useEffect(() => {
@@ -86,12 +88,28 @@
         };
 
         const sendNotification = (title, body) => {
-            if (isNotificationsEnabled && notificationPermission === 'granted' && document.visibilityState === 'hidden') {
+            if (isNotificationsEnabled && notificationPermission === 'granted') {
                 try {
                     new Notification(title, { body, icon: '/static/icons/icon-192x192.png' });
                 } catch (e) {
                     console.error("Notification error", e);
                 }
+            }
+        };
+
+        const ensureNotificationPermission = async () => {
+            if (!("Notification" in window)) return;
+            if (notificationPermission === 'granted') {
+                setIsNotificationsEnabled(true);
+                return;
+            }
+            if (notificationPermission !== 'default') return;
+            try {
+                const permission = await Notification.requestPermission();
+                setNotificationPermission(permission);
+                setIsNotificationsEnabled(permission === 'granted');
+            } catch (e) {
+                console.error("Notification permission error", e);
             }
         };
 
@@ -929,6 +947,42 @@
             setTimeout(() => setMessage(null), 3000);
         };
 
+        useEffect(() => {
+            const prevStatus = prevStatusRef.current;
+            if (!currentStep || status === 'LOADING' || status === 'IDLE') {
+                prevStatusRef.current = status;
+                return;
+            }
+
+            if (status === 'REST' && currentStep.type === 'rest') {
+                if (lastAnnouncementRef.current.status !== 'REST' || lastAnnouncementRef.current.stepId !== currentStep.id) {
+                    showMessage("Inicia Descanso", "info");
+                    sendNotification("Descanso", "Inicia descanso");
+                }
+                lastAnnouncementRef.current = { status: 'REST', stepId: currentStep.id };
+            }
+
+            if (status === 'WORK' && currentStep.type === 'work') {
+                const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
+                if (prevStatus === 'REST') {
+                    showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
+                    sendNotification("Descanso finalizado", `Inicia ejercicio ${exName}`);
+                } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
+                    showMessage(`Inicia ejercicio ${exName}`, "info");
+                    sendNotification("Inicia ejercicio", exName);
+                }
+                lastAnnouncementRef.current = { status: 'WORK', stepId: currentStep.id };
+            }
+
+            if (status === 'FINISHED' && prevStatus !== 'FINISHED') {
+                showMessage("Fin de la Rutina", "success");
+                sendNotification("Rutina finalizada", "Fin de la rutina");
+                lastAnnouncementRef.current = { status: 'FINISHED', stepId: null };
+            }
+
+            prevStatusRef.current = status;
+        }, [status, currentStep?.id]);
+
         const openSubstituteModal = (stepIndex = cursor) => {
             const step = queue[stepIndex];
             if (!step || step.type !== 'work') return;
@@ -989,6 +1043,7 @@
             if (!queue || queue.length === 0) return;
 
             console.log("Starting countdown...");
+            ensureNotificationPermission();
             setCountdownValue(3);
             setShowCountdown(true);
 

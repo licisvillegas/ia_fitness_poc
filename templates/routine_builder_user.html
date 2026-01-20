@@ -1126,9 +1126,15 @@
         renderRoutineItems();
     }
 
-    function moveRoutineItem(index, direction) {
+    async function moveRoutineItem(index, direction) {
         const target = index + direction;
         if (target < 0 || target >= currentRoutineItems.length) return;
+        const currentItem = currentRoutineItems[index];
+        const targetItem = currentRoutineItems[target];
+        const directionLabel = direction < 0 ? "antes de" : "despues de";
+        const message = `Mover ${getMoveItemLabel(currentItem)} ${directionLabel} ${getMoveItemLabel(targetItem)}?`;
+        const confirmed = await showConfirmModal("Confirmar movimiento", message, "info");
+        if (!confirmed) return;
         const item = currentRoutineItems.splice(index, 1)[0];
         currentRoutineItems.splice(target, 0, item);
         renderRoutineItems();
@@ -1230,6 +1236,14 @@
     function getGroupName(groupId) {
         const group = currentRoutineItems.find(item => item.item_type === "group" && item._id === groupId);
         return group ? group.group_name : "";
+    }
+
+    function getMoveItemLabel(item) {
+        if (!item) return "Elemento";
+        if (item.item_type === "group") return `Grupo: ${item.group_name || "Grupo"}`;
+        if (item.item_type === "rest") return "Pausa";
+        if (item.item_type === "exercise") return `Ejercicio: ${item.exercise_name || "Ejercicio"}`;
+        return "Elemento";
     }
 
     function getExerciseById(exId) {

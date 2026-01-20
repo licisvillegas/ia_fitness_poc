@@ -1,0 +1,402 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Rutina Guiada{% endblock %}
+
+{% block sidebar %}
+{% if request.args.get('source') == 'admin' %}
+{% include 'components/sidebar_admin.html' %}
+{% else %}
+{% include 'components/sidebar.html' %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-panel border-0 shadow text-white">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 text-cyber-blue"><i class="fas fa-route me-2"></i>Rutina guiada</h5>
+                    <div class="text-secondary small">Crea una rutina paso a paso</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-info d-lg-none" id="guidedProgressInfoBtn" type="button">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="guidedCancelBtn" type="button" title="Reiniciar rutina (limpia todo)" aria-label="Reiniciar rutina">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="guidedMessage" class="alert alert-dark border-secondary text-secondary small mb-3" style="display:none;"></div>
+
+                <div class="guided-steps d-flex flex-wrap gap-2 mb-4">
+                    <div class="step-chip active" data-step="1">1. Detalles</div>
+                    <div class="step-chip" data-step="2">2. Ejercicios</div>
+                    <div class="step-chip" data-step="3">3. Ajustes</div>
+                    <div class="step-chip" data-step="4">4. Revision</div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <section id="guidedStep1" class="guided-step-section">
+                            <h6 class="text-cyber-green mb-3">Detalles de la rutina</h6>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Mis rutinas</label>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <input type="text" id="guidedRoutineSearch" class="form-control bg-dark text-white border-secondary" placeholder="Buscar rutina..." style="max-width: 320px;">
+                                    <button class="btn btn-outline-secondary" type="button" id="guidedRoutineReset">Restablecer</button>
+                                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#guidedRoutineCollapse" aria-expanded="false" aria-controls="guidedRoutineCollapse">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div id="guidedRoutineCollapse" class="collapse">
+                                    <div id="guidedRoutineList" class="list-group list-group-flush"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Nombre</label>
+                                <input type="text" id="guidedName" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Fuerza tren superior">
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Descripcion</label>
+                                <input type="text" id="guidedDesc" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Pecho, espalda, biceps">
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Dia sugerido</label>
+                                <select id="guidedDay" class="form-select bg-dark text-white border-secondary">
+                                    <option value="">Seleccionar</option>
+                                    <option value="Monday">Lunes</option>
+                                    <option value="Tuesday">Martes</option>
+                                    <option value="Wednesday">Miercoles</option>
+                                    <option value="Thursday">Jueves</option>
+                                    <option value="Friday">Viernes</option>
+                                    <option value="Saturday">Sabado</option>
+                                    <option value="Sunday">Domingo</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Grupos musculares</label>
+                                <div id="guidedBodyParts" class="d-flex flex-wrap gap-2"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Estado</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="guidedActive" checked>
+                                    <label class="form-check-label text-secondary" for="guidedActive">Mostrar en Rutinas creadas</label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guidedStep2" class="guided-step-section" style="display:none;">
+                            <h6 class="text-cyber-green mb-3">Selecciona ejercicios</h6>
+                            <div class="mb-3">
+                                <label class="text-secondary small">Catalogo de ejercicios</label>
+                                <div class="input-group">
+                                    <input type="text" id="guidedExerciseName" class="form-control bg-dark text-white border-secondary" readonly placeholder="Selecciona un ejercicio">
+                                    <button class="btn btn-outline-secondary" type="button" id="guidedOpenExerciseModal">Buscar</button>
+                                </div>
+                                <div class="text-secondary small mt-2">Selecciona un ejercicio y se agregara a la rutina.</div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-info mb-2" type="button" id="guidedAddExerciseBtn">
+                                <i class="fas fa-plus me-1"></i> Agregar ejercicio
+                            </button>
+                            <div class="text-secondary small mb-2">Ejercicios agregados</div>
+                            <div id="guidedExerciseList" class="list-group list-group-flush"></div>
+                        </section>
+
+                        <section id="guidedStep3" class="guided-step-section" style="display:none;">
+                            <h6 class="text-cyber-green mb-3">Ajusta series, reps y descanso</h6>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddGroupBtn">
+                                    <i class="fas fa-layer-group me-1"></i> Agregar grupo
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddExerciseBtnStep3">
+                                    <i class="fas fa-plus me-1"></i> Agregar ejercicio
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" type="button" id="guidedAddRestBtn">
+                                    <i class="fas fa-pause me-1"></i> Agregar pausa
+                                </button>
+                            </div>
+                            <div id="guidedConfigList" class="d-flex flex-column gap-3"></div>
+                        </section>
+
+                        <section id="guidedStep4" class="guided-step-section" style="display:none;">
+                            <h6 class="text-cyber-green mb-3">Revision final</h6>
+                            <div id="guidedReviewList"></div>
+                        </section>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="bg-dark-elem p-3 rounded border border-secondary h-100 guided-progress-card">
+                            <h6 class="text-cyber-blue mb-3">Progreso</h6>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div id="guidedProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 25%;"></div>
+                            </div>
+                            <div class="text-secondary small mb-2">Resumen rapido</div>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="summary-row"><span>Ejercicios:</span> <strong id="guidedSummaryCount">0</strong></div>
+                                <div class="summary-row"><span>Grupo principal:</span> <strong id="guidedSummaryGroup">-</strong></div>
+                                <div class="summary-row"><span>Estado:</span> <strong id="guidedSummaryActive">Activa</strong></div>
+                            </div>
+                            <hr class="border-secondary my-3">
+                            <div class="text-secondary small mb-2">Ayuda</div>
+                            <div id="guidedHelp" class="text-secondary small">Completa los datos principales antes de elegir ejercicios.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <button class="btn btn-outline-secondary" id="guidedPrevBtn" type="button" disabled>Anterior</button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-info" id="guidedNextBtn" type="button">Siguiente</button>
+                        <button class="btn btn-success" id="guidedSaveBtn" type="button" style="display:none;">
+                            <i class="fas fa-save me-1"></i> Guardar rutina
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-cyber-green { color: #00ff9d; }
+    .text-cyber-blue { color: #00d2ff; }
+    .bg-dark-elem { background-color: var(--bg-card); }
+    .step-chip {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .step-chip.active {
+        color: #081018;
+        background: #00d2ff;
+        border-color: #00d2ff;
+        font-weight: 700;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-secondary);
+    }
+    .list-group-item {
+        background: transparent;
+        color: var(--text-main);
+        border-color: var(--border-color);
+    }
+    .guided-ex-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .guided-ex-item:last-child {
+        border-bottom: none;
+    }
+    .guided-config-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.25);
+    }
+    .guided-block {
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px;
+    }
+    .guided-block-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .guided-inline-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .routine-preview-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 16px;
+    }
+    .routine-preview-scroll {
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+    .routine-preview-group {
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .routine-preview-item {
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .rm-exercise-modal .modal-content {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+    }
+    .rm-exercise-modal .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+    .rm-exercise-frame {
+        width: 100%;
+        height: 70vh;
+        border: none;
+        background: var(--bg-body);
+    }
+    @media (max-width: 991.98px) {
+        .guided-progress-card {
+            display: none;
+        }
+    }
+</style>
+
+<div class="modal fade rm-exercise-modal" id="guidedExerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white">Catalogo de ejercicios</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="guidedExerciseFrame" class="rm-exercise-frame" title="Catalogo de ejercicios"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="guidedAddExerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Agregar ejercicio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="text-secondary small">Grupo</label>
+                <select id="guidedAddExerciseGroup" class="form-select bg-dark text-white border-secondary">
+                    <option value="">Sin grupo (al final)</option>
+                </select>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-info" id="guidedAddExerciseConfirm">Continuar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="guidedGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Nuevo grupo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="text-secondary small">Tipo</label>
+                <select id="guidedGroupType" class="form-select bg-dark text-white border-secondary">
+                    <option value="biserie">Biserie</option>
+                    <option value="superset">Superset</option>
+                    <option value="circuito">Circuito</option>
+                </select>
+                <label class="text-secondary small mt-3">Nombre</label>
+                <input type="text" id="guidedGroupName" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Biserie 1">
+                <label class="text-secondary small mt-3">Nota</label>
+                <textarea id="guidedGroupNote" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Opcional"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="guidedGroupSave">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="guidedRestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Nueva pausa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="text-secondary small">Grupo</label>
+                <select id="guidedRestGroup" class="form-select bg-dark text-white border-secondary"></select>
+                <label class="text-secondary small mt-3">Tiempo</label>
+                <select id="guidedRestSeconds" class="form-select bg-dark text-white border-secondary"></select>
+                <label class="text-secondary small mt-3">Nota</label>
+                <textarea id="guidedRestNote" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Opcional"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="guidedRestSave">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="guidedMoveConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green" id="guidedMoveConfirmTitle">Confirmar movimiento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-secondary" id="guidedMoveConfirmBody"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="guidedMoveConfirmCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-info" id="guidedMoveConfirmOk">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="guidedProgressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-blue">Progreso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3" style="height: 8px;">
+                    <div id="guidedProgressBarMobile" class="progress-bar bg-info" role="progressbar" style="width: 25%;"></div>
+                </div>
+                <div class="text-secondary small mb-2">Resumen rapido</div>
+                <div class="d-flex flex-column gap-2">
+                    <div class="summary-row"><span>Ejercicios:</span> <strong id="guidedSummaryCountMobile">0</strong></div>
+                    <div class="summary-row"><span>Grupo principal:</span> <strong id="guidedSummaryGroupMobile">-</strong></div>
+                    <div class="summary-row"><span>Estado:</span> <strong id="guidedSummaryActiveMobile">Activa</strong></div>
+                </div>
+                <hr class="border-secondary my-3">
+                <div class="text-secondary small mb-2">Ayuda</div>
+                <div id="guidedHelpMobile" class="text-secondary small">Completa los datos principales antes de elegir ejercicios.</div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/routine_builder_guided.js"></script>
+{% endblock %}

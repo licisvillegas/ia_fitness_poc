@@ -354,6 +354,11 @@ def api_get_user_routines():
 def user_routine_builder_page():
     return render_template("routine_builder_user.html")
 
+@workout_bp.route("/routines/builder-guided")
+def user_routine_builder_guided_page():
+    source = request.args.get("source") or "user"
+    return render_template("routine_builder_guided.html", source=source)
+
 @workout_bp.route("/routines")
 def user_routines_catalog_page():
     return render_template("routines_catalog_user.html")
@@ -381,7 +386,10 @@ def api_list_my_routines():
         user_id = target_user_id or current_user_id
 
         active_only = request.args.get("active_only")
+        all_routines = request.args.get("all") in ("1", "true", "yes")
         query = {"user_id": user_id}
+        if all_routines and is_admin:
+            query = {}
         if active_only in ("1", "true", "yes"):
             query["$or"] = [{"is_active": {"$exists": False}}, {"is_active": True}]
 
@@ -459,7 +467,11 @@ def api_get_my_routine_detail(routine_id):
         target_user_id = request.args.get("user_id") if is_admin else None
         user_id = target_user_id or current_user_id
 
-        r = db.routines.find_one({"_id": ObjectId(routine_id), "user_id": user_id})
+        all_routines = request.args.get("all") in ("1", "true", "yes")
+        query = {"_id": ObjectId(routine_id), "user_id": user_id}
+        if all_routines and is_admin:
+            query = {"_id": ObjectId(routine_id)}
+        r = db.routines.find_one(query)
         if not r:
             return jsonify({"error": "Rutina no encontrada"}), 404
         r["_id"] = str(r["_id"])
@@ -481,6 +493,10 @@ def api_save_my_routine():
         if db is None: return jsonify({"error": "DB not ready"}), 503
 
         rid = data.get("id")
+        role_doc = db.user_roles.find_one({"user_id": user_id})
+        is_admin = role_doc and role_doc.get("role") == "admin"
+        admin_template = bool(data.get("admin_template")) and is_admin
+
         doc = {
             "name": data.get("name"),
             "description": data.get("description"),
@@ -488,16 +504,20 @@ def api_save_my_routine():
             "routine_body_parts": data.get("routine_body_parts", []),
             "items": data.get("items", []),
             "updated_at": datetime.utcnow(),
-            "user_id": user_id
         }
+        if not admin_template:
+            doc["user_id"] = user_id
         if "is_active" in data:
             doc["is_active"] = bool(data.get("is_active"))
 
         if rid:
             if not ObjectId.is_valid(rid):
                 return jsonify({"error": "ID invalido"}), 400
+            update_query = {"_id": ObjectId(rid)}
+            if not admin_template:
+                update_query["user_id"] = user_id
             res = db.routines.update_one(
-                {"_id": ObjectId(rid), "user_id": user_id},
+                update_query,
                 {"$set": doc}
             )
             if res.matched_count == 0:

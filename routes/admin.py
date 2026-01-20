@@ -1083,7 +1083,8 @@ def save_routine_builder():
 
 @admin_bp.get("/admin/routines/assign")
 def admin_assign_routine_page():
-    return render_template("assign_routine.html")
+    source = request.args.get("source") or "admin"
+    return render_template("assign_routine.html", source=source)
 
 @admin_bp.post("/api/admin/routines/assign")
 def admin_api_assign_routine():

@@ -173,7 +173,11 @@
 <body>
 
     <!-- Sidebar Component -->
+    {% if source == 'user' %}
+    {% include 'components/sidebar.html' %}
+    {% else %}
     {% include 'components/sidebar_admin.html' %}
+    {% endif %}
 
     <div class="main-content">
         <div class="container">

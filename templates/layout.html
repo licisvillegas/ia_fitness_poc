@@ -187,6 +187,24 @@
             });
         };
 
+        const showSessionRecoveryModal = (detail) => {
+            if (!appAlertModal) {
+                alert("Sesion perdida. Intentando recuperar informacion...");
+                return Promise.resolve(true);
+            }
+            appAlertTitle.textContent = "Sesion perdida";
+            const extra = detail ? ` (${detail})` : "";
+            appAlertMessage.textContent = `Se perdio la sesion actual. Intentando recuperar informacion${extra}.`;
+            appAlertCancel.style.display = "none";
+            appAlertConfirm.textContent = "Continuar";
+            appAlertConfirm.className = "btn btn-outline-light";
+            applyAlertTone("warning");
+            appAlertModal.classList.add("show");
+            return new Promise(resolve => {
+                appAlertResolve = resolve;
+            });
+        };
+
         const showConfirmModal = (title, message, tone = "danger") => {
             if (!appAlertModal) {
                 return Promise.resolve(confirm(message || title || "Confirmar"));
@@ -217,6 +235,7 @@
 
         window.showAlertModal = showAlertModal;
         window.showConfirmModal = showConfirmModal;
+        window.showSessionRecoveryModal = showSessionRecoveryModal;
 
         (function syncAdminWorkingUserGlobal() {
             function setWorkingUser(user) {
@@ -237,6 +256,72 @@
             window.addEventListener("admin-user-cleared", () => {
                 setWorkingUser(null);
             });
+        })();
+
+        (function detectSessionLoss() {
+            const state = {
+                shown: false
+            };
+
+            const getCookieValue = (name) => {
+                const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+                return match ? decodeURIComponent(match[1]) : "";
+            };
+
+            const hasAuthCookie = () => {
+                return Boolean(getCookieValue("user_session") || getCookieValue("admin_token"));
+            };
+
+            const hasLocalUser = () => {
+                try {
+                    return !!localStorage.getItem("ai_fitness_user");
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const reloadForSidebar = () => {
+                const url = new URL(window.location.href);
+                url.searchParams.set("refresh_sidebar", Date.now().toString());
+                window.location.replace(url.toString());
+            };
+
+            const handleSessionLoss = (detail) => {
+                if (state.shown) return;
+                state.shown = true;
+                showSessionRecoveryModal(detail).then(() => {
+                    reloadForSidebar();
+                });
+            };
+
+            const checkOnLoad = () => {
+                if (!hasAuthCookie() && hasLocalUser()) {
+                    handleSessionLoss("Sesion no encontrada");
+                }
+            };
+
+            const originalFetch = window.fetch;
+            if (originalFetch) {
+                window.fetch = async (...args) => {
+                    const res = await originalFetch(...args);
+                    if (res && (res.status === 401 || res.status === 403)) {
+                        handleSessionLoss("Respuesta sin autorizacion");
+                    }
+                    return res;
+                };
+            }
+
+            window.addEventListener("storage", (event) => {
+                if (event.key === "ai_fitness_user") {
+                    checkOnLoad();
+                }
+            });
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", checkOnLoad);
+            } else {
+                checkOnLoad();
+            }
         })();
 
         // PWA Service Worker Registration

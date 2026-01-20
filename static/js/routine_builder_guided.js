@@ -36,6 +36,20 @@
 
   const makeId = (prefix) => `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
+  const normalizeGroupName = (value) => {
+    return (value || "").trim().toLowerCase();
+  };
+
+  const isGroupNameTaken = (name, excludeId) => {
+    const target = normalizeGroupName(name);
+    if (!target) return false;
+    return state.routine.items.some((item) => {
+      if (item.item_type !== "group") return false;
+      if (excludeId && item._id === excludeId) return false;
+      return normalizeGroupName(item.group_name) === target;
+    });
+  };
+
   const showMessage = (text, tone) => {
     const modalEl = document.getElementById("guidedAlertModal");
     const titleEl = document.getElementById("guidedAlertTitle");
@@ -154,14 +168,14 @@
     });
 
     const progress = document.getElementById("guidedProgressBar");
-    if (progress) progress.style.width = `${step * 25}%`;
+    if (progress) progress.style.width = `${Math.round((step / 3) * 100)}%`;
 
     const prevBtn = document.getElementById("guidedPrevBtn");
     const nextBtn = document.getElementById("guidedNextBtn");
     const saveBtn = document.getElementById("guidedSaveBtn");
     if (prevBtn) prevBtn.disabled = step === 1;
-    if (nextBtn) nextBtn.style.display = step === 4 ? "none" : "inline-block";
-    if (saveBtn) saveBtn.style.display = step === 4 ? "inline-block" : "none";
+    if (nextBtn) nextBtn.style.display = step === 3 ? "none" : "inline-block";
+    if (saveBtn) saveBtn.style.display = step === 3 ? "inline-block" : "none";
     updateHelpText();
   };
 
@@ -170,38 +184,11 @@
     if (!el) return;
     const map = {
       1: "Busca una rutina existente o comienza desde cero.",
-      2: "Agrega ejercicios con el catalogo o reemplaza los ya seleccionados.",
-      3: "Organiza grupos y ajusta orden, descansos y comentarios.",
-      4: "Revisa el resumen visual antes de guardar.",
+      2: "Organiza grupos y ajusta orden, descansos y comentarios.",
+      3: "Revisa el resumen visual antes de guardar.",
     };
     el.textContent = map[state.step] || "";
     updateProgressModal();
-  };
-
-  const updateStep2Actions = () => {
-    const hasExercise = state.routine.items.some((item) => item.item_type === "exercise");
-    const hasGroup = state.routine.items.some((item) => item.item_type === "group");
-    const shouldDisable = hasExercise || hasGroup;
-    const addExerciseBtn = document.getElementById("guidedAddExerciseBtn");
-    const addGroupBtn = document.getElementById("guidedAddGroupBtnStep2");
-    const hint = document.getElementById("guidedStep2Hint");
-    if (addExerciseBtn) addExerciseBtn.disabled = shouldDisable;
-    if (addGroupBtn) addGroupBtn.disabled = shouldDisable;
-    if (hint) hint.style.display = shouldDisable ? "block" : "none";
-  };
-
-  const normalizeGroupName = (value) => {
-    return (value || "").trim().toLowerCase();
-  };
-
-  const isGroupNameTaken = (name, excludeId) => {
-    const target = normalizeGroupName(name);
-    if (!target) return false;
-    return state.routine.items.some((item) => {
-      if (item.item_type !== "group") return false;
-      if (excludeId && item._id === excludeId) return false;
-      return normalizeGroupName(item.group_name) === target;
-    });
   };
 
   const renderBodyParts = () => {
@@ -365,7 +352,6 @@
     updateSummary();
     renderExerciseList();
     renderConfigList();
-    updateStep2Actions();
   };
 
   const addGroup = (name, type, note) => {
@@ -377,7 +363,6 @@
       note: note || "",
     });
     renderConfigList();
-    updateStep2Actions();
   };
 
   const addRest = (groupId, seconds, note) => {
@@ -1187,10 +1172,10 @@
           return;
         }
       }
-      if (state.step === 3) {
+      if (state.step === 2) {
         updateReview();
       }
-      setStep(Math.min(4, state.step + 1));
+      setStep(Math.min(3, state.step + 1));
       openProgressModalIfMobile();
     });
 
@@ -1264,8 +1249,7 @@
       renderExerciseList();
       renderConfigList();
       updateSummary();
-      updateStep2Actions();
-    });
+      });
 
     document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
       const field = event.target.getAttribute("data-field");
@@ -1468,8 +1452,7 @@
         renderConfigList();
         renderExerciseList();
         updateSummary();
-        updateStep2Actions();
-        return;
+            return;
       }
 
       const btn = event.target.closest("[data-remove]");
@@ -1495,8 +1478,7 @@
       renderConfigList();
       renderExerciseList();
       updateSummary();
-      updateStep2Actions();
-    });
+      });
 
     document.getElementById("guidedOpenExerciseModal")?.addEventListener("click", () => {
       pendingReplaceId = "";
@@ -1627,7 +1609,6 @@
   const init = async () => {
     updateHelpText();
     updateSummary();
-    updateStep2Actions();
     await Promise.all([loadBodyParts(), loadExercises(), loadRoutines()]);
     if (isAdminBuilder) {
       const activeWrap = document.getElementById("guidedActive")?.closest(".mb-3");

@@ -33,9 +33,8 @@
 
                 <div class="guided-steps d-flex flex-wrap gap-2 mb-4">
                     <div class="step-chip active" data-step="1">1. Detalles</div>
-                    <div class="step-chip" data-step="2">2. Ejercicios</div>
-                    <div class="step-chip" data-step="3">3. Ajustes</div>
-                    <div class="step-chip" data-step="4">4. Revision</div>
+                    <div class="step-chip" data-step="2">2. Ajustes</div>
+                    <div class="step-chip" data-step="3">3. Revision</div>
                 </div>
 
                 <div class="row g-4">
@@ -89,32 +88,9 @@
                             </div>
                         </section>
 
-                        <section id="guidedStep2" class="guided-step-section" style="display:none;">
-                            <h6 class="text-cyber-green mb-3">Selecciona ejercicios</h6>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Catalogo de ejercicios</label>
-                                <div class="input-group">
-                                    <input type="text" id="guidedExerciseName" class="form-control bg-dark text-white border-secondary" readonly placeholder="Selecciona un ejercicio">
-                                    <button class="btn btn-outline-secondary" type="button" id="guidedOpenExerciseModal">Buscar</button>
-                                </div>
-                                <div class="text-secondary small mt-2">Selecciona un ejercicio y se agregara a la rutina.</div>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 mb-2">
-                                <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddGroupBtnStep2">
-                                    <i class="fas fa-layer-group me-1"></i> Agregar grupo
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddExerciseBtn">
-                                    <i class="fas fa-plus me-1"></i> Agregar ejercicio
-                                </button>
-                            </div>
-                            <div class="text-secondary small mb-2" id="guidedStep2Hint" style="display:none;">
-                                Presiona "Siguiente" para construir la rutina.
-                            </div>
-                            <div class="text-secondary small mb-2">Ejercicios agregados</div>
-                            <div id="guidedExerciseList" class="list-group list-group-flush"></div>
-                        </section>
+                        
 
-                        <section id="guidedStep3" class="guided-step-section" style="display:none;">
+                        <section id="guidedStep2" class="guided-step-section" style="display:none;">
                             <h6 class="text-cyber-green mb-3">Ajusta series, reps y descanso</h6>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddGroupBtn">
@@ -130,7 +106,7 @@
                             <div id="guidedConfigList" class="d-flex flex-column gap-3"></div>
                         </section>
 
-                        <section id="guidedStep4" class="guided-step-section" style="display:none;">
+                        <section id="guidedStep3" class="guided-step-section" style="display:none;">
                             <h6 class="text-cyber-green mb-3">Revision final</h6>
                             <div id="guidedReviewList"></div>
                         </section>

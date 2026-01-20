@@ -57,6 +57,7 @@
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
         const prevStatusRef = useRef(status);
+        const workNotifyTimeoutsRef = useRef([]);
 
         // Notification Logic
         useEffect(() => {
@@ -957,7 +958,6 @@
             if (status === 'REST' && currentStep.type === 'rest') {
                 if (lastAnnouncementRef.current.status !== 'REST' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage("Inicia Descanso", "info");
-                    sendNotification("Descanso", "Inicia descanso");
                 }
                 lastAnnouncementRef.current = { status: 'REST', stepId: currentStep.id };
             }
@@ -966,21 +966,75 @@
                 const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
                 if (prevStatus === 'REST') {
                     showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
-                    sendNotification("Descanso finalizado", `Inicia ejercicio ${exName}`);
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage(`Inicia ejercicio ${exName}`, "info");
-                    sendNotification("Inicia ejercicio", exName);
                 }
                 lastAnnouncementRef.current = { status: 'WORK', stepId: currentStep.id };
             }
 
             if (status === 'FINISHED' && prevStatus !== 'FINISHED') {
                 showMessage("Fin de la Rutina", "success");
-                sendNotification("Rutina finalizada", "Fin de la rutina");
                 lastAnnouncementRef.current = { status: 'FINISHED', stepId: null };
             }
 
             prevStatusRef.current = status;
+        }, [status, currentStep?.id]);
+
+        useEffect(() => {
+            workNotifyTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+            workNotifyTimeoutsRef.current = [];
+
+            if (!currentStep || status !== 'WORK' || currentStep.type !== 'work') return;
+
+            const stepId = currentStep.id;
+            const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
+            const isTimeBased = Boolean(currentStep.isTimeBased || currentStep.target?.time);
+            const totalSeconds = currentStep.target?.time || 0;
+
+            if (isTimeBased && totalSeconds > 0) {
+                const halfSeconds = Math.floor(totalSeconds / 2);
+                const almostDoneSeconds = totalSeconds - 60;
+                const scheduleNotification = (delaySeconds, title, message) => {
+                    if (delaySeconds <= 0) return;
+                    const timeoutId = setTimeout(() => {
+                        const currentLog = sessionLogRef.current || [];
+                        const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
+                        const stillWorking = statusRef.current === 'WORK';
+                        const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
+                        if (stillSameStep && stillWorking && !alreadyLogged) {
+                            sendNotification(title, message);
+                        }
+                    }, delaySeconds * 1000);
+                    workNotifyTimeoutsRef.current.push(timeoutId);
+                };
+
+                scheduleNotification(halfSeconds, "Sigue entrenando", `Vas a la mitad de ${exName}. Continua fuerte.`);
+                scheduleNotification(almostDoneSeconds, "Casi terminas", `Casi finalizas ${exName}. Un ultimo esfuerzo.`);
+            } else {
+                const checkpoints = [
+                    { minutes: 3, message: `Aun estas en ${exName}. Vamos, puedes terminar esta serie.` },
+                    { minutes: 5, message: `Sigue con ${exName}. Un esfuerzo mas.` },
+                    { minutes: 10, message: `Gran trabajo. Finaliza ${exName} cuando puedas.` }
+                ];
+
+                checkpoints.forEach(({ minutes, message }) => {
+                    const timeoutId = setTimeout(() => {
+                        const currentLog = sessionLogRef.current || [];
+                        const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
+                        const stillWorking = statusRef.current === 'WORK';
+                        const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
+                        if (stillSameStep && stillWorking && !alreadyLogged) {
+                            sendNotification("Sigue entrenando", message);
+                        }
+                    }, minutes * 60 * 1000);
+                    workNotifyTimeoutsRef.current.push(timeoutId);
+                });
+            }
+
+            return () => {
+                workNotifyTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+                workNotifyTimeoutsRef.current = [];
+            };
         }, [status, currentStep?.id]);
 
         const openSubstituteModal = (stepIndex = cursor) => {

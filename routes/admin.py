@@ -11,6 +11,7 @@ from extensions import logger
 from utils.auth_helpers import check_admin_access, ensure_user_status, generate_admin_csrf, validate_admin_csrf, USER_STATUS_DEFAULT
 from utils.cache import cache_delete
 from utils.helpers import parse_birth_date, format_birth_date, compute_age, normalize_user_status
+from utils.routine_utils import normalize_routine_items
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -1072,7 +1073,7 @@ def save_routine_builder():
             "description": data.get("description"),
             "routine_day": data.get("routine_day"),
             "routine_body_parts": data.get("routine_body_parts", []),
-            "items": data.get("items", []), # The structure from builder
+            "items": normalize_routine_items(data.get("items", [])), # The structure from builder
             "updated_at": datetime.utcnow()
         }
 

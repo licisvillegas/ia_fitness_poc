@@ -23,14 +23,17 @@
   const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
   const REPS_OPTIONS = ["4-6", "6-8", "8-12", "10-12", "12-15", "15-20", "20-25", "AMRAP", "Reps fijas"];
   const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 180];
-  const TIME_OPTIONS = [300, 600, 900, 1200, 1800];
+  const TIME_OPTIONS = [600, 900, 1200, 1800, 3600];
 
   let exerciseModal = null;
   let addExerciseModal = null;
   let confirmMoveModal = null;
   let alertModal = null;
+  let commentModal = null;
   let pendingReplaceId = "";
   let pendingAddGroupId = "";
+  let pendingCommentIdx = null;
+  let pendingCommentField = "";
 
   let routineListManuallyExpanded = false;
   let routineListAutoToggle = false;
@@ -190,7 +193,7 @@
     const saveBtn = document.getElementById("guidedSaveBtn");
     if (prevBtn) prevBtn.disabled = step === 1;
     if (state.isEditingFlow) {
-      if (nextBtn) nextBtn.style.display = "inline-block";
+      if (nextBtn) nextBtn.style.display = step === 3 ? "none" : "inline-block";
       if (saveBtn) saveBtn.style.display = "inline-block";
     } else {
       if (nextBtn) nextBtn.style.display = step === 3 ? "none" : "inline-block";
@@ -330,16 +333,21 @@
       const idx = state.routine.items.findIndex((item) => item._id === pendingReplaceId);
       if (idx >= 0) {
         const existing = state.routine.items[idx];
+        const exerciseType = exercise.type || "weight";
+        const timeBased = isTimeBasedExercise(exerciseType);
         state.routine.items[idx] = {
           ...existing,
           exercise_id: exercise._id || exercise.id,
           exercise_name: exercise.name || "Ejercicio",
-          exercise_type: exercise.type || "weight",
+          exercise_type: exerciseType,
           equipment: exercise.equipment || "",
           body_part: exercise.body_part || "",
           video_url: exercise.video_url || "",
           substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
+          target_time_seconds: timeBased ? (existing.target_time_seconds || 600) : 0,
+          target_reps: timeBased ? 0 : (existing.target_reps || "8-12"),
         };
+        normalizeItemTargets(state.routine.items[idx]);
       }
       pendingReplaceId = "";
     } else {
@@ -350,20 +358,22 @@
           inheritedSets = Number(groupExercise.target_sets) || 3;
         }
       }
+      const exerciseType = exercise.type || "weight";
+      const timeBased = isTimeBasedExercise(exerciseType);
       state.routine.items.push({
         item_type: "exercise",
         _id: makeId("ex"),
         exercise_id: exercise._id || exercise.id,
         exercise_name: exercise.name || "Ejercicio",
-        exercise_type: exercise.type || "weight",
+        exercise_type: exerciseType,
         equipment: exercise.equipment || "",
         body_part: exercise.body_part || "",
         video_url: exercise.video_url || "",
         substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
         target_sets: inheritedSets,
-        target_reps: "8-12",
+        target_reps: timeBased ? 0 : "8-12",
         rest_seconds: 60,
-        target_time_seconds: 600,
+        target_time_seconds: timeBased ? 600 : 0,
         group_id: groupId || "",
         comment: "",
       });
@@ -467,6 +477,23 @@
     return value !== null && value !== undefined && /^\d+$/.test(String(value));
   };
 
+  const isTimeBasedExercise = (type) => {
+    const normalized = String(type || "").trim().toLowerCase();
+    return normalized === "cardio" || normalized === "time";
+  };
+
+  const normalizeItemTargets = (item) => {
+    if (!item || item.item_type !== "exercise") return item;
+    if (isTimeBasedExercise(item.exercise_type)) {
+      item.target_reps = 0;
+      if (!item.target_time_seconds) item.target_time_seconds = 600;
+    } else {
+      item.target_time_seconds = 0;
+      if (!item.target_reps || Number(item.target_reps) === 0) item.target_reps = "8-12";
+    }
+    return item;
+  };
+
   const getRepsSelectValue = (value) => {
     return isExactRepsValue(value) ? "Reps fijas" : (value || "8-12");
   };
@@ -491,7 +518,7 @@
     });
 
     const renderExerciseCard = (item, idx) => {
-      const isTime = item.exercise_type === "time" || item.exercise_type === "cardio";
+      const isTime = isTimeBasedExercise(item.exercise_type || item.type);
       return `
         <div class="guided-config-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
@@ -537,7 +564,7 @@
             </div>
             <div class="col-6">
               <label class="text-secondary small">Comentario</label>
-              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="comment" data-idx="${idx}" value="${item.comment || ""}">
+              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="comment" data-idx="${idx}" data-comment-edit="comment" readonly value="${item.comment || ""}">
             </div>
           </div>
         </div>
@@ -570,7 +597,7 @@
             </div>
             <div class="col-4">
               <label class="text-secondary small">Nota</label>
-              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${idx}" value="${item.note || ""}">
+              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${idx}" data-comment-edit="note" readonly value="${item.note || ""}">
             </div>
           </div>
         </div>
@@ -607,7 +634,7 @@
             </div>
             <div class="col-12">
               <label class="text-secondary small">Nota</label>
-              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${groupIndex}" value="${group.note || ""}">
+              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${groupIndex}" data-comment-edit="note" readonly value="${group.note || ""}">
             </div>
           </div>
           ${body || '<div class="text-secondary small">No hay ejercicios en este grupo.</div>'}
@@ -1098,7 +1125,7 @@
       }
       const exerciseId = item.exercise_id || item._id || item.id;
       const lookupExercise = exerciseLookup[exerciseId] || {};
-      return {
+      const mapped = {
         item_type: "exercise",
         _id: item._id || makeId("ex"),
         exercise_id: exerciseId,
@@ -1117,6 +1144,7 @@
         group_id: item.group_id || "",
         comment: item.comment || "",
       };
+      return normalizeItemTargets(mapped);
     });
   };
 
@@ -1151,6 +1179,19 @@
       exerciseModal = new bootstrap.Modal(modalEl);
     }
     exerciseModal.show();
+  };
+
+  const openCommentModal = (title, value, idx, field) => {
+    const modalEl = document.getElementById("guidedCommentModal");
+    const titleEl = document.getElementById("guidedCommentTitle");
+    const textEl = document.getElementById("guidedCommentText");
+    if (!modalEl || !textEl || !titleEl) return;
+    pendingCommentIdx = idx;
+    pendingCommentField = field;
+    titleEl.textContent = title || "Editar comentario";
+    textEl.value = value || "";
+    if (!commentModal) commentModal = new bootstrap.Modal(modalEl);
+    commentModal.show();
   };
 
   const openAddExerciseModal = () => {
@@ -1324,8 +1365,10 @@
             exactInput.style.display = "block";
             const exactValue = exactInput.value ? exactInput.value : 10;
             state.routine.items[idx].target_reps = exactValue;
+            state.routine.items[idx].target_time_seconds = 0;
           } else {
             state.routine.items[idx].target_reps = 10;
+            state.routine.items[idx].target_time_seconds = 0;
           }
           renderConfigList();
           return;
@@ -1335,16 +1378,21 @@
           exactInput.style.display = "none";
         }
         state.routine.items[idx].target_reps = value;
+        state.routine.items[idx].target_time_seconds = 0;
         return;
       }
 
       if (field === "target_reps_exact") {
         state.routine.items[idx].target_reps = value;
+        state.routine.items[idx].target_time_seconds = 0;
         return;
       }
 
       const parsedValue = field.includes("sets") || field.includes("seconds") ? Number(value) : value;
       state.routine.items[idx][field] = parsedValue;
+      if (field === "target_time_seconds") {
+        state.routine.items[idx].target_reps = 0;
+      }
       if (field === "target_sets") {
         const item = state.routine.items[idx];
         if (item && item.group_id) {
@@ -1364,6 +1412,19 @@
         pendingReplaceId = replaceBtn.dataset.replace;
         pendingAddGroupId = "";
         openExerciseModal();
+        return;
+      }
+
+      const commentInput = event.target.closest("[data-comment-edit]");
+      if (commentInput) {
+        const idx = Number(commentInput.dataset.idx);
+        const field = commentInput.dataset.commentEdit;
+        if (Number.isNaN(idx) || !field || !state.routine.items[idx]) return;
+        const titleMap = {
+          comment: "Comentario del ejercicio",
+          note: "Nota"
+        };
+        openCommentModal(titleMap[field] || "Editar comentario", state.routine.items[idx][field] || "", idx, field);
         return;
       }
 
@@ -1584,6 +1645,14 @@
       modal.show();
     });
 
+    document.getElementById("guidedDesc")?.addEventListener("click", () => {
+      const descInput = document.getElementById("guidedDesc");
+      if (!descInput) return;
+      pendingCommentIdx = null;
+      pendingCommentField = "routine_description";
+      openCommentModal("Descripcion de la rutina", descInput.value || "", null, "routine_description");
+    });
+
     document.getElementById("guidedRestSave")?.addEventListener("click", () => {
       const groupId = document.getElementById("guidedRestGroup").value;
       const seconds = document.getElementById("guidedRestSeconds").value;
@@ -1591,6 +1660,26 @@
       addRest(groupId, seconds, note);
       document.getElementById("guidedRestNote").value = "";
       bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedRestModal")).hide();
+    });
+
+    document.getElementById("guidedCommentSave")?.addEventListener("click", () => {
+      const textEl = document.getElementById("guidedCommentText");
+      if (!textEl) return;
+      if (!pendingCommentField) return;
+      if (pendingCommentField === "routine_description") {
+        const descInput = document.getElementById("guidedDesc");
+        if (descInput) descInput.value = textEl.value || "";
+        state.routine.description = textEl.value || "";
+      } else {
+        if (pendingCommentIdx == null) return;
+        const item = state.routine.items[pendingCommentIdx];
+        if (!item) return;
+        item[pendingCommentField] = textEl.value || "";
+        renderConfigList();
+      }
+      pendingCommentIdx = null;
+      pendingCommentField = "";
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedCommentModal")).hide();
     });
 
     document.getElementById("guidedRoutineList")?.addEventListener("click", (event) => {
@@ -1656,7 +1745,13 @@
     if (data.type === "rm-exercise-select" && data.exercise) {
       const picked = data.exercise;
       const byId = state.exercises.find((ex) => String(ex._id) === String(picked.id));
-      addExercise(byId || { _id: picked.id, name: picked.name, body_part: picked.body_part }, pendingAddGroupId);
+      const fallback = {
+        _id: picked.id,
+        name: picked.name,
+        body_part: picked.body_part,
+        type: picked.type || picked.exercise_type || "weight"
+      };
+      addExercise(byId || fallback, pendingAddGroupId);
       pendingAddGroupId = "";
       const nameInput = document.getElementById("guidedExerciseName");
       if (nameInput) nameInput.value = picked.name || "";

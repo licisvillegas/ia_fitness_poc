@@ -60,7 +60,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="text-secondary small">Descripcion</label>
-                                <input type="text" id="guidedDesc" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Pecho, espalda, biceps">
+                                <input type="text" id="guidedDesc" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Pecho, espalda, biceps" readonly>
                             </div>
                             <div class="mb-3">
                                 <label class="text-secondary small">Dia sugerido</label>
@@ -339,6 +339,24 @@
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-warning" id="guidedRestSave">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="guidedCommentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-panel border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green" id="guidedCommentTitle">Editar comentario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="guidedCommentText" class="form-control bg-dark text-white border-secondary" rows="5"></textarea>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-info" id="guidedCommentSave">Guardar</button>
             </div>
         </div>
     </div>

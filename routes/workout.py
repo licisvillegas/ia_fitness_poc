@@ -7,6 +7,7 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 import extensions
 from extensions import logger
+from utils.routine_utils import normalize_routine_items
 from utils.cache import cache_get, cache_set
 
 # Crear blueprint
@@ -107,6 +108,8 @@ def list_public_exercises():
                     "body_part": 1,
                     "difficulty": 1,
                     "equipment": 1,
+                    "type": 1,
+                    "exercise_type": 1,
                     "video_url": 1,
                     "description": 1,
                     "image_url": 1,
@@ -502,7 +505,7 @@ def api_save_my_routine():
             "description": data.get("description"),
             "routine_day": data.get("routine_day"),
             "routine_body_parts": data.get("routine_body_parts", []),
-            "items": data.get("items", []),
+            "items": normalize_routine_items(data.get("items", [])),
             "updated_at": datetime.utcnow(),
         }
         if not admin_template:

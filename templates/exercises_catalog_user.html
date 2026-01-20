@@ -291,10 +291,14 @@
     }
 
     async function loadExercises() {
-        showLoader("Sincronizando catálogo...");
+        showLoader("Sincronizando cat logo...");
         try {
             const res = await fetch("/workout/api/exercises?limit=1000");
-            allExercises = await res.json();
+            const data = await res.json();
+            allExercises = Array.isArray(data) ? data.map((ex) => ({
+                ...ex,
+                type: ex.type || ex.exercise_type || ""
+            })) : [];
             filterExercises();
         } catch (e) { console.error(e); }
         finally { hideLoader(); }
@@ -334,7 +338,7 @@
             </td>
             <td><span class="badge bg-secondary">${translateBodyPart(ex.body_part)}</span></td>
             <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
-            <td>${ex.type}</td>
+            <td>${ex.type || "N/A"}</td>
             <td>
                 ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
             </td>
@@ -375,7 +379,7 @@
                     
                     <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
                         <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
-                            <i class="fas fa-dumbbell me-1"></i> ${ex.type}
+                            <i class="fas fa-dumbbell me-1"></i> ${ex.type || "N/A"}
                         </small>
                     </div>
                 </div>
@@ -436,7 +440,8 @@
             const nameMatch = !term || (ex.name || "").toLowerCase().includes(term);
             const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
             const equipmentMatch = !equipment || ex.equipment === equipment;
-            const typeMatch = !type || ex.type === type;
+            const exType = String(ex.type || "").toLowerCase();
+            const typeMatch = !type || exType === String(type).toLowerCase();
             return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
         });
 
@@ -585,7 +590,8 @@
                 exercise: {
                     name: ex.name,
                     id: ex._id,
-                    body_part: ex.body_part
+                    body_part: ex.body_part,
+                    type: ex.type
                 }
             }, "*");
         }

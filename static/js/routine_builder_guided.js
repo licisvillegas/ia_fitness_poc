@@ -147,15 +147,22 @@
   const renderRoutineList = () => {
     const list = document.getElementById("guidedRoutineList");
     const term = (document.getElementById("guidedRoutineSearch")?.value || "").toLowerCase();
+    const collapseEl = document.getElementById("guidedRoutineCollapse");
     if (!list) return;
     const filtered = state.routines.filter((r) => {
       const name = (r.name || "").toLowerCase();
       return !term || name.includes(term);
     });
+    const collapseInstance = collapseEl ? bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }) : null;
+
     if (!filtered.length) {
       list.innerHTML = '<div class="p-3 text-secondary small">Sin resultados.</div>';
+      if (collapseInstance) collapseInstance.hide();
       return;
     }
+
+    if (collapseInstance) collapseInstance.show();
+
     list.innerHTML = filtered
       .map((r) => {
         const badge = r.is_active === false ? "Inactiva" : "Activa";
@@ -232,6 +239,8 @@
           exercise_type: exercise.type || "weight",
           equipment: exercise.equipment || "",
           body_part: exercise.body_part || "",
+          video_url: exercise.video_url || "",
+          substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
         };
       }
       pendingReplaceId = "";
@@ -251,6 +260,8 @@
         exercise_type: exercise.type || "weight",
         equipment: exercise.equipment || "",
         body_part: exercise.body_part || "",
+        video_url: exercise.video_url || "",
+        substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
         target_sets: inheritedSets,
         target_reps: "8-12",
         rest_seconds: 60,
@@ -598,7 +609,7 @@
     list.innerHTML = `
       <div class="routine-preview-card">
         <div class="text-center mb-3">
-          <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
+          <div class="h3 fw-bold text-cyber-green mb-1">${routine.name || "Rutina"}</div>
           <div class="text-secondary">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
         </div>
         <div class="row g-2 mb-3">
@@ -619,6 +630,7 @@
             <div class="text-white">${routine.is_active ? "Activa" : "Inactiva"}</div>
           </div>
         </div>
+        ${routine.description ? `<div class="text-secondary small mb-3">${routine.description}</div>` : ""}
         <div class="routine-preview-scroll d-flex flex-column gap-2">${previewHtml}</div>
       </div>
     `;
@@ -659,6 +671,52 @@
       other: { label: "Otro", icon: "fas fa-toolbox" },
     };
     return map[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+  };
+
+  const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
+
+  const buildExerciseLookup = () => {
+    return (state.exercises || []).reduce((acc, ex) => {
+      if (ex && ex._id) acc[ex._id] = ex;
+      return acc;
+    }, {});
+  };
+
+  const resolveSubstitutes = (substitutes) => {
+    if (!Array.isArray(substitutes) || substitutes.length == 0) return [];
+    const lookup = buildExerciseLookup();
+    return substitutes.map((sub) => {
+      if (typeof sub == "string") return lookup[sub];
+      if (sub && typeof sub == "object") return sub;
+      return null;
+    }).filter(Boolean);
+  };
+
+  const toEmbedUrl = (url) => {
+    const trimmed = (url || "").trim();
+    if (!trimmed) return "";
+    if (trimmed.includes("youtube.com/watch")) {
+      const match = trimmed.match(/[?&]v=([^&]+)/);
+      if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    if (trimmed.includes("youtu.be/")) {
+      const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+      if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    return trimmed;
+  };
+
+  const openVideoModal = (url) => {
+    const modalEl = document.getElementById("videoModal");
+    const iframe = document.getElementById("videoFrame");
+    const embedUrl = toEmbedUrl(url);
+    if (!modalEl || !iframe || !embedUrl) return;
+    iframe.src = embedUrl;
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    modalEl.addEventListener("hidden.bs.modal", () => {
+      iframe.src = "";
+    }, { once: true });
   };
 
   const buildRoutinePreviewHtml = (routine) => {
@@ -732,17 +790,51 @@
       const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
       const rest = getRestSeconds(item);
       const equipmentMeta = getEquipmentMeta(item.equipment);
+      const hasVideo = item.video_url && item.video_url.trim() !== "";
+      const substitutes = resolveSubstitutes(item.substitutes || []);
+      const subsId = `subs_${safeId(routine._id)}_${safeId(item._id)}`;
 
       return `
         <div class="routine-preview-item d-flex justify-content-between align-items-start">
           <div>
-            <div class="text-white fw-bold">${name}</div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="text-white fw-bold">${name}</div>
+              ${hasVideo ? `
+                <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')">
+                  <i class="fab fa-youtube"></i>
+                </button>
+              ` : ""}
+            </div>
             <div class="d-flex flex-wrap gap-2 mt-1">
               <span class="badge bg-secondary">${bodyPartLabel}</span>
               <span class="badge bg-dark border border-secondary text-info">
                 <i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}
               </span>
             </div>
+            ${substitutes.length ? `
+              <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
+                Sustitutos (${substitutes.length})
+              </button>
+              <div class="collapse mt-2" id="${subsId}">
+                <div class="d-flex flex-column gap-2">
+                  ${substitutes.map((sub) => `
+                    <div class="routine-preview-item d-flex align-items-center justify-content-between">
+                      <div>
+                        <div class="fw-bold text-white">${sub.name || "Ejercicio"}</div>
+                        <div class="text-secondary small">
+                          <i class="${getEquipmentMeta(sub.equipment).icon} me-1"></i>${getEquipmentMeta(sub.equipment).label}
+                        </div>
+                      </div>
+                      ${sub.video_url ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')">
+                          <i class="fab fa-youtube"></i>
+                        </button>
+                      ` : ""}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            ` : ""}
           </div>
           <div class="text-end text-secondary small">
             <div>${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}</div>
@@ -827,9 +919,18 @@
 
   const loadExercises = async () => {
     try {
-      const res = await fetch("/workout/api/exercises");
-      const data = await res.json();
-      state.exercises = Array.isArray(data) ? data : [];
+      const limit = 1000;
+      let page = 1;
+      let all = [];
+      while (true) {
+        const res = await fetch(`/workout/api/exercises?limit=${limit}&page=${page}`);
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length == 0) break;
+        all = all.concat(data);
+        if (data.length < limit) break;
+        page += 1;
+      }
+      state.exercises = all;
     } catch (e) {
       state.exercises = [];
     }
@@ -865,6 +966,7 @@
 
   const normalizeRoutine = (routine, options) => {
     const duplicate = options && options.duplicate;
+    const exerciseLookup = buildExerciseLookup();
     state.routine.id = duplicate ? "" : routine._id || routine.id || "";
     state.routine.name = duplicate ? `${routine.name || "Rutina"} (Copia)` : (routine.name || "");
     state.routine.description = routine.description || "";
@@ -890,14 +992,20 @@
           group_id: item.group_id || "",
         };
       }
+      const exerciseId = item.exercise_id || item._id || item.id;
+      const lookupExercise = exerciseLookup[exerciseId] || {};
       return {
         item_type: "exercise",
         _id: item._id || makeId("ex"),
-        exercise_id: item.exercise_id || item._id || item.id,
-        exercise_name: item.exercise_name || item.name || "Ejercicio",
-        exercise_type: item.exercise_type || item.type || "weight",
-        equipment: item.equipment || "",
-        body_part: item.body_part || "",
+        exercise_id: exerciseId,
+        exercise_name: item.exercise_name || item.name || lookupExercise.name || "Ejercicio",
+        exercise_type: item.exercise_type || item.type || lookupExercise.type || "weight",
+        equipment: item.equipment || lookupExercise.equipment || "",
+        body_part: item.body_part || lookupExercise.body_part || "",
+        video_url: item.video_url || lookupExercise.video_url || "",
+        substitutes: Array.isArray(item.substitutes) && item.substitutes.length
+          ? item.substitutes
+          : (Array.isArray(lookupExercise.substitutes) ? lookupExercise.substitutes : []),
         target_sets: item.target_sets || 3,
         target_reps: item.target_reps || "8-12",
         rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
@@ -1332,6 +1440,8 @@
       renderRoutineList();
     });
   };
+
+  window.openVideoModal = openVideoModal;
 
   const init = async () => {
     updateHelpText();

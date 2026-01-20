@@ -1005,6 +1005,13 @@ def list_admin_routines():
         results = []
         for r in cursor:
             r["_id"] = str(r["_id"])
+            user_id = r.get("user_id")
+            if user_id:
+                user_doc = extensions.db.users.find_one({"user_id": user_id})
+                if not user_doc and ObjectId.is_valid(user_id):
+                    user_doc = extensions.db.users.find_one({"_id": ObjectId(user_id)})
+                if user_doc:
+                    r["user_name"] = user_doc.get("name") or user_doc.get("username") or user_doc.get("email")
             results.append(r)
         return jsonify(results), 200
     except Exception as e:

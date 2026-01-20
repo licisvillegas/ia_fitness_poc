@@ -75,6 +75,11 @@
             margin-bottom: 1rem;
         }
 
+        .badge-wrap {
+            white-space: normal;
+            word-break: break-word;
+        }
+
         .stat-item {
             display: flex;
             align-items: center;
@@ -173,11 +178,7 @@
 <body>
 
     <!-- Sidebar Component -->
-    {% if source == 'user' %}
-    {% include 'components/sidebar.html' %}
-    {% else %}
     {% include 'components/sidebar_admin.html' %}
-    {% endif %}
 
     <div class="main-content">
         <div class="container">
@@ -303,6 +304,7 @@
         let allRoutines = [];
         let assignedMap = {};
         let currentMuscles = "all";
+        let userMap = {};
 
         // Elements
         const routinesGrid = document.getElementById('routinesGrid');
@@ -317,6 +319,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadRoutines();
             loadBodyParts();
+            loadUsers();
             initUserSearch({
                 inputId: "userSearchTerm",
                 resultsId: "userSearchResults",
@@ -364,6 +367,21 @@
             } catch (e) {
                 console.error(e);
                 loadingRoutines.innerHTML = `<p class="text-danger">Error cargando rutinas</p>`;
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                userMap = (Array.isArray(users) ? users : []).reduce((acc, u) => {
+                    if (u && u.user_id) {
+                        acc[u.user_id] = u.name || u.username || u.email || u.user_id;
+                    }
+                    return acc;
+                }, {});
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -515,6 +533,12 @@
                     ? new Date(assignedInfo.expires_at).toLocaleDateString()
                     : null;
                 const daysValue = assignedInfo && assignedInfo.valid_days ? assignedInfo.valid_days : 30;
+                const ownerName = routine.user_id
+                    ? (routine.user_name || userMap[routine.user_id] || "")
+                    : "";
+                const ownerLabel = routine.user_id
+                    ? (ownerName ? `${ownerName} (${routine.user_id})` : routine.user_id)
+                    : "";
 
                 card.innerHTML = `
                 <div class="routine-header">
@@ -522,6 +546,9 @@
                     <small class="text-muted" style="font-size: 0.75rem;">ID: ${routine._id}</small>
                 </div>
                 <div class="routine-body">
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        ${routine.user_id ? `<span class="badge bg-dark border border-secondary text-info badge-wrap">Usuario: ${ownerLabel}</span>` : `<span class="badge bg-secondary badge-wrap">Global</span>`}
+                    </div>
                     <div class="routine-stats">
                         <div class="stat-item" title="Ejercicios">
                             <i class="fas fa-list-ol"></i>

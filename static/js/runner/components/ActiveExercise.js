@@ -1,4 +1,5 @@
 (function () {
+    const { useState } = React;
     const { useWorkout } = window.Runner.hooks;
     const { translateBodyPart } = window.Runner.constants;
     const { getExerciseWithLookup, resolveSubstitutes, openVideoModal } = window.Runner.logic;
@@ -19,6 +20,41 @@
         );
         const exerciseComment = ex.comment || ex.note || ex.description || "";
         const groupComment = currentStep.groupComment || "";
+        const [showExerciseNote, setShowExerciseNote] = useState(false);
+        const hasExerciseNote = Boolean(exerciseComment);
+
+        const exerciseNoteButton = hasExerciseNote ? (
+            <button
+                type="button"
+                className="btn btn-sm btn-outline-info rounded-circle exercise-note-btn"
+                title="Ver notas del ejercicio"
+                onClick={() => setShowExerciseNote(true)}
+            >
+                <i className="fas fa-info"></i>
+            </button>
+        ) : null;
+
+        const exerciseNoteModal = showExerciseNote && hasExerciseNote ? (
+            <div
+                className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                style={{ background: "rgba(0,0,0,0.65)", zIndex: 2300, padding: "16px" }}
+                onClick={() => setShowExerciseNote(false)}
+            >
+                <div
+                    className="alert border-secondary m-0"
+                    style={{ maxWidth: "560px", width: "100%", backgroundColor: "#0f1720", color: "#e8f4ff" }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                        <strong className="text-info">Notas del ejercicio</strong>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowExerciseNote(false)}>
+                            Cerrar
+                        </button>
+                    </div>
+                    <div style={{ whiteSpace: "pre-wrap", color: "#8fe4ff" }}>{exerciseComment}</div>
+                </div>
+            </div>
+        ) : null;
 
         if (focusMode) {
             return (
@@ -36,8 +72,11 @@
 
                     <div className="d-flex flex-column justify-content-between h-100">
                         <div className="text-center mb-2 pt-2">
-                            <div className="text-info fs-6 mb-1">
-                                Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
+                            <div className="text-info fs-6 mb-1 d-inline-flex align-items-center gap-2">
+                                <span>
+                                    Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
+                                </span>
+                                {exerciseNoteButton}
                             </div>
                             <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
                             {currentStep.isTimeBased && (
@@ -50,10 +89,11 @@
                             ) : (
                                 <InputControls key={currentStep.id} step={currentStep} hideRPE focusMode={focusMode} />
                             )}
-                        </div>
                     </div>
+                    {exerciseNoteModal}
                 </div>
-            );
+            </div>
+        );
         }
 
         return (
@@ -113,8 +153,11 @@
                                 </button>
                             </div>
                         </div>
-                        <div className="mt-1 text-info fs-6">
-                            Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
+                        <div className="mt-1 text-info fs-6 d-inline-flex align-items-center gap-2">
+                            <span>
+                                Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
+                            </span>
+                            {exerciseNoteButton}
                         </div>
                     </div>
 
@@ -133,6 +176,7 @@
                         </div>
                     )}
                 </div>
+                {exerciseNoteModal}
             </div>
         );
     };

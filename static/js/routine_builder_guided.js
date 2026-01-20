@@ -27,26 +27,78 @@
   let exerciseModal = null;
   let addExerciseModal = null;
   let confirmMoveModal = null;
+  let alertModal = null;
   let pendingReplaceId = "";
   let pendingAddGroupId = "";
+
+  let routineListManuallyExpanded = false;
+  let routineListAutoToggle = false;
 
   const makeId = (prefix) => `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
   const showMessage = (text, tone) => {
-    const el = document.getElementById("guidedMessage");
-    if (!el) return;
-    el.style.display = "block";
-    el.className = `alert alert-${tone || "dark"} border-secondary text-${tone === "warning" ? "dark" : "secondary"} small mb-3`;
-    el.textContent = text;
+    const modalEl = document.getElementById("guidedAlertModal");
+    const titleEl = document.getElementById("guidedAlertTitle");
+    const bodyEl = document.getElementById("guidedAlertBody");
+    const footerEl = document.getElementById("guidedAlertFooter");
+    const confirmBtn = document.getElementById("guidedAlertConfirm");
+    const cancelBtn = document.getElementById("guidedAlertCancel");
+    if (!modalEl || !titleEl || !bodyEl || !footerEl) return;
+    const titleMap = {
+      success: "Listo",
+      warning: "Atencion",
+      danger: "Error",
+      info: "Aviso",
+    };
+    titleEl.textContent = titleMap[tone] || "Aviso";
+    bodyEl.textContent = text || "";
+    if (confirmBtn) confirmBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.textContent = "Cerrar";
+    if (footerEl) footerEl.style.justifyContent = "flex-end";
+    if (!alertModal) alertModal = new bootstrap.Modal(modalEl);
+    alertModal.show();
   };
 
   const clearMessage = () => {
-    const el = document.getElementById("guidedMessage");
-    if (el) el.style.display = "none";
+    const modalEl = document.getElementById("guidedAlertModal");
+    if (modalEl && alertModal) {
+      alertModal.hide();
+    }
   };
 
   const confirmRemove = (message) => {
-    return window.confirm(message || "Confirmar eliminacion?");
+    const modalEl = document.getElementById("guidedAlertModal");
+    const titleEl = document.getElementById("guidedAlertTitle");
+    const bodyEl = document.getElementById("guidedAlertBody");
+    const footerEl = document.getElementById("guidedAlertFooter");
+    const confirmBtn = document.getElementById("guidedAlertConfirm");
+    const cancelBtn = document.getElementById("guidedAlertCancel");
+    if (!modalEl || !titleEl || !bodyEl || !confirmBtn) {
+      return Promise.resolve(window.confirm(message || "Confirmar eliminacion?"));
+    }
+    titleEl.textContent = "Confirmar";
+    bodyEl.textContent = message || "Confirmar eliminacion?";
+    if (confirmBtn) {
+      confirmBtn.style.display = "inline-block";
+      confirmBtn.textContent = "Confirmar";
+    }
+    if (cancelBtn) cancelBtn.textContent = "Cancelar";
+    if (footerEl) footerEl.style.justifyContent = "space-between";
+    if (!alertModal) alertModal = new bootstrap.Modal(modalEl);
+
+    return new Promise((resolve) => {
+      const onConfirm = () => {
+        alertModal.hide();
+        resolve(true);
+      };
+      const onCancel = () => {
+        resolve(false);
+      };
+      confirmBtn.onclick = onConfirm;
+      if (cancelBtn) cancelBtn.onclick = onCancel;
+      modalEl.addEventListener("hidden.bs.modal", () => resolve(false), { once: true });
+      alertModal.show();
+    });
   };
 
   const getMoveItemLabel = (item) => {
@@ -146,7 +198,9 @@
 
   const renderRoutineList = () => {
     const list = document.getElementById("guidedRoutineList");
-    const term = (document.getElementById("guidedRoutineSearch")?.value || "").toLowerCase();
+    const termRaw = document.getElementById("guidedRoutineSearch")?.value || "";
+    const term = termRaw.toLowerCase();
+    const hasTerm = termRaw.trim().length > 0;
     const collapseEl = document.getElementById("guidedRoutineCollapse");
     if (!list) return;
     const filtered = state.routines.filter((r) => {
@@ -157,11 +211,22 @@
 
     if (!filtered.length) {
       list.innerHTML = '<div class="p-3 text-secondary small">Sin resultados.</div>';
-      if (collapseInstance) collapseInstance.hide();
+      if (collapseInstance && !routineListManuallyExpanded) {
+        routineListAutoToggle = true;
+        collapseInstance.hide();
+      }
       return;
     }
 
-    if (collapseInstance) collapseInstance.show();
+    if (collapseInstance) {
+      const shouldShow = hasTerm || routineListManuallyExpanded;
+      routineListAutoToggle = true;
+      if (shouldShow) {
+        collapseInstance.show();
+      } else {
+        collapseInstance.hide();
+      }
+    }
 
     list.innerHTML = filtered
       .map((r) => {
@@ -1098,8 +1163,8 @@
       openProgressModalIfMobile();
     });
 
-    document.getElementById("guidedCancelBtn")?.addEventListener("click", () => {
-      if (confirm("Cancelar y limpiar la rutina?")) {
+    document.getElementById("guidedCancelBtn")?.addEventListener("click", async () => {
+      if (await confirmRemove("Cancelar y limpiar la rutina?")) {
         window.location.reload();
       }
     });
@@ -1143,7 +1208,7 @@
       }
     });
 
-    document.getElementById("guidedExerciseList")?.addEventListener("click", (event) => {
+    document.getElementById("guidedExerciseList")?.addEventListener("click", async (event) => {
       const replaceBtn = event.target.closest("[data-replace]");
       if (replaceBtn) {
         pendingReplaceId = replaceBtn.dataset.replace;
@@ -1157,7 +1222,7 @@
       const exercises = state.routine.items.filter((item) => item.item_type === "exercise");
       const item = exercises[idx];
       if (!item) return;
-      if (!confirmRemove(`Eliminar ejercicio: ${item.exercise_name || "Ejercicio"}?`)) return;
+      if (!(await confirmRemove(`Eliminar ejercicio: ${item.exercise_name || "Ejercicio"}?`))) return;
       state.routine.items = state.routine.items.filter((entry) => entry !== item);
       renderExerciseList();
       renderConfigList();
@@ -1218,6 +1283,14 @@
     });
 
     document.getElementById("guidedConfigList")?.addEventListener("click", async (event) => {
+      const replaceBtn = event.target.closest("[data-replace]");
+      if (replaceBtn) {
+        pendingReplaceId = replaceBtn.dataset.replace;
+        pendingAddGroupId = "";
+        openExerciseModal();
+        return;
+      }
+
       const moveGroupBtn = event.target.closest("[data-move-group]");
       if (moveGroupBtn) {
         const groupId = moveGroupBtn.dataset.moveGroup;
@@ -1331,7 +1404,7 @@
 
       const removeGroupBtn = event.target.closest("[data-remove-group]");
       if (removeGroupBtn) {
-        if (!confirmRemove("Eliminar grupo y sus elementos?")) return;
+        if (!(await confirmRemove("Eliminar grupo y sus elementos?"))) return;
         removeGroup(removeGroupBtn.dataset.removeGroup);
         renderConfigList();
         renderExerciseList();
@@ -1353,7 +1426,7 @@
       } else if (item.item_type === "exercise") {
         message = `Eliminar ejercicio: ${item.exercise_name || "Ejercicio"}?`;
       }
-      if (!confirmRemove(message)) return;
+      if (!(await confirmRemove(message))) return;
       if (item.item_type === "group") {
         removeGroup(item._id);
       } else {
@@ -1424,17 +1497,40 @@
       const loadBtn = event.target.closest("[data-load]");
       if (loadBtn) {
         loadRoutineById(loadBtn.dataset.load, { duplicate: false });
+        const searchInput = document.getElementById("guidedRoutineSearch");
+        if (searchInput) searchInput.value = "";
+        renderRoutineList();
         collapseRoutineList();
         return;
       }
       const dupBtn = event.target.closest("[data-dup]");
       if (dupBtn) {
         loadRoutineById(dupBtn.dataset.dup, { duplicate: true });
+        const searchInput = document.getElementById("guidedRoutineSearch");
+        if (searchInput) searchInput.value = "";
+        renderRoutineList();
         collapseRoutineList();
       }
     });
 
     document.getElementById("guidedRoutineSearch")?.addEventListener("input", renderRoutineList);
+    const routineCollapseEl = document.getElementById("guidedRoutineCollapse");
+    if (routineCollapseEl) {
+      routineCollapseEl.addEventListener("shown.bs.collapse", () => {
+        if (routineListAutoToggle) {
+          routineListAutoToggle = false;
+          return;
+        }
+        routineListManuallyExpanded = true;
+      });
+      routineCollapseEl.addEventListener("hidden.bs.collapse", () => {
+        if (routineListAutoToggle) {
+          routineListAutoToggle = false;
+          return;
+        }
+        routineListManuallyExpanded = false;
+      });
+    }
     document.getElementById("guidedRoutineReset")?.addEventListener("click", () => {
       document.getElementById("guidedRoutineSearch").value = "";
       renderRoutineList();

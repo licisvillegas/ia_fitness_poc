@@ -426,5 +426,23 @@
     </div>
 </div>
 
+<div class="modal fade" id="guidedAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green" id="guidedAlertTitle">Confirmacion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-secondary" id="guidedAlertBody"></div>
+            </div>
+            <div class="modal-footer border-secondary" id="guidedAlertFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="guidedAlertCancel">Cancelar</button>
+                <button type="button" class="btn btn-outline-info" id="guidedAlertConfirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="/static/js/routine_builder_guided.js"></script>
 {% endblock %}

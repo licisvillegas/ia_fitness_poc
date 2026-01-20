@@ -8,6 +8,7 @@
     exercises: [],
     bodyParts: [],
     routines: [],
+    isEditingFlow: false,
     routine: {
       id: "",
       name: "",
@@ -35,6 +36,17 @@
   let routineListAutoToggle = false;
 
   const makeId = (prefix) => `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+  const closeOpenModals = () => {
+    document.querySelectorAll(".modal.show").forEach((modalEl) => {
+      const instance = bootstrap.Modal.getInstance(modalEl);
+      if (instance) {
+        instance.hide();
+      } else {
+        modalEl.classList.remove("show");
+      }
+    });
+  };
 
   const normalizeGroupName = (value) => {
     return (value || "").trim().toLowerCase();
@@ -70,6 +82,9 @@
     if (cancelBtn) cancelBtn.textContent = "Cerrar";
     if (footerEl) footerEl.style.justifyContent = "flex-end";
     if (!alertModal) alertModal = new bootstrap.Modal(modalEl);
+    modalEl.addEventListener("hidden.bs.modal", () => {
+      closeOpenModals();
+    }, { once: true });
     alertModal.show();
   };
 
@@ -174,8 +189,13 @@
     const nextBtn = document.getElementById("guidedNextBtn");
     const saveBtn = document.getElementById("guidedSaveBtn");
     if (prevBtn) prevBtn.disabled = step === 1;
-    if (nextBtn) nextBtn.style.display = step === 3 ? "none" : "inline-block";
-    if (saveBtn) saveBtn.style.display = step === 3 ? "inline-block" : "none";
+    if (state.isEditingFlow) {
+      if (nextBtn) nextBtn.style.display = "inline-block";
+      if (saveBtn) saveBtn.style.display = "inline-block";
+    } else {
+      if (nextBtn) nextBtn.style.display = step === 3 ? "none" : "inline-block";
+      if (saveBtn) saveBtn.style.display = step === 3 ? "inline-block" : "none";
+    }
     updateHelpText();
   };
 
@@ -1049,6 +1069,7 @@
 
   const normalizeRoutine = (routine, options) => {
     const duplicate = options && options.duplicate;
+    state.isEditingFlow = true;
     const exerciseLookup = buildExerciseLookup();
     state.routine.id = duplicate ? "" : routine._id || routine.id || "";
     state.routine.name = duplicate ? `${routine.name || "Rutina"} (Copia)` : (routine.name || "");
@@ -1107,6 +1128,7 @@
       const data = await res.json();
       normalizeRoutine(data, options);
       applyRoutineToForm(state.routine);
+      setStep(state.step);
       updateReview();
     } catch (e) {
       showMessage("No se pudo cargar la rutina.", "warning");
@@ -1199,10 +1221,21 @@
       modal.show();
     });
 
-    document.getElementById("guidedSaveBtn")?.addEventListener("click", async () => {
-      clearMessage();
-      try {
-        if (window.showLoader) window.showLoader("Guardando rutina...");
+  document.getElementById("guidedSaveBtn")?.addEventListener("click", async () => {
+    clearMessage();
+    closeOpenModals();
+    try {
+      state.routine.name = document.getElementById("guidedName").value.trim();
+      state.routine.description = document.getElementById("guidedDesc").value.trim();
+      state.routine.routine_day = document.getElementById("guidedDay").value;
+      state.routine.is_active = document.getElementById("guidedActive").checked;
+      const selectedParts = Array.from(document.querySelectorAll(".guided-bodypart:checked")).map((el) => el.value);
+      state.routine.routine_body_parts = selectedParts;
+      if (!state.routine.name) {
+        showMessage("Debes ingresar un nombre.", "warning");
+        return;
+      }
+      if (window.showLoader) window.showLoader("Guardando rutina...");
         const payload = {
           id: state.routine.id || undefined,
           name: state.routine.name,

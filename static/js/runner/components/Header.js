@@ -72,7 +72,7 @@
                     </button>
                     {status !== 'IDLE' && status !== 'FINISHED' && (
                         <button
-                            className="btn btn-sm btn-outline-secondary rounded-circle"
+                            className="btn btn-sm rounded-pill px-3 pending-jump-btn"
                             onClick={openPendingConfirm}
                             title="Ir a pendientes"
                         >

@@ -6,7 +6,7 @@
     window.Runner.components.Header = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
         const {
             routine, globalTime, cursor, queue, isPaused, togglePause, cancelWorkout, status, startWorkout,
-            notificationPermission, requestNotificationPermission, isNotificationsEnabled, toggleNotifications
+            notificationPermission, requestNotificationPermission, isNotificationsEnabled, toggleNotifications, openPendingConfirm
         } = useWorkout();
 
         const workStats = useMemo(() => {
@@ -56,7 +56,7 @@
 
                     {status !== 'IDLE' && status !== 'FINISHED' && (
                         <button
-                            className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                            className={`btn btn-sm rounded-pill px-3 pending-toggle-btn ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
                             onClick={onTogglePending}
                             title="Pendientes"
                         >
@@ -70,6 +70,15 @@
                     >
                         <i className="fas fa-bullseye"></i>
                     </button>
+                    {status !== 'IDLE' && status !== 'FINISHED' && (
+                        <button
+                            className="btn btn-sm btn-outline-secondary rounded-circle"
+                            onClick={openPendingConfirm}
+                            title="Ir a pendientes"
+                        >
+                            <i className="fas fa-clipboard-list"></i>
+                        </button>
+                    )}
                     {status === 'IDLE' ? (
                         <button className="btn btn-sm btn-outline-success rounded-pill px-3" onClick={startWorkout}>
                             <i className="fas fa-play"></i>

@@ -47,6 +47,7 @@
         const globalTimeRef = useRef(globalTime);
         const currentStepRef = useRef(null);
         const onCancelRef = useRef(null); // Add ref for onCancel
+        const forceRestAfterLoggedRef = useRef(false);
 
         // Notification Logic
         useEffect(() => {
@@ -557,6 +558,11 @@
                         reps: 0
                     });
                 }
+                const nextWork = queue[cursor + 1];
+                const possibleRest = queue[cursor + 2];
+                if (nextWork?.type === 'work' && isStepLogged(nextWork.id, currentLog) && possibleRest?.type === 'rest') {
+                    forceRestAfterLoggedRef.current = true;
+                }
             }
 
             if (cursor >= queue.length - 1) {
@@ -581,6 +587,11 @@
                     nextIdx++;
                     // If the immediate next step is REST, skip it too because its work is done
                     if (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
+                        if (forceRestAfterLoggedRef.current) {
+                            console.log("DEBUG: Keeping rest after logged work");
+                            forceRestAfterLoggedRef.current = false;
+                            break;
+                        }
                         console.log("DEBUG: Skipping orphan rest");
                         nextIdx++;
                     }
@@ -1030,6 +1041,51 @@
             setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null, onCancel: null }));
         };
 
+        const goToStepIndex = (targetIdx) => {
+            if (targetIdx < 0 || targetIdx >= queueRef.current.length) return;
+            setCursor(targetIdx);
+            const step = queueRef.current[targetIdx];
+            if (step?.type === 'rest') {
+                setStatus('REST');
+                setStepTimer(step.duration || 0);
+                setIsTimerRunning(true);
+            } else if (step?.type === 'work') {
+                setStatus('WORK');
+                setStepTimer(step.isTimeBased ? step.target.time : 0);
+                setIsTimerRunning(step.isTimeBased);
+            }
+            setIsPaused(false);
+        };
+
+        const openPendingConfirm = () => {
+            const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
+            const pendingSteps = queueRef.current.filter(step => step.type === 'work' && !isStepLogged(step.id, currentLog));
+            const pendingCount = pendingSteps.length;
+
+            if (pendingCount === 0) {
+                showMessage("No hay ejercicios pendientes", "info");
+                return;
+            }
+
+            showConfirm(
+                "Ejercicios Pendientes",
+                `Tienes ${pendingCount} ejercicios pendientes. ¿Deseas ir al primero?`,
+                () => {
+                    const firstPendingIdx = queueRef.current.findIndex(step => step.type === 'work' && !isStepLogged(step.id, currentLog));
+                    if (firstPendingIdx !== -1) {
+                        goToStepIndex(firstPendingIdx);
+                        setShowPending(false);
+                    } else {
+                        setShowPending(true);
+                    }
+                },
+                "warning",
+                () => {
+                    setShowPending(true);
+                }
+            );
+        };
+
         const checkPendingAndFinish = () => {
             // Find pending steps
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
@@ -1043,12 +1099,7 @@
                         // Confirm: Go to first pending exercise
                         const firstPendingIdx = queueRef.current.findIndex(step => step.type === 'work' && !isStepLogged(step.id, currentLog));
                         if (firstPendingIdx !== -1) {
-                            setCursor(firstPendingIdx);
-                            const step = queueRef.current[firstPendingIdx];
-                            setStatus('WORK'); // Force work mode
-                            setStepTimer(step.isTimeBased ? step.target.time : 0);
-                            setIsTimerRunning(step.isTimeBased);
-                            setIsPaused(false);
+                            goToStepIndex(firstPendingIdx);
                             console.log("Jumping to pending step:", firstPendingIdx);
                         } else {
                             // Should not happen given pendingCount check, but fallback
@@ -1119,6 +1170,7 @@
             showPending,
             setShowPending,
             checkPendingAndFinish,
+            openPendingConfirm,
             handleCancelAction: closeConfirm
         };
 

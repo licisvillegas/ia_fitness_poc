@@ -3,20 +3,40 @@
     const { formatTime } = window.Runner.utils;
 
     window.Runner.components.RestOverlay = ({ nextStep, showPending, onTogglePending }) => {
-        const { currentStep, skipRest, stepTimer, addRestTime, notificationPermission, requestNotificationPermission, cancelWorkout } = useWorkout();
+        const { currentStep, skipRest, stepTimer, addRestTime, notificationPermission, requestNotificationPermission, cancelWorkout, queue, cursor, isStepLogged } = useWorkout();
         const { useState, useEffect } = React;
         const [showRestNote, setShowRestNote] = useState(false);
         const [isLandscapeCompact, setIsLandscapeCompact] = useState(false);
 
         if (currentStep.type !== 'rest') return null;
 
-        const isLastStep = !nextStep;
-        const isNextRest = nextStep?.type === 'rest';
-        const nextRestTime = isNextRest ? formatTime(nextStep?.duration || 0) : "";
+        const getUpcomingStep = () => {
+            if (!queue || cursor >= queue.length - 1) return null;
+            let idx = cursor + 1;
+            const immediate = queue[idx];
+            if (immediate?.type === 'rest') return immediate;
+            while (idx < queue.length) {
+                const step = queue[idx];
+                if (step.type === 'work' && isStepLogged(step.id)) {
+                    idx += 1;
+                    if (idx < queue.length && queue[idx].type === 'rest') {
+                        idx += 1;
+                    }
+                    continue;
+                }
+                return step;
+            }
+            return null;
+        };
+
+        const upcomingStep = getUpcomingStep();
+        const isLastStep = !upcomingStep;
+        const isNextRest = upcomingStep?.type === 'rest';
+        const nextRestTime = isNextRest ? formatTime(upcomingStep?.duration || 0) : "";
         const nextExName = isLastStep
             ? "Fin de la Rutina"
-            : (isNextRest ? `Descanso (${nextRestTime})` : (nextStep?.exercise?.name || nextStep?.exercise?.exercise_name || "Siguiente Ejercicio"));
-        const nextNote = isNextRest ? "" : (nextStep?.exercise?.comment || nextStep?.exercise?.note || nextStep?.exercise?.description || "");
+            : (isNextRest ? `Descanso (${nextRestTime})` : (upcomingStep?.exercise?.name || upcomingStep?.exercise?.exercise_name || "Siguiente Ejercicio"));
+        const nextNote = isNextRest ? "" : (upcomingStep?.exercise?.comment || upcomingStep?.exercise?.note || upcomingStep?.exercise?.description || "");
         // const isNextTimeBased = nextStep?.isTimeBased || false; 
 
         const restNoteRaw = currentStep?.label || currentStep?.note || "";
@@ -66,7 +86,7 @@
                             <i className="fas fa-adjust"></i>
                         </button>
                         <button
-                            className={`btn btn-sm rounded-pill px-3 ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                            className={`btn btn-sm rounded-pill px-3 pending-toggle-btn ${showPending ? 'btn-info text-dark' : 'btn-outline-info'}`}
                             onClick={onTogglePending}
                             title="Pendientes"
                         >

@@ -147,12 +147,12 @@
                 {focusMode && (
                     <button
                         type="button"
-                        className="btn btn-sm text-secondary position-absolute top-0 start-0 m-2"
+                        className="plate-icon-btn plate-icon-btn--floating position-absolute top-0 start-0 m-2"
                         title="Calculadora de discos"
                         onClick={() => setPlateModalOpen(true)}
-                        style={{ zIndex: 10, opacity: 0.6 }}
+                        style={{ zIndex: 10 }}
                     >
-                        <img src="/static/images/disc/45.png" alt="Plate Calc" style={{ width: '24px', height: '24px', filter: 'brightness(0.7)' }} />
+                        <img src="/static/images/disc/45.png" alt="Plate Calc" className="plate-icon-img" />
                     </button>
                 )}
 

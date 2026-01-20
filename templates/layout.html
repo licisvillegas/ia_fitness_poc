@@ -156,6 +156,9 @@
         });
     </script>
     <script>
+        window.__HAS_SESSION = {{ 'true' if request.cookies.get('user_session') else 'false' }};
+        window.__HAS_ADMIN = {{ 'true' if request.cookies.get('admin_token') else 'false' }};
+
         const appAlertModal = document.getElementById("appAlertModal");
         const appAlertTitle = document.getElementById("appAlertTitle");
         const appAlertMessage = document.getElementById("appAlertMessage");
@@ -271,6 +274,7 @@
             };
 
             const hasAuthCookie = () => {
+                if (window.__HAS_SESSION === true || window.__HAS_ADMIN === true) return true;
                 return Boolean(getCookieValue("user_session") || getCookieValue("admin_token"));
             };
 

@@ -10,7 +10,7 @@
 
         const nextStep = useMemo(() => {
             if (!queue || cursor >= queue.length - 1) return null;
-            return queue.slice(cursor + 1).find(s => s.type === 'work');
+            return queue[cursor + 1];
         }, [queue, cursor]);
 
         // Auto-Focus on Landscape

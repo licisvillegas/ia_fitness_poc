@@ -3,7 +3,7 @@
     const { useWorkout } = window.Runner.hooks;
 
     window.Runner.components.App = () => {
-        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal } = window.Runner.components;
+        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal } = window.Runner.components;
         const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending, finishWorkout } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
         // showPending state moved to context
@@ -105,6 +105,7 @@
                 )}
                 <SubstitutesModal />
                 <ConfirmModal />
+                <RMCalculatorModal />
             </React.Fragment>
         );
     };

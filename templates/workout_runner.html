@@ -370,23 +370,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        /* justify-content: flex-end; -- Standard flex behavior (top) is fine for Reps unless forced */
-        justify-content: center;
         gap: 6px;
         margin-bottom: 6px;
-        /* Remove fixed height for Normal Mode to restore original behavior */
-        min-height: auto;
-    }
-
-    /* Focus Mode Alignment */
-    .focus-mode .reps-header {
-        /* Match the height of the Weight Header (Label + Unit Button) in Focus Mode (~28-30px) */
-        min-height: 28px;
-        justify-content: flex-end;
-    }
-
-    .focus-mode .weight-header {
-        justify-content: flex-end;
     }
 
     .tap-hint-overlay {
@@ -406,25 +391,7 @@
     }
 
     .reps-column {
-        /* Button (36px) + Gap (6px) = 42px exactly */
-        padding-top: 42px;
-    }
-
-    /* Focus Mode overrides */
-    .focus-mode .reps-column {
         padding-top: 0;
-    }
-
-    .focus-mode .reps-header {
-        /* Match height of Weight Header (~28px with button) so inputs start at same line */
-        min-height: 28px;
-        justify-content: flex-end;
-    }
-
-    .focus-mode .weight-header {
-        justify-content: flex-end;
-        min-height: 28px;
-        /* Force match */
     }
 
     .plate-modal-backdrop {
@@ -486,6 +453,129 @@
     .plate-modal-footer {
         border-top: 1px solid var(--border-color);
         border-bottom: none;
+    }
+
+    .rm-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .rm-modal {
+        width: min(560px, 96vw);
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        color: var(--text-main);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+        max-height: min(90vh, 640px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rm-modal-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .rm-modal-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+    }
+
+    .rm-modal .rm-summary {
+        padding: 1rem;
+        border-radius: 14px;
+        background: rgba(0, 210, 255, 0.12);
+        border: 1px solid var(--border-color);
+    }
+
+    .rm-modal .rm-primary-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--cyber-green);
+    }
+
+    .rm-modal .rm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .rm-modal-actions {
+        display: flex;
+        justify-content: center;
+    }
+
+    .rm-modal .rm-tile {
+        padding: 0.6rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        text-align: center;
+    }
+
+    .rm-modal .rm-tile.highlight {
+        border-color: #ffb347;
+        box-shadow: 0 0 12px rgba(255, 157, 0, 0.35);
+    }
+
+    .rm-modal .rm-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #ffb347;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .rm-modal .rm-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .rm-modal .rm-unit {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+
+    .rm-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid #00d2ff;
+        background: var(--bg-input);
+        color: #00d2ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .rm-icon-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .rm-icon-btn-horizontal {
+        display: inline-flex;
+    }
+
+    .rm-icon-btn-vertical {
+        display: inline-flex;
+        margin-top: 0;
     }
 
     .plate-modal-body {
@@ -671,6 +761,44 @@
 
         .pending-panel.open {
             transform: translateY(0);
+        }
+    }
+
+    @media (orientation: portrait) {
+        .rm-icon-btn-horizontal {
+            display: none;
+        }
+    }
+
+    @media (orientation: landscape) {
+        .rm-icon-btn-vertical {
+            display: none;
+        }
+    }
+
+    @media (orientation: landscape) and (max-height: 600px) {
+        .rm-modal {
+            width: min(720px, 94vw);
+            max-height: 90vh;
+        }
+
+        .rm-modal-body {
+            padding: 12px;
+            gap: 12px;
+        }
+
+        .rm-modal .rm-grid {
+            grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+            gap: 0.6rem;
+        }
+
+        .rm-modal .rm-tile {
+            padding: 0.5rem;
+            border-radius: 10px;
+        }
+
+        .rm-modal .rm-primary-value {
+            font-size: 1.9rem;
         }
     }
 
@@ -990,6 +1118,7 @@
 <script type="text/babel" src="/static/js/runner/components/RPEHelpModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/PlateCalculatorModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/SubstitutesModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/RMCalculatorModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/RoutineDetails.js"></script>
 <script type="text/babel" src="/static/js/runner/components/PreStart.js"></script>
 <script type="text/babel" src="/static/js/runner/components/TimerControls.js"></script>

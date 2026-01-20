@@ -4,7 +4,7 @@
 
     window.Runner.components.InputControls = ({ step, compact = false, hideRPE = false, focusMode = false }) => {
         const { PlateCalculatorModal, RPEHelpModal } = window.Runner.components;
-        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit } = useWorkout();
+        const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit, updateCurrentInput, openRmModal } = useWorkout();
 
         const [weight, setWeight] = useState(step.target.weight || '');
         const [reps, setReps] = useState(step.target.reps || '');
@@ -64,6 +64,12 @@
             setWeight(nextWeight);
             setReps(nextReps);
             setRpe(8);
+            updateCurrentInput({
+                weight: nextWeight,
+                reps: nextReps,
+                unit: unit,
+                exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+            });
 
             const shouldFocusWeight = !compact && step.type === 'work' && !step.isTimeBased && !step.target?.time;
             setShowTapHint(shouldFocusWeight);
@@ -115,6 +121,9 @@
                 const rounded = Math.round(converted * 2) / 2;
                 setWeight(rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1));
             }
+            updateCurrentInput({
+                unit: unit === 'kg' ? 'lb' : 'kg'
+            });
         };
 
         const adjustWeight = (delta) => {
@@ -145,36 +154,55 @@
             <div className="py-1">
                 {/* Plate Calculator Icon - Focus Mode Only */}
                 {focusMode && (
-                    <button
-                        type="button"
-                        className="plate-icon-btn plate-icon-btn--floating position-absolute top-0 start-0 m-2"
-                        title="Calculadora de discos"
-                        onClick={() => setPlateModalOpen(true)}
-                        style={{ zIndex: 10 }}
-                    >
-                        <img src="/static/images/disc/45.png" alt="Plate Calc" className="plate-icon-img" />
-                    </button>
+                    <div className="position-absolute top-0 start-0 m-2 d-flex align-items-center gap-2" style={{ zIndex: 10 }}>
+                        <button
+                            type="button"
+                            className="plate-icon-btn plate-icon-btn--floating"
+                            title="Calculadora de discos"
+                            onClick={() => setPlateModalOpen(true)}
+                        >
+                            <img src="/static/images/disc/45.png" alt="Plate Calc" className="plate-icon-img" />
+                        </button>
+                        <button
+                            type="button"
+                            className="rm-icon-btn rm-icon-btn-focus"
+                            title="Calculadora 1RM"
+                            onClick={openRmModal}
+                        >
+                            <i className="fas fa-calculator"></i>
+                        </button>
+                    </div>
                 )}
 
                 <div className="row g-2 justify-content-center mb-2">
                     {!compact && (
                         <div className="col-6">
-                            <div className="weight-header">
-                                {!hideRPE && (
-                                    <button
-                                        type="button"
-                                        className="plate-icon-btn"
-                                        title="Calculadora de discos"
-                                        onClick={() => setPlateModalOpen(true)}
-                                    >
-                                        <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
-                                    </button>
-                                )}
-                                <div className="d-flex align-items-center justify-content-center gap-1">
-                                    <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
-                                    <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
-                                        {unit.toUpperCase()}
-                                    </button>
+                        <div className="weight-header">
+                            {!hideRPE && (
+                                    <div className="d-flex align-items-center gap-2">
+                                        <button
+                                            type="button"
+                                            className="plate-icon-btn"
+                                            title="Calculadora de discos"
+                                            onClick={() => setPlateModalOpen(true)}
+                                        >
+                                            <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="rm-icon-btn rm-icon-btn-horizontal"
+                                            title="Calculadora 1RM"
+                                            onClick={openRmModal}
+                                        >
+                                            <i className="fas fa-calculator"></i>
+                                        </button>
+                                    </div>
+                            )}
+                            <div className="d-flex align-items-center justify-content-center gap-1">
+                                <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
+                                <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
+                                    {unit.toUpperCase()}
+                                </button>
                                 </div>
                             </div>
                             <div className="d-flex align-items-center justify-content-center gap-1">
@@ -192,7 +220,15 @@
                                         ref={weightInputRef}
                                         className="form-control input-hud text-center p-0"
                                         value={weight}
-                                        onChange={e => setWeight(e.target.value)}
+                                        onChange={e => {
+                                            const nextVal = e.target.value;
+                                            setWeight(nextVal);
+                                            updateCurrentInput({
+                                                weight: nextVal,
+                                                unit: unit,
+                                                exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+                                            });
+                                        }}
                                         placeholder="0"
                                         onClick={(e) => e.target.select()}
                                         onFocus={() => setShowTapHint(false)}
@@ -227,6 +263,16 @@
                     )}
                     <div className={compact ? "col-12" : "col-6 reps-column"}>
                         <div className="reps-header">
+                            {!compact && !focusMode && (
+                                <button
+                                    type="button"
+                                    className="rm-icon-btn rm-icon-btn-vertical"
+                                    title="Calculadora 1RM"
+                                    onClick={openRmModal}
+                                >
+                                    <i className="fas fa-calculator"></i>
+                                </button>
+                            )}
                             <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>
                                 REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
                             </label>
@@ -242,7 +288,15 @@
                                 ref={repsInputRef}
                                 className="form-control input-hud text-center p-0"
                                 value={reps}
-                                onChange={e => setReps(e.target.value)}
+                                onChange={e => {
+                                    const nextVal = e.target.value;
+                                    setReps(nextVal);
+                                    updateCurrentInput({
+                                        reps: nextVal,
+                                        unit: unit,
+                                        exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+                                    });
+                                }}
                                 placeholder="0"
                                 inputMode="numeric"
                                 pattern="[0-9\\-]*"

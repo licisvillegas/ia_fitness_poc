@@ -24,6 +24,13 @@
         const [notificationPermission, setNotificationPermission] = useState('default'); // default, granted, denied
         const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
         const [showPending, setShowPending] = useState(false); // New state lifted from App.js
+        const [showRmModal, setShowRmModal] = useState(false);
+        const [currentInput, setCurrentInput] = useState({
+            weight: "",
+            reps: "",
+            unit: "kg",
+            exerciseName: ""
+        });
 
 
         // Timers
@@ -543,6 +550,16 @@
             const currentLog = log || (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
             return currentLog.some(l => l.stepId === stepId);
         };
+
+        const updateCurrentInput = (payload) => {
+            setCurrentInput(prev => ({
+                ...prev,
+                ...payload
+            }));
+        };
+
+        const openRmModal = () => setShowRmModal(true);
+        const closeRmModal = () => setShowRmModal(false);
 
         const next = () => {
             console.log("DEBUG: Next called. Cursor:", cursor, "QueueLen:", queue.length);
@@ -1171,6 +1188,11 @@
             setShowPending,
             checkPendingAndFinish,
             openPendingConfirm,
+            showRmModal,
+            openRmModal,
+            closeRmModal,
+            currentInput,
+            updateCurrentInput,
             handleCancelAction: closeConfirm
         };
 

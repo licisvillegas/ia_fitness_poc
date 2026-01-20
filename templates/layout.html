@@ -262,6 +262,8 @@
             const state = {
                 shown: false
             };
+            const recoveryKey = "session_recovery_attempted";
+            const recoveryLockKey = "session_recovery_lock";
 
             const getCookieValue = (name) => {
                 const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -280,6 +282,49 @@
                 }
             };
 
+            const hasAttemptedRecovery = () => {
+                try {
+                    return sessionStorage.getItem(recoveryKey) === "1";
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const setRecoveryAttempted = () => {
+                try {
+                    sessionStorage.setItem(recoveryKey, "1");
+                } catch (e) { }
+            };
+
+            const setRecoveryLock = () => {
+                try {
+                    sessionStorage.setItem(recoveryLockKey, "1");
+                } catch (e) { }
+            };
+
+            const clearRecoveryLock = () => {
+                try {
+                    sessionStorage.removeItem(recoveryLockKey);
+                } catch (e) { }
+            };
+
+            const hasRecoveryLock = () => {
+                try {
+                    return sessionStorage.getItem(recoveryLockKey) === "1";
+                } catch (e) {
+                    return false;
+                }
+            };
+
+            const clearLocalAuth = () => {
+                try {
+                    localStorage.removeItem("ai_fitness_user");
+                } catch (e) { }
+                try {
+                    sessionStorage.removeItem("admin_unlocked");
+                } catch (e) { }
+            };
+
             const reloadForSidebar = () => {
                 const url = new URL(window.location.href);
                 url.searchParams.set("refresh_sidebar", Date.now().toString());
@@ -288,13 +333,36 @@
 
             const handleSessionLoss = (detail) => {
                 if (state.shown) return;
+                if (hasAttemptedRecovery()) {
+                    state.shown = true;
+                    showAlertModal(
+                        "Sesion expirada",
+                        "No se pudo recuperar la sesion. Inicia sesion nuevamente.",
+                        "warning"
+                    ).then(() => {
+                        clearLocalAuth();
+                        window.location.href = "/";
+                    });
+                    return;
+                }
+                if (hasRecoveryLock()) return;
                 state.shown = true;
+                setRecoveryLock();
                 showSessionRecoveryModal(detail).then(() => {
+                    setRecoveryAttempted();
+                    clearRecoveryLock();
                     reloadForSidebar();
                 });
             };
 
             const checkOnLoad = () => {
+                if (hasAuthCookie()) {
+                    try {
+                        sessionStorage.removeItem(recoveryKey);
+                    } catch (e) { }
+                    clearRecoveryLock();
+                    return;
+                }
                 if (!hasAuthCookie() && hasLocalUser()) {
                     handleSessionLoss("Sesion no encontrada");
                 }

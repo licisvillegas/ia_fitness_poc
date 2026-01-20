@@ -2,11 +2,24 @@
 Middleware de autenticación y perfiles
 """
 from flask import request, redirect
+from datetime import datetime, timedelta
 import extensions
 from extensions import logger
 from utils.cache import cache_get, cache_set
 
 _USER_CTX_TTL_SEC = 60
+_WORKOUT_LOCK_STALE_SEC = 60 * 60 * 2
+
+
+def _parse_dt(value):
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    return None
 
 
 def check_user_profile():
@@ -135,6 +148,29 @@ def check_workout_lock():
             user = extensions.db.users.find_one({"user_id": user_id}, {"active_routine_id": 1})
             if user and user.get("active_routine_id"):
                 active_id = user.get("active_routine_id")
+                # If no active session record exists, clear stale lock
+                active_session = extensions.db.active_workout_sessions.find_one({
+                    "user_id": user_id,
+                    "routine_id": str(active_id)
+                }, {"_id": 1, "updated_at": 1, "started_at": 1})
+                if not active_session:
+                    extensions.db.users.update_one(
+                        {"user_id": user_id},
+                        {"$unset": {"active_routine_id": ""}}
+                    )
+                    logger.info(f"Cleared stale workout lock for user {user_id} (routine {active_id})")
+                    return
+                last_touch = _parse_dt(active_session.get("updated_at")) or _parse_dt(active_session.get("started_at"))
+                if last_touch:
+                    now = datetime.now()
+                    if now - last_touch > timedelta(seconds=_WORKOUT_LOCK_STALE_SEC):
+                        extensions.db.active_workout_sessions.delete_one({"_id": active_session.get("_id")})
+                        extensions.db.users.update_one(
+                            {"user_id": user_id},
+                            {"$unset": {"active_routine_id": ""}}
+                        )
+                        logger.info(f"Cleared stale active session for user {user_id} (routine {active_id})")
+                        return
                 target_url = f"/workout/run/{active_id}"
                 
                 # If already on the target page, allowed

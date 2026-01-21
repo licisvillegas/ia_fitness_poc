@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import certifi
 from pymongo import MongoClient
@@ -8,6 +9,7 @@ from config import Config
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
+    stream=sys.stdout,
 )
 logger = logging.getLogger("ai_fitness")
 logger.info("✔ Aplicación AI Fitness iniciada correctamente")

@@ -5,7 +5,12 @@
 from flask import Flask
 import os
 import traceback
+import sys
 from datetime import datetime, timezone
+
+# FORCE PYTHON UNBUFFERED
+sys.stdout.reconfigure(encoding='utf-8')
+print("--- [DEBUG] STARTING APP.PY ---", file=sys.stdout, flush=True)
 
 from config import Config
 import extensions
@@ -29,18 +34,22 @@ from routes.workout import workout_bp
 # CONFIGURACIÓN INICIAL
 # ======================================================
 def create_app():
+    print("--- [DEBUG] Entering create_app ---", file=sys.stdout, flush=True)
     app = Flask(__name__)
     app.config.from_object(Config)
 
     # Inicializar base de datos
+    print("--- [DEBUG] Initializing DB ---", file=sys.stdout, flush=True)
     init_db(app)
 
     # Registrar middleware
+    print("--- [DEBUG] Registering Middleware ---", file=sys.stdout, flush=True)
     app.before_request(check_user_profile)
     app.before_request(check_workout_lock)
     app.context_processor(inject_user_role)
 
     # Registrar blueprints
+    print("--- [DEBUG] Registering Blueprints ---", file=sys.stdout, flush=True)
     app.register_blueprint(auth_bp, url_prefix="/auth") 
     # NOTA: auth_bp tiene rutas /auth/register, /auth/login, etc. url_prefix="/auth" duplica si las rutas ya tienen /auth?
     # Revisemos auth.py: @auth_bp.post("/register") -> /auth/register (con prefix /auth).
@@ -59,9 +68,12 @@ def create_app():
     app.register_blueprint(ai_plans_bp)
     app.register_blueprint(workout_bp) # Rutas /api/workout/* (asumo definidos en workout.py)
 
+    print("--- [DEBUG] Blueprints registered successfully ---", file=sys.stdout, flush=True)
     return app
 
+print("--- [DEBUG] Calling create_app() ---", file=sys.stdout, flush=True)
 app = create_app()
+print("--- [DEBUG] App created successfully ---", file=sys.stdout, flush=True)
 
 # ======================================================
 # MANEJADORES DE ERRORES GLOBALES

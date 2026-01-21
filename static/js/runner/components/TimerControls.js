@@ -14,18 +14,23 @@
         }
 
         return (
-            <div className="text-center py-4">
+            <div className="text-center py-4 timer-controls">
+                {isTimerRunning && (
+                    <button className="btn btn-outline-light timer-pause-icon-btn" onClick={toggle} title="Pausar">
+                        <i className="fas fa-pause"></i>
+                    </button>
+                )}
                 <div className="display-1 fw-bold text-theme mb-2 font-monospace" style={{ textShadow: '0 0 20px rgba(0,0,0,0.1)' }}>
                     {formatTime(stepTimer)}
                 </div>
                 <p className="text-success mb-4">TIEMPO OBJETIVO</p>
 
-                <div className="d-grid gap-2">
+                <div className="d-grid gap-2 timer-actions">
                     {!isTimerRunning && stepTimer > 0 && (
                         <button className="btn btn-action" onClick={toggle}>INICIAR <i className="fas fa-play ms-2"></i></button>
                     )}
                     {isTimerRunning && (
-                        <button className="btn btn-outline-light py-3 border-2" onClick={toggle}>PAUSA ||</button>
+                        <button className="btn btn-outline-light py-3 border-2 timer-pause-btn" onClick={toggle}>PAUSA ||</button>
                     )}
                     <button className="btn btn-outline-secondary btn-sm mt-3" onClick={finish}>
                         {useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work')

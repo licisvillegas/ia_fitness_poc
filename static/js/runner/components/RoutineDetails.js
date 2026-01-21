@@ -5,9 +5,10 @@
     const { getEquipmentMeta, getExerciseWithLookup, resolveSubstitutes, getRestSeconds, openVideoModal } = window.Runner.logic;
 
     window.Runner.components.RoutineDetails = ({ routine }) => {
-        const { exerciseLookup, applySubstitute, showConfirm, queue } = useWorkout();
+        const { exerciseLookup, applySubstitute, showConfirm, queue, updateTimeTargetForItem } = useWorkout();
         const [expandedGroups, setExpandedGroups] = useState(new Set());
         const [blocks, setBlocks] = useState([]);
+        const timeOptions = [600, 900, 1200, 1800, 3600];
 
         const toggleGroup = (groupId) => {
             const next = new Set(expandedGroups);
@@ -166,6 +167,8 @@
             const reps = mergedEx.target_reps || mergedEx.reps;
             const time = mergedEx.target_time_seconds || mergedEx.time_seconds;
             const restSeconds = getRestSeconds(mergedEx);
+            const timeValue = Number(mergedEx.target_time_seconds || mergedEx.time_seconds || 600);
+            const timeSelectValue = timeOptions.includes(timeValue) ? timeValue : 600;
 
             return (
                 <div key={key} className="d-flex justify-content-between align-items-start gap-3">
@@ -192,6 +195,21 @@
                         {(mergedEx.comment || mergedEx.note) && (
                             <div className="mt-2 text-warning small fst-italic">
                                 <i className="fas fa-sticky-note me-1"></i> {mergedEx.comment || mergedEx.note}
+                            </div>
+                        )}
+                        {isTime && (
+                            <div className="mt-2 d-flex align-items-center gap-2">
+                                <span className="text-secondary small">Tiempo:</span>
+                                <select
+                                    className="form-select form-select-sm bg-dark text-white border-secondary"
+                                    style={{ width: "140px" }}
+                                    value={timeSelectValue}
+                                    onChange={(e) => updateTimeTargetForItem(routineItemId, Number(e.target.value))}
+                                >
+                                    {timeOptions.map(opt => (
+                                        <option key={opt} value={opt}>{Math.round(opt / 60)} min</option>
+                                    ))}
+                                </select>
                             </div>
                         )}
                         {substitutes.length > 0 && (

@@ -1,4 +1,5 @@
 (function () {
+    const { useState, useEffect, useMemo } = React;
     const { useWorkout } = window.Runner.hooks;
 
     window.Runner.components.PreStart = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {

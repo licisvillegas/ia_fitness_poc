@@ -31,6 +31,7 @@
             unit: "kg",
             exerciseName: ""
         });
+        const [routineState, setRoutineState] = useState(routine);
 
 
         // Timers
@@ -114,17 +115,89 @@
             }
         };
 
+        const applyTimeTargetToItems = (items, seconds) => {
+            if (!Array.isArray(items)) return items;
+            return items.map(item => {
+                if (!item || typeof item !== "object") return item;
+                if (Array.isArray(item.items)) {
+                    return { ...item, items: applyTimeTargetToItems(item.items, seconds) };
+                }
+                if (item.item_type === "exercise") {
+                    const type = String(item.exercise_type || item.type || "").toLowerCase();
+                    if (type === "cardio" || type === "time") {
+                        return {
+                            ...item,
+                            target_time_seconds: seconds,
+                            target_reps: 0
+                        };
+                    }
+                }
+                return item;
+            });
+        };
+
+        const applyTimeTargetToItem = (items, routineItemId, seconds) => {
+            if (!Array.isArray(items)) return items;
+            return items.map(item => {
+                if (!item || typeof item !== "object") return item;
+                if (Array.isArray(item.items)) {
+                    return { ...item, items: applyTimeTargetToItem(item.items, routineItemId, seconds) };
+                }
+                if (item.item_type === "exercise") {
+                    const id = item._id || item.id;
+                    if (String(id) !== String(routineItemId)) return item;
+                    const type = String(item.exercise_type || item.type || "").toLowerCase();
+                    if (type === "cardio" || type === "time") {
+                        return {
+                            ...item,
+                            target_time_seconds: seconds,
+                            target_reps: 0
+                        };
+                    }
+                }
+                return item;
+            });
+        };
+
+        const updateTimeTargets = (seconds) => {
+            if (!routineState || !Number.isFinite(seconds)) return;
+            const nextItems = applyTimeTargetToItems(routineState.items, seconds);
+            const updatedRoutine = { ...routineState, items: nextItems };
+            setRoutineState(updatedRoutine);
+            const q = buildQueue(updatedRoutine);
+            setQueue(q);
+            queueRef.current = q;
+            setCursor(prev => Math.min(prev, Math.max(q.length - 1, 0)));
+            if (status === 'IDLE') setStatus('IDLE');
+        };
+
+        const updateTimeTargetForItem = (routineItemId, seconds) => {
+            if (!routineState || !routineItemId || !Number.isFinite(seconds)) return;
+            const nextItems = applyTimeTargetToItem(routineState.items, routineItemId, seconds);
+            const updatedRoutine = { ...routineState, items: nextItems };
+            setRoutineState(updatedRoutine);
+            const q = buildQueue(updatedRoutine);
+            setQueue(q);
+            queueRef.current = q;
+            setCursor(prev => Math.min(prev, Math.max(q.length - 1, 0)));
+            if (status === 'IDLE') setStatus('IDLE');
+        };
+
 
         // INITIALIZE
         useEffect(() => {
-            if (routine) {
-                const q = buildQueue(routine);
+            if (routine) setRoutineState(routine);
+        }, [routine]);
+
+        useEffect(() => {
+            if (routineState) {
+                const q = buildQueue(routineState);
                 setQueue(q);
                 setStatus('IDLE');
 
                 // Hydrate from restored state
                 // Assumes RESTORED_STATE is a global variable from the Jinja template
-                if (window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routine.id) {
+                if (window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
                     console.log("RESTORING STATE:", window.RESTORED_STATE);
                     if (window.RESTORED_STATE.cursor > 0 && window.RESTORED_STATE.cursor < q.length) {
                         setCursor(window.RESTORED_STATE.cursor);
@@ -154,7 +227,7 @@
                 console.log("Queue Built:", q);
                 queueRef.current = q; // Update ref
             }
-        }, [routine]);
+        }, [routineState]);
 
         // Reset start time when step changes
         useEffect(() => {
@@ -207,7 +280,7 @@
 
         useEffect(() => {
             let isMounted = true;
-            const routineId = routine?.id || routine?._id;
+            const routineId = routineState?.id || routineState?._id;
             // currentUserId is a global variable from Jinja (see workout_runner.html)
             const userId = window.currentUserId || window.CURRENT_USER_ID;
             if (!userId || !routineId) return;
@@ -250,7 +323,7 @@
 
             loadHistoryMax();
             return () => { isMounted = false; };
-        }, [routine]);
+        }, [routineState]);
 
         useEffect(() => {
             const handleOfflineSync = (event) => {
@@ -557,7 +630,7 @@
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
-                        routine_id: routine.id,
+                        routine_id: (routineState?.id || routine?.id),
                         cursor: idx,
                         session_log: log || sessionLogRef.current
                     })
@@ -804,7 +877,7 @@
                 showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
                     setStatus('FINISHED');
                     const payload = {
-                        routine_id: routine.id,
+                        routine_id: (routineState?.id || routine?.id),
                         start_time: new Date(Date.now() - globalTime * 1000).toISOString(),
                         end_time: new Date().toISOString(),
                         sets: sessionLogRef.current // Use REF to ensure latest data
@@ -1111,7 +1184,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ routine_id: routine.id })
+                body: JSON.stringify({ routine_id: (routineState?.id || routine?.id) })
             }).catch(e => console.error("Start session error", e));
 
             const interval = setInterval(() => {
@@ -1249,7 +1322,7 @@
 
 
         const value = {
-            routine,
+            routine: routineState,
             queue,
             cursor,
             currentStep,
@@ -1306,6 +1379,8 @@
             closeRmModal,
             currentInput,
             updateCurrentInput,
+            updateTimeTargets,
+            updateTimeTargetForItem,
             handleCancelAction: closeConfirm
         };
 

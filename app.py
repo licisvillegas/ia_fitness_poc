@@ -126,4 +126,4 @@ if __name__ == "__main__":
     # Nota: Windows socket error con reloader a veces. 
     # El usuario tuvo problemas antes con esto (WinError 10038).
     # Si sigue fallando, poner use_reloader=False.
-    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=use_reloader)
+    app.run(debug=True, host="0.0.0.0", port=Config.PORT, use_reloader=use_reloader)

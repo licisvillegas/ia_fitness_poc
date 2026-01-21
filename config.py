@@ -35,7 +35,7 @@ class Config:
     
     # Server
     HOST = "0.0.0.0"
-    PORT = 5000
+    PORT = int(os.getenv("PORT", "5000"))
     
     @staticmethod
     def init_app(app):

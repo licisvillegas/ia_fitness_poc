@@ -1063,11 +1063,20 @@
 
             const stepId = currentStep.id;
             const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
-            const stepType = String(currentStep.exercise_type || currentStep.type || "").toLowerCase();
-            const repsTarget = Number(currentStep.target?.reps || 0);
+            const stepType = String(
+                currentStep.exercise?.exercise_type ||
+                currentStep.exercise?.type ||
+                currentStep.exercise_type ||
+                currentStep.type ||
+                ""
+            ).toLowerCase();
+            const repsTargetRaw = currentStep.target?.reps;
+            const repsTargetNum = parseFloat(repsTargetRaw);
+            const hasRepsTarget = (Number.isFinite(repsTargetNum) && repsTargetNum !== 0) ||
+                (repsTargetRaw != null && String(repsTargetRaw).trim() !== "" && String(repsTargetRaw) !== "0");
             const timeTarget = Number(currentStep.target?.time || 0);
-            const isTimeExercise = (stepType === "cardio" || stepType === "time") && repsTarget === 0 && timeTarget > 0;
-            const isRepExercise = stepType !== "cardio" && stepType !== "time" && timeTarget === 0 && repsTarget !== 0;
+            const isTimeExercise = (stepType === "cardio" || stepType === "time") && !hasRepsTarget && timeTarget > 0;
+            const isRepExercise = stepType !== "cardio" && stepType !== "time" && timeTarget === 0 && hasRepsTarget;
 
             const scheduleNotification = (delaySeconds, title, message) => {
                 if (delaySeconds <= 0) return;
@@ -1255,6 +1264,9 @@
                 showMessage("No hay ejercicios pendientes", "info");
                 return;
             }
+
+            showMessage("Realiza los ejercicios pendientes", "info");
+            sendNotification("Ejercicios pendientes", "Realiza los ejercicios pendientes.");
 
             showConfirm(
                 "Ejercicios Pendientes",

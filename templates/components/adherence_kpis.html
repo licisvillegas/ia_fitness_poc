@@ -1,26 +1,33 @@
 <div class="card bg-panel border-0 shadow h-100">
     <div class="card-header border-secondary text-white fw-bold">
-        <i class="fas fa-chart-bar text-cyber-blue me-2"></i>Adherencia y constancia
+        <i class="fas fa-chart-bar text-cyber-blue me-2"></i>Resumen de adherencia
     </div>
     <div class="card-body">
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <span class="text-secondary small">Ventana</span>
-            <select id="adherenceWindowSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="max-width: 200px;" aria-label="Ventana de analisis">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="text-secondary small">Periodo</span>
+            <select id="adherenceWindowSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="max-width: 200px;" aria-label="Periodo">
                 <option value="week">Semana</option>
                 <option value="14">2 semanas</option>
                 <option value="21">3 semanas</option>
                 <option value="30" selected>1 mes</option>
                 <option value="60">2 meses</option>
-                <option value="90">90 días</option>
-            </select>
-            <span class="text-secondary small">Semana base</span>
-            <select id="adherenceWeekSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="max-width: 200px;" aria-label="Semana base">
-                <option value="">Semana actual</option>
+                <option value="90">90 dias</option>
             </select>
             <span id="adherenceWindowRange" class="text-secondary small"></span>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#adherenceAdvancedFilters" aria-expanded="false">
+                Ajustes avanzados
+            </button>
         </div>
-        <div class="text-secondary small mb-3">
-            El rango afecta Semaforo, Racha y Brecha. "Cumplimiento semanal" usa la semana base.
+        <div class="collapse mb-3" id="adherenceAdvancedFilters">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="text-secondary small">Semana base</span>
+                <select id="adherenceWeekSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="max-width: 220px;" aria-label="Semana base">
+                    <option value="">Semana actual</option>
+                </select>
+            </div>
+            <div class="text-secondary small">
+                El periodo afecta Semaforo, Racha y Brecha. El cumplimiento semanal usa la semana base.
+            </div>
         </div>
         <div class="row g-3">
             <div class="col-md-6">
@@ -37,7 +44,7 @@
             </div>
             <div class="col-md-6">
                 <div class="bg-dark-elem p-3 rounded border border-secondary h-100">
-                    <div class="text-secondary small" id="adherenceRollingTitle">Semáforo</div>
+                    <div class="text-secondary small" id="adherenceRollingTitle">Semaforo</div>
                     <div class="d-flex align-items-end justify-content-between mb-2">
                         <div class="h3 text-theme mb-0" id="adherenceRollingValue">-</div>
                         <span id="adherenceRollingBadge" class="badge bg-secondary text-dark">-</span>
@@ -56,7 +63,7 @@
                 <div class="bg-dark-elem p-3 rounded border border-secondary h-100">
                     <div class="text-secondary small">Brecha promedio</div>
                     <div class="h3 text-cyber-orange mb-1" id="adherenceGapValue">-</div>
-                    <div class="text-secondary small">Días entre sesiones</div>
+                    <div class="text-secondary small">Dias entre sesiones</div>
                 </div>
             </div>
         </div>

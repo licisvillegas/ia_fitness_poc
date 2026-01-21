@@ -848,6 +848,8 @@
 
             // 1. Show Icon
             setShowCompletionIcon(true);
+            showMessage("Rutina finalizada", "success");
+            sendNotification("Rutina finalizada", "Listo para guardar tu entrenamiento.");
 
             // Celebration Trigger
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
@@ -1064,48 +1066,32 @@
             const stepType = String(currentStep.exercise_type || currentStep.type || "").toLowerCase();
             const repsTarget = Number(currentStep.target?.reps || 0);
             const timeTarget = Number(currentStep.target?.time || 0);
-            const isCardioTime = (stepType === "cardio" || stepType === "time") && repsTarget === 0 && timeTarget > 0;
+            const isTimeExercise = (stepType === "cardio" || stepType === "time") && repsTarget === 0 && timeTarget > 0;
             const isRepExercise = stepType !== "cardio" && stepType !== "time" && timeTarget === 0 && repsTarget !== 0;
 
-            if (isCardioTime) {
-                const totalSeconds = timeTarget;
-                const halfSeconds = Math.floor(totalSeconds / 2);
-                const almostDoneSeconds = totalSeconds - 60;
-                const scheduleNotification = (delaySeconds, title, message) => {
-                    if (delaySeconds <= 0) return;
-                    const timeoutId = setTimeout(() => {
-                        const currentLog = sessionLogRef.current || [];
-                        const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
-                        const stillWorking = statusRef.current === 'WORK';
-                        const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
-                        if (stillSameStep && stillWorking && !alreadyLogged) {
-                            sendNotification(title, message);
-                        }
-                    }, delaySeconds * 1000);
-                    workNotifyTimeoutsRef.current.push(timeoutId);
-                };
+            const scheduleNotification = (delaySeconds, title, message) => {
+                if (delaySeconds <= 0) return;
+                const timeoutId = setTimeout(() => {
+                    const currentLog = sessionLogRef.current || [];
+                    const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
+                    const stillWorking = statusRef.current === 'WORK';
+                    const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
+                    if (stillSameStep && stillWorking && !alreadyLogged) {
+                        sendNotification(title, message);
+                    }
+                }, delaySeconds * 1000);
+                workNotifyTimeoutsRef.current.push(timeoutId);
+            };
 
-                scheduleNotification(halfSeconds, "Sigue entrenando", `Vas a la mitad de ${exName}. Continua fuerte.`);
-                scheduleNotification(almostDoneSeconds, "Casi terminas", `Casi finalizas ${exName}. Un ultimo esfuerzo.`);
+            if (isTimeExercise) {
+                const halfSeconds = Math.floor(timeTarget / 2);
+                const nearEndSeconds = timeTarget - 120;
+                scheduleNotification(halfSeconds, "Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);
+                scheduleNotification(nearEndSeconds, "Casi terminas", "Lo estas logrando. Te faltan 2 minutos.");
             } else if (isRepExercise) {
-                const checkpoints = [
-                    { minutes: 3, message: `Aun estas en ${exName}. Vamos, puedes terminar esta serie.` },
-                    { minutes: 5, message: `Sigue con ${exName}. Un esfuerzo mas.` },
-                    { minutes: 10, message: `Gran trabajo. Finaliza ${exName} cuando puedas.` }
-                ];
-
-                checkpoints.forEach(({ minutes, message }) => {
-                    const timeoutId = setTimeout(() => {
-                        const currentLog = sessionLogRef.current || [];
-                        const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
-                        const stillWorking = statusRef.current === 'WORK';
-                        const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
-                        if (stillSameStep && stillWorking && !alreadyLogged) {
-                            sendNotification("Sigue entrenando", message);
-                        }
-                    }, minutes * 60 * 1000);
-                    workNotifyTimeoutsRef.current.push(timeoutId);
-                });
+                scheduleNotification(3 * 60, "Motivacion", `Vamos, sigue con ${exName}.`);
+                scheduleNotification(5 * 60, "Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
+                scheduleNotification(10 * 60, "Cierre de rutina", "¿Prefieres finalizar la rutina?");
             }
 
             return () => {

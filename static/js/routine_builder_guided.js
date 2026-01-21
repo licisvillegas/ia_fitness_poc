@@ -34,6 +34,7 @@
   let pendingAddGroupId = "";
   let pendingCommentIdx = null;
   let pendingCommentField = "";
+  let restModalManualEnabled = false;
 
   let routineListManuallyExpanded = false;
   let routineListAutoToggle = false;
@@ -329,26 +330,27 @@
     const exists = state.routine.items.some((item) => String(item.exercise_id) === String(exercise._id || exercise.id));
     if (exists && !pendingReplaceId) return;
 
-    if (pendingReplaceId) {
-      const idx = state.routine.items.findIndex((item) => item._id === pendingReplaceId);
-      if (idx >= 0) {
-        const existing = state.routine.items[idx];
-        const exerciseType = exercise.type || "weight";
-        const timeBased = isTimeBasedExercise(exerciseType);
-        state.routine.items[idx] = {
-          ...existing,
-          exercise_id: exercise._id || exercise.id,
-          exercise_name: exercise.name || "Ejercicio",
-          exercise_type: exerciseType,
-          equipment: exercise.equipment || "",
-          body_part: exercise.body_part || "",
-          video_url: exercise.video_url || "",
-          substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
-          target_time_seconds: timeBased ? (existing.target_time_seconds || 600) : 0,
-          target_reps: timeBased ? 0 : (existing.target_reps || "8-12"),
-        };
-        normalizeItemTargets(state.routine.items[idx]);
-      }
+      if (pendingReplaceId) {
+        const idx = state.routine.items.findIndex((item) => item._id === pendingReplaceId);
+        if (idx >= 0) {
+          const existing = state.routine.items[idx];
+          const exerciseType = exercise.type || "weight";
+          const timeBased = isTimeBasedExercise(exerciseType);
+          state.routine.items[idx] = {
+            ...existing,
+            exercise_id: exercise._id || exercise.id,
+            exercise_name: exercise.name || "Ejercicio",
+            exercise_type: exerciseType,
+            equipment: exercise.equipment || "",
+            body_part: exercise.body_part || "",
+            video_url: exercise.video_url || "",
+            substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
+            target_time_seconds: timeBased ? (existing.target_time_seconds || 600) : 0,
+            target_reps: timeBased ? 0 : (existing.target_reps || "8-12"),
+            manual_rest_enabled: existing.manual_rest_enabled !== false,
+          };
+          normalizeItemTargets(state.routine.items[idx]);
+        }
       pendingReplaceId = "";
     } else {
       let inheritedSets = 3;
@@ -360,24 +362,25 @@
       }
       const exerciseType = exercise.type || "weight";
       const timeBased = isTimeBasedExercise(exerciseType);
-      state.routine.items.push({
-        item_type: "exercise",
-        _id: makeId("ex"),
-        exercise_id: exercise._id || exercise.id,
-        exercise_name: exercise.name || "Ejercicio",
-        exercise_type: exerciseType,
-        equipment: exercise.equipment || "",
-        body_part: exercise.body_part || "",
-        video_url: exercise.video_url || "",
-        substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
-        target_sets: inheritedSets,
-        target_reps: timeBased ? 0 : "8-12",
-        rest_seconds: 60,
-        target_time_seconds: timeBased ? 600 : 0,
-        group_id: groupId || "",
-        comment: "",
-      });
-    }
+        state.routine.items.push({
+          item_type: "exercise",
+          _id: makeId("ex"),
+          exercise_id: exercise._id || exercise.id,
+          exercise_name: exercise.name || "Ejercicio",
+          exercise_type: exerciseType,
+          equipment: exercise.equipment || "",
+          body_part: exercise.body_part || "",
+          video_url: exercise.video_url || "",
+          substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
+          target_sets: inheritedSets,
+          target_reps: timeBased ? 0 : "8-12",
+          rest_seconds: 60,
+          target_time_seconds: timeBased ? 600 : 0,
+          group_id: groupId || "",
+          comment: "",
+          manual_rest_enabled: true,
+        });
+      }
 
     updateSummary();
     renderExerciseList();
@@ -396,12 +399,14 @@
   };
 
   const addRest = (groupId, seconds, note) => {
+    const restValue = Math.max(1, Math.min(1800, Number(seconds) || 60));
     state.routine.items.push({
       item_type: "rest",
       _id: makeId("rest"),
-      rest_seconds: Number(seconds) || 60,
+      rest_seconds: restValue,
       note: note || "Descanso",
       group_id: groupId || "",
+      manual_rest_enabled: true,
     });
     renderConfigList();
   };
@@ -517,12 +522,16 @@
       groupItemsMap.get(item.group_id).push({ item, idx });
     });
 
-    const renderExerciseCard = (item, idx) => {
-      const isTime = isTimeBasedExercise(item.exercise_type || item.type);
-      return `
-        <div class="guided-config-card">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="text-white fw-bold">${item.exercise_name || "Ejercicio"}</div>
+      const renderExerciseCard = (item, idx) => {
+        const isTime = isTimeBasedExercise(item.exercise_type || item.type);
+        const manualTimeEnabled = Boolean(item.manual_time_enabled);
+        const manualRestEnabled = item.manual_rest_enabled !== false;
+        const currentSeconds = Number(item.target_time_seconds) || 600;
+        const currentMinutes = Math.max(1, Math.round(currentSeconds / 60));
+        return `
+          <div class="guided-config-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="text-white fw-bold">${item.exercise_name || "Ejercicio"}</div>
             <div class="guided-inline-actions">
               <button class="btn btn-sm btn-outline-info" data-replace="${item._id}">Reemplazar</button>
               <button class="btn btn-sm btn-outline-secondary" data-move-item="${item._id}" data-dir="-1"><i class="fas fa-arrow-up"></i></button>
@@ -537,25 +546,49 @@
                 ${SETS_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_sets) === opt ? "selected" : ""}>${opt}</option>`).join("")}
               </select>
             </div>
-            <div class="col-4">
-              <label class="text-secondary small">${isTime ? "Tiempo" : "Reps"}</label>
-              ${
-                isTime
-                  ? `<select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_time_seconds" data-idx="${idx}">
-                      ${TIME_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_time_seconds) === opt ? "selected" : ""}>${Math.round(opt / 60)} min</option>`).join("")}
-                    </select>`
-                  : `<select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_reps" data-idx="${idx}">
-                      ${REPS_OPTIONS.map((opt) => `<option value="${opt}" ${getRepsSelectValue(item.target_reps) === opt ? "selected" : ""}>${opt}</option>`).join("")}
+              <div class="col-4">
+                <label class="text-secondary small">${isTime ? "Tiempo" : "Reps"}</label>
+                ${
+                  isTime
+                    ? `<div class="d-flex align-items-center gap-2">
+                        ${!manualTimeEnabled ? `
+                          <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_time_seconds" data-idx="${idx}">
+                            ${TIME_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_time_seconds) === opt ? "selected" : ""}>${Math.round(opt / 60)} min</option>`).join("")}
+                          </select>
+                        ` : `
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-dark text-white border-secondary">min</span>
+                            <input type="number" min="1" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="target_time_minutes" data-idx="${idx}" value="${currentMinutes}">
+                          </div>
+                        `}
+                        <button class="btn btn-sm ${manualTimeEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-time-input="${idx}" title="Editar minutos">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                      </div>`
+                    : `<select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_reps" data-idx="${idx}">
+                        ${REPS_OPTIONS.map((opt) => `<option value="${opt}" ${getRepsSelectValue(item.target_reps) === opt ? "selected" : ""}>${opt}</option>`).join("")}
+                      </select>
+                      <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1" data-field="target_reps_exact" data-idx="${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}" style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};" ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}>`
+                }
+            </div>
+              <div class="col-4">
+                <label class="text-secondary small">Descanso</label>
+                <div class="d-flex align-items-center gap-2">
+                  ${!manualRestEnabled ? `
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="rest_seconds" data-idx="${idx}">
+                      ${REST_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.rest_seconds) === opt ? "selected" : ""}>${opt}s</option>`).join("")}
                     </select>
-                    <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1" data-field="target_reps_exact" data-idx="${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}" style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};" ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}>`
-              }
-            </div>
-            <div class="col-4">
-              <label class="text-secondary small">Descanso</label>
-              <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="rest_seconds" data-idx="${idx}">
-                ${REST_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.rest_seconds) === opt ? "selected" : ""}>${opt}s</option>`).join("")}
-              </select>
-            </div>
+                  ` : `
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-dark text-white border-secondary">seg</span>
+                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}">
+                    </div>
+                  `}
+                  <button class="btn btn-sm ${manualRestEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-rest-input="${idx}" title="Editar descanso">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                </div>
+              </div>
             <div class="col-6">
               <label class="text-secondary small">Grupo</label>
               <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
@@ -572,6 +605,7 @@
     };
 
     const renderRestCard = (item, idx) => {
+      const manualRestEnabled = item.manual_rest_enabled !== false;
       return `
         <div class="guided-config-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
@@ -582,13 +616,25 @@
               <button class="btn btn-sm btn-outline-danger" data-remove="${idx}"><i class="fas fa-times"></i></button>
             </div>
           </div>
-          <div class="row g-2">
-            <div class="col-4">
-              <label class="text-secondary small">Tiempo</label>
-              <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="rest_seconds" data-idx="${idx}">
-                ${REST_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.rest_seconds) === opt ? "selected" : ""}>${opt}s</option>`).join("")}
-              </select>
-            </div>
+            <div class="row g-2">
+              <div class="col-4">
+                <label class="text-secondary small">Tiempo</label>
+                <div class="d-flex align-items-center gap-2">
+                  ${!manualRestEnabled ? `
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="rest_seconds" data-idx="${idx}">
+                      ${REST_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.rest_seconds) === opt ? "selected" : ""}>${opt}s</option>`).join("")}
+                    </select>
+                  ` : `
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-dark text-white border-secondary">seg</span>
+                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}">
+                    </div>
+                  `}
+                  <button class="btn btn-sm ${manualRestEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-rest-input="${idx}" title="Editar descanso">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                </div>
+              </div>
             <div class="col-4">
               <label class="text-secondary small">Grupo</label>
               <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
@@ -725,6 +771,30 @@
     if (!modalEl) return;
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
+  };
+
+  const setRestModalManual = (enabled) => {
+    restModalManualEnabled = enabled;
+    const selectEl = document.getElementById("guidedRestSeconds");
+    const manualWrap = document.getElementById("guidedRestSecondsManualWrap");
+    const manualInput = document.getElementById("guidedRestSecondsManual");
+    const toggleBtn = document.getElementById("guidedRestSecondsToggle");
+    if (!selectEl || !manualWrap || !manualInput || !toggleBtn) return;
+
+    if (enabled) {
+      const currentSeconds = Number(selectEl.value) || 60;
+      manualInput.value = String(Math.max(1, Math.min(1800, currentSeconds)));
+      selectEl.style.display = "none";
+      manualWrap.style.display = "flex";
+      toggleBtn.classList.remove("btn-outline-secondary");
+      toggleBtn.classList.add("btn-info", "text-dark");
+      return;
+    }
+
+    manualWrap.style.display = "none";
+    selectEl.style.display = "";
+    toggleBtn.classList.remove("btn-info", "text-dark");
+    toggleBtn.classList.add("btn-outline-secondary");
   };
 
   const updateReview = () => {
@@ -1114,36 +1184,38 @@
           note: item.note || "",
         };
       }
-      if (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null)) {
-        return {
-          item_type: "rest",
-          _id: item._id || makeId("rest"),
-          rest_seconds: item.rest_seconds || 60,
-          note: item.note || "Descanso",
-          group_id: item.group_id || "",
-        };
-      }
+        if (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null)) {
+          return {
+            item_type: "rest",
+            _id: item._id || makeId("rest"),
+            rest_seconds: item.rest_seconds || 60,
+            note: item.note || "Descanso",
+            group_id: item.group_id || "",
+            manual_rest_enabled: item.manual_rest_enabled !== false,
+          };
+        }
       const exerciseId = item.exercise_id || item._id || item.id;
       const lookupExercise = exerciseLookup[exerciseId] || {};
-      const mapped = {
-        item_type: "exercise",
-        _id: item._id || makeId("ex"),
-        exercise_id: exerciseId,
-        exercise_name: item.exercise_name || item.name || lookupExercise.name || "Ejercicio",
-        exercise_type: item.exercise_type || item.type || lookupExercise.type || "weight",
-        equipment: item.equipment || lookupExercise.equipment || "",
-        body_part: item.body_part || lookupExercise.body_part || "",
-        video_url: item.video_url || lookupExercise.video_url || "",
-        substitutes: Array.isArray(item.substitutes) && item.substitutes.length
-          ? item.substitutes
-          : (Array.isArray(lookupExercise.substitutes) ? lookupExercise.substitutes : []),
-        target_sets: item.target_sets || 3,
-        target_reps: item.target_reps || "8-12",
-        rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
-        target_time_seconds: item.target_time_seconds || 600,
-        group_id: item.group_id || "",
-        comment: item.comment || "",
-      };
+        const mapped = {
+          item_type: "exercise",
+          _id: item._id || makeId("ex"),
+          exercise_id: exerciseId,
+          exercise_name: item.exercise_name || item.name || lookupExercise.name || "Ejercicio",
+          exercise_type: item.exercise_type || item.type || lookupExercise.type || "weight",
+          equipment: item.equipment || lookupExercise.equipment || "",
+          body_part: item.body_part || lookupExercise.body_part || "",
+          video_url: item.video_url || lookupExercise.video_url || "",
+          substitutes: Array.isArray(item.substitutes) && item.substitutes.length
+            ? item.substitutes
+            : (Array.isArray(lookupExercise.substitutes) ? lookupExercise.substitutes : []),
+          target_sets: item.target_sets || 3,
+          target_reps: item.target_reps || "8-12",
+          rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
+          target_time_seconds: item.target_time_seconds || 600,
+          group_id: item.group_id || "",
+          comment: item.comment || "",
+          manual_rest_enabled: item.manual_rest_enabled !== false,
+        };
       return normalizeItemTargets(mapped);
     });
   };
@@ -1325,11 +1397,11 @@
       updateSummary();
       });
 
-    document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
-      const field = event.target.getAttribute("data-field");
-      const idx = Number(event.target.getAttribute("data-idx"));
-      if (!field || Number.isNaN(idx)) return;
-      const value = event.target.value;
+      document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
+        const field = event.target.getAttribute("data-field");
+        const idx = Number(event.target.getAttribute("data-idx"));
+        if (!field || Number.isNaN(idx)) return;
+        const value = event.target.value;
       if (!state.routine.items[idx]) return;
       if (["group_name", "note", "comment"].includes(field)) {
         if (field == "group_name") {
@@ -1382,17 +1454,30 @@
         return;
       }
 
-      if (field === "target_reps_exact") {
-        state.routine.items[idx].target_reps = value;
-        state.routine.items[idx].target_time_seconds = 0;
-        return;
-      }
+        if (field === "target_reps_exact") {
+          state.routine.items[idx].target_reps = value;
+          state.routine.items[idx].target_time_seconds = 0;
+          return;
+        }
 
-      const parsedValue = field.includes("sets") || field.includes("seconds") ? Number(value) : value;
-      state.routine.items[idx][field] = parsedValue;
-      if (field === "target_time_seconds") {
-        state.routine.items[idx].target_reps = 0;
-      }
+        if (field === "target_time_minutes") {
+          const minutes = Math.max(1, Number(value) || 1);
+          state.routine.items[idx].target_time_seconds = minutes * 60;
+          state.routine.items[idx].target_reps = 0;
+          return;
+        }
+
+        if (field === "rest_seconds_manual") {
+          const seconds = Math.max(1, Math.min(1800, Number(value) || 1));
+          state.routine.items[idx].rest_seconds = seconds;
+          return;
+        }
+
+        const parsedValue = field.includes("sets") || field.includes("seconds") ? Number(value) : value;
+        state.routine.items[idx][field] = parsedValue;
+        if (field === "target_time_seconds") {
+          state.routine.items[idx].target_reps = 0;
+        }
       if (field === "target_sets") {
         const item = state.routine.items[idx];
         if (item && item.group_id) {
@@ -1406,7 +1491,23 @@
       }
     });
 
-    document.getElementById("guidedConfigList")?.addEventListener("click", async (event) => {
+      document.getElementById("guidedConfigList")?.addEventListener("click", async (event) => {
+        const toggleTimeBtn = event.target.closest("[data-toggle-time-input]");
+        if (toggleTimeBtn) {
+          const idx = Number(toggleTimeBtn.dataset.toggleTimeInput);
+          if (Number.isNaN(idx) || !state.routine.items[idx]) return;
+          state.routine.items[idx].manual_time_enabled = !state.routine.items[idx].manual_time_enabled;
+          renderConfigList();
+          return;
+        }
+        const toggleRestBtn = event.target.closest("[data-toggle-rest-input]");
+        if (toggleRestBtn) {
+          const idx = Number(toggleRestBtn.dataset.toggleRestInput);
+          if (Number.isNaN(idx) || !state.routine.items[idx]) return;
+          state.routine.items[idx].manual_rest_enabled = !state.routine.items[idx].manual_rest_enabled;
+          renderConfigList();
+          return;
+        }
       const replaceBtn = event.target.closest("[data-replace]");
       if (replaceBtn) {
         pendingReplaceId = replaceBtn.dataset.replace;
@@ -1641,8 +1742,13 @@
       if (restSelect && restSelect.options.length === 0) {
         restSelect.innerHTML = REST_OPTIONS.map((opt) => `<option value="${opt}">${opt}s</option>`).join("");
       }
+      setRestModalManual(false);
       const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedRestModal"));
       modal.show();
+    });
+
+    document.getElementById("guidedRestSecondsToggle")?.addEventListener("click", () => {
+      setRestModalManual(!restModalManualEnabled);
     });
 
     document.getElementById("guidedDesc")?.addEventListener("click", () => {
@@ -1655,10 +1761,13 @@
 
     document.getElementById("guidedRestSave")?.addEventListener("click", () => {
       const groupId = document.getElementById("guidedRestGroup").value;
-      const seconds = document.getElementById("guidedRestSeconds").value;
+      const seconds = restModalManualEnabled
+        ? document.getElementById("guidedRestSecondsManual").value
+        : document.getElementById("guidedRestSeconds").value;
       const note = document.getElementById("guidedRestNote").value.trim();
       addRest(groupId, seconds, note);
       document.getElementById("guidedRestNote").value = "";
+      setRestModalManual(false);
       bootstrap.Modal.getOrCreateInstance(document.getElementById("guidedRestModal")).hide();
     });
 

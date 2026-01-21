@@ -230,6 +230,8 @@
                                             type="number"
                                             min="1"
                                             max="240"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
                                             className="form-control bg-dark text-white border-secondary"
                                             value={manualMinutesValue}
                                             onChange={(e) => {

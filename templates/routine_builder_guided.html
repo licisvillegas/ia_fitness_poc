@@ -332,7 +332,16 @@
                 <label class="text-secondary small">Grupo</label>
                 <select id="guidedRestGroup" class="form-select bg-dark text-white border-secondary"></select>
                 <label class="text-secondary small mt-3">Tiempo</label>
-                <select id="guidedRestSeconds" class="form-select bg-dark text-white border-secondary"></select>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="guidedRestSeconds" class="form-select bg-dark text-white border-secondary"></select>
+                    <div id="guidedRestSecondsManualWrap" class="input-group" style="display: none;">
+                        <span class="input-group-text bg-dark text-white border-secondary">seg</span>
+                        <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" id="guidedRestSecondsManual" class="form-control bg-dark text-white border-secondary" value="60">
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" id="guidedRestSecondsToggle" type="button" title="Editar descanso">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
                 <label class="text-secondary small mt-3">Nota</label>
                 <textarea id="guidedRestNote" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Opcional"></textarea>
             </div>

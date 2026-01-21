@@ -58,7 +58,8 @@
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
         const prevStatusRef = useRef(status);
-        const workNotifyTimeoutsRef = useRef([]);
+        const currentStepElapsedRef = useRef(0);
+        const notificationFlagsRef = useRef({});
 
         // Notification Logic
         useEffect(() => {
@@ -423,10 +424,80 @@
         }, [isActive]);
 
 
-        // Global Timer (only when actively working or resting)
+        // Reset trackers on step change
+        useEffect(() => {
+            currentStepElapsedRef.current = 0;
+            notificationFlagsRef.current = {};
+        }, [currentStep?.id]);
+
+        // Global Timer & Notification Checker
         useEffect(() => {
             if (status !== 'WORK' && status !== 'REST' || isPaused) return;
-            const int = setInterval(() => setGlobalTime(t => t + 1), 1000);
+            const int = setInterval(() => {
+                setGlobalTime(t => t + 1);
+
+                if (status === 'WORK') {
+                    currentStepElapsedRef.current += 1;
+                    const elapsed = currentStepElapsedRef.current;
+                    const step = currentStepRef.current;
+
+                    if (!step || !step.exercise) return;
+
+                    const exName = step.exercise.exercise_name || step.exercise.name || "Ejercicio";
+                    const flags = notificationFlagsRef.current;
+
+                    const stepType = String(
+                        step.exercise.exercise_type ||
+                        step.exercise.type ||
+                        step.exercise_type ||
+                        step.type ||
+                        ""
+                    ).toLowerCase();
+
+                    const timeTarget = Number(step.target?.time || 0);
+                    const repsTarget = Number(step.target?.reps || 0);
+
+                    const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
+
+                    // Motivation Reps
+                    // Condition: exercise_type != cardio/time AND target_time_seconds == 0 AND target_reps != 0
+                    if (!isCardioOrTime && timeTarget === 0 && repsTarget !== 0) {
+                        // 3 min = 180s
+                        if (elapsed === 180 && !flags.min3) {
+                            sendNotification("Motivacion", `Vamos, sigue con ${exName}.`);
+                            flags.min3 = true;
+                        }
+                        // 5 min = 300s
+                        if (elapsed === 300 && !flags.min5) {
+                            sendNotification("Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
+                            flags.min5 = true;
+                        }
+                        // 10 min = 600s
+                        if (elapsed === 600 && !flags.min10) {
+                            sendNotification("Cierre de rutina", "¿Prefieres finalizar la rutina?");
+                            flags.min10 = true;
+                        }
+                    }
+
+                    // Motivation Time
+                    // Condition: exercise_type = cardio or time, target_reps = 0, target_time_seconds > 0
+                    if (isCardioOrTime && repsTarget === 0 && timeTarget > 0) {
+                        const remaining = stepTimerRef.current;
+                        const halfTime = Math.floor(timeTarget / 2);
+
+                        if (remaining === halfTime && !flags.half) {
+                            sendNotification("Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);
+                            flags.half = true;
+                        }
+
+                        if (remaining === 120 && !flags.min2left) {
+                            sendNotification("Casi terminas", "Lo estas logrando. Te faltan 2 minutos.");
+                            flags.min2left = true;
+                        }
+                    }
+                }
+
+            }, 1000);
             return () => clearInterval(int);
         }, [status, isPaused]);
 
@@ -505,7 +576,8 @@
                         isPaused: isPausedRef.current,
                         isTimerRunning: isTimerRunningRef.current,
                         stepTimer: stepTimerRef.current,
-                        globalTime: globalTimeRef.current
+                        globalTime: globalTimeRef.current,
+                        currentStepElapsed: currentStepElapsedRef.current
                     };
                     return;
                 }
@@ -519,6 +591,10 @@
                 if (deltaSec <= 0) return;
 
                 setGlobalTime(current => Math.max(current, snap.globalTime + deltaSec));
+
+                if (snap.status === 'WORK') {
+                    currentStepElapsedRef.current = (snap.currentStepElapsed || 0) + deltaSec;
+                }
 
                 if (snap.isTimerRunning && snap.stepTimer > 0) {
                     const nextTimer = Math.max(0, snap.stepTimer - deltaSec);
@@ -1055,58 +1131,9 @@
             prevStatusRef.current = status;
         }, [status, currentStep?.id]);
 
+        // Legacy Notification Logic Removed (replaced by interval polling)
         useEffect(() => {
-            workNotifyTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
-            workNotifyTimeoutsRef.current = [];
-
-            if (!currentStep || status !== 'WORK' || currentStep.type !== 'work') return;
-
-            const stepId = currentStep.id;
-            const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
-            const stepType = String(
-                currentStep.exercise?.exercise_type ||
-                currentStep.exercise?.type ||
-                currentStep.exercise_type ||
-                currentStep.type ||
-                ""
-            ).toLowerCase();
-            const repsTargetRaw = currentStep.target?.reps;
-            const repsTargetNum = parseFloat(repsTargetRaw);
-            const hasRepsTarget = (Number.isFinite(repsTargetNum) && repsTargetNum !== 0) ||
-                (repsTargetRaw != null && String(repsTargetRaw).trim() !== "" && String(repsTargetRaw) !== "0");
-            const timeTarget = Number(currentStep.target?.time || 0);
-            const isTimeExercise = (stepType === "cardio" || stepType === "time") && !hasRepsTarget && timeTarget > 0;
-            const isRepExercise = stepType !== "cardio" && stepType !== "time" && timeTarget === 0 && hasRepsTarget;
-
-            const scheduleNotification = (delaySeconds, title, message) => {
-                if (delaySeconds <= 0) return;
-                const timeoutId = setTimeout(() => {
-                    const currentLog = sessionLogRef.current || [];
-                    const stillSameStep = currentStepRef.current && currentStepRef.current.id === stepId;
-                    const stillWorking = statusRef.current === 'WORK';
-                    const alreadyLogged = currentLog.some(entry => entry.stepId === stepId);
-                    if (stillSameStep && stillWorking && !alreadyLogged) {
-                        sendNotification(title, message);
-                    }
-                }, delaySeconds * 1000);
-                workNotifyTimeoutsRef.current.push(timeoutId);
-            };
-
-            if (isTimeExercise) {
-                const halfSeconds = Math.floor(timeTarget / 2);
-                const nearEndSeconds = timeTarget - 120;
-                scheduleNotification(halfSeconds, "Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);
-                scheduleNotification(nearEndSeconds, "Casi terminas", "Lo estas logrando. Te faltan 2 minutos.");
-            } else if (isRepExercise) {
-                scheduleNotification(3 * 60, "Motivacion", `Vamos, sigue con ${exName}.`);
-                scheduleNotification(5 * 60, "Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
-                scheduleNotification(10 * 60, "Cierre de rutina", "¿Prefieres finalizar la rutina?");
-            }
-
-            return () => {
-                workNotifyTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
-                workNotifyTimeoutsRef.current = [];
-            };
+            // Optional: keeping this structure if we need other side effects on step start
         }, [status, currentStep?.id]);
 
         const openSubstituteModal = (stepIndex = cursor) => {
@@ -1293,6 +1320,7 @@
             const pendingCount = queueRef.current.filter(step => step.type === 'work' && !isStepLogged(step.id, currentLog)).length;
 
             if (pendingCount > 0) {
+                sendNotification("Ejercicios pendientes", "Tienes ejercicios pendientes por realizar.");
                 showConfirm(
                     "Ejercicios Pendientes",
                     `Tienes ${pendingCount} ejercicios pendientes. ¿Deseas realizarlos antes de finalizar?`,

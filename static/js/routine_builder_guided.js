@@ -540,12 +540,12 @@
             </div>
           </div>
           <div class="row g-2">
-            <div class="col-4">
-              <label class="text-secondary small">Series</label>
-              <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_sets" data-idx="${idx}">
-                ${SETS_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_sets) === opt ? "selected" : ""}>${opt}</option>`).join("")}
-              </select>
-            </div>
+              <div class="col-4">
+                <label class="text-secondary small">Series</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary guided-compact-select" data-field="target_sets" data-idx="${idx}">
+                  ${SETS_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_sets) === opt ? "selected" : ""}>${opt}</option>`).join("")}
+                </select>
+              </div>
               <div class="col-4">
                 <label class="text-secondary small">${isTime ? "Tiempo" : "Reps"}</label>
                 ${
@@ -558,19 +558,19 @@
                         ` : `
                           <div class="input-group input-group-sm">
                             <span class="input-group-text bg-dark text-white border-secondary">min</span>
-                            <input type="number" min="1" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="target_time_minutes" data-idx="${idx}" value="${currentMinutes}">
+                            <input type="number" min="1" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="target_time_minutes" data-idx="${idx}" value="${currentMinutes}" onfocus="this.select()">
                           </div>
                         `}
                         <button class="btn btn-sm ${manualTimeEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-time-input="${idx}" title="Editar minutos">
                           <i class="fas fa-pen"></i>
                         </button>
                       </div>`
-                    : `<select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_reps" data-idx="${idx}">
+                    : `<select class="form-select form-select-sm bg-dark text-white border-secondary guided-compact-select" data-field="target_reps" data-idx="${idx}">
                         ${REPS_OPTIONS.map((opt) => `<option value="${opt}" ${getRepsSelectValue(item.target_reps) === opt ? "selected" : ""}>${opt}</option>`).join("")}
                       </select>
                       <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1" data-field="target_reps_exact" data-idx="${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}" style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};" ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}>`
                 }
-            </div>
+              </div>
               <div class="col-4">
                 <label class="text-secondary small">Descanso</label>
                 <div class="d-flex align-items-center gap-2">
@@ -581,7 +581,7 @@
                   ` : `
                     <div class="input-group input-group-sm">
                       <span class="input-group-text bg-dark text-white border-secondary">seg</span>
-                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}">
+                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}" onfocus="this.select()">
                     </div>
                   `}
                   <button class="btn btn-sm ${manualRestEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-rest-input="${idx}" title="Editar descanso">
@@ -615,9 +615,9 @@
               <button class="btn btn-sm btn-outline-secondary" data-move-item="${item._id}" data-dir="1"><i class="fas fa-arrow-down"></i></button>
               <button class="btn btn-sm btn-outline-danger" data-remove="${idx}"><i class="fas fa-times"></i></button>
             </div>
-          </div>
+            </div>
             <div class="row g-2">
-              <div class="col-4">
+              <div class="col-6">
                 <label class="text-secondary small">Tiempo</label>
                 <div class="d-flex align-items-center gap-2">
                   ${!manualRestEnabled ? `
@@ -627,7 +627,7 @@
                   ` : `
                     <div class="input-group input-group-sm">
                       <span class="input-group-text bg-dark text-white border-secondary">seg</span>
-                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}">
+                      <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" class="form-control bg-dark text-white border-secondary" data-field="rest_seconds_manual" data-idx="${idx}" value="${Number(item.rest_seconds) || 60}" onfocus="this.select()">
                     </div>
                   `}
                   <button class="btn btn-sm ${manualRestEnabled ? "btn-info text-dark" : "btn-outline-secondary"}" data-toggle-rest-input="${idx}" title="Editar descanso">
@@ -635,18 +635,18 @@
                   </button>
                 </div>
               </div>
-            <div class="col-4">
-              <label class="text-secondary small">Grupo</label>
-              <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
-                ${renderGroupOptions(item.group_id)}
-              </select>
-            </div>
-            <div class="col-4">
-              <label class="text-secondary small">Nota</label>
-              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${idx}" data-comment-edit="note" readonly value="${item.note || ""}">
+              <div class="col-6">
+                <label class="text-secondary small">Grupo</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
+                  ${renderGroupOptions(item.group_id)}
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="text-secondary small">Nota</label>
+                <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="note" data-idx="${idx}" data-comment-edit="note" readonly value="${item.note || ""}">
+              </div>
             </div>
           </div>
-        </div>
       `;
     };
 

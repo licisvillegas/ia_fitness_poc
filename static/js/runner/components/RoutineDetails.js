@@ -234,6 +234,7 @@
                                             pattern="[0-9]*"
                                             className="form-control bg-dark text-white border-secondary"
                                             value={manualMinutesValue}
+                                            onFocus={(e) => e.target.select()}
                                             onChange={(e) => {
                                                 const minutes = Number(e.target.value);
                                                 if (!Number.isFinite(minutes)) return;

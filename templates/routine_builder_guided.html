@@ -198,6 +198,13 @@
         padding: 12px;
         background: rgba(0, 0, 0, 0.25);
     }
+    .guided-compact-select {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+        height: 32px;
+        min-height: 32px;
+        line-height: 1.1;
+    }
     .guided-block {
         border: 1px dashed rgba(255, 255, 255, 0.1);
         border-radius: 12px;
@@ -253,6 +260,51 @@
     @media (max-width: 991.98px) {
         .guided-progress-card {
             display: none;
+        }
+    }
+
+    @media (max-width: 991.98px) and (orientation: landscape) {
+        .guided-inline-actions .btn {
+            padding: 0.25rem 0.45rem;
+            font-size: 0.75rem;
+        }
+        .guided-config-card .row .col-4,
+        .guided-config-card .row .col-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        .guided-config-card .col-4 .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+        .guided-config-card .input-group {
+            flex: 1 1 120px;
+            min-width: 120px;
+        }
+        .guided-config-card .form-select,
+        .guided-config-card .form-control {
+            min-width: 0;
+        }
+        .guided-config-card .btn {
+            white-space: nowrap;
+        }
+        .guided-compact-select {
+            padding: 0.15rem 0.35rem;
+            font-size: 0.75rem;
+            height: 30px;
+            min-height: 30px;
+            min-width: 0;
+        }
+        .guided-config-card .input-group .input-group-text {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+        .guided-config-card .input-group input {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.85rem;
+            min-width: 64px;
+        }
+        .guided-config-card .col-4 .btn.btn-sm {
+            padding: 0.25rem 0.4rem;
         }
     }
 </style>
@@ -336,7 +388,7 @@
                     <select id="guidedRestSeconds" class="form-select bg-dark text-white border-secondary"></select>
                     <div id="guidedRestSecondsManualWrap" class="input-group" style="display: none;">
                         <span class="input-group-text bg-dark text-white border-secondary">seg</span>
-                        <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" id="guidedRestSecondsManual" class="form-control bg-dark text-white border-secondary" value="60">
+                        <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" id="guidedRestSecondsManual" class="form-control bg-dark text-white border-secondary" value="60" onfocus="this.select()">
                     </div>
                     <button class="btn btn-sm btn-outline-secondary" id="guidedRestSecondsToggle" type="button" title="Editar descanso">
                         <i class="fas fa-pen"></i>

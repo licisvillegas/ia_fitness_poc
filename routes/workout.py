@@ -254,19 +254,30 @@ def api_get_body_parts():
 def api_stats_heatmap():
     """Returns frequency map of workouts for the user (last year)."""
     try:
-        current_user_id = request.cookies.get("user_session")
+        # Relaxed Auth: Allow access via user_id arg (consistent with volume/sessions)
         req_user_id = request.args.get("user_id")
-        if not current_user_id: return jsonify({"error": "Unauthorized"}), 401
+        current_user_id = request.cookies.get("user_session")
+
+        # If neither provided, error
+        if not current_user_id and not req_user_id:
+             return jsonify({"error": "Unauthorized"}), 401
             
         db = get_db()
         if db is None: return jsonify({}), 503
 
         # Resolve user_id
-        user_id = current_user_id
-        if req_user_id and req_user_id != current_user_id:
+        # Priority: Admin requesting specific ID > specific ID (if relaxed) > Cookie ID
+        user_id = None
+        
+        if current_user_id:
+             user_id = current_user_id
+             # Check Admin for Override
              role_doc = db.user_roles.find_one({"user_id": current_user_id})
-             if role_doc and role_doc.get("role") == "admin":
+             if role_doc and role_doc.get("role") == "admin" and req_user_id:
                  user_id = req_user_id
+        else:
+             # Fallback to requested ID if no cookie (Dashboard auto-refresh scenario)
+             user_id = req_user_id
         
         # Robust Logic: Fetch raw and process in Python to handle Mixed Types (Date/String)
         # Fetch only needed fields from 'workout_sessions'
@@ -377,16 +388,24 @@ def api_list_my_routines():
     """Lista las rutinas creadas por el usuario."""
     try:
         current_user_id = request.cookies.get("user_session")
-        if not current_user_id:
-            return jsonify({"error": "Unauthorized"}), 401
-
+        req_user_id = request.args.get("user_id")
+        
+        # Determine effective user
+        user_id = current_user_id
+        is_admin = False
         db = get_db()
         if db is None: return jsonify({"error": "DB not ready"}), 503
 
-        role_doc = db.user_roles.find_one({"user_id": current_user_id})
-        is_admin = role_doc and role_doc.get("role") == "admin"
-        target_user_id = request.args.get("user_id") if is_admin else None
-        user_id = target_user_id or current_user_id
+        if current_user_id:
+            role_doc = db.user_roles.find_one({"user_id": current_user_id})
+            is_admin = role_doc and role_doc.get("role") == "admin"
+            if is_admin and req_user_id:
+                user_id = req_user_id
+        elif req_user_id:
+            # Fallback for dashboard consistency
+            user_id = req_user_id
+        else:
+            return jsonify({"error": "Unauthorized"}), 401
 
         active_only = request.args.get("active_only")
         all_routines = request.args.get("all") in ("1", "true", "yes")

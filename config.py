@@ -36,6 +36,11 @@ class Config:
     # Server
     HOST = "0.0.0.0"
     PORT = int(os.getenv("PORT", "5000"))
+
+    # Web Push (VAPID)
+    VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
+    VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
+    VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:no-reply@localhost")
     
     @staticmethod
     def init_app(app):

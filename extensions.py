@@ -110,6 +110,17 @@ def create_indexes(db_instance):
             db_instance.user_profiles.create_index("user_id", unique=True)
         except Exception:
             pass
+
+        try:
+            db_instance.push_subscriptions.create_index([("user_id", 1), ("endpoint", 1)], unique=True)
+        except Exception:
+            pass
+
+        try:
+             # Index for workout_sessions to prevent dashboard timeouts
+            db_instance.workout_sessions.create_index([("user_id", 1), ("created_at", -1)])
+        except Exception as e:
+            logger.warning(f"Could not create workout_sessions index: {e}")
         
         logger.info("✔  Índices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
         

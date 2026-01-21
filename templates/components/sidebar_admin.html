@@ -66,7 +66,9 @@
             <i id="sidebar-admin-avatar-icon"
                 class="fas fa-user-shield {{ 'd-none' if user_data and user_data.profile_image_url else '' }}"></i>
         </div>
-        <strong><span id="sidebar-username">Administrador</span></strong>
+        <strong><span id="sidebar-username">{{ user_data.name if user_data and user_data.name else (user_data.username
+                if user_data and user_data.username else (current_user_role|capitalize if current_user_role else
+                'Usuario')) }}</span></strong>
     </div>
 
     <!-- Admin User Search -->
@@ -227,4 +229,42 @@
             document.head.appendChild(script);
         }
     });
+
+
+    // 3. User Info Sync (Robustness)
+    (function () {
+        // Only run if we suspect data might be stale or missing (e.g. "Administrador" or "Usuario" default)
+        const nameEl = document.getElementById("sidebar-username");
+        const imgEl = document.getElementById("sidebar-admin-avatar-img");
+        const iconEl = document.getElementById("sidebar-admin-avatar-icon");
+
+        const currentName = nameEl ? nameEl.textContent.trim() : "";
+        const needsUpdate = currentName === "Administrador" || currentName === "Usuario" || !currentName;
+
+        if (needsUpdate) {
+            fetch("/api/user/my_profile")
+                .then(res => {
+                    if (!res.ok) throw new Error("No auth");
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && !data.error) {
+                        // Update Name
+                        const displayName = data.name || data.username || "Usuario";
+                        if (nameEl) nameEl.textContent = displayName;
+
+                        // Update Image
+                        if (data.profile_image_url) {
+                            if (imgEl) {
+                                imgEl.src = data.profile_image_url;
+                                imgEl.classList.remove("d-none");
+                                imgEl.classList.add("d-block");
+                            }
+                            if (iconEl) iconEl.classList.add("d-none");
+                        }
+                    }
+                })
+                .catch(() => { });
+        }
+    })();
 </script>

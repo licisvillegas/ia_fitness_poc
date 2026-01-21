@@ -462,6 +462,7 @@ def get_my_profile_aggregated():
             "name": user_doc.get("name") or user_doc.get("username"),
             "email": user_doc.get("email"),
             "sex": profile_doc.get("sex"),
+            "profile_image_url": profile_doc.get("profile_image_url"),
             "age": age,
             "phone": profile_doc.get("phone"),
             "goal": plan_doc.get("goal") or user_doc.get("goal") or user_doc.get("goals"), # Fallback to user doc

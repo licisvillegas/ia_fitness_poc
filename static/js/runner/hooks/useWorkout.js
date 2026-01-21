@@ -68,6 +68,9 @@
                 setNotificationPermission(perm);
                 // Default enabled if permission already granted
                 setIsNotificationsEnabled(perm === 'granted');
+                if (perm === 'granted' && typeof window.ensurePushSubscription === "function") {
+                    window.ensurePushSubscription();
+                }
             }
         }, []);
 
@@ -79,6 +82,9 @@
                     const permission = await Notification.requestPermission();
                     setNotificationPermission(permission);
                     setIsNotificationsEnabled(permission === 'granted');
+                    if (permission === 'granted' && typeof window.ensurePushSubscription === "function") {
+                        window.ensurePushSubscription();
+                    }
                 } catch (e) {
                     console.error("Notification permission error", e);
                 }
@@ -98,12 +104,28 @@
                     console.error("Notification error", e);
                 }
             }
+            if (document.visibilityState !== 'visible' && navigator.onLine && typeof window.ensurePushSubscription === "function") {
+                window.ensurePushSubscription()
+                    .then((ok) => {
+                        if (!ok) return;
+                        return fetch("/api/push/send", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ title, body, url: window.location.pathname || "/" })
+                        });
+                    })
+                    .catch((e) => console.warn("Push send error", e));
+            }
         };
 
         const ensureNotificationPermission = async () => {
             if (!("Notification" in window)) return;
             if (notificationPermission === 'granted') {
                 setIsNotificationsEnabled(true);
+                if (typeof window.ensurePushSubscription === "function") {
+                    window.ensurePushSubscription();
+                }
                 return;
             }
             if (notificationPermission !== 'default') return;
@@ -111,6 +133,9 @@
                 const permission = await Notification.requestPermission();
                 setNotificationPermission(permission);
                 setIsNotificationsEnabled(permission === 'granted');
+                if (permission === 'granted' && typeof window.ensurePushSubscription === "function") {
+                    window.ensurePushSubscription();
+                }
             } catch (e) {
                 console.error("Notification permission error", e);
             }

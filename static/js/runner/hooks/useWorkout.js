@@ -454,14 +454,24 @@
                         ""
                     ).toLowerCase();
 
-                    const timeTarget = Number(step.target?.time || 0);
-                    const repsTarget = Number(step.target?.reps || 0);
+                    // Access RAW values to avoid logic.js defaults (like time=60)
+                    const rawTimeTarget = Number(
+                        step.exercise.target_time_seconds ||
+                        step.exercise.time_seconds ||
+                        step.exercise.time ||
+                        0
+                    );
+                    const rawRepsTarget = Number(
+                        step.exercise.target_reps ||
+                        step.exercise.reps ||
+                        0
+                    );
 
                     const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
 
                     // Motivation Reps
-                    // Condition: exercise_type != cardio/time AND target_time_seconds == 0 AND target_reps != 0
-                    if (!isCardioOrTime && timeTarget === 0 && repsTarget !== 0) {
+                    // Condition: exercise_type != cardio/time AND raw_time == 0 AND raw_reps != 0
+                    if (!isCardioOrTime && rawTimeTarget === 0 && rawRepsTarget !== 0) {
                         // 3 min = 180s
                         if (elapsed === 180 && !flags.min3) {
                             sendNotification("Motivacion", `Vamos, sigue con ${exName}.`);
@@ -480,10 +490,11 @@
                     }
 
                     // Motivation Time
-                    // Condition: exercise_type = cardio or time, target_reps = 0, target_time_seconds > 0
-                    if (isCardioOrTime && repsTarget === 0 && timeTarget > 0) {
+                    // Condition: exercise_type = cardio or time OR (raw_reps == 0 AND raw_time > 0)
+                    if (isCardioOrTime || (rawRepsTarget === 0 && rawTimeTarget > 0)) {
                         const remaining = stepTimerRef.current;
-                        const halfTime = Math.floor(timeTarget / 2);
+                        const totalTime = rawTimeTarget || Number(step.target?.time || 60);
+                        const halfTime = Math.floor(totalTime / 2);
 
                         if (remaining === halfTime && !flags.half) {
                             sendNotification("Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);

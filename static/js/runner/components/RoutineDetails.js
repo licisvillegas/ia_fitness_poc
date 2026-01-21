@@ -8,6 +8,8 @@
         const { exerciseLookup, applySubstitute, showConfirm, queue, updateTimeTargetForItem } = useWorkout();
         const [expandedGroups, setExpandedGroups] = useState(new Set());
         const [blocks, setBlocks] = useState([]);
+        const [manualTimeEnabled, setManualTimeEnabled] = useState({});
+        const [manualTimeMinutes, setManualTimeMinutes] = useState({});
         const timeOptions = [600, 900, 1200, 1800, 3600];
 
         const toggleGroup = (groupId) => {
@@ -169,6 +171,9 @@
             const restSeconds = getRestSeconds(mergedEx);
             const timeValue = Number(mergedEx.target_time_seconds || mergedEx.time_seconds || 600);
             const timeSelectValue = timeOptions.includes(timeValue) ? timeValue : 600;
+            const manualEnabled = Boolean(manualTimeEnabled[routineItemId]);
+            const defaultMinutes = Math.max(1, Math.round(timeSelectValue / 60));
+            const manualMinutesValue = manualTimeMinutes[routineItemId] ?? defaultMinutes;
 
             return (
                 <div key={key} className="d-flex justify-content-between align-items-start gap-3">
@@ -200,16 +205,62 @@
                         {isTime && (
                             <div className="mt-2 d-flex align-items-center gap-2">
                                 <span className="text-secondary small">Tiempo:</span>
-                                <select
-                                    className="form-select form-select-sm bg-dark text-white border-secondary"
-                                    style={{ width: "140px" }}
-                                    value={timeSelectValue}
-                                    onChange={(e) => updateTimeTargetForItem(routineItemId, Number(e.target.value))}
+                                {!manualEnabled ? (
+                                    <select
+                                        className="form-select form-select-sm bg-dark text-white border-secondary"
+                                        style={{ width: "140px" }}
+                                        value={timeSelectValue}
+                                        onChange={(e) => {
+                                            const seconds = Number(e.target.value);
+                                            updateTimeTargetForItem(routineItemId, seconds);
+                                            if (manualEnabled) {
+                                                const minutes = Math.max(1, Math.round(seconds / 60));
+                                                setManualTimeMinutes(prev => ({ ...prev, [routineItemId]: minutes }));
+                                            }
+                                        }}
+                                    >
+                                        {timeOptions.map(opt => (
+                                            <option key={opt} value={opt}>{Math.round(opt / 60)} min</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="input-group input-group-sm" style={{ width: "120px" }}>
+                                        <span className="input-group-text bg-dark text-white border-secondary">min</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="240"
+                                            className="form-control bg-dark text-white border-secondary"
+                                            value={manualMinutesValue}
+                                            onChange={(e) => {
+                                                const minutes = Number(e.target.value);
+                                                if (!Number.isFinite(minutes)) return;
+                                                const clamped = Math.max(1, Math.min(240, minutes));
+                                                setManualTimeMinutes(prev => ({ ...prev, [routineItemId]: clamped }));
+                                                updateTimeTargetForItem(routineItemId, clamped * 60);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    className={`btn btn-sm ${manualEnabled ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
+                                    title={manualEnabled ? "Usar lista" : "Editar minutos"}
+                                    onClick={() => {
+                                        setManualTimeEnabled(prev => {
+                                            const nextEnabled = !prev[routineItemId];
+                                            if (nextEnabled) {
+                                                setManualTimeMinutes(minutesPrev => ({
+                                                    ...minutesPrev,
+                                                    [routineItemId]: manualMinutesValue
+                                                }));
+                                            }
+                                            return { ...prev, [routineItemId]: nextEnabled };
+                                        });
+                                    }}
                                 >
-                                    {timeOptions.map(opt => (
-                                        <option key={opt} value={opt}>{Math.round(opt / 60)} min</option>
-                                    ))}
-                                </select>
+                                    <i className="fas fa-pen"></i>
+                                </button>
                             </div>
                         )}
                         {substitutes.length > 0 && (

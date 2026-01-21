@@ -58,6 +58,7 @@
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
         const prevStatusRef = useRef(status);
+        const lastHistoryRoutineIdRef = useRef(null);
         const currentStepElapsedRef = useRef(0);
         const notificationFlagsRef = useRef({});
 
@@ -310,6 +311,8 @@
             // currentUserId is a global variable from Jinja (see workout_runner.html)
             const userId = window.currentUserId || window.CURRENT_USER_ID;
             if (!userId || !routineId) return;
+            if (lastHistoryRoutineIdRef.current === routineId) return;
+            lastHistoryRoutineIdRef.current = routineId;
 
             const loadHistoryMax = async () => {
                 if (window.showLoader) window.showLoader("Sincronizando historial...");
@@ -349,7 +352,7 @@
 
             loadHistoryMax();
             return () => { isMounted = false; };
-        }, [routineState]);
+        }, [routineState?.id, routineState?._id]);
 
         useEffect(() => {
             const handleOfflineSync = (event) => {

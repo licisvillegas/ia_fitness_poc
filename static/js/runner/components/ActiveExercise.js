@@ -56,9 +56,14 @@
             </div>
         ) : null;
 
+        const cardClassName = `active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column position-relative ${focusMode ? 'h-100' : ''}`;
+        const contentClassName = focusMode
+            ? "d-flex flex-column justify-content-between h-100"
+            : "d-flex flex-column gap-3";
+
         if (focusMode) {
             return (
-                <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100 position-relative`}>
+                <div className={cardClassName}>
 
                     {/* Defer Button - Discrete top right */}
                     <button
@@ -70,7 +75,7 @@
                         <i className="fas fa-history fa-lg"></i>
                     </button>
 
-                    <div className="d-flex flex-column justify-content-between h-100">
+                    <div className={contentClassName}>
                         <div className="text-center mb-2 pt-2">
                             <div className="text-info fs-6 mb-1 d-inline-flex align-items-center gap-2">
                                 <span>
@@ -97,7 +102,7 @@
         }
 
         return (
-            <div className={`active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column h-100 position-relative`}>
+            <div className={cardClassName}>
 
                 {/* Defer Button - Discrete top right (Same as Focus Mode) */}
                 <button
@@ -109,7 +114,7 @@
                     <i className="fas fa-history fa-lg"></i>
                 </button>
 
-                <div className="d-flex flex-column justify-content-between h-100">
+                <div className={contentClassName}>
 
                     <div className="text-center mobile-compact-mb mb-3">
                         {currentStep.groupName && (

@@ -178,33 +178,25 @@
                     {!compact && (
                         <div className="col-6">
                         <div className="weight-header">
-                            {!hideRPE && (
-                                    <div className="d-flex align-items-center gap-2">
-                                        <button
-                                            type="button"
-                                            className="plate-icon-btn"
-                                            title="Calculadora de discos"
-                                            onClick={() => setPlateModalOpen(true)}
-                                        >
-                                            <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="rm-icon-btn rm-icon-btn-horizontal"
-                                            title="Calculadora 1RM"
-                                            onClick={openRmModal}
-                                        >
-                                            <i className="fas fa-calculator"></i>
-                                        </button>
-                                    </div>
-                            )}
                             <div className="d-flex align-items-center justify-content-center gap-1">
                                 <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
                                 <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
                                     {unit.toUpperCase()}
                                 </button>
-                                </div>
                             </div>
+                        </div>
+                        {!hideRPE && (
+                            <div className="input-icon-slot">
+                                <button
+                                    type="button"
+                                    className="plate-icon-btn"
+                                    title="Calculadora de discos"
+                                    onClick={() => setPlateModalOpen(true)}
+                                >
+                                    <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
+                                </button>
+                            </div>
+                        )}
                             <div className="d-flex align-items-center justify-content-center gap-1">
                                 <button
                                     className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"
@@ -263,7 +255,12 @@
                     )}
                     <div className={compact ? "col-12" : "col-6 reps-column"}>
                         <div className="reps-header">
-                            {!compact && !focusMode && (
+                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>
+                                REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
+                            </label>
+                        </div>
+                        {!compact && !focusMode && (
+                            <div className="input-icon-slot">
                                 <button
                                     type="button"
                                     className="rm-icon-btn rm-icon-btn-vertical"
@@ -272,11 +269,8 @@
                                 >
                                     <i className="fas fa-calculator"></i>
                                 </button>
-                            )}
-                            <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>
-                                REPS {step.target.reps && <span className="text-cyber-green ms-1">({step.target.reps})</span>}
-                            </label>
-                        </div>
+                            </div>
+                        )}
                         <div className="d-flex align-items-center justify-content-center gap-1">
                             <button
                                 className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"

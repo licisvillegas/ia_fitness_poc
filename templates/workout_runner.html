@@ -155,6 +155,7 @@
         text-align: center;
         border-radius: 12px;
         height: 60px;
+        width: 140px;
     }
 
     .input-hud:focus {
@@ -358,21 +359,34 @@
         transform: scale(0.98);
     }
 
-    .weight-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 6px;
-    }
-
+    .weight-header,
     .reps-header {
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: flex-end;
         gap: 6px;
+        margin-bottom: 4px;
+        min-height: 24px;
+    }
+
+    .input-icon-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 36px;
         margin-bottom: 6px;
     }
+
+    .input-icon-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        margin-bottom: 6px;
+    }
+
 
     .tap-hint-overlay {
         position: absolute;
@@ -784,6 +798,12 @@
     @media (orientation: landscape) {
         .rm-icon-btn-vertical {
             display: none;
+        }
+    }
+
+    @media (orientation: landscape) {
+        .input-icon-slot .rm-icon-btn-vertical {
+            display: inline-flex;
         }
     }
 

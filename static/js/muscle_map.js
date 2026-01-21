@@ -11,6 +11,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clearSelection');
     const toggleViewBtn = document.getElementById('toggleViewBtn');
     const mapContainer = document.querySelector('.tab-content');
+    const adminSwapBtn = document.getElementById('adminSwapBtn');
+    const frontMap = document.querySelector('.body-map-front');
+    const backMap = document.querySelector('.body-map-back');
+
+    const adminSwapImages = {
+        frontDefault: '/static/images/examples/av1.png',
+        backDefault: '/static/images/examples/av2.png',
+        frontAlt: '/static/images/examples/ah01.png',
+        backAlt: '/static/images/examples/ah02.png'
+    };
+
+    const isAdminUnlocked = () => sessionStorage.getItem('admin_unlocked') === 'true';
+    const canShowAdminSwap = () => window.__HAS_ADMIN === true && isAdminUnlocked();
+
+    const syncAdminSwapVisibility = () => {
+        if (!adminSwapBtn) return;
+        if (canShowAdminSwap()) {
+            adminSwapBtn.classList.remove('d-none');
+        } else {
+            adminSwapBtn.classList.add('d-none');
+        }
+    };
 
     const muscleImages = {
         'Pectorales': 'pec.png',
@@ -113,6 +135,27 @@ document.addEventListener('DOMContentLoaded', () => {
             frontTab.click();
         }
     });
+
+    if (adminSwapBtn) {
+        syncAdminSwapVisibility();
+        let adminChecks = 0;
+        const adminCheckTimer = setInterval(() => {
+            adminChecks += 1;
+            syncAdminSwapVisibility();
+            if (!adminSwapBtn.classList.contains('d-none') || adminChecks > 30) {
+                clearInterval(adminCheckTimer);
+            }
+        }, 1000);
+
+        adminSwapBtn.addEventListener('click', () => {
+            if (!frontMap || !backMap) return;
+            const isAlt = adminSwapBtn.dataset.mode === 'alt';
+            const nextMode = isAlt ? 'default' : 'alt';
+            adminSwapBtn.dataset.mode = nextMode;
+            frontMap.style.backgroundImage = `url('${isAlt ? adminSwapImages.frontDefault : adminSwapImages.frontAlt}')`;
+            backMap.style.backgroundImage = `url('${isAlt ? adminSwapImages.backDefault : adminSwapImages.backAlt}')`;
+        });
+    }
 
     const tooltip = document.createElement('div');
     tooltip.className = 'muscle-tooltip';

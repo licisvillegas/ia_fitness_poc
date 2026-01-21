@@ -988,10 +988,14 @@
 
             const stepId = currentStep.id;
             const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
-            const isTimeBased = Boolean(currentStep.isTimeBased || currentStep.target?.time);
-            const totalSeconds = currentStep.target?.time || 0;
+            const stepType = String(currentStep.exercise_type || currentStep.type || "").toLowerCase();
+            const repsTarget = Number(currentStep.target?.reps || 0);
+            const timeTarget = Number(currentStep.target?.time || 0);
+            const isCardioTime = (stepType === "cardio" || stepType === "time") && repsTarget === 0 && timeTarget > 0;
+            const isRepExercise = stepType !== "cardio" && stepType !== "time" && timeTarget === 0 && repsTarget !== 0;
 
-            if (isTimeBased && totalSeconds > 0) {
+            if (isCardioTime) {
+                const totalSeconds = timeTarget;
                 const halfSeconds = Math.floor(totalSeconds / 2);
                 const almostDoneSeconds = totalSeconds - 60;
                 const scheduleNotification = (delaySeconds, title, message) => {
@@ -1010,7 +1014,7 @@
 
                 scheduleNotification(halfSeconds, "Sigue entrenando", `Vas a la mitad de ${exName}. Continua fuerte.`);
                 scheduleNotification(almostDoneSeconds, "Casi terminas", `Casi finalizas ${exName}. Un ultimo esfuerzo.`);
-            } else {
+            } else if (isRepExercise) {
                 const checkpoints = [
                     { minutes: 3, message: `Aun estas en ${exName}. Vamos, puedes terminar esta serie.` },
                     { minutes: 5, message: `Sigue con ${exName}. Un esfuerzo mas.` },

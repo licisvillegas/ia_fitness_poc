@@ -540,13 +540,13 @@
             </div>
           </div>
           <div class="row g-2">
-              <div class="col-4">
+              <div class="col-4 guided-field-series">
                 <label class="text-secondary small">Series</label>
                 <select class="form-select form-select-sm bg-dark text-white border-secondary guided-compact-select" data-field="target_sets" data-idx="${idx}">
                   ${SETS_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_sets) === opt ? "selected" : ""}>${opt}</option>`).join("")}
                 </select>
               </div>
-              <div class="col-4">
+              <div class="col-4 guided-field-reps">
                 <label class="text-secondary small">${isTime ? "Tiempo" : "Reps"}</label>
                 ${
                   isTime
@@ -571,7 +571,7 @@
                       <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1" data-field="target_reps_exact" data-idx="${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}" style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};" ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}>`
                 }
               </div>
-              <div class="col-4">
+              <div class="col-4 guided-field-rest">
                 <label class="text-secondary small">Descanso</label>
                 <div class="d-flex align-items-center gap-2">
                   ${!manualRestEnabled ? `
@@ -589,16 +589,16 @@
                   </button>
                 </div>
               </div>
-            <div class="col-6">
-              <label class="text-secondary small">Grupo</label>
-              <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
-                ${renderGroupOptions(item.group_id)}
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="text-secondary small">Comentario</label>
-              <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="comment" data-idx="${idx}" data-comment-edit="comment" readonly value="${item.comment || ""}">
-            </div>
+              <div class="col-6 guided-field-group">
+                <label class="text-secondary small">Grupo</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="group_id" data-idx="${idx}">
+                  ${renderGroupOptions(item.group_id)}
+                </select>
+              </div>
+              <div class="col-6 guided-field-comment">
+                <label class="text-secondary small">Comentario</label>
+                <input class="form-control form-control-sm bg-dark text-white border-secondary" data-field="comment" data-idx="${idx}" data-comment-edit="comment" readonly value="${item.comment || ""}">
+              </div>
           </div>
         </div>
       `;

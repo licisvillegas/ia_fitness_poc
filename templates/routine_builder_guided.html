@@ -307,6 +307,28 @@
             padding: 0.25rem 0.4rem;
         }
     }
+
+    @media (max-width: 991.98px) and (orientation: portrait) {
+        .guided-config-card .row .guided-field-series,
+        .guided-config-card .row .guided-field-reps,
+        .guided-config-card .row .guided-field-rest,
+        .guided-config-card .row .guided-field-group {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        .guided-config-card .row .guided-field-comment {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        .guided-config-card .row .guided-field-series { order: 1; }
+        .guided-config-card .row .guided-field-reps { order: 2; }
+        .guided-config-card .row .guided-field-rest { order: 3; }
+        .guided-config-card .row .guided-field-group { order: 4; }
+        .guided-config-card .row .guided-field-comment { order: 5; }
+        .guided-config-card .guided-field-rest .d-flex.align-items-center {
+            flex-wrap: nowrap;
+        }
+    }
 </style>
 
 <div class="modal fade rm-exercise-modal" id="guidedExerciseModal" tabindex="-1" aria-hidden="true">

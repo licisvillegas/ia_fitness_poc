@@ -105,6 +105,8 @@ svg {
     stroke-width: 1;
     transition: all 0.25s ease;
     cursor: pointer;
+    transform-box: fill-box;
+    transform-origin: center;
 }
 
 .muscle:hover {

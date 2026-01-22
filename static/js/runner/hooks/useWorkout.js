@@ -1,6 +1,6 @@
 (function () {
     const { createContext, useState, useEffect, useRef, useMemo, useContext } = React;
-    const { formatTime, getAudio, triggerHaptic, getReturnUrl } = window.Runner.utils;
+    const { formatTime, getAudio, triggerHaptic, getReturnUrl, schedulePush, cancelPush } = window.Runner.utils;
     const { BODY_PART_MAP } = window.Runner.constants;
     const { getExerciseId, mergeExerciseForSwap, getRestSeconds, buildQueue } = window.Runner.logic;
 
@@ -61,6 +61,7 @@
         const lastHistoryRoutineIdRef = useRef(null);
         const currentStepElapsedRef = useRef(0);
         const notificationFlagsRef = useRef({});
+        const activePushTaskRef = useRef(null);
 
         // Notification Logic
         useEffect(() => {
@@ -580,6 +581,34 @@
             }
             return () => clearInterval(stepIntervalRef.current);
         }, [isTimerRunning, stepTimer, isPaused]);
+
+        // Background Push Scheduling for Timer
+        useEffect(() => {
+            if (isTimerRunning && !isPaused && stepTimer > 0) {
+                // Schedule push when timer starts or resumes
+                // Add 2s buffer so if app is active, client cancels before server fires.
+                schedulePush(stepTimer + 2, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                    .then(id => {
+                        if (id) activePushTaskRef.current = id;
+                    });
+            }
+
+            return () => {
+                // Cancel push when timer stops, pauses, or component unmounts
+                // Note: If isTimerRunning changes false (finished), we cancel. 
+                // If isPaused changes true, we cancel.
+                // If stepTimer causes re-render? No, stepTimer is NOT in dependency array of THIS effect.
+                // So this effect only runs on toggle of running/paused state. 
+                // Wait, if stepTimer is NOT in deps, it uses the captured initial value of stepTimer 
+                // when isTimerRunning became true. That is CORRECT for the initial schedule.
+                // But if we pause (cleanup runs) and resume (setup runs), we see the NEW stepTimer value 
+                // because a re-render occurred updates the closure scope variable `stepTimer`.
+                if (activePushTaskRef.current) {
+                    cancelPush(activePushTaskRef.current);
+                    activePushTaskRef.current = null;
+                }
+            };
+        }, [isTimerRunning, isPaused]);
 
         const playAlarm = () => {
             try {

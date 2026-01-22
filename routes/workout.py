@@ -5,6 +5,7 @@ Maneja dashboard, runner, sesiones y estadísticas de entrenamiento
 from flask import Blueprint, request, jsonify, render_template, redirect
 from bson import ObjectId
 from datetime import datetime, timedelta
+import re
 import extensions
 from extensions import logger
 from utils.routine_utils import normalize_routine_items
@@ -93,8 +94,8 @@ def list_public_exercises():
         page = int(request.args.get("page", 1))
         if limit < 1:
             limit = 50
-        if limit > 1000:
-            limit = 1000
+        if limit > 5000:
+            limit = 5000
         if page < 1:
             page = 1
         skip = (page - 1) * limit
@@ -116,6 +117,12 @@ def list_public_exercises():
                     "substitutes": 1,
                     "equivalents": 1,
                     "equivalent_exercises": 1,
+                    "alternative_names": 1,
+                    "pattern": 1,
+                    "plane": 1,
+                    "unilateral": 1,
+                    "primary_muscle": 1,
+                    "level": 1,
                 },
             )
             .sort("name", 1)
@@ -128,6 +135,89 @@ def list_public_exercises():
     except Exception as e:
         logger.error(f"Error listing public exercises: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+
+@workout_bp.get("/api/exercises/search")
+def api_search_exercises():
+    """Search exercises with pagination for the user catalog."""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "DB not ready"}), 503
+    try:
+        limit = int(request.args.get("limit", 50))
+        page = int(request.args.get("page", 1))
+        if limit < 1:
+            limit = 50
+        if limit > 200:
+            limit = 200
+        if page < 1:
+            page = 1
+        skip = (page - 1) * limit
+
+        term = (request.args.get("q") or "").strip()
+        body_part = (request.args.get("body_part") or "").strip()
+        equipment = (request.args.get("equipment") or "").strip()
+        ex_type = (request.args.get("type") or "").strip()
+
+        query = {}
+        if body_part:
+            query["body_part"] = body_part
+
+        if equipment:
+            escaped_equipment = re.escape(equipment)
+            query["equipment"] = {"$regex": f"^{escaped_equipment}$", "$options": "i"}
+
+        if ex_type:
+            escaped_type = re.escape(ex_type)
+            query["type"] = {"$regex": f"^{escaped_type}$", "$options": "i"}
+
+        if term:
+            escaped_term = re.escape(term)
+            query["$or"] = [
+                {"name": {"$regex": escaped_term, "$options": "i"}},
+                {"alternative_names": {"$regex": escaped_term, "$options": "i"}},
+            ]
+
+        total = db.exercises.count_documents(query)
+        docs = list(
+            db.exercises.find(
+                query,
+                {
+                    "exercise_id": 1,
+                    "name": 1,
+                    "body_part": 1,
+                    "difficulty": 1,
+                    "equipment": 1,
+                    "type": 1,
+                    "exercise_type": 1,
+                    "video_url": 1,
+                    "description": 1,
+                    "image_url": 1,
+                    "substitutes": 1,
+                    "equivalents": 1,
+                    "equivalent_exercises": 1,
+                    "alternative_names": 1,
+                    "pattern": 1,
+                    "plane": 1,
+                    "unilateral": 1,
+                    "primary_muscle": 1,
+                    "level": 1,
+                    "is_custom": 1,
+                },
+            )
+            .sort("name", 1)
+            .skip(skip)
+            .limit(limit)
+        )
+        for d in docs:
+            d["_id"] = str(d["_id"])
+        return jsonify({"items": docs, "total": total, "page": page, "limit": limit}), 200
+    except Exception as e:
+        logger.error(f"Error searching exercises: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+
+
 
 @workout_bp.post("/api/rm/save")
 def api_save_rm_record():
@@ -212,11 +302,16 @@ def api_filter_exercises():
 
     # Equipment Filter
     if equipment_arg:
-        query["equipment"] = equipment_arg
+        escaped_equipment = re.escape(equipment_arg)
+        query["equipment"] = {"$regex": f"^{escaped_equipment}$", "$options": "i"}
             
     # Search Term
     if query_term:
-        query["name"] = {"$regex": query_term, "$options": "i"}
+        escaped_term = re.escape(query_term)
+        query["$or"] = [
+            {"name": {"$regex": escaped_term, "$options": "i"}},
+            {"alternative_names": {"$regex": escaped_term, "$options": "i"}},
+        ]
         
     try:
         # Projection: keep it light
@@ -224,7 +319,9 @@ def api_filter_exercises():
             "exercise_id": 1, "name": 1, "body_part": 1,
             "difficulty": 1, "equipment": 1, "video_url": 1,
             "description": 1, "image_url": 1,
-            "substitutes": 1, "equivalents": 1, "equivalent_exercises": 1
+            "substitutes": 1, "equivalents": 1, "equivalent_exercises": 1,
+            "alternative_names": 1, "pattern": 1, "plane": 1, "unilateral": 1,
+            "primary_muscle": 1, "level": 1
         }).sort("name", 1).limit(limit)
         
         results = list(cursor)

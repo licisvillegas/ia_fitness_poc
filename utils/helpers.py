@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from extensions import db, logger
+from utils.cache import cache_get, cache_set
 import extensions
 
 USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending"}
@@ -26,6 +27,77 @@ def normalize_user_status(value: Optional[str]) -> Optional[str]:
     if status in USER_STATUS_VALUES:
         return status
     return None
+
+
+def normalize_string_list(value: Any) -> List[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        items = value
+    elif isinstance(value, str):
+        raw = value.replace(";", ",")
+        items = raw.split(",")
+    else:
+        items = [value]
+    cleaned: List[str] = []
+    for item in items:
+        text = str(item).strip()
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
+def normalize_equipment_list(value: Any) -> List[str]:
+    items = normalize_string_list(value)
+    return [item.lower() for item in items if item]
+
+
+def normalize_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        if cleaned in {"true", "1", "yes", "y", "si", "s"}:
+            return True
+        if cleaned in {"false", "0", "no", "n"}:
+            return False
+    return default
+
+
+def normalize_body_part(value: Any, db_override=None) -> Optional[str]:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned:
+        return None
+
+    db_conn = db_override or db
+    if db_conn is None:
+        return cleaned.lower()
+
+    cache_key = "body_parts_map"
+    mapping = cache_get(cache_key)
+    if not mapping:
+        parts = list(db_conn.body_parts.find({}, {"key": 1, "label": 1, "label_es": 1}))
+        mapping = {}
+        for p in parts:
+            key = (p.get("key") or "").strip()
+            if not key:
+                continue
+            label = (p.get("label") or "").strip()
+            label_es = (p.get("label_es") or "").strip()
+            mapping[key.lower()] = key
+            if label:
+                mapping[label.lower()] = key
+            if label_es:
+                mapping[label_es.lower()] = key
+        cache_set(cache_key, mapping, 300)
+
+    return mapping.get(cleaned.lower(), cleaned.lower())
 
 
 def parse_birth_date(value: Optional[str]) -> Optional[datetime]:

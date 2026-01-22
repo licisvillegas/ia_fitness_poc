@@ -68,6 +68,29 @@
                             </div>
                             {% endif %}
                         </div>
+                        <div class="segmental-card mt-4">
+                            <div class="segmental-title">Analisis segmental</div>
+                            <svg id="segmental-chart" viewBox="0 0 220 220" aria-label="Grafico segmental">
+                                <polygon class="segmental-grid" points="110,20 200,78 166,185 54,185 20,78"></polygon>
+                                <polygon class="segmental-grid" points="110,45 178,89 151,169 69,169 42,89"></polygon>
+                                <polygon class="segmental-grid" points="110,70 156,101 135,152 85,152 64,101"></polygon>
+                                <line class="segmental-axis" x1="110" y1="110" x2="110" y2="20"></line>
+                                <line class="segmental-axis" x1="110" y1="110" x2="200" y2="78"></line>
+                                <line class="segmental-axis" x1="110" y1="110" x2="166" y2="185"></line>
+                                <line class="segmental-axis" x1="110" y1="110" x2="54" y2="185"></line>
+                                <line class="segmental-axis" x1="110" y1="110" x2="20" y2="78"></line>
+                                <polygon id="segmentalPolygon" class="segmental-shape"
+                                    points="110,70 156,101 135,152 85,152 64,101"></polygon>
+                                <text id="seg-sup" class="segmental-label" x="110" y="14" text-anchor="middle">Brazo/Cuello</text>
+                                <text id="seg-cross" class="segmental-label" x="206" y="70" text-anchor="start">Pant/Brazo</text>
+                                <text id="seg-vtaper" class="segmental-label" x="178" y="206" text-anchor="middle">V-Taper</text>
+                                <text id="seg-xframe" class="segmental-label" x="42" y="206" text-anchor="middle">Muslo/Cint</text>
+                                <text id="seg-lateral" class="segmental-label" x="12" y="70" text-anchor="end">Balance Lat</text>
+                            </svg>
+                            <div id="segmental-empty" class="text-secondary small mt-2 d-none">
+                                Sin datos segmentales disponibles.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

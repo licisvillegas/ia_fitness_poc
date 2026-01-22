@@ -1002,15 +1002,18 @@
     }
 
     function getEquipmentMeta(equipmentKey) {
+        const raw = Array.isArray(equipmentKey) ? (equipmentKey[0] || "") : equipmentKey;
         const map = {
             barbell: { label: "Barra", icon: "fas fa-grip-lines" },
             dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
             machine: { label: "Máquina", icon: "fas fa-cogs" },
             cable: { label: "Polea", icon: "fas fa-wave-square" },
+            band: { label: "Banda", icon: "fas fa-link" },
+            bench: { label: "Banco", icon: "fas fa-chair" },
             bodyweight: { label: "Corporal", icon: "fas fa-running" },
             other: { label: "Otro", icon: "fas fa-toolbox" }
         };
-        return map[equipmentKey] || { label: equipmentKey || "N/A", icon: "fas fa-dumbbell" };
+        return map[raw] || { label: raw || "N/A", icon: "fas fa-dumbbell" };
     }
 
     function toEmbedUrl(url) {

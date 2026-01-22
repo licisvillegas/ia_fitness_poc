@@ -57,6 +57,52 @@
   color: #9aa0a6;
 }
 
+.segmental-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.segmental-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa0a6;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+#segmental-chart {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  display: block;
+}
+
+.segmental-grid {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.25);
+  stroke-width: 1;
+}
+
+.segmental-axis {
+  stroke: rgba(148, 163, 184, 0.18);
+  stroke-width: 1;
+}
+
+.segmental-shape {
+  fill: rgba(0, 210, 255, 0.25);
+  stroke: rgba(0, 210, 255, 0.7);
+  stroke-width: 1.2;
+}
+
+.segmental-label {
+  fill: #e2e8f0;
+  font-size: 0.55rem;
+  letter-spacing: 0.02em;
+}
+
 .morph-play-btn {
   margin-top: 12px;
   padding: 0.35rem 0.75rem;

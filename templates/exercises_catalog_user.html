@@ -37,6 +37,8 @@
                     <option value="dumbbell">Mancuernas</option>
                     <option value="machine">M&#225;quina</option>
                     <option value="cable">Polea / Cable</option>
+                    <option value="band">Banda</option>
+                    <option value="bench">Banco</option>
                     <option value="bodyweight">Peso Corporal</option>
                     <option value="other">Otro</option>
                 </select>
@@ -57,6 +59,12 @@
             </div>
         </div>
     </div>
+</div>
+
+<div class="pagination-bar d-flex justify-content-center align-items-center gap-2 mb-3 d-none" id="paginationControls">
+    <button class="btn btn-outline-secondary btn-sm" id="prevPageBtn">Anterior</button>
+    <span class="text-secondary small" id="pageInfo">Pagina 1 de 1 - 0 ejercicios</span>
+    <button class="btn btn-outline-secondary btn-sm" id="nextPageBtn">Siguiente</button>
 </div>
 
 <!-- Muscle Icons Bar -->
@@ -95,6 +103,8 @@
 <div id="mobileExercisesList" class="d-md-none d-flex flex-column gap-3">
     <!-- Populated by JS -->
 </div>
+
+
 
 <!-- Modal Video -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
@@ -237,13 +247,72 @@
     body.embed-mode #sidebar-overlay {
         display: none !important;
     }
+
+    .pagination-bar {
+        position: sticky;
+        top: 72px;
+        z-index: 5;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(6px);
+    }
 </style>
 
 <script>
     let allExercises = [];
+    const EQUIPMENT_META = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuerna", icon: "fas fa-dumbbell" },
+        machine: { label: "Maquina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        band: { label: "Banda", icon: "fas fa-link" },
+        bench: { label: "Banco", icon: "fas fa-chair" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
+
+    function normalizeEquipmentList(value) {
+        if (!value) return [];
+        if (Array.isArray(value)) {
+            return value.map(v => String(v).trim()).filter(Boolean);
+        }
+        if (typeof value === "string") {
+            return value.split(",").map(v => v.trim()).filter(Boolean);
+        }
+        return [String(value).trim()].filter(Boolean);
+    }
+
+    function getEquipmentLabels(value) {
+        const list = normalizeEquipmentList(value);
+        return list.map(item => {
+            const key = String(item).toLowerCase();
+            return (EQUIPMENT_META[key] || { label: item }).label;
+        });
+    }
+
+    function renderEquipmentBadges(value) {
+        const list = normalizeEquipmentList(value);
+        if (!list.length) {
+            return '<span class="badge bg-dark border border-secondary text-info">N/A</span>';
+        }
+        return list.map(item => {
+            const key = String(item).toLowerCase();
+            const meta = EQUIPMENT_META[key] || { label: item, icon: "fas fa-dumbbell" };
+            return `<span class="badge bg-dark border border-secondary text-info me-1"><i class="${meta.icon} me-1"></i>${meta.label}</span>`;
+        }).join("");
+    }
+
     let bodyPartMap = {}; // Will hold key -> label
+    let currentPage = 1;
+    let totalItems = 0;
+    const pageSize = 50;
+    let searchTimer = null;
     const queryEmbed = new URLSearchParams(window.location.search).get("embed");
+    const queryPaged = new URLSearchParams(window.location.search).get("paged");
     const isEmbed = {{ embed | default (false) | tojson }} || ["1", "true", "yes"].includes(String(queryEmbed).toLowerCase());
+    const useServerPaging = String(queryPaged).toLowerCase() !== "0";
 
     document.addEventListener("DOMContentLoaded", () => {
         if (isEmbed) {
@@ -261,10 +330,20 @@
         const filterEquipment = document.getElementById("filterEquipment");
         const filterType = document.getElementById("filterType");
 
-        if (mainSearch) mainSearch.addEventListener("input", filterExercises);
+        if (mainSearch) mainSearch.addEventListener("input", useServerPaging ? scheduleSearch : filterExercises);
         if (filterBodyPart) filterBodyPart.addEventListener("change", filterExercises);
         if (filterEquipment) filterEquipment.addEventListener("change", filterExercises);
         if (filterType) filterType.addEventListener("change", filterExercises);
+
+        const pagination = document.getElementById("paginationControls");
+        if (pagination && useServerPaging) {
+            pagination.classList.remove("d-none");
+        }
+
+        const prevBtn = document.getElementById("prevPageBtn");
+        const nextBtn = document.getElementById("nextPageBtn");
+        if (prevBtn) prevBtn.addEventListener("click", () => loadExercisesPage(currentPage - 1));
+        if (nextBtn) nextBtn.addEventListener("click", () => loadExercisesPage(currentPage + 1));
     });
 
     async function loadBodyParts() {
@@ -291,17 +370,97 @@
     }
 
     async function loadExercises() {
-        showLoader("Sincronizando cat logo...");
+        if (useServerPaging) {
+            await loadExercisesPage(1);
+            return;
+        }
+        showLoader("Sincronizando catalogo...");
         try {
-            const res = await fetch("/workout/api/exercises?limit=1000");
-            const data = await res.json();
-            allExercises = Array.isArray(data) ? data.map((ex) => ({
+            const limit = 1000;
+            let page = 1;
+            let merged = [];
+
+            while (true) {
+                const res = await fetch(`/workout/api/exercises?limit=${limit}&page=${page}`);
+                const data = await res.json();
+                if (!Array.isArray(data) || data.length === 0) break;
+                merged = merged.concat(data);
+                if (data.length < limit) break;
+                page += 1;
+            }
+
+            allExercises = merged.map((ex) => ({
                 ...ex,
                 type: ex.type || ex.exercise_type || ""
-            })) : [];
+            }));
             filterExercises();
         } catch (e) { console.error(e); }
         finally { hideLoader(); }
+    }
+
+    function buildQueryParams(page) {
+        const mainSearch = document.getElementById("mainSearch");
+        const filterBodyPart = document.getElementById("filterBodyPart");
+        const filterEquipment = document.getElementById("filterEquipment");
+        const filterType = document.getElementById("filterType");
+
+        const term = (mainSearch ? mainSearch.value : "").trim();
+        const bodyPart = filterBodyPart ? filterBodyPart.value : "";
+        const equipment = filterEquipment ? filterEquipment.value : "";
+        const type = filterType ? filterType.value : "";
+
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(pageSize)
+        });
+        if (term) params.set("q", term);
+        if (bodyPart) params.set("body_part", bodyPart);
+        if (equipment) params.set("equipment", equipment);
+        if (type) params.set("type", type);
+        return params;
+    }
+
+    async function loadExercisesPage(page) {
+        showLoader("Sincronizando catalogo...");
+        try {
+            currentPage = page;
+            const params = buildQueryParams(page);
+            const res = await fetch(`/workout/api/exercises/search?${params}`);
+            const data = await res.json();
+            const items = Array.isArray(data.items) ? data.items : [];
+            totalItems = Number.isFinite(data.total) ? data.total : items.length;
+            allExercises = items.map((ex) => ({
+                ...ex,
+                type: ex.type || ex.exercise_type || ""
+            }));
+            renderExercises(allExercises);
+            updatePagination();
+        } catch (e) { console.error(e); }
+        finally { hideLoader(); }
+    }
+
+    function updatePagination() {
+        if (!useServerPaging) return;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const pageInfo = document.getElementById("pageInfo");
+        const prevBtn = document.getElementById("prevPageBtn");
+        const nextBtn = document.getElementById("nextPageBtn");
+
+        if (pageInfo) {
+            pageInfo.textContent = `Pagina ${currentPage} de ${totalPages} - ${totalItems} ejercicios`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = currentPage <= 1;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = currentPage >= totalPages;
+        }
+    }
+
+    function scheduleSearch() {
+        if (!useServerPaging) return;
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadExercisesPage(1), 300);
     }
 
     function renderExercises(exercises) {
@@ -310,15 +469,6 @@
 
         tbody.innerHTML = "";
         mobileContainer.innerHTML = "";
-
-        const equipmentMap = {
-            'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
-            'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
-            'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
-            'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
-            'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
-            'other': 'Otro'
-        };
 
         if (exercises.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No se encontraron ejercicios</td></tr>';
@@ -337,7 +487,7 @@
                 <small class="text-secondary text-truncate d-block" style="max-width: 200px;">${ex.description || ''}</small>
             </td>
             <td><span class="badge bg-secondary">${translateBodyPart(ex.body_part)}</span></td>
-            <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
+            <td>${renderEquipmentBadges(ex.equipment)}</td>
             <td>${ex.type || "N/A"}</td>
             <td>
                 ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
@@ -368,7 +518,7 @@
                             </h5>
                             <div class="d-flex flex-wrap gap-1 mb-1">
                                 <span class="badge bg-secondary" style="font-size: 0.7rem;">${translateBodyPart(ex.body_part)}</span>
-                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span>
+                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${getEquipmentLabels(ex.equipment).join(', ') || 'N/A'}</span>
                             </div>
                         </div>
                         <span class="badge ${ex.is_custom ? 'bg-info text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.65rem;">
@@ -436,21 +586,28 @@
         const equipment = filterEquipment ? filterEquipment.value : "";
         const type = filterType ? filterType.value : "";
 
-        const filtered = allExercises.filter(ex => {
-            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term);
-            const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
-            const equipmentMatch = !equipment || ex.equipment === equipment;
-            const exType = String(ex.type || "").toLowerCase();
-            const typeMatch = !type || exType === String(type).toLowerCase();
-            return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
-        });
-
         // Sync Icon State
         document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
         if (bodyPart) {
             const activeIcon = document.getElementById(`icon-${bodyPart}`);
             if (activeIcon) activeIcon.classList.add('active');
         }
+
+        if (useServerPaging) {
+            loadExercisesPage(1);
+            return;
+        }
+
+        const filtered = allExercises.filter(ex => {
+            const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names.join(" ") : "";
+            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term) || altNames.toLowerCase().includes(term);
+            const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
+            const equipmentList = normalizeEquipmentList(ex.equipment).map(e => String(e).toLowerCase());
+            const equipmentMatch = !equipment || equipmentList.includes(String(equipment).toLowerCase());
+            const exType = String(ex.type || "").toLowerCase();
+            const typeMatch = !type || exType === String(type).toLowerCase();
+            return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
+        });
 
         renderExercises(filtered);
     }
@@ -468,6 +625,11 @@
 
         // Reset icons
         document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+
+        if (useServerPaging) {
+            loadExercisesPage(1);
+            return;
+        }
 
         renderExercises(allExercises);
     }

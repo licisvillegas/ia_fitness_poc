@@ -10,7 +10,16 @@ import extensions
 from extensions import logger
 from utils.auth_helpers import check_admin_access, ensure_user_status, generate_admin_csrf, validate_admin_csrf, USER_STATUS_DEFAULT
 from utils.cache import cache_delete
-from utils.helpers import parse_birth_date, format_birth_date, compute_age, normalize_user_status
+from utils.helpers import (
+    parse_birth_date,
+    format_birth_date,
+    compute_age,
+    normalize_user_status,
+    normalize_string_list,
+    normalize_equipment_list,
+    normalize_bool,
+    normalize_body_part,
+)
 from utils.routine_utils import normalize_routine_items
 
 admin_bp = Blueprint('admin', __name__)
@@ -741,7 +750,16 @@ def save_exercise():
         
         oid = data.get("id")
         name = data.get("name")
-        body_part = data.get("body_part")
+        body_part = normalize_body_part(data.get("body_part"), extensions.db)
+        alternative_names = normalize_string_list(
+            data.get("alternative_names") or data.get("alternative names")
+        )
+        pattern = str(data.get("pattern") or "").strip()
+        plane = str(data.get("plane") or "").strip()
+        unilateral = normalize_bool(data.get("unilateral"), default=False)
+        primary_muscle = str(data.get("primary_muscle") or "").strip()
+        level = str(data.get("level") or "").strip()
+        equipment_list = normalize_equipment_list(data.get("equipment"))
         
         if not name: return jsonify({"error": "Nombre es requerido"}), 400
         
@@ -749,10 +767,16 @@ def save_exercise():
             "name": name,
             "body_part": body_part,
             "type": data.get("type"),
-            "equipment": data.get("equipment"),
+            "equipment": equipment_list,
             "description": data.get("description"),
             "video_url": data.get("video_url"),
             "substitutes": data.get("substitutes", []),
+            "alternative_names": alternative_names,
+            "pattern": pattern,
+            "plane": plane,
+            "unilateral": unilateral,
+            "primary_muscle": primary_muscle,
+            "level": level,
             "is_custom": False, # Admin created -> Global
             "updated_at": datetime.utcnow()
         }

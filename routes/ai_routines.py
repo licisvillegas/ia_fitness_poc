@@ -3,6 +3,7 @@ from bson import ObjectId
 import extensions
 from extensions import logger
 from utils.db_helpers import log_agent_execution
+from utils.helpers import normalize_string_list, normalize_equipment_list, normalize_bool, normalize_body_part
 from ai_agents.routine_agent import RoutineAgent
 from ai_agents.routine_agent_mongo import MongoRoutineAgent
 from datetime import datetime
@@ -208,7 +209,7 @@ def api_check_exercises():
             clean_name = name.strip()
             # Escape for regex and Case insensitive check, allow optional surrounding whitespace
             escaped_name = re.escape(clean_name)
-            ex = extensions.db.exercises.find_one({"name": {"$regex": f"^\s*{escaped_name}\s*$", "$options": "i"}})
+            ex = extensions.db.exercises.find_one({"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}})
             results.append({
                 "name": name,
                 "exists": bool(ex),
@@ -245,17 +246,51 @@ def api_add_exercises():
             clean_name = name.strip()
             escaped_name = re.escape(clean_name)
             # Double check if exists with robust search
-            ex = extensions.db.exercises.find_one({"name": {"$regex": f"^\s*{escaped_name}\s*$", "$options": "i"}})
+            ex = extensions.db.exercises.find_one({"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}})
             if not ex:
+                if isinstance(item, dict):
+                    alternative_names = normalize_string_list(
+                        item.get("alternative_names") or item.get("alternative names")
+                    )
+                    equipment_list = normalize_equipment_list(item.get("equipment"))
+                    pattern = str(item.get("pattern") or "").strip()
+                    plane = str(item.get("plane") or "").strip()
+                    unilateral = normalize_bool(item.get("unilateral"), default=False)
+                    primary_muscle = str(item.get("primary_muscle") or "").strip()
+                    level = str(item.get("level") or "").strip()
+                else:
+                    alternative_names = []
+                    equipment_list = []
+                    pattern = ""
+                    plane = ""
+                    unilateral = False
+                    primary_muscle = ""
+                    level = ""
+
+                if not equipment_list:
+                    equipment_list = ["dumbbell"]
+
+                body_part = (
+                    normalize_body_part(item.get("body_part", "Other"), extensions.db)
+                    if isinstance(item, dict)
+                    else normalize_body_part("Other", extensions.db)
+                )
+
                 new_ex = {
                     "name": name,
-                    "body_part": item.get("body_part", "Other") if isinstance(item, dict) else "Other",
+                    "body_part": body_part,
                     "type": "weight",
-                    "equipment": "dumbbell",
+                    "equipment": equipment_list,
                     "description": item.get("description") if (isinstance(item, dict) and item.get("description")) else "Agregado automaticamente desde IA Generator",
                     "video_url": "",
                     "substitutes": [],
                     "is_custom": False,
+                    "alternative_names": alternative_names,
+                    "pattern": pattern,
+                    "plane": plane,
+                    "unilateral": unilateral,
+                    "primary_muscle": primary_muscle,
+                    "level": level,
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
                 }

@@ -62,6 +62,68 @@ def muscle_map_page():
 def body_morph_page():
     return render_template("body_morph.html")
 
+@user_bp.get("/api/user/body_assessment/latest")
+def api_latest_body_assessment():
+    user_id = request.args.get("user_id") or request.cookies.get("user_session")
+    if not user_id:
+        return jsonify({"error": "No autenticado"}), 401
+    if extensions.db is None:
+        return jsonify({"error": "DB no disponible"}), 503
+
+    def pick_value(source, keys):
+        for key in keys:
+            if source and key in source and source.get(key) is not None:
+                return source.get(key)
+        return None
+
+    def to_float(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    try:
+        latest = extensions.db.body_assessments.find_one(
+            {"user_id": user_id},
+            sort=[("created_at", -1)]
+        )
+        if not latest:
+            return jsonify({"measurements": {}}), 200
+
+        inp = latest.get("input") or {}
+        meas = inp.get("measurements") or {}
+        out = latest.get("output") or {}
+        body_comp = out.get("body_composition") or {}
+
+        weight = pick_value(meas, ["weight_kg", "weight"]) or inp.get("weight")
+        body_fat = pick_value(body_comp, ["body_fat_percent"]) or pick_value(meas, ["body_fat_percent", "body_fat"])
+
+        data = {
+            "weight_kg": to_float(weight),
+            "body_fat_percent": to_float(body_fat),
+            "measurements": {
+                "chest": to_float(pick_value(meas, ["chest", "torax", "pecho"])),
+                "neck": to_float(pick_value(meas, ["neck", "cuello"])),
+                "waist": to_float(pick_value(meas, ["waist", "cintura", "abdomen"])),
+                "hip": to_float(pick_value(meas, ["hip", "hips", "cadera"])),
+                "shoulders": to_float(pick_value(meas, ["shoulders", "hombros"])),
+                "biceps_left": to_float(pick_value(meas, ["biceps_left", "arm_flexed_left", "arm_relaxed_left", "arm_left", "biceps_izq"])),
+                "biceps_right": to_float(pick_value(meas, ["biceps_right", "arm_flexed_right", "arm_relaxed_right", "arm_right", "biceps_der"])),
+                "forearm_left": to_float(pick_value(meas, ["forearm_left", "forearm_izq", "antebrazo_izq"])),
+                "forearm_right": to_float(pick_value(meas, ["forearm_right", "forearm_der", "antebrazo_der"])),
+                "thigh_left": to_float(pick_value(meas, ["thigh_left", "thigh_izq", "muslo_izq"])),
+                "thigh_right": to_float(pick_value(meas, ["thigh_right", "thigh_der", "muslo_der"])),
+                "calf_left": to_float(pick_value(meas, ["calf_left", "calf_izq", "pantorrilla_izq"])),
+                "calf_right": to_float(pick_value(meas, ["calf_right", "calf_der", "pantorrilla_der"])),
+            }
+        }
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching latest body assessment: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
+
 @user_bp.route("/profile")
 def profile_page():
     user_id = request.cookies.get("user_session")

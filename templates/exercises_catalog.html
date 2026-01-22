@@ -31,6 +31,8 @@
                     <option value="dumbbell">Mancuernas</option>
                     <option value="machine">M&#225;quina</option>
                     <option value="cable">Polea / Cable</option>
+                    <option value="band">Banda</option>
+                    <option value="bench">Banco</option>
                     <option value="bodyweight">Peso Corporal</option>
                     <option value="other">Otro</option>
                 </select>
@@ -110,24 +112,79 @@
                             </select>
                         </div>
 
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Patron</label>
+                            <select class="form-select border-secondary" id="exPattern">
+                                <option value="">Sin definir</option>
+                                <option value="Push">Push</option>
+                                <option value="Pull">Pull</option>
+                                <option value="Squat">Squat</option>
+                                <option value="Hinge">Hinge</option>
+                                <option value="Carry">Carry</option>
+                                <option value="Rotation">Rotation</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Plano</label>
+                            <select class="form-select border-secondary" id="exPlane">
+                                <option value="">Sin definir</option>
+                                <option value="Vertical">Vertical</option>
+                                <option value="Horizontal">Horizontal</option>
+                                <option value="Diagonal">Diagonal</option>
+                                <option value="Sagittal">Sagittal</option>
+                                <option value="Frontal">Frontal</option>
+                                <option value="Transversal">Transversal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Nivel</label>
+                            <select class="form-select border-secondary" id="exLevel">
+                                <option value="">Sin definir</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Tipo de Registro</label>
                             <select class="form-select border-secondary" id="exType">
                                 <option value="weight">Peso (Series x Reps)</option>
-                                <option value="time">Tiempo (Duración)</option>
+                                <option value="time">Tiempo (Duracion)</option>
                                 <option value="cardio">Cardio (Distancia/Tiempo)</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Equipo Requerido</label>
-                            <select class="form-select border-secondary" id="exEquipment">
+                            <select class="form-select border-secondary" id="exEquipment" multiple size="4">
                                 <option value="barbell">Barra</option>
                                 <option value="dumbbell">Mancuernas</option>
-                                <option value="machine">Máquina</option>
+                                <option value="machine">Maquina</option>
                                 <option value="cable">Polea / Cable</option>
+                                <option value="band">Banda</option>
+                                <option value="bench">Banco</option>
                                 <option value="bodyweight">Peso Corporal</option>
                                 <option value="other">Otro</option>
                             </select>
+                            <small class="text-muted">Puedes seleccionar mas de uno.</small>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label text-secondary">Musculo Primario</label>
+                            <input type="text" class="form-control border-secondary" id="exPrimaryMuscle"
+                                placeholder="Ej. Lats">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="exUnilateral">
+                                <label class="form-check-label text-secondary" for="exUnilateral">Unilateral</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Nombres Alternativos</label>
+                            <input type="text" class="form-control border-secondary" id="exAlternativeNames"
+                                placeholder="Separa con comas">
                         </div>
 
                         <div class="col-12">
@@ -222,11 +279,63 @@
     let exercises = [];
     let currentExerciseId = null;
     let currentSubstitutes = [];
+    let currentBodyPart = null;
     let bodyPartMap = {}; // Will hold key -> label
     let messageModalInstance = null;
 
+    const EQUIPMENT_META = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuerna", icon: "fas fa-dumbbell" },
+        machine: { label: "MÃ¡quina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        band: { label: "Banda", icon: "fas fa-link" },
+        bench: { label: "Banco", icon: "fas fa-chair" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
+
+    function normalizeEquipmentList(value) {
+        if (!value) return [];
+        if (Array.isArray(value)) {
+            return value.map(v => String(v).trim()).filter(Boolean);
+        }
+        if (typeof value === "string") {
+            return value.split(",").map(v => v.trim()).filter(Boolean);
+        }
+        return [String(value).trim()].filter(Boolean);
+    }
+
+    function getEquipmentLabels(value) {
+        const list = normalizeEquipmentList(value);
+        return list.map(item => {
+            const key = String(item).toLowerCase();
+            return (EQUIPMENT_META[key] || { label: item }).label;
+        });
+    }
+
+    function renderEquipmentBadges(value) {
+        const list = normalizeEquipmentList(value);
+        if (!list.length) {
+            return '<span class="badge bg-dark border border-secondary text-info">N/A</span>';
+        }
+        return list.map(item => {
+            const key = String(item).toLowerCase();
+            const meta = EQUIPMENT_META[key] || { label: item, icon: "fas fa-dumbbell" };
+            return `<span class="badge bg-dark border border-secondary text-info me-1"><i class="${meta.icon} me-1"></i>${meta.label}</span>`;
+        }).join("");
+    }
+
+    function setMultiSelectValues(selectEl, values) {
+        if (!selectEl) return;
+        const list = Array.isArray(values) ? values : normalizeEquipmentList(values);
+        const normalized = new Set(list.map(v => String(v).toLowerCase()));
+        Array.from(selectEl.options).forEach(opt => {
+            opt.selected = normalized.has(String(opt.value).toLowerCase());
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-        let currentBodyPart = null;
+        currentBodyPart = null;
 
         loadBodyParts().then(() => {
             loadExercises();
@@ -315,15 +424,6 @@
         tbody.innerHTML = "";
         mobileContainer.innerHTML = "";
 
-        const equipmentMap = {
-            'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
-            'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
-            'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
-            'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
-            'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
-            'other': 'Otro'
-        };
-
         if (exercises.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No se encontraron ejercicios</td></tr>';
             mobileContainer.innerHTML = '<div class="text-center text-muted py-5">No se encontraron ejercicios con los filtros seleccionados.</div>';
@@ -341,7 +441,7 @@
                 <small class="text-secondary text-truncate d-block" style="max-width: 200px;">${ex.description || ''}</small>
             </td>
             <td><span class="badge bg-secondary">${translateBodyPart(ex.body_part)}</span></td>
-            <td><span class="badge bg-dark border border-secondary text-info">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span></td>
+            <td>${renderEquipmentBadges(ex.equipment)}</td>
             <td>${ex.type}</td>
             <td>
                 ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${ex.video_url}')" title="Ver video"><i class="fab fa-youtube"></i></button>` : '<span class="text-muted">-</span>'}
@@ -378,7 +478,7 @@
                             </h5>
                             <div class="d-flex flex-wrap gap-1 mb-1">
                                 <span class="badge bg-secondary" style="font-size: 0.7rem;">${translateBodyPart(ex.body_part)}</span>
-                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${equipmentMap[ex.equipment] || ex.equipment || 'N/A'}</span>
+                                <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${getEquipmentLabels(ex.equipment).join(', ') || 'N/A'}</span>
                             </div>
                         </div>
                         <span class="badge ${ex.is_custom ? 'bg-info text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.65rem;">
@@ -457,7 +557,7 @@
         return bootstrap.Modal.getOrCreateInstance(modalEl);
     };
 
-    const showConfirmModal = (title, message, tone = "warning") => {
+    const localShowConfirmModal = (title, message, tone = "warning") => {
         if (window.showConfirmModal) {
             return window.showConfirmModal(title, message, tone);
         }
@@ -493,7 +593,7 @@
         });
     };
 
-    const showAlertModal = (title, message, tone = "warning") => {
+    const localShowAlertModal = (title, message, tone = "warning") => {
         if (window.showAlertModal) {
             return window.showAlertModal(title, message, tone);
         }
@@ -537,9 +637,11 @@
         const type = filterType ? filterType.value : "";
 
         const filtered = allExercises.filter(ex => {
-            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term);
+            const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names.join(" ") : "";
+            const nameMatch = !term || (ex.name || "").toLowerCase().includes(term) || altNames.toLowerCase().includes(term);
             const bodyPartMatch = !bodyPart || ex.body_part === bodyPart;
-            const equipmentMatch = !equipment || ex.equipment === equipment;
+            const equipmentList = normalizeEquipmentList(ex.equipment).map(e => String(e).toLowerCase());
+            const equipmentMatch = !equipment || equipmentList.includes(String(equipment).toLowerCase());
             const typeMatch = !type || ex.type === type;
             return nameMatch && bodyPartMatch && equipmentMatch && typeMatch;
         });
@@ -571,7 +673,7 @@
         const searchFiltered = searchTerm
             ? filtered.filter(ex => {
                 const name = (ex.name || "").toLowerCase();
-                const equipment = (ex.equipment || "").toLowerCase();
+                const equipment = getEquipmentLabels(ex.equipment).join(' ').toLowerCase();
                 const type = (ex.type || "").toLowerCase();
                 return name.includes(searchTerm) || equipment.includes(searchTerm) || type.includes(searchTerm);
             })
@@ -596,7 +698,7 @@
                         <span class="badge bg-secondary ms-2">${translateBodyPart(ex.body_part)}</span>
                     </div>
                     <div class="d-flex justify-content-between small text-secondary">
-                        <span>${ex.equipment}</span>
+                        <span>${getEquipmentLabels(ex.equipment).join(', ') || 'N/A'}</span>
                         <span>${ex.type}</span>
                     </div>
                 </label>
@@ -639,8 +741,14 @@
                 */
 
                 document.getElementById("exBodyPart").value = ex.body_part;
-                document.getElementById("exType").value = ex.type;
-                document.getElementById("exEquipment").value = ex.equipment || 'other';
+                document.getElementById("exType").value = ex.type || "weight";
+                setMultiSelectValues(document.getElementById("exEquipment"), ex.equipment || []);
+                document.getElementById("exPattern").value = ex.pattern || "";
+                document.getElementById("exPlane").value = ex.plane || "";
+                document.getElementById("exLevel").value = ex.level || "";
+                document.getElementById("exPrimaryMuscle").value = ex.primary_muscle || "";
+                document.getElementById("exUnilateral").checked = !!ex.unilateral;
+                document.getElementById("exAlternativeNames").value = (ex.alternative_names || []).join(", ");
                 document.getElementById("exDescription").value = ex.description || '';
                 document.getElementById("exVideo").value = ex.video_url || '';
 
@@ -648,6 +756,9 @@
             }
         } else {
             modalTitle.textContent = "Nuevo Ejercicio";
+            setMultiSelectValues(document.getElementById("exEquipment"), []);
+            document.getElementById("exUnilateral").checked = false;
+            document.getElementById("exAlternativeNames").value = "";
         }
 
         const bodyPart = document.getElementById("exBodyPart").value;
@@ -663,22 +774,42 @@
         const name = document.getElementById("exName").value;
         const bodyPart = document.getElementById("exBodyPart").value;
         const type = document.getElementById("exType").value;
+        const pattern = document.getElementById("exPattern").value;
+        const plane = document.getElementById("exPlane").value;
+        const level = document.getElementById("exLevel").value;
+        const primaryMuscle = document.getElementById("exPrimaryMuscle").value;
+        const unilateral = document.getElementById("exUnilateral").checked;
 
-        const equipment = document.getElementById("exEquipment").value;
+        const equipmentSelect = document.getElementById("exEquipment");
+        const equipment = Array.from(equipmentSelect.selectedOptions || []).map(opt => opt.value);
         const description = document.getElementById("exDescription").value;
         const videoUrl = document.getElementById("exVideo").value;
+        const alternativeNamesRaw = document.getElementById("exAlternativeNames").value || "";
+        const alternativeNames = alternativeNamesRaw.split(",").map(v => v.trim()).filter(Boolean);
 
         // Get Substitutes from Checkboxes
         const substitutes = getSelectedSubstitutes();
 
         if (!name) {
-            showAlertModal("Campo requerido", "El nombre es obligatorio");
+            localShowAlertModal("Campo requerido", "El nombre es obligatorio");
             return;
         }
 
         const payload = {
-            id, name, body_part: bodyPart, type,
-            equipment, description, video_url: videoUrl, substitutes
+            id,
+            name,
+            body_part: bodyPart,
+            type,
+            equipment,
+            description,
+            video_url: videoUrl,
+            substitutes,
+            alternative_names: alternativeNames,
+            pattern,
+            plane,
+            unilateral,
+            primary_muscle: primaryMuscle,
+            level
         };
 
         showLoader("Guardando ejercicio...");
@@ -693,18 +824,18 @@
             loadExercises();
         } catch (e) {
             hideLoader();
-            showAlertModal("Error al guardar", "Ocurrio un error al guardar el ejercicio.");
+            localShowAlertModal("Error al guardar", "Ocurrio un error al guardar el ejercicio.");
         }
     }
 
     async function duplicateExercise(id) {
         const ex = allExercises.find(e => e._id === id);
         if (!ex) {
-            showAlertModal("Error", "No se encontró el ejercicio a duplicar.");
+            localShowAlertModal("Error", "No se encontró el ejercicio a duplicar.");
             return;
         }
 
-        const confirmed = await showConfirmModal(
+        const confirmed = await localShowConfirmModal(
             "Duplicar Ejercicio",
             `¿Deseas crear una copia personalizada de "${ex.name}"?`
         );
@@ -718,10 +849,16 @@
                 name: ex.name + " (Copia)",
                 body_part: ex.body_part,
                 type: ex.type,
-                equipment: ex.equipment || 'other',
+                equipment: normalizeEquipmentList(ex.equipment),
                 description: ex.description || '',
                 video_url: ex.video_url || '',
-                substitutes: ex.substitutes || []
+                substitutes: ex.substitutes || [],
+                alternative_names: ex.alternative_names || [],
+                pattern: ex.pattern || "",
+                plane: ex.plane || "",
+                unilateral: !!ex.unilateral,
+                primary_muscle: ex.primary_muscle || "",
+                level: ex.level || ""
             };
 
             await fetch("/api/exercises/save", {
@@ -730,16 +867,16 @@
                 body: JSON.stringify(payload)
             });
 
-            await showAlertModal("Éxito", "Ejercicio duplicado correctamente. Ahora puedes editarlo.");
+            await localShowAlertModal("Éxito", "Ejercicio duplicado correctamente. Ahora puedes editarlo.");
             loadExercises();
         } catch (e) {
             hideLoader();
-            showAlertModal("Error", "Ocurrió un error al duplicar el ejercicio.");
+            localShowAlertModal("Error", "Ocurrió un error al duplicar el ejercicio.");
         }
     }
 
     async function deleteExercise(id) {
-        const confirmed = await showConfirmModal(
+        const confirmed = await localShowConfirmModal(
             "Eliminar ejercicio",
             "¿Estás seguro de que deseas eliminar este ejercicio?",
             "danger"
@@ -754,11 +891,11 @@
             } else {
                 hideLoader();
                 const err = await res.json();
-                showAlertModal("Error", err.error || "No se pudo eliminar", "danger");
+                localShowAlertModal("Error", err.error || "No se pudo eliminar", "danger");
             }
         } catch (e) {
             hideLoader();
-            showAlertModal("Error", `Error de conexión: ${e}`, "danger");
+            localShowAlertModal("Error", `Error de conexión: ${e}`, "danger");
         }
     }
 </script>

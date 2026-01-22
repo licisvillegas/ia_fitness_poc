@@ -133,6 +133,8 @@
                                 <option value="dumbbell">Mancuernas</option>
                                 <option value="machine">M&#225;quina</option>
                                 <option value="cable">Polea / Cable</option>
+                                <option value="band">Banda</option>
+                                <option value="bench">Banco</option>
                                 <option value="bodyweight">Peso Corporal</option>
                                 <option value="other">Otro</option>
                             </select>
@@ -441,6 +443,8 @@
         dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
         machine: { label: "Maquina", icon: "fas fa-cogs" },
         cable: { label: "Polea", icon: "fas fa-wave-square" },
+        band: { label: "Banda", icon: "fas fa-link" },
+        bench: { label: "Banco", icon: "fas fa-chair" },
         bodyweight: { label: "Corporal", icon: "fas fa-running" },
         other: { label: "Otro", icon: "fas fa-toolbox" }
     };
@@ -948,11 +952,14 @@
         const filtered = availableExercises.filter(ex => {
             const name = (ex.name || "").toLowerCase();
             const body = (ex.body_part || "").toLowerCase();
-            const equip = (ex.equipment || "").toLowerCase();
+            const equipList = Array.isArray(ex.equipment)
+                ? ex.equipment.map(item => String(item).toLowerCase())
+                : String(ex.equipment || "").split(",").map(item => item.trim().toLowerCase()).filter(Boolean);
+            const equipText = equipList.join(" ");
             const exType = (ex.type || "").toLowerCase();
-            const termMatch = !term || name.includes(term) || body.includes(term) || equip.includes(term) || exType.includes(term);
+            const termMatch = !term || name.includes(term) || body.includes(term) || equipText.includes(term) || exType.includes(term);
             const bodyMatch = !bodyPart || ex.body_part === bodyPart;
-            const equipMatch = !equipment || ex.equipment === equipment;
+            const equipMatch = !equipment || equipList.includes(String(equipment).toLowerCase());
             const typeMatch = !type || ex.type === type;
             const routineMatch = routineBodyParts.length === 0 || routineBodyParts.includes(ex.body_part);
             return termMatch && bodyMatch && equipMatch && typeMatch && routineMatch;
@@ -991,7 +998,7 @@
             exercise_id: exId,
             exercise_name: ex.name,
             exercise_type: ex.type || "weight",
-            equipment: ex.equipment || "",
+            equipment: Array.isArray(ex.equipment) ? (ex.equipment[0] || "") : (ex.equipment || ""),
             video_url: ex.video_url || "",
             body_part: ex.body_part || "",
             substitutes: ex.substitutes || [],

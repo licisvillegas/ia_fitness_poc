@@ -176,6 +176,8 @@
                                 <li><a class="dropdown-item" href="#" data-val="barbell">Barra</a></li>
                                 <li><a class="dropdown-item" href="#" data-val="machine">Máquina</a></li>
                                 <li><a class="dropdown-item" href="#" data-val="cable">Polea / Cable</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="band">Banda</a></li>
+                                <li><a class="dropdown-item" href="#" data-val="bench">Banco</a></li>
                                 <li><a class="dropdown-item" href="#" data-val="other">Otro</a></li>
                             </ul>
                         </div>
@@ -227,6 +229,7 @@
                                     <img id="exerciseDetailsImage" src="" alt="Ejercicio">
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mb-3" id="exerciseDetailsBadges"></div>
+                                <div class="small text-secondary mb-3" id="exerciseDetailsMeta"></div>
                                 <div class="d-grid">
                                     <button id="exerciseDetailsVideoBtn" type="button"
                                         class="btn btn-outline-danger d-none">
@@ -273,8 +276,35 @@
             machine: { label: "Maquina", icon: "fas fa-cogs" },
             cable: { label: "Polea", icon: "fas fa-wave-square" },
             bodyweight: { label: "Corporal", icon: "fas fa-running" },
-            other: { label: "Otro", icon: "fas fa-toolbox" }
+            other: { label: "Otro", icon: "fas fa-toolbox" },
+            band: { label: "Banda", icon: "fas fa-link" },
+            bench: { label: "Banco", icon: "fas fa-chair" }
         };
+
+        function normalizeEquipmentList(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+                return value.map(v => String(v).trim()).filter(Boolean);
+            }
+            if (typeof value === "string") {
+                return value.split(",").map(v => v.trim()).filter(Boolean);
+            }
+            return [String(value).trim()].filter(Boolean);
+        }
+
+        function getEquipmentLabels(value) {
+            const list = normalizeEquipmentList(value);
+            return list.map(item => {
+                const key = String(item).toLowerCase();
+                return (EQUIPMENT_META[key] || { label: item }).label;
+            });
+        }
+
+        function getPrimaryEquipment(value) {
+            const list = normalizeEquipmentList(value);
+            return list.length ? String(list[0]).toLowerCase() : "";
+        }
+
 
         document.addEventListener("DOMContentLoaded", async () => {
             const params = new URLSearchParams(window.location.search);
@@ -479,14 +509,6 @@
                 }
 
                 // Equipment Map (copied from catalog)
-                const equipmentMap = {
-                    'barbell': '<i class="fas fa-grip-lines me-1"></i> Barra',
-                    'dumbbell': '<i class="fas fa-dumbbell me-1"></i> Mancuerna',
-                    'machine': '<i class="fas fa-cogs me-1"></i> Máquina',
-                    'cable': '<i class="fas fa-wave-square me-1"></i> Polea',
-                    'bodyweight': '<i class="fas fa-running me-1"></i> Corporal',
-                    'other': 'Otro'
-                };
 
                 // Group by body_part
                 const groups = exercises.reduce((acc, ex) => {
@@ -512,7 +534,7 @@
                              </button>` : '';
 
                         // Formatted tags similar to mobile admin view
-                        const equipLabel = equipmentMap[ex.equipment] || ex.equipment || 'N/A';
+                        const equipLabel = getEquipmentLabels(ex.equipment).join(', ') || 'N/A';
 
                         const imageSrc = resolveExerciseImage(ex);
                         return `
@@ -602,11 +624,13 @@
             const titleEl = document.getElementById("exerciseDetailsTitle");
             const imgEl = document.getElementById("exerciseDetailsImage");
             const badgesEl = document.getElementById("exerciseDetailsBadges");
+            const metaEl = document.getElementById("exerciseDetailsMeta");
             const descEl = document.getElementById("exerciseDetailsDesc");
             const subsEl = document.getElementById("exerciseDetailsSubs");
             const videoBtn = document.getElementById("exerciseDetailsVideoBtn");
 
-            const equipMeta = EQUIPMENT_META[ex.equipment] || { label: ex.equipment || "N/A", icon: "fas fa-dumbbell" };
+            const primaryEquip = getPrimaryEquipment(ex.equipment);
+            const equipMeta = EQUIPMENT_META[primaryEquip] || { label: getEquipmentLabels(ex.equipment).join(', ') || "N/A", icon: "fas fa-dumbbell" };
             titleEl.textContent = ex.name || "Ejercicio";
             imgEl.src = resolveExerciseImage(ex);
             imgEl.alt = ex.name || "Ejercicio";
@@ -618,6 +642,23 @@
                     <span class="exercise-meta-pill"><i class="${equipMeta.icon}"></i>${equipMeta.label}</span>
                     <span class="exercise-meta-pill"><i class="fas fa-clipboard"></i>${ex.type || "N/A"}</span>
                 `;
+            }
+
+            if (metaEl) {
+                const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names : [];
+                const items = [
+                    { label: "Patron", value: ex.pattern },
+                    { label: "Plano", value: ex.plane },
+                    { label: "Unilateral", value: ex.unilateral ? "Si" : "No" },
+                    { label: "Musculo primario", value: ex.primary_muscle },
+                    { label: "Nivel", value: ex.level },
+                    { label: "Nombres alternativos", value: altNames.join(", ") }
+                ].filter(item => item.value);
+                if (items.length) {
+                    metaEl.innerHTML = items.map(item => `<div><strong class="text-light">${item.label}:</strong> ${item.value}</div>`).join("");
+                } else {
+                    metaEl.innerHTML = "";
+                }
             }
 
             if (subsEl) {
@@ -647,7 +688,8 @@
                     subsEl.innerHTML = resolved.map(sub => {
                         const subName = sub.name || sub.exercise_name || "Ejercicio";
                         const subBody = bodyPartMap[sub.body_part] || sub.body_part || "General";
-                        const subEquipMeta = EQUIPMENT_META[sub.equipment] || { label: sub.equipment || "N/A", icon: "fas fa-dumbbell" };
+                        const subPrimaryEquip = getPrimaryEquipment(sub.equipment);
+                        const subEquipMeta = EQUIPMENT_META[subPrimaryEquip] || { label: getEquipmentLabels(sub.equipment).join(', ') || "N/A", icon: "fas fa-dumbbell" };
                         const subHasVideo = sub.video_url && sub.video_url.trim() !== "";
                         const videoBtn = subHasVideo
                             ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>`

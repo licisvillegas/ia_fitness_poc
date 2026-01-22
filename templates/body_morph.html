@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+
+{% block title %}AI Fitness - Transformacion Corporal
+{% endblock %}
+
+{% block sidebar %}
+{% include 'components/sidebar.html' %}
+
+{% endblock %}
+
+{% block content %}
+<link href="/static/css/body_morph.css" rel="stylesheet">
+<div class="row align-items-center mb-4">
+    <div class="col-lg-8">
+        <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-sliders-h me-2"></i>Transformacion corporal</h2>
+        <p class="text-secondary mb-2">Mueve el control para simular la transicion entre tipos de cuerpo.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-10 col-xl-8 mx-auto">
+        <div class="card bg-panel border-0 shadow-sm h-100">
+            <div
+                class="card-header border-secondary text-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-user-alt text-cyber-blue"></i>
+                    Simulador corporal
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0 h-100">
+                    <div class="col-md-7 border-end border-secondary border-opacity-25">
+                        <div class="morph-stage p-3">
+                            <div class="morph-container">
+                                <img src="/static/images/body/male/1front2.png" id="img-thin" class="morph-layer"
+                                    alt="Delgado">
+                                <img src="/static/images/body/male/1front.png" id="img-muscle" class="morph-layer"
+                                    alt="Musculoso">
+                                <img src="/static/images/body/male/1front3.png" id="img-over" class="morph-layer"
+                                    alt="Sobrepeso">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 p-3 d-flex flex-column justify-content-center bg-panel-soft">
+                        <div class="controls morph-controls">
+                            <label class="fw-bold text-white mb-2">Transformacion Corporal</label>
+                            <input type="range" id="body-slider" min="0" max="100" value="0">
+                            <div class="labels">
+                                <span>Delgado</span>
+                                <span>Musculoso</span>
+                                <span>Sobrepeso</span>
+                            </div>
+                            <p class="text-secondary small mt-3 mb-0">
+                                Ajusta el rango para ver como cambia la silueta base.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/body_morph.js"></script>
+{% endblock %}

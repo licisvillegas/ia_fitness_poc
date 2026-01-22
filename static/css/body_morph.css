@@ -1,0 +1,58 @@
+.morph-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+}
+
+.morph-container {
+  position: relative;
+  width: 320px;
+  height: 520px;
+  margin: 0 auto;
+}
+
+.morph-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.1s linear;
+  pointer-events: none;
+}
+
+#img-thin {
+  opacity: 1;
+  z-index: 1;
+}
+
+#img-muscle {
+  opacity: 0;
+  z-index: 2;
+}
+
+#img-over {
+  opacity: 0;
+  z-index: 3;
+}
+
+.morph-controls {
+  text-align: center;
+}
+
+.morph-controls input[type="range"] {
+  width: 300px;
+  max-width: 100%;
+}
+
+.morph-controls .labels {
+  display: flex;
+  justify-content: space-between;
+  width: 300px;
+  max-width: 100%;
+  margin: 8px auto 0;
+  font-size: 0.8rem;
+  color: #9aa0a6;
+}

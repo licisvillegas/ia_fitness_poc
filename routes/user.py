@@ -58,6 +58,10 @@ def glossary_page():
 def muscle_map_page():
     return render_template("muscle_map.html")
 
+@user_bp.route("/body-morph")
+def body_morph_page():
+    return render_template("body_morph.html")
+
 @user_bp.route("/profile")
 def profile_page():
     user_id = request.cookies.get("user_session")

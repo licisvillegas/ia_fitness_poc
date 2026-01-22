@@ -16,10 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const backMap = document.querySelector('.body-map-back');
 
     const adminSwapImages = {
-        frontDefault: '/static/images/examples/av1.png',
-        backDefault: '/static/images/examples/av2.png',
-        frontAlt: '/static/images/examples/ah01.png',
-        backAlt: '/static/images/examples/ah02.png'
+        frontDefault: '/static/images/examples/ah01.png',
+        backDefault: '/static/images/examples/ah02.png',
+        frontAlt: '/static/images/examples/av1.png',
+        backAlt: '/static/images/examples/av2.png'
     };
 
     const isAdminUnlocked = () => sessionStorage.getItem('admin_unlocked') === 'true';

@@ -71,6 +71,11 @@ def create_app():
     app.register_blueprint(push_bp)
 
     print("--- [DEBUG] Blueprints registered successfully ---", file=sys.stdout, flush=True)
+
+    @app.get("/health")
+    def healthcheck():
+        return {"status": "ok"}, 200
+
     return app
 
 print("--- [DEBUG] Calling create_app() ---", file=sys.stdout, flush=True)

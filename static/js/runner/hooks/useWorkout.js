@@ -142,6 +142,46 @@
             }
         };
 
+        const getStepExerciseMeta = (step) => {
+            if (!step || !step.exercise) return null;
+            const exName = step.exercise.exercise_name || step.exercise.name || "Ejercicio";
+            const stepType = String(
+                step.exercise.exercise_type ||
+                step.exercise.type ||
+                step.exercise_type ||
+                step.type ||
+                ""
+            ).toLowerCase();
+            const rawTimeTarget = Number(
+                step.exercise.target_time_seconds ||
+                step.exercise.time_seconds ||
+                step.exercise.time ||
+                0
+            );
+            const rawRepsTarget = Number(
+                step.exercise.target_reps ||
+                step.exercise.reps ||
+                0
+            );
+            const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
+            return { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime };
+        };
+
+        const checkRepMotivation = (elapsed, flags, exName) => {
+            if (elapsed === 180 && !flags.min3) {
+                sendNotification("Motivacion", `Vamos, sigue con ${exName}.`);
+                flags.min3 = true;
+            }
+            if (elapsed === 300 && !flags.min5) {
+                sendNotification("Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
+                flags.min5 = true;
+            }
+            if (elapsed === 600 && !flags.min10) {
+                sendNotification("Cierre de rutina", "¿Prefieres finalizar la rutina?");
+                flags.min10 = true;
+            }
+        };
+
         const applyTimeTargetToItems = (items, seconds) => {
             if (!Array.isArray(items)) return items;
             return items.map(item => {
@@ -458,6 +498,17 @@
             notificationFlagsRef.current = {};
         }, [currentStep?.id]);
 
+        useEffect(() => {
+            if (status !== 'WORK' || isPaused) return;
+            const step = currentStep;
+            const meta = getStepExerciseMeta(step);
+            if (!meta) return;
+            const { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime } = meta;
+            if (!isCardioOrTime && rawTimeTarget === 0 && rawRepsTarget !== 0) {
+                checkRepMotivation(currentStepElapsedRef.current, notificationFlagsRef.current, exName);
+            }
+        }, [currentStep?.id, status, isPaused]);
+
         // Global Timer & Notification Checker
         useEffect(() => {
             if (status !== 'WORK' && status !== 'REST' || isPaused) return;
@@ -469,52 +520,15 @@
                     const elapsed = currentStepElapsedRef.current;
                     const step = currentStepRef.current;
 
-                    if (!step || !step.exercise) return;
-
-                    const exName = step.exercise.exercise_name || step.exercise.name || "Ejercicio";
+                    const meta = getStepExerciseMeta(step);
+                    if (!meta) return;
+                    const { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime } = meta;
                     const flags = notificationFlagsRef.current;
-
-                    const stepType = String(
-                        step.exercise.exercise_type ||
-                        step.exercise.type ||
-                        step.exercise_type ||
-                        step.type ||
-                        ""
-                    ).toLowerCase();
-
-                    // Access RAW values to avoid logic.js defaults (like time=60)
-                    const rawTimeTarget = Number(
-                        step.exercise.target_time_seconds ||
-                        step.exercise.time_seconds ||
-                        step.exercise.time ||
-                        0
-                    );
-                    const rawRepsTarget = Number(
-                        step.exercise.target_reps ||
-                        step.exercise.reps ||
-                        0
-                    );
-
-                    const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
 
                     // Motivation Reps
                     // Condition: exercise_type != cardio/time AND raw_time == 0 AND raw_reps != 0
                     if (!isCardioOrTime && rawTimeTarget === 0 && rawRepsTarget !== 0) {
-                        // 3 min = 180s
-                        if (elapsed === 180 && !flags.min3) {
-                            sendNotification("Motivacion", `Vamos, sigue con ${exName}.`);
-                            flags.min3 = true;
-                        }
-                        // 5 min = 300s
-                        if (elapsed === 300 && !flags.min5) {
-                            sendNotification("Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
-                            flags.min5 = true;
-                        }
-                        // 10 min = 600s
-                        if (elapsed === 600 && !flags.min10) {
-                            sendNotification("Cierre de rutina", "¿Prefieres finalizar la rutina?");
-                            flags.min10 = true;
-                        }
+                        checkRepMotivation(elapsed, flags, exName);
                     }
 
                     // Motivation Time

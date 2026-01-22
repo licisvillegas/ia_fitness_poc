@@ -12,10 +12,12 @@
         const [plateModalOpen, setPlateModalOpen] = useState(false);
         const [rpeHelpOpen, setRpeHelpOpen] = useState(false);
         const [showTapHint, setShowTapHint] = useState(false);
+        const [isCompleting, setIsCompleting] = useState(false);
 
         const weightInputRef = useRef(null);
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
+        const completeBtnRef = useRef(null);
 
         // ... (focusWeightInput and useEffects remain unchanged)
 
@@ -95,6 +97,13 @@
             }
         }, [step, sessionLog, historyMaxByExercise]);
 
+        useEffect(() => {
+            setIsCompleting(false);
+            if (completeBtnRef.current) {
+                completeBtnRef.current.blur();
+            }
+        }, [step?.id]);
+
         const adjustReps = (delta) => {
             const current = parseInt(reps, 10);
             const base = Number.isFinite(current) ? current : 0;
@@ -104,6 +113,8 @@
         };
 
         const handleSubmit = () => {
+            if (isCompleting) return;
+            setIsCompleting(true);
             logSet({ weight, reps, rpe });
             next();
         };
@@ -327,7 +338,12 @@
                 )}
 
                 <div className="d-grid px-3">
-                    <button className="btn btn-action shadow-lg ripple py-3" onClick={handleSubmit}>
+                    <button
+                        ref={completeBtnRef}
+                        className={`btn btn-action shadow-lg ripple py-3 ${isCompleting ? 'processing' : ''}`}
+                        onClick={handleSubmit}
+                        disabled={isCompleting}
+                    >
                         {useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work')
                             ? "COMPLETAR"
                             : "FINALIZAR"} <i className={`fas ${useWorkout().queue.slice(useWorkout().cursor + 1).some(s => s.type === 'work') ? 'fa-check' : 'fa-flag-checkered'} ms-2`}></i>

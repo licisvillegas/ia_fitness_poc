@@ -1,4 +1,4 @@
-﻿{% extends 'layout.html' %}
+{% extends 'layout.html' %}
 
 {% block title %}AI Fitness - Mapa Muscular
 {% endblock %}
@@ -52,17 +52,22 @@
                     <div class="col-md-7 border-end border-secondary border-opacity-25 relative-position"
                         style="position: relative;">
                         <!-- Floating Controls -->
-                        <div class="map-controls">
+                                                <div class="map-controls">
                             <button class="btn btn-glass btn-icon mb-2" id="toggleViewBtn" title="Rotar vista"
                                 aria-label="Rotar vista">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
-                            <button class="btn btn-glass btn-icon" id="clearSelection" title="Limpiar selección"
-                                aria-label="Limpiar selección">
+                            <button class="btn btn-glass btn-icon" id="clearSelection" title="Limpiar seleccion"
+                                aria-label="Limpiar seleccion">
                                 <i class="fas fa-undo"></i>
-                            </button>                            <button class="btn btn-glass btn-icon mt-2 d-none" id="adminSwapBtn" title="Cambiar referencias" aria-label="Cambiar referencias">
-                                <i class="fas fa-shield-alt"></i>
                             </button>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary d-none"
+                                id="adminThemeSelect" aria-label="ThemaBody">
+                                <option value="HD1">HD1</option>
+                                <option value="HD2">HD2</option>
+                                <option value="HR1">HR1</option>
+                                <option value="HR2">HR2</option>
+                            </select>
                         </div>
 
                         <div class="tab-content p-3">
@@ -266,4 +271,5 @@
             
 <script src="/static/js/muscle_map.js"></script>
 {% endblock %}
+
 

@@ -11,26 +11,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clearSelection');
     const toggleViewBtn = document.getElementById('toggleViewBtn');
     const mapContainer = document.querySelector('.tab-content');
-    const adminSwapBtn = document.getElementById('adminSwapBtn');
+    const adminThemeSelect = document.getElementById('adminThemeSelect');
     const frontMap = document.querySelector('.body-map-front');
     const backMap = document.querySelector('.body-map-back');
 
-    const adminSwapImages = {
-        frontDefault: '/static/images/examples/ah01.png',
-        backDefault: '/static/images/examples/ah02.png',
-        frontAlt: '/static/images/examples/av1.png',
-        backAlt: '/static/images/examples/av2.png'
+    const adminThemeImages = {
+        HD1: {
+            front: '/static/images/body/male/1front_d.png',
+            back: '/static/images/body/male/1back_d.png'
+        },
+        HD2: {
+            front: '/static/images/body/male/01front_d.png',
+            back: '/static/images/body/male/01back_d.png'
+        },
+        HR1: {
+            front: '/static/images/body/male/1front.png',
+            back: '/static/images/body/male/1back.png'
+        },
+        HR2: {
+            front: '/static/images/body/male/01front.png',
+            back: '/static/images/body/male/01back.png'
+        }
     };
 
     const isAdminUnlocked = () => sessionStorage.getItem('admin_unlocked') === 'true';
     const canShowAdminSwap = () => window.__HAS_ADMIN === true && isAdminUnlocked();
 
     const syncAdminSwapVisibility = () => {
-        if (!adminSwapBtn) return;
+        if (!adminThemeSelect) return;
         if (canShowAdminSwap()) {
-            adminSwapBtn.classList.remove('d-none');
+            adminThemeSelect.classList.remove('d-none');
         } else {
-            adminSwapBtn.classList.add('d-none');
+            adminThemeSelect.classList.add('d-none');
         }
     };
 
@@ -136,24 +148,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    if (adminSwapBtn) {
+    if (adminThemeSelect) {
         syncAdminSwapVisibility();
         let adminChecks = 0;
         const adminCheckTimer = setInterval(() => {
             adminChecks += 1;
             syncAdminSwapVisibility();
-            if (!adminSwapBtn.classList.contains('d-none') || adminChecks > 30) {
+            if (!adminThemeSelect.classList.contains('d-none') || adminChecks > 30) {
                 clearInterval(adminCheckTimer);
             }
         }, 1000);
 
-        adminSwapBtn.addEventListener('click', () => {
+        adminThemeSelect.value = 'HD1';
+        adminThemeSelect.addEventListener('change', () => {
             if (!frontMap || !backMap) return;
-            const isAlt = adminSwapBtn.dataset.mode === 'alt';
-            const nextMode = isAlt ? 'default' : 'alt';
-            adminSwapBtn.dataset.mode = nextMode;
-            frontMap.style.backgroundImage = `url('${isAlt ? adminSwapImages.frontDefault : adminSwapImages.frontAlt}')`;
-            backMap.style.backgroundImage = `url('${isAlt ? adminSwapImages.backDefault : adminSwapImages.backAlt}')`;
+            const theme = adminThemeImages[adminThemeSelect.value] || adminThemeImages.HD1;
+            frontMap.style.backgroundImage = `url('${theme.front}')`;
+            backMap.style.backgroundImage = `url('${theme.back}')`;
         });
     }
 

@@ -68,11 +68,11 @@
 }
 
 .body-map-front {
-    background-image: url('/static/images/examples/av1.png');
+    background-image: url('/static/images/body/male/1front_d.png');
 }
 
 .body-map-back {
-    background-image: url('/static/images/examples/av2.png');
+    background-image: url('/static/images/body/male/1back_d.png');
 }
 
 svg {

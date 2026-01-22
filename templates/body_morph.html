@@ -32,11 +32,11 @@
                     <div class="col-md-7 border-end border-secondary border-opacity-25">
                         <div class="morph-stage p-3">
                             <div class="morph-container">
-                                <img src="/static/images/body/male/1front2.png" id="img-thin" class="morph-layer"
+                                <img src="/static/images/body/male/01front_d2.png" id="img-thin" class="morph-layer"
                                     alt="Delgado">
-                                <img src="/static/images/body/male/1front.png" id="img-muscle" class="morph-layer"
+                                <img src="/static/images/body/male/01front_d.png" id="img-muscle" class="morph-layer"
                                     alt="Musculoso">
-                                <img src="/static/images/body/male/1front3.png" id="img-over" class="morph-layer"
+                                <img src="/static/images/body/male/01front_d3.png" id="img-over" class="morph-layer"
                                     alt="Sobrepeso">
                             </div>
                         </div>
@@ -54,6 +54,16 @@
                             <p class="text-secondary small mt-3 mb-0">
                                 Ajusta el rango para ver como cambia la silueta base.
                             </p>
+                            {% if current_user_role == 'admin' %}
+                            <div class="mt-3">
+                                <select class="form-select form-select-sm bg-dark text-white border-secondary d-none"
+                                    id="body-theme-select" aria-label="Tema corporal">
+                                    <option value="HD2" selected>HD2</option>
+                                    <option value="HD1">HD1</option>
+                                    <option value="HR1">HR1</option>
+                                </select>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

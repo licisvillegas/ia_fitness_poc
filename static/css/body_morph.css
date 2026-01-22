@@ -56,3 +56,15 @@
   font-size: 0.8rem;
   color: #9aa0a6;
 }
+
+.morph-play-btn {
+  margin-top: 12px;
+  padding: 0.35rem 0.75rem;
+  font-weight: 600;
+}
+
+.morph-play-btn.is-playing,
+.morph-play-btn:disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}

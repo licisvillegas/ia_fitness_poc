@@ -241,6 +241,43 @@
         window.showConfirmModal = showConfirmModal;
         window.showSessionRecoveryModal = showSessionRecoveryModal;
 
+        (function enableFullscreenVideoOnLandscape() {
+            const isMobile = () => {
+                return window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 991px)").matches;
+            };
+
+            const isLandscape = () => window.matchMedia("(orientation: landscape)").matches;
+
+            const getActiveVideoFrame = () => {
+                const modal = document.querySelector(".modal.show");
+                if (!modal) return null;
+                return modal.querySelector("iframe");
+            };
+
+            const requestFullscreen = (iframe) => {
+                if (!iframe) return;
+                const req = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
+                if (typeof req !== "function") return;
+                try {
+                    req.call(iframe).catch(() => {});
+                } catch (e) {}
+            };
+
+            const tryFullscreen = () => {
+                if (!isMobile() || !isLandscape()) return;
+                const frame = getActiveVideoFrame();
+                if (frame && frame.src) requestFullscreen(frame);
+            };
+
+            document.addEventListener("shown.bs.modal", () => {
+                setTimeout(tryFullscreen, 150);
+            });
+
+            window.addEventListener("orientationchange", () => {
+                setTimeout(tryFullscreen, 150);
+            });
+        })();
+
         (function syncAdminWorkingUserGlobal() {
             function setWorkingUser(user) {
                 window.adminWorkingUser = user || null;

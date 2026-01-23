@@ -209,7 +209,12 @@ def api_check_exercises():
             clean_name = name.strip()
             # Escape for regex and Case insensitive check, allow optional surrounding whitespace
             escaped_name = re.escape(clean_name)
-            ex = extensions.db.exercises.find_one({"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}})
+            ex = extensions.db.exercises.find_one({
+                "$or": [
+                    {"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}},
+                    {"alternative_names": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}},
+                ]
+            })
             results.append({
                 "name": name,
                 "exists": bool(ex),

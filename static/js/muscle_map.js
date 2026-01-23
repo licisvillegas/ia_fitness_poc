@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleViewBtn = document.getElementById('toggleViewBtn');
     const mapContainer = document.querySelector('.tab-content');
     const adminThemeSelect = document.getElementById('adminThemeSelect');
+    const genderToggle = document.getElementById('gender-toggle');
     const frontMap = document.querySelector('.body-map-front');
     const backMap = document.querySelector('.body-map-back');
 
@@ -34,15 +35,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const femaleThemeImages = {
+        front: '/static/images/body/female/f_front_d.png',
+        back: '/static/images/body/female/f_back_d.png'
+    };
+
+    let currentGender = 'male';
+
     const isAdminUnlocked = () => sessionStorage.getItem('admin_unlocked') === 'true';
     const canShowAdminSwap = () => window.__HAS_ADMIN === true && isAdminUnlocked();
 
     const syncAdminSwapVisibility = () => {
         if (!adminThemeSelect) return;
+        if (currentGender === 'female') {
+            adminThemeSelect.classList.add('d-none');
+            return;
+        }
         if (canShowAdminSwap()) {
             adminThemeSelect.classList.remove('d-none');
         } else {
             adminThemeSelect.classList.add('d-none');
+        }
+    };
+
+    const applyGender = () => {
+        if (!frontMap || !backMap) return;
+        if (currentGender === 'female') {
+            frontMap.style.backgroundImage = `url('${femaleThemeImages.front}')`;
+            backMap.style.backgroundImage = `url('${femaleThemeImages.back}')`;
+        } else if (adminThemeSelect) {
+            const theme = adminThemeImages[adminThemeSelect.value] || adminThemeImages.HD1;
+            frontMap.style.backgroundImage = `url('${theme.front}')`;
+            backMap.style.backgroundImage = `url('${theme.back}')`;
+        } else {
+            frontMap.style.backgroundImage = `url('${adminThemeImages.HD1.front}')`;
+            backMap.style.backgroundImage = `url('${adminThemeImages.HD1.back}')`;
         }
     };
 
@@ -161,12 +188,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         adminThemeSelect.value = 'HD1';
         adminThemeSelect.addEventListener('change', () => {
-            if (!frontMap || !backMap) return;
-            const theme = adminThemeImages[adminThemeSelect.value] || adminThemeImages.HD1;
-            frontMap.style.backgroundImage = `url('${theme.front}')`;
-            backMap.style.backgroundImage = `url('${theme.back}')`;
+            if (currentGender !== 'male') return;
+            applyGender();
         });
     }
+
+    if (genderToggle) {
+        genderToggle.addEventListener('click', () => {
+            currentGender = currentGender === 'male' ? 'female' : 'male';
+            if (currentGender === 'female') {
+                genderToggle.innerHTML = '<i class="fas fa-venus me-1"></i><span class="d-none d-sm-inline">Femenino</span>';
+            } else {
+                genderToggle.innerHTML = '<i class="fas fa-mars me-1"></i><span class="d-none d-sm-inline">Masculino</span>';
+            }
+            applyGender();
+            syncAdminSwapVisibility();
+        });
+    }
+
+    applyGender();
 
     const tooltip = document.createElement('div');
     tooltip.className = 'muscle-tooltip';

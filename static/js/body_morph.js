@@ -4,6 +4,7 @@ const imgMuscle = document.getElementById('img-muscle');
 const imgOver = document.getElementById('img-over');
 const themeSelect = document.getElementById('body-theme-select');
 const playBtn = document.getElementById('body-play');
+const genderToggle = document.getElementById('gender-toggle');
 
 const themes = {
   HD2: [
@@ -23,6 +24,16 @@ const themes = {
   ],
 };
 
+const femaleThemes = {
+  FD1: [
+    '/static/images/body/female/f_front_d2.png',
+    '/static/images/body/female/f_front_d.png',
+    '/static/images/body/female/f_front_d3.png',
+  ],
+};
+
+let currentGender = 'male';
+
 function applyTheme(themeKey) {
   const theme = themes[themeKey] || themes.HD2;
   imgThin.src = theme[0];
@@ -30,8 +41,23 @@ function applyTheme(themeKey) {
   imgOver.src = theme[2];
 }
 
+function applyGender() {
+  if (currentGender === 'female') {
+    const theme = femaleThemes.FD1;
+    imgThin.src = theme[0];
+    imgMuscle.src = theme[1];
+    imgOver.src = theme[2];
+  } else {
+    applyTheme(themeSelect ? themeSelect.value : 'HD2');
+  }
+}
+
 function updateThemeVisibility() {
   if (!themeSelect) return;
+  if (currentGender === 'female') {
+    themeSelect.classList.add('d-none');
+    return;
+  }
   const unlocked = sessionStorage.getItem('admin_unlocked') === 'true';
   if (unlocked) {
     themeSelect.classList.remove('d-none');
@@ -110,9 +136,23 @@ if (themeSelect && imgThin && imgMuscle && imgOver) {
   themeSelect.addEventListener('change', (e) => {
     applyTheme(e.target.value);
   });
-  applyTheme(themeSelect.value || 'HD2');
+  applyGender();
   updateThemeVisibility();
   setInterval(updateThemeVisibility, 1000);
+}
+
+if (genderToggle && imgThin && imgMuscle && imgOver) {
+  genderToggle.addEventListener('click', () => {
+    currentGender = currentGender === 'male' ? 'female' : 'male';
+    if (currentGender === 'female') {
+      genderToggle.innerHTML = '<i class="fas fa-venus me-1"></i><span class="d-none d-sm-inline">Femenino</span>';
+    } else {
+      genderToggle.innerHTML = '<i class="fas fa-mars me-1"></i><span class="d-none d-sm-inline">Masculino</span>';
+    }
+    applyGender();
+    updateThemeVisibility();
+  });
+  applyGender();
 }
 
 function average(values) {

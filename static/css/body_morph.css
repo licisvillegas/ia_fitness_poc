@@ -141,6 +141,14 @@
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  .segmental-tooltip {
+    width: 90%;
+    max-width: 280px;
+    z-index: 9999;
+  }
+}
+
 .segmental-tooltip.hidden {
   opacity: 0;
   pointer-events: none;

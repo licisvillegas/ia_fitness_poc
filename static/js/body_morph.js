@@ -248,7 +248,7 @@ function updateSegmentalUI(scores) {
   if (emptyState) emptyState.classList.add('d-none');
 
   // Calculate points
-  
+
   const values = [scores.sup, scores.cross, scores.vtaper, scores.xframe, scores.lateral];
   const points = buildPentagonPoints(values); // Returns "x,y x,y ..." string
   polygon.setAttribute('points', points);
@@ -278,21 +278,63 @@ function updateSegmentalUI(scores) {
 
       // Add/Update listeners (removing old first to be safe, though typical pattern is simpler)
       // Ideally use a delegate or just onclick if simple. For hover:
-      circle.onmouseenter = () => {
+      // Use a common handler for showing tooltip
+      const showTooltip = (e) => {
+        // Prevent default touch actions if needed to avoid double firing on some devices
+        // e.preventDefault(); 
+
         if (tooltipEl) {
           const score = Math.round(values[index]);
           const desc = tooltips[metric];
           tooltipEl.innerHTML = `<strong class="text-white">${desc}</strong><br><span class="text-cyber-green">${score}/100</span>`;
-          tooltipEl.style.left = `${pointCoords[index].x}px`;
-          tooltipEl.style.top = `${pointCoords[index].y - 20}px`; // Offset up
+
+          if (window.innerWidth <= 768) {
+            // Mobile: Center fixed (let CSS handle top/left 50%)
+            tooltipEl.style.left = '';
+            tooltipEl.style.top = '';
+            tooltipEl.style.transform = 'translate(-50%, -50%)';
+          } else {
+            // Desktop: Position near the point
+            tooltipEl.style.left = `${pointCoords[index].x}px`;
+            tooltipEl.style.top = `${pointCoords[index].y - 20}px`;
+            tooltipEl.style.transform = 'translate(-50%, -100%)'; // Anchor bottom center
+          }
+
           tooltipEl.classList.remove('hidden');
           circle.classList.add('active');
         }
       };
-      circle.onmouseleave = () => {
+
+      const hideTooltip = () => {
         if (tooltipEl) tooltipEl.classList.add('hidden');
         circle.classList.remove('active');
       };
+
+      // Mouse events
+      circle.onmouseenter = showTooltip;
+      circle.onmouseleave = hideTooltip;
+
+      // Touch events
+      circle.ontouchstart = (e) => {
+        // Stop propagation to prevent immediate close if we have document listeners
+        e.stopPropagation();
+        showTooltip(e);
+      };
+      // Optional: hide on touch elsewhere could be handled globally, 
+      // but for now let's ensure touching another point switches them.
+    }
+  });
+
+  // Global listener to close tooltip on tap outside (for mobile UX)
+  document.addEventListener('touchstart', (e) => {
+    if (!e.target.closest('.segmental-point') && !e.target.closest('.segmental-tooltip')) {
+      const tooltipEl = document.getElementById('seg-tooltip');
+      if (tooltipEl && !tooltipEl.classList.contains('hidden')) {
+        tooltipEl.classList.add('hidden');
+        // Retrieve active circles if any and remove active class
+        const activeCircles = document.querySelectorAll('.segmental-point.active');
+        activeCircles.forEach(c => c.classList.remove('active'));
+      }
     }
   });
 

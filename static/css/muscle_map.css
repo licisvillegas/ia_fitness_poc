@@ -262,3 +262,94 @@ svg {
         font-size: 1.5rem;
     }
 }
+
+/* --- Female SVG Adjustments --- */
+/* Reduce forearm separation by 45px total (22.5px each side) specifically for female view. 
+   SVG paths for forearms are roughly symmetrical around center. 
+   Left moves right (+22.5), Right moves left (-22.5). 
+*/
+.gender-female #forearms-left,
+.gender-female #forearms-back-left {
+    transform: translateX(22.5px);
+}
+
+.gender-female #forearms-right,
+.gender-female #forearms-back-right {
+    transform: translateX(-22.5px);
+}
+
+/* Ensure hover scale is maintained along with translation */
+.gender-female #forearms-left:hover,
+.gender-female #forearms-back-left:hover {
+    transform: translateX(22.5px) scale(1.01);
+}
+
+.gender-female #forearms-right:hover,
+.gender-female #forearms-back-right:hover {
+    transform: translateX(-22.5px) scale(1.01);
+}
+
+/* Reduce calves separation by 55px total (27.5px each side) specifically for female view. */
+.gender-female #calves-left,
+.gender-female #calves-back-left {
+    transform: translateX(27.5px);
+}
+
+.gender-female #calves-right,
+.gender-female #calves-back-right {
+    transform: translateX(-27.5px);
+}
+
+/* Ensure hover scale is maintained for calves */
+.gender-female #calves-left:hover,
+.gender-female #calves-back-left:hover {
+    transform: translateX(27.5px) scale(1.01);
+}
+
+.gender-female #calves-right:hover,
+.gender-female #calves-back-right:hover {
+    transform: translateX(-27.5px) scale(1.01);
+}
+
+/* Reduce Biceps, Triceps, Adductors (Front Only) separation by 25px total (12.5px each side) */
+.gender-female #biceps-left,
+.gender-female #triceps-back-left,
+.gender-female #adductors-left {
+    transform: translateX(12.5px);
+}
+
+.gender-female #biceps-right,
+.gender-female #triceps-back-right,
+.gender-female #adductors-right {
+    transform: translateX(-12.5px);
+}
+
+/* Reduce Adductors (Back) separation by 15px total (7.5px each side) */
+.gender-female #adductors-back-left {
+    transform: translateX(7.5px);
+}
+
+.gender-female #adductors-back-right {
+    transform: translateX(-7.5px);
+}
+
+/* Ensure hover scale is maintained */
+.gender-female #biceps-left:hover,
+.gender-female #triceps-back-left:hover,
+.gender-female #adductors-left:hover {
+    transform: translateX(12.5px) scale(1.01);
+}
+
+.gender-female #biceps-right:hover,
+.gender-female #triceps-back-right:hover,
+.gender-female #adductors-right:hover {
+    transform: translateX(-12.5px) scale(1.01);
+}
+
+.gender-female #adductors-back-left:hover {
+    transform: translateX(7.5px) scale(1.01);
+}
+
+.gender-female #adductors-back-right:hover {
+    transform: translateX(-7.5px) scale(1.01);
+}

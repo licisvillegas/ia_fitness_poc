@@ -63,13 +63,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentGender === 'female') {
             frontMap.style.backgroundImage = `url('${femaleThemeImages.front}')`;
             backMap.style.backgroundImage = `url('${femaleThemeImages.back}')`;
-        } else if (adminThemeSelect) {
-            const theme = adminThemeImages[adminThemeSelect.value] || adminThemeImages.HD1;
-            frontMap.style.backgroundImage = `url('${theme.front}')`;
-            backMap.style.backgroundImage = `url('${theme.back}')`;
+            frontMap.classList.add('gender-female');
+            backMap.classList.add('gender-female');
         } else {
-            frontMap.style.backgroundImage = `url('${adminThemeImages.HD1.front}')`;
-            backMap.style.backgroundImage = `url('${adminThemeImages.HD1.back}')`;
+            frontMap.classList.remove('gender-female');
+            backMap.classList.remove('gender-female');
+
+            if (adminThemeSelect) {
+                const theme = adminThemeImages[adminThemeSelect.value] || adminThemeImages.HD1;
+                frontMap.style.backgroundImage = `url('${theme.front}')`;
+                backMap.style.backgroundImage = `url('${theme.back}')`;
+            } else {
+                frontMap.style.backgroundImage = `url('${adminThemeImages.HD1.front}')`;
+                backMap.style.backgroundImage = `url('${adminThemeImages.HD1.back}')`;
+            }
         }
     };
 

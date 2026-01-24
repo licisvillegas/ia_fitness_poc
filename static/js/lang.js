@@ -79,9 +79,9 @@
   dict['entrenamiento_full_body'] = { es: 'Entrenamiento Full Body', en: 'Full Body Training' };
   dict['sesiones_completas_que_activan_todos_los_grupos_musculares_p'] = { es: 'Sesiones completas que activan todos los grupos musculares. Perfecto para mantenerte en forma cuando dispones de poco tiempo.', en: 'Full sessions that activate all muscle groups. Perfect for staying fit when you have little time.' };
   dict['2025_ai_fitness_alimentación_y_entrenamiento_inteligente'] = { es: '© 2025 Synapse Fit | Alimentación y Entrenamiento Inteligente', en: '© 2025 Synapse Fit | Alimentación y Entrenamiento Inteligente' };
-  // Plan page extra keys
+  // Claves extra para la página de Plan
   dict['nutrition_intro'] = { es: 'Una alimentación adecuada no solo mejora tu rendimiento físico, sino que también impulsa tu bienestar mental y tu capacidad de recuperación. En AI Fitness creemos que cada cuerpo es único, y por eso nuestros planes están diseñados con inteligencia artificial para adaptarse a ti.', en: 'A proper diet not only improves your physical performance but also boosts your mental well-being and recovery capacity. At AI Fitness we believe every body is unique, and our plans are AI-designed to adapt to you.' };
-  // the list items keys already exist earlier; ensure they map (they do) but re-add safe defaults if missing
+  // las claves de los elementos de la lista ya existen antes; asegurar que se mapeen (lo hacen) pero volver a agregar valores predeterminados seguros si faltan
   dict['pecho_y_tríceps'] = dict['pecho_y_tríceps'] || { es: 'Pecho y Tríceps', en: 'Chest & Triceps' };
   dict['fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr'] = dict['fortalece_tu_tren_superior_con_ejercicios_compuestos_como_pr'] || { es: 'Fortalece tu tren superior con ejercicios compuestos como press de banca, fondos y flexiones. Desarrolla masa muscular y potencia en tus empujes.', en: 'Strengthen your upper body with compound exercises like bench press, dips and push-ups. Build muscle mass and pushing power.' };
   dict['espalda_y_bíceps'] = dict['espalda_y_bíceps'] || { es: 'Espalda y Bíceps', en: 'Back & Biceps' };
@@ -111,14 +111,14 @@
   dict['chart_performance'] = { es: 'Rendimiento (%)', en: 'Performance (%)' };
   dict['chart_nutrition'] = { es: 'TMB (%)', en: 'Nutrition Adherence (%)' };
 
-  // Página: Nutrition
+  // Página: Nutrición
   dict['nutrition_hero_title'] = { es: 'Nutrición Inteligente para un Rendimiento Óptimo', en: 'Smart Nutrition for Optimal Performance' };
   dict['nutrition_hero_p'] = { es: 'Descubre recetas saludables y aprende a equilibrar tus alimentos con equivalencias precisas.', en: 'Discover healthy recipes and learn to balance your foods with precise equivalences.' };
   dict['recipes_title'] = { es: 'Recetas Fitness', en: 'Fitness Recipes' };
   dict['recipes_sub'] = { es: 'Fáciles, nutritivas y llenas de energía para acompañar tus entrenamientos.', en: 'Easy, nutritious and energy-packed recipes to support your workouts.' };
   dict['equivalences_title'] = { es: 'Equivalencias de Alimentos', en: 'Food Equivalences' };
   dict['equivalences_sub'] = { es: 'Comprende cómo sustituir alimentos sin perder el equilibrio nutricional.', en: 'Understand how to substitute foods without losing nutritional balance.' };
-  // Table headers and recipe items
+  // Encabezados de tabla y elementos de recetas
   dict['avena_proteica'] = dict['avena_proteica'] || { es: 'Avena Proteica', en: 'Protein Oats' };
   dict['avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_'] = dict['avena_proteína_en_polvo_banana_y_canela_ideal_para_comenzar_'] || { es: 'Avena, proteína en polvo, banana y canela. Ideal para comenzar el día lleno de energía.', en: 'Oats, protein powder, banana and cinnamon. Ideal to start the day full of energy.' };
   dict['bowl_de_pollo_y_quinoa'] = dict['bowl_de_pollo_y_quinoa'] || { es: 'Bowl de Pollo y Quinoa', en: 'Chicken & Quinoa Bowl' };
@@ -144,7 +144,7 @@
   dict['1_pan_integral_o_de_centeno'] = dict['1_pan_integral_o_de_centeno'] || { es: '1 pan integral o de centeno', en: '1 wholegrain or rye slice' };
   dict['más_fibra_y_saciedad'] = dict['más_fibra_y_saciedad'] || { es: 'Más fibra y saciedad', en: 'More fiber and satiety' };
 
-  // Fix/override some remaining entries where English was left equal to Spanish
+  // Corregir/sobrescribir algunas entradas restantes donde el inglés se quedó igual al español
   dict['ai_fitness_dashboard_de_progreso'] = { es: 'Synapse Fit | Dashboard de Progreso', en: 'Synapse Fit | Progress Dashboard' };
   dict['2025_ai_fitness_dashboard_de_progreso_inteligente'] = { es: '© 2025 Synapse Fit | Dashboard de Progreso Inteligente', en: '© 2025 Synapse Fit | Smart Progress Dashboard' };
   dict['ai_fitness_tu_entrenador_inteligente'] = { es: 'Synapse Fit | Tu Entrenador Inteligente', en: 'Synapse Fit | Your Smart Coach' };
@@ -176,19 +176,19 @@
   dict['plan_hero_p'] = { es: 'Descubre cómo equilibrar tu nutrición y potenciar tus resultados físicos.', en: 'Discover how to balance your nutrition and boost your physical results.' };
   dict['nutrition_importance_title'] = { es: 'La importancia de una buena alimentación', en: 'The importance of good nutrition' };
   dict['workouts_title'] = { es: 'Entrenamientos por Grupo Muscular', en: 'Workouts by Muscle Group' };
-  // Cardio workout translations
+  // Traducciones de entrenamiento cardiovascular
   dict['cardio'] = { es: 'Cardio', en: 'Cardio' };
   dict['ejercicios_cardio_caminadora_eliptica_natacion'] = {
     es: 'Ejercicios de cardio como caminadora, elíptica y natación para mejorar la resistencia y la salud cardiovascular.',
     en: 'Cardio exercises like treadmill, elliptical and swimming to improve endurance and cardiovascular health.'
   };
 
-  // Buttons, loading and labels
+  // Botones, carga y etiquetas
   dict['btn_load_progress'] = { es: 'Cargar progreso', en: 'Load progress' };
   dict['loading_data'] = { es: 'Cargando datos...', en: 'Loading data...' };
   dict['select_user_label'] = { es: 'Selecciona tu ID de usuario', en: 'Select your User ID' };
   dict['generate_section_title'] = { es: 'Genera tu Plan', en: 'Generate your Plan' };
-  // Common auth actions
+  // Acciones de autenticación comunes
   dict['logout'] = { es: 'Cerrar sesión', en: 'Log out' };
 
   // Página: Auth
@@ -226,10 +226,10 @@
   }
 
   function updateButtons(lang) {
-    // Debug log
+    // Log de depuración
     // console.log('[lang.js] updateButtons:', lang);
 
-    // Select all buttons with these IDs (handles potential duplicates)
+    // Seleccionar todos los botones con estos IDs (maneja posibles duplicados)
     const esBtns = document.querySelectorAll('[id="lang-es"]');
     const enBtns = document.querySelectorAll('[id="lang-en"]');
 
@@ -255,7 +255,7 @@
     if (navNutrition) { navNutrition.textContent = t('nav_nutrition'); navNutrition.setAttribute('data-i18n', 'nav_nutrition'); }
     if (navHome) { navHome.textContent = t('nav_home'); navHome.setAttribute('data-i18n', 'nav_home'); }
     if (navAbout) { navAbout.textContent = t('nav_about'); navAbout.setAttribute('data-i18n', 'nav_about'); }
-    // Smart redirect for Home and brand: if logged in -> /dashboard; else -> /
+    // Redirección inteligente para Inicio y marca: si está logueado -> /dashboard; si no -> /
     try {
       const brand = document.querySelector('.navbar .navbar-brand');
       const homeLink = document.getElementById('nav-home');
@@ -272,26 +272,26 @@
       bind(homeLink);
     } catch (e) { /* ignore */ }
 
-    // Ensure active nav button sits before auth controls, which are before the language selector
+    // Asegurar que el botón de navegación activo se sitúe antes de los controles de autenticación, que están antes del selector de idioma
     try {
       const navContainer = document.querySelector('.navbar .d-flex.align-items-center');
       if (navContainer) {
-        // Ensure a stable container for auth controls
+        // Asegurar un contenedor estable para los controles de autenticación
         const authControls = ensureAuthControlsContainer(navContainer);
         const btnGroup = navContainer.querySelector('.btn-group.ms-3');
         const links = Array.from(navContainer.querySelectorAll('a.btn.btn-sm'))
           .filter(a => !btnGroup || !btnGroup.contains(a));
         const activeBtn = links.find(a => a.classList.contains('btn-primary'));
         if (activeBtn) {
-          // Ensure all outline links come before the active button
+          // Asegurar que todos los enlaces outline vayan antes del botón activo
           links.filter(a => a !== activeBtn).forEach(a => navContainer.insertBefore(a, activeBtn));
-          // Place active button just before the auth controls container
+          // Colocar el botón activo justo antes del contenedor de controles de autenticación
           navContainer.insertBefore(activeBtn, authControls);
         }
-        // Render user chip and logout if logged in
+        // Renderizar chip de usuario y logout si está logueado
         renderAuthChip(navContainer);
       }
-    } catch (e) { /* ignore ordering issues */ }
+    } catch (e) { /* ignorar problemas de ordenamiento */ }
 
     // Hero
     const heroTitle = document.getElementById('hero-title');
@@ -301,7 +301,7 @@
     if (heroP) heroP.textContent = t('hero_p');
     if (cta) cta.textContent = t('cta_start');
 
-    // Form labels and placeholders
+    // Etiquetas de formulario y placeholders
     const labelUid = document.getElementById('label-userid');
     const uidInput = document.getElementById('userId');
     const labelWeight = document.getElementById('label-weight');
@@ -323,11 +323,11 @@
     if (btnGen) btnGen.textContent = t('btn_generate');
     if (loadingText) loadingText.textContent = t('loading_plan');
 
-    // Footer
+    // Pie de página
     const footer = document.getElementById('footer-text');
     if (footer) footer.textContent = t('footer');
 
-    // Dashboard specific
+    // Específico del Dashboard
     const dashHeroTitle = document.querySelector('#stats') ? document.querySelector('.hero h1') : null;
     const dashHeroP = document.querySelector('#stats') ? document.querySelector('.hero p') : null;
     if (dashHeroTitle) dashHeroTitle.textContent = t('dashboard_hero_title');
@@ -335,7 +335,7 @@
 
     const statWeightTitle = document.querySelector('#stats h5');
     if (statWeightTitle) statWeightTitle.textContent = t('stat_weight_title');
-    // other stat headings (we target by their position)
+    // otros encabezados de estadísticas (apuntamos por su posición)
     const statHeadings = document.querySelectorAll('#stats .stat-card h5');
     if (statHeadings && statHeadings.length >= 4) {
       statHeadings[0].textContent = t('stat_weight_title');
@@ -343,14 +343,14 @@
       statHeadings[2].textContent = t('stat_tmb_title');
       statHeadings[3].textContent = t('stat_diet_title');
     }
-    // overlays
+    // superposiciones (overlays)
     const overlays = ['weight', 'fat', 'performance', 'nutrition'];
     overlays.forEach(id => {
       const el = document.getElementById(`msg-${id}`);
       if (el) el.textContent = t('no_data');
     });
 
-    // Controls and labels
+    // Controles y etiquetas
     const loadBtn = document.getElementById('loadDataBtn');
     if (loadBtn) loadBtn.textContent = t('btn_load_progress');
     const loadingEl = document.querySelector('#loading p');
@@ -358,12 +358,12 @@
     const selectUserLabel = document.getElementById('select-user-label');
     if (selectUserLabel) selectUserLabel.textContent = t('select_user_label');
 
-    // Index / Generate section
+    // Sección Index / Generar
     let genTitle = document.querySelector('#form-section h2');
     if (!genTitle) genTitle = document.getElementById('generate-section-title');
     if (genTitle) genTitle.textContent = t('generate_section_title');
 
-    // Nutrition page
+    // Página de Nutrición
     const nutritionHeroTitle = document.querySelector('.hero h1');
     const nutritionHeroP = document.querySelector('.hero p');
     if (nutritionHeroTitle && document.querySelector('section.recipes')) {
@@ -379,7 +379,7 @@
     if (eqTitle) eqTitle.textContent = t('equivalences_title');
     if (eqSub) eqSub.textContent = t('equivalences_sub');
 
-    // Plan page
+    // Página de Plan
     if (document.querySelector('section.workouts') || document.querySelector('.nutrition')) {
       const planHeroTitle = document.querySelector('.hero h1');
       const planHeroP = document.querySelector('.hero p');
@@ -391,18 +391,18 @@
       if (workoutsTitle) workoutsTitle.textContent = t('workouts_title');
     }
 
-    // Auth page
-    // Left panel
+    // Página de Autenticación
+    // Panel izquierdo
     const authLeftTitle = document.getElementById('auth-left-title');
     if (authLeftTitle) authLeftTitle.textContent = t('auth_left_title');
     const authLeftSubtitle = document.getElementById('auth-left-subtitle');
     if (authLeftSubtitle) authLeftSubtitle.textContent = t('auth_left_subtitle');
-    // Tabs
+    // Pestañas
     const authTabLogin = document.getElementById('auth-tab-login');
     if (authTabLogin) authTabLogin.textContent = t('auth_tab_login');
     const authTabRegister = document.getElementById('auth-tab-register');
     if (authTabRegister) authTabRegister.textContent = t('auth_tab_register');
-    // Login identifiers
+    // Identificadores de Login
     const lblAuthIdentifier = document.getElementById('label-auth-identifier');
     if (lblAuthIdentifier) lblAuthIdentifier.textContent = t('auth_identifier_label');
     const inAuthIdentifier = document.getElementById('auth-identifier');
@@ -417,7 +417,7 @@
     if (authForgotLink) authForgotLink.textContent = t('auth_forgot');
     const authEnterBtn = document.getElementById('auth-enter-btn');
     if (authEnterBtn) authEnterBtn.textContent = t('auth_enter');
-    // Register fields
+    // Campos de Registro
     const lblAuthName = document.getElementById('label-auth-name');
     if (lblAuthName) lblAuthName.textContent = t('auth_name_label');
     const inAuthName = document.getElementById('auth-name');
@@ -438,7 +438,7 @@
     if (authPasswordMinHelp) authPasswordMinHelp.textContent = t('auth_password_min_ph');
     const authCreateBtn = document.getElementById('auth-create-btn');
     if (authCreateBtn) authCreateBtn.textContent = t('auth_create_account');
-    // Terms & privacy snippet
+    // Fragmento de Términos y privacidad
     const authTermsIntro = document.getElementById('auth-terms-intro');
     if (authTermsIntro) authTermsIntro.textContent = t('auth_terms_intro');
     const authTermsLink = document.getElementById('auth-terms-link');
@@ -450,7 +450,7 @@
     const authUserNotRegistered = document.getElementById('auth-user-not-registered');
     if (authUserNotRegistered) authUserNotRegistered.textContent = t('auth_user_not_registered');
 
-    // Generic: any element annotated with data-i18n will be translated
+    // Genérico: cualquier elemento anotado con data-i18n será traducido
     const i18nEls = document.querySelectorAll('[data-i18n]');
     if (i18nEls && i18nEls.length) {
       i18nEls.forEach(el => {
@@ -464,7 +464,7 @@
       });
     }
 
-    // Dashboard: stat-last labels and message
+    // Dashboard: etiquetas stat-last y mensaje
     const statLasts = document.querySelectorAll('[id^="stat-last"]');
     if (statLasts) statLasts.forEach(el => el.textContent = t('stat_last_label'));
     const messageEl = document.getElementById('message');
@@ -475,7 +475,7 @@
       }
     }
 
-    // Update chart labels if the page exposes an update function
+    // Actualizar etiquetas del gráfico si la página expone una función de actualización
     if (window.updateChartLabels) {
       try { window.updateChartLabels(); } catch (e) { /* ignore */ }
     }
@@ -499,7 +499,7 @@
       if (btnGroup) navContainer.insertBefore(container, btnGroup);
       else navContainer.appendChild(container);
     } else if (btnGroup && container.nextSibling !== btnGroup) {
-      // Keep container anchored immediately before language selector
+      // Mantener el contenedor anclado inmediatamente antes del selector de idioma
       navContainer.insertBefore(container, btnGroup);
     }
     return container;
@@ -508,20 +508,20 @@
   function renderAuthChip(navContainer) {
     try {
       const user = getCurrentUser();
-      // Use dedicated container for stable placement
+      // Usar contenedor dedicado para ubicación estable
       const controls = ensureAuthControlsContainer(navContainer);
-      // Existing elements
+      // Elementos existentes
       let userChip = document.getElementById('user-chip');
       let logoutBtn = document.getElementById('logout-btn');
 
       if (!user || (!user.username && !user.name && !user.email)) {
-        // Remove if exists
+        // Eliminar si existe
         if (userChip && userChip.parentElement) userChip.parentElement.removeChild(userChip);
         if (logoutBtn && logoutBtn.parentElement) logoutBtn.parentElement.removeChild(logoutBtn);
         return;
       }
 
-      // Build display name
+      // Construir nombre para mostrar
       const display = user.username ? `@${user.username}` : (user.name || user.email || '');
 
       if (!userChip) {
@@ -538,16 +538,16 @@
         logoutBtn.id = 'logout-btn';
         logoutBtn.type = 'button';
         logoutBtn.className = 'btn btn-sm btn-outline-light';
-        // minimal icon using emoji to avoid extra deps
+        // icono mínimo usando emoji para evitar dependencias extra
         logoutBtn.textContent = '⏻';
         logoutBtn.title = t('logout');
         logoutBtn.setAttribute('aria-label', t('logout'));
         controls.appendChild(logoutBtn);
         logoutBtn.addEventListener('click', () => {
           try { localStorage.removeItem('ai_fitness_user'); } catch (_) { }
-          // Re-render UI
+          // Re-renderizar UI
           renderAuthChip(navContainer);
-          // Redirect to home or auth
+          // Redirigir a inicio o auth
           try { window.location.href = '/'; } catch (_) { }
         });
       } else {
@@ -564,9 +564,9 @@
     translatePage(lang);
   }
 
-  // Public API for other scripts
+  // API Pública para otros scripts
   window.i18n = { t, setLang, translatePage };
-  // Backwards-compatible globals used across existing templates
+  // Globales compatibles con versiones anteriores usadas en plantillas existentes
   window.t = t;
   window.setLang = setLang;
   window.translatePage = translatePage;
@@ -574,7 +574,7 @@
   // Traducción para placeholder del chat flotante
   try { dict['placeholder_chat'] = { es: 'Escribe tu pregunta...', en: 'Type your question...' }; } catch (e) { }
 
-  // About page translations
+  // Traducciones de la página Acerca de
   try {
     dict['nav_about'] = { es: 'Acerca de', en: 'About' };
     dict['about_hero_title'] = { es: 'Conoce AI Fitness', en: 'Meet AI Fitness' };
@@ -601,12 +601,12 @@
         const rawUser = localStorage.getItem('ai_fitness_user');
         if (!rawUser) {
           try { window.location.replace('/'); } catch (e) { window.location.href = '/'; }
-          return; // stop initializing on protected pages when not logged in
+          return; // detener inicialización en páginas protegidas cuando no hay login
         }
       }
     } catch (e) { /* ignore */ }
     const stored = localStorage.getItem('ai_fitness_lang') || 'es';
-    // apply
+    // aplicar
     setLang(stored);
 
     const esBtns = document.querySelectorAll('[id="lang-es"]');

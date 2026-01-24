@@ -131,6 +131,10 @@
                         <div id="mobileUsersList" class="d-md-none d-flex flex-column gap-3 p-3">
                             <!-- Mobile cards injected here -->
                         </div>
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-25"
+                            id="paginationContainer">
+                            <!-- Pagination injected by JS -->
+                        </div>
                     </div>
                 </div>
         </main>
@@ -223,14 +227,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/lang.js"></script>
     <script src="/static/js/theme.js"></script>
-    <script src="/static/js/user_search.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/admin_datagrid.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
-            const tableBody = document.getElementById("usersTableBody");
-            // const searchInput = document.getElementById("searchInput"); // Removed/Moved down or replaced
-            const btnRefresh = document.getElementById("btnRefresh");
-            const mobileList = document.getElementById("mobileUsersList");
-
             // Modal Elements
             const userModalEl = document.getElementById('userModal');
             const userModal = new bootstrap.Modal(userModalEl);
@@ -249,8 +249,6 @@
             const deleteModal = new bootstrap.Modal(deleteModalEl);
             const deleteUserName = document.getElementById('deleteUserName');
             const btnConfirmDelete = document.getElementById('btnConfirmDelete');
-
-            let allUsers = [];
             let deletingUserId = null;
 
             function showToast(msg, type = 'primary') {
@@ -262,105 +260,77 @@
                 toast.show();
             }
 
-            async function loadUsers() {
-                try {
-                    const resp = await fetch('/admin/api/users_roles'); // Reuse existing list endpoint
-                    if (!resp.ok) throw new Error("Error cargando usuarios");
-                    allUsers = await resp.json();
-                    renderUsers(allUsers);
-                } catch (e) {
-                    console.error(e);
-                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
-                }
-            }
-
-            function renderUsers(users) {
-                if (users.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-secondary py-5">No se encontraron usuarios</td></tr>';
-                    return;
-                }
-                tableBody.innerHTML = "";
-                if (mobileList) mobileList.innerHTML = "";
-                users.forEach(u => {
-                    const tr = document.createElement("tr");
-                    const avatarInitials = (u.username || u.email || "?").substring(0, 2).toUpperCase();
-
-                    // Escape strings for safety
+            // --- GRID INITIALIZATION ---
+            window.userGrid = new AdminDataGrid({
+                tableId: 'usersTableBody',
+                paginationId: 'paginationContainer',
+                searchId: 'userSearchTerm',
+                endpoint: '/api/admin/users_paginated',
+                columns: [
+                    {
+                        key: 'username',
+                        label: 'Usuario',
+                        className: 'ps-4',
+                        render: (u) => {
+                            const initial = (u.username || u.email || "?").charAt(0).toUpperCase();
+                            // Handle quotes for onclick safety
+                            const safeId = (u.user_id || "").replace(/'/g, "\\'");
+                            const safeName = (u.name || "").replace(/'/g, "\\'");
+                            return `
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar-sm">${initial}</div>
+                                    <div class="fw-bold">${u.username || 'Sin usuario'}</div>
+                                </div>`;
+                        }
+                    },
+                    { key: 'email', label: 'Email' },
+                    { key: 'name', label: 'Nombre' },
+                    {
+                        key: 'status',
+                        label: 'Estado',
+                        render: (u) => {
+                            const map = {
+                                active: { cls: 'bg-success', lbl: 'Activo' },
+                                pending: { cls: 'bg-warning', lbl: 'Pendiente' },
+                                suspended: { cls: 'bg-danger', lbl: 'Suspendido' },
+                                inactive: { cls: 'bg-secondary', lbl: 'Inactivo' }
+                            };
+                            const st = map[u.status] || map.active;
+                            return `<span class="badge ${st.cls}">${st.lbl}</span>`;
+                        }
+                    }
+                ],
+                actions: (u) => {
+                    const safeId = (u.user_id || "").replace(/'/g, "\\'");
                     const safeName = (u.name || "").replace(/'/g, "\\'");
                     const safeUser = (u.username || "").replace(/'/g, "\\'");
                     const safeEmail = (u.email || "").replace(/'/g, "\\'");
-                    const safeId = u.user_id;
+                    const st = u.status || 'active';
 
-                    const status = (u.status || "active").toLowerCase();
-                    let statusClass = "bg-success";
-                    let statusLabel = "Activo";
-                    if (status === "pending") { statusClass = "bg-warning"; statusLabel = "Pendiente"; }
-                    if (status === "suspended") { statusClass = "bg-danger"; statusLabel = "Suspendido"; }
-                    if (status === "inactive") { statusClass = "bg-secondary"; statusLabel = "Inactivo"; }
-
-                    tr.innerHTML = `
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar-sm">${avatarInitials}</div>
-                                <div class="fw-bold">${u.username || 'Sin usuario'}</div>
-                            </div>
-                        </td>
-                        <td>${u.email || ''}</td>
-                        <td>${u.name || '-'}</td>
-                        <td><span class="badge ${statusClass}">${statusLabel}</span></td>
-                        <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-outline-info me-2" 
-                                onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${status}')"
-                                title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" 
-                                onclick="openDeleteModal('${safeId}', '${safeUser || safeEmail}')"
-                                title="Eliminar">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </td>
+                    return `
+                        <button class="btn btn-sm btn-outline-info me-2" 
+                            onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${st}')"
+                            title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" 
+                            onclick="openDeleteModal('${safeId}', '${safeUser || safeEmail}')"
+                            title="Eliminar">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     `;
-                    tableBody.appendChild(tr);
+                }
+            });
 
-                    if (mobileList) {
-                        const card = document.createElement("div");
-                        card.className = "card bg-panel border-secondary shadow-sm";
-                        card.innerHTML = `
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div class="flex-grow-1">
-                                        <h5 class="card-title text-white fw-bold mb-1 d-flex align-items-center">
-                                            ${u.username || 'Sin usuario'}
-                                        </h5>
-                                        <div class="text-secondary small">${u.email || '-'}</div>
-                                    </div>
-                                    <span class="badge ${statusClass} ms-2" style="font-size: 0.7rem;">
-                                        ${statusLabel}
-                                    </span>
-                                </div>
-                                <div class="text-secondary small mb-3">Nombre: <span class="text-white">${u.name || '-'}</span></div>
-                                <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
-                                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
-                                        ID: ${safeId}
-                                    </small>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-info"
-                                            onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${status}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger"
-                                            onclick="openDeleteModal('${safeId}', '${safeUser || safeEmail}')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        mobileList.appendChild(card);
-                    }
-                });
-            }
+            window.userGrid.init();
+
+            // Hook Refresh Button
+            document.getElementById('btnRefresh').addEventListener('click', () => window.userGrid.loadPage(1));
+            document.getElementById('btnClearUserSearch').addEventListener('click', () => {
+                document.getElementById('userSearchTerm').value = "";
+                window.userGrid.loadPage(1);
+            });
+
 
             // --- CREATE / EDIT LOGIC ---
             window.openCreateModal = function () {
@@ -372,7 +342,7 @@
                 statusSelect.value = "active";
                 passwordInput.value = "";
                 passwordInput.required = true;
-                helpPassword.textContent = "Mé­nimo 8 caracteres.";
+                helpPassword.textContent = "Mínimo 8 caracteres.";
                 userModal.show();
             };
 
@@ -390,6 +360,7 @@
             };
 
             btnSaveUser.addEventListener('click', async () => {
+                // ... (Same logic as before, just refresh grid at end)
                 const isEdit = !!userIdInput.value;
                 const endpoint = isEdit ? `/api/admin/users/${userIdInput.value}` : '/api/admin/users';
 
@@ -399,7 +370,8 @@
                     username: usernameInput.value,
                     email: emailInput.value,
                     password: passwordInput.value || undefined,
-                    status: statusSelect.value
+                    status: statusSelect.value,
+                    role: 'user' // Default role
                 };
 
                 // Basic validation
@@ -427,7 +399,7 @@
 
                     showToast("Usuario guardado correctamente", "success");
                     userModal.hide();
-                    loadUsers();
+                    window.userGrid.loadPage(window.userGrid.currentPage); // Refresh
                 } catch (e) {
                     showToast(e.message, "danger");
                 } finally {
@@ -457,7 +429,7 @@
 
                     showToast("Usuario eliminado correctamente", "success");
                     deleteModal.hide();
-                    loadUsers();
+                    window.userGrid.loadPage(window.userGrid.currentPage); // Refresh
                 } catch (e) {
                     showToast(e.message, "danger");
                 } finally {
@@ -465,53 +437,6 @@
                     btnConfirmDelete.textContent = "Eliminar";
                     deletingUserId = null;
                 }
-            });
-
-            // --- SEARCH ---
-            // --- Standard User Search Logic (Adapted for Table) ---
-            // searchInput used from new declaration below or needs to be top level? 
-            // Better: define it here if I removed it from top. 
-            // Wait, I commented it out at top. So here I can declare it.
-            function selectUser(u) {
-                // Filter table to show ONLY this user
-                // Try to find in allUsers to get full status/details
-                const local = allUsers.find(existing => existing.user_id === u.user_id);
-                renderUsers(local ? [local] : [u]);
-            }
-
-            initUserSearch({
-                inputId: "userSearchTerm",
-                resultsId: "userSearchResults",
-                hiddenId: "adminUserId",
-                buttonId: "btnLookupUser",
-                clearButtonId: "btnClearUserSearch",
-                storageKey: "admin_working_user",
-                onSelect: selectUser,
-                onClear: () => renderUsers(allUsers)
-            });
-
-            const searchInput = document.getElementById('userSearchTerm');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    if (!e.target.value.trim()) renderUsers(allUsers);
-                });
-            }
-            // ----------------------------------
-
-            btnRefresh.addEventListener("click", loadUsers);
-
-            loadUsers().then(() => {
-                // Context Recovery
-                try {
-                    const ctx = localStorage.getItem('admin_working_user');
-                    if (ctx) {
-                        const u = JSON.parse(ctx);
-                        // If we are on this page, we might want to filter by this user automatically
-                        if (u && u.user_id) {
-                            selectUser(u);
-                        }
-                    }
-                } catch (e) { }
             });
         });
     </script>

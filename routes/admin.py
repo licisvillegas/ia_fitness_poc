@@ -193,9 +193,75 @@ def admin_routine_builder_page():
 # API ENDPOINTS - ADMIN USERS & LOOKUP
 # ======================================================
 
+@admin_bp.get("/api/admin/users_paginated")
+def list_users_paginated():
+    """Endpoint paginado para usuarios."""
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+        search = request.args.get("search", "").strip()
+        
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+
+        query = {}
+        if search:
+            # Safe regex search
+            regex = {"$regex": search, "$options": "i"}
+            query = {
+                "$or": [
+                    {"name": regex},
+                    {"email": regex},
+                    {"username": regex},
+                    {"user_id": search} # exact or regex? usually exact for ID but string match is fine
+                ]
+            }
+
+        total = extensions.db.users.count_documents(query)
+        cursor = extensions.db.users.find(query, {
+            "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1
+        }).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+
+        data = []
+        for u in cursor:
+            uid = str(u.get("user_id") or u.get("_id"))
+            
+            # Helper lookups (optimize later with aggregation if slow)
+            roles_doc = extensions.db.user_roles.find_one({"user_id": uid})
+            role = roles_doc.get("role") if roles_doc else "user"
+            
+            status_doc = extensions.db.user_status.find_one({"user_id": uid})
+            status = status_doc.get("status", "active") if status_doc else "active"
+            
+            created = u.get("created_at")
+            if isinstance(created, datetime):
+                created = created.strftime("%Y-%m-%d %H:%M")
+            
+            data.append({
+                "user_id": uid,
+                "name": u.get("name"),
+                "email": u.get("email"),
+                "username": u.get("username"),
+                "created_at": created,
+                "role": role,
+                "status": status
+            })
+
+        return jsonify({
+            "items": data,
+            "total": total,
+            "page": page,
+            "pages": (total + limit - 1) // limit
+        }), 200
+    except Exception as e:
+        logger.error(f"Error listing users paginated: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
 @admin_bp.get("/api/admin/users")
 def list_users():
-    """Lista usuarios registrados (solo ID/Nombre/Email/Username)."""
+    """Lista usuarios registrados (Legacy/Full List)."""
     ok, err = check_admin_access()
     if not ok: return err
 
@@ -589,6 +655,78 @@ def delete_user(user_id):
 # ======================================================
 # API ENDPOINTS - ADMIN PROFILES
 # ======================================================
+@admin_bp.get("/api/admin/profiles_paginated")
+def list_profiles_paginated():
+    ok, err = check_admin_access()
+    if not ok: return err
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+        search = request.args.get("search", "").strip()
+
+        query = {}
+        # If searching, we likely search users first unless phone is in profile
+        if search:
+            regex = {"$regex": search, "$options": "i"}
+            # Find users matching name/email/username
+            matching_users = list(extensions.db.users.find({
+                "$or": [
+                    {"name": regex},
+                    {"email": regex},
+                    {"username": regex}
+                ]
+            }, {"user_id": 1}))
+            
+            user_ids = [u["user_id"] for u in matching_users if u.get("user_id")]
+            
+            # Profile query: user_id IN [...] OR phone matches
+            query = {
+                "$or": [
+                    {"user_id": {"$in": user_ids}},
+                    {"phone": regex}
+                ]
+            }
+
+        total = extensions.db.user_profiles.count_documents(query)
+        cursor = extensions.db.user_profiles.find(query).skip((page - 1) * limit).limit(limit)
+        
+        result = []
+        for p in cursor:
+            user_id = p.get("user_id")
+            # Join user info
+            u_doc = extensions.db.users.find_one({"user_id": user_id}, {"name": 1, "email": 1, "username": 1}) or {}
+            
+            # Basic status implicit check?
+            # The grid expects 'status' key for the badge.
+            status_doc = extensions.db.user_status.find_one({"user_id": user_id})
+            status = status_doc.get("status", "active") if status_doc else "active"
+
+            p_out = {
+                "user_id": user_id,
+                "username": u_doc.get("username"),
+                "name": u_doc.get("name"),
+                "email": u_doc.get("email"),
+                "sex": p.get("sex"),
+                "birth_date": format_birth_date(p.get("birth_date")),
+                "phone": p.get("phone"),
+                "age": compute_age(p.get("birth_date")),
+                "status": status,
+                # 'has_profile' is implied true since we are iterating profiles collection
+            }
+            result.append(p_out)
+
+        return jsonify({
+            "items": result,
+            "total": total,
+            "page": page,
+            "pages": (total + limit - 1) // limit
+        }), 200
+    except Exception as e:
+        logger.error(f"Error listing profiles paginated: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
 @admin_bp.get("/api/admin/profiles")
 def list_profiles():
     ok, err = check_admin_access()
@@ -1356,3 +1494,11 @@ def get_user_full_profile(user_id):
     except Exception as e:
         logger.error(f"Error full profile: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+
+
+# ======================================================
+# OPTIMIZED PAGINATION ENDPOINTS
+# ======================================================
+
+

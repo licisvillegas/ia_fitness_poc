@@ -22,23 +22,23 @@ logger = logging.getLogger("ai_fitness")
 def build_routine_prompt(level: str, goal: str, frequency: str, equipment: str) -> str:
     """Construye el System Prompt para el agente de rutinas."""
     return f"""
-# ROLE
+# ROL
 Actúa como un Entrenador Experto en Hipertrofia y Arquitecto de Software Deportivo. Tu objetivo es generar rutinas de entrenamiento dinámicas en formato JSON estricto, adaptadas al nivel del usuario basándote en principios de biomecánica y periodización.
 
-# INPUT VARIABLES
+# VARIABLES DE ENTRADA
 - Nivel de Usuario: {level}
 - Objetivo: {goal}
 - Días Disponibles: {frequency}
 - Equipo Disponible: {equipment}
 
-# LOGIC & RULES (Based on Evidence)
+# LÓGICA Y REGLAS (Basado en Evidencia)
 
 1.  **Clasificación de Nivel:**
     * **Principiante:** Enfoque en sobrecarga progresiva lineal, aprendizaje motor y adherencia. Series simples, descanso completo. Frecuencia recomendada 2-3 días.
     * **Intermedio:** Introducción de ondulación y periodización básica. Uso de biseries/superseries para eficiencia. Frecuencia recomendada 3-4 días.
     * **Avanzado:** Alta especificidad y gestión de fatiga. Uso mandatorio de técnicas de intensidad (Dropsets, Clusters, SST, Rest Pause) para romper estancamientos. Frecuencia 4-6 días.
 
-2.  **Selección de Técnicas (Intensity Techniques):**
+2.  **Selección de Técnicas (Técnicas de Intensidad):**
     * Usa "Series Simples" para ejercicios compuestos pesados (Squat, Deadlift) para evitar lesiones por fatiga excesiva.
     * Para Intermedios/Avanzados, inyecta técnicas según el contexto:
         * *Superseries/Triseries:* Para densidad metabólica.
@@ -47,13 +47,13 @@ Actúa como un Entrenador Experto en Hipertrofia y Arquitecto de Software Deport
         * *SST (Sarcoplasma Stimulating Training):* Solo para avanzados en ejercicios seguros.
         * *Tempo/TUT:* Define el tiempo excéntrico, isométrico y concéntrico (ej. 3010).
 
-3.  **Descansos (Rest Periods):**
+3.  **Descansos (Periodos de Descanso):**
     * Fuerza/Básicos (1-3 reps): 3-5 minutos.
     * Hipertrofia (6-12 reps): 1-2 minutos.
     * Metabólico/Resistencia (>15 reps): <1 minuto.
     * Biseries: 0-10s entre ejercicios, descanso largo al final.
 
-# OUTPUT FORMAT (JSON Schema)
+# FORMATO DE SALIDA (Esquema JSON)
 Genera UNICAMENTE un objeto JSON. No incluyas texto conversacional fuera del JSON.
 
 {{
@@ -83,7 +83,7 @@ Genera UNICAMENTE un objeto JSON. No incluyas texto conversacional fuera del JSO
 """
 
 class RoutineAgent:
-    """Agent wrapper that can call OpenAI or a local mock for Routines."""
+    """Envoltorio del agente que puede llamar a OpenAI o un mock local para Rutinas."""
 
     def __init__(self, model: Optional[str] = None) -> None:
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
@@ -95,7 +95,7 @@ class RoutineAgent:
             try:
                 from openai import OpenAI
                 import httpx
-                # Fix for proxies arg error
+                # Corrección para error de argumento proxies
                 http_client = httpx.Client()
                 self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                 logger.info(f"RoutineAgent initialized with OpenAI model: {self.model}")
@@ -116,7 +116,7 @@ class RoutineAgent:
         return f"mock ({self.init_error})" if self.init_error else "mock"
 
     def run(self, level: str, goal: str, frequency: str, equipment: str) -> Dict[str, Any]:
-        """Run the agent and return structured JSON."""
+        """Ejecuta el agente y devuelve JSON estructurado."""
         logger.info(
             "[AgentRun] RoutineAgent start | backend=%s model=%s args=(%s, %s, %s, %s)",
             self.backend(), self.model, level, goal, frequency, equipment

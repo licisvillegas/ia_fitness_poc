@@ -8,9 +8,9 @@ import traceback
 import sys
 from datetime import datetime, timezone
 
-# FORCE PYTHON UNBUFFERED
+# FORZAR PYTHON SIN BUFFER
 sys.stdout.reconfigure(encoding='utf-8')
-print("--- [DEBUG] STARTING APP.PY ---", file=sys.stdout, flush=True)
+print("--- [DEBUG] INICIANDO APP.PY ---", file=sys.stdout, flush=True)
 
 from config import Config
 import extensions
@@ -36,22 +36,22 @@ from routes.onboarding import onboarding_bp
 # CONFIGURACIÓN INICIAL
 # ======================================================
 def create_app():
-    print("--- [DEBUG] Entering create_app ---", file=sys.stdout, flush=True)
+    print("--- [DEBUG] Entrando a create_app ---", file=sys.stdout, flush=True)
     app = Flask(__name__)
     app.config.from_object(Config)
 
     # Inicializar base de datos
-    print("--- [DEBUG] Initializing DB ---", file=sys.stdout, flush=True)
+    print("--- [DEBUG] Inicializando BD ---", file=sys.stdout, flush=True)
     init_db(app)
 
     # Registrar middleware
-    print("--- [DEBUG] Registering Middleware ---", file=sys.stdout, flush=True)
+    print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)
     app.before_request(check_user_profile)
     app.before_request(check_workout_lock)
     app.context_processor(inject_user_role)
 
     # Registrar blueprints
-    print("--- [DEBUG] Registering Blueprints ---", file=sys.stdout, flush=True)
+    print("--- [DEBUG] Registrando Blueprints ---", file=sys.stdout, flush=True)
     app.register_blueprint(auth_bp, url_prefix="/auth") 
     # NOTA: auth_bp tiene rutas /auth/register, /auth/login, etc. url_prefix="/auth" duplica si las rutas ya tienen /auth?
     # Revisemos auth.py: @auth_bp.post("/register") -> /auth/register (con prefix /auth).
@@ -72,7 +72,7 @@ def create_app():
     app.register_blueprint(push_bp)
     app.register_blueprint(onboarding_bp) # Rutas /onboarding/*
 
-    print("--- [DEBUG] Blueprints registered successfully ---", file=sys.stdout, flush=True)
+    print("--- [DEBUG] Blueprints registrados exitosamente ---", file=sys.stdout, flush=True)
 
     @app.get("/health")
     def healthcheck():
@@ -80,9 +80,9 @@ def create_app():
 
     return app
 
-print("--- [DEBUG] Calling create_app() ---", file=sys.stdout, flush=True)
+print("--- [DEBUG] Llamando a create_app() ---", file=sys.stdout, flush=True)
 app = create_app()
-print("--- [DEBUG] App created successfully ---", file=sys.stdout, flush=True)
+print("--- [DEBUG] App creada exitosamente ---", file=sys.stdout, flush=True)
 
 # ======================================================
 # MANEJADORES DE ERRORES GLOBALES
@@ -111,7 +111,7 @@ def server_error(e):
 # UTILS DE INICIO
 # ======================================================
 def seed_user_statuses():
-    """Backfill user_status collection for existing users as active."""
+    """Rellena la colección user_status para usuarios existentes como activos."""
     if db is None:
         return
     try:

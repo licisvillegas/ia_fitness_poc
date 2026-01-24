@@ -59,8 +59,8 @@
 <!-- Tabs Navigation -->
 <ul class="nav nav-tabs border-secondary mb-3">
     <li class="nav-item">
-        <button class="nav-link active text-theme" id="tab-all" onclick="setTab('all')">
-            <i class="fas fa-list me-2"></i>Todas
+        <button class="nav-link active text-theme" id="tab-created" onclick="setTab('created')">
+            <i class="fas fa-list me-2"></i>Creadas
         </button>
     </li>
     <li class="nav-item">
@@ -80,7 +80,7 @@
                         <th>Grupos</th>
                         <th>Día</th>
                         <th>Ejercicios</th>
-                        <th>Disponible hasta</th>
+                        <th>Estado</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
@@ -385,7 +385,7 @@
     let bodyPartMap = {};
     let exerciseLookup = {};
     let messageModalInstance = null;
-    let activeTab = 'all'; // 'all' or 'assigned'
+    let activeTab = 'created'; // 'created' or 'assigned'
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (window.showLoader) window.showLoader("Cargando rutinas...");
@@ -462,7 +462,7 @@
         document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active', 'text-white'));
         document.querySelectorAll('.nav-link').forEach(btn => btn.classList.add('text-theme'));
 
-        const activeBtn = document.getElementById(mode === 'assigned' ? 'tab-assigned' : 'tab-all');
+        const activeBtn = document.getElementById(mode === 'assigned' ? 'tab-assigned' : 'tab-created');
         if (activeBtn) {
             activeBtn.classList.add('active', 'text-white');
             activeBtn.classList.remove('text-theme');
@@ -572,32 +572,45 @@
                 renderRoutines(routines);
                 return;
             }
+            // Fetch separated to avoid confusion
             const [assignedRes, createdRes] = await Promise.all([
                 fetch(`/workout/api/routines?user_id=${encodeURIComponent(uid)}`),
                 fetch("/workout/api/my-routines")
             ]);
+
             const assigned = await assignedRes.json().catch(() => []);
             const created = await createdRes.json().catch(() => []);
 
-            const merged = new Map();
-            (Array.isArray(assigned) ? assigned : []).forEach(r => {
-                if (r && r._id) merged.set(r._id, r);
+            // Normalizar Assigned
+            assigned.forEach(r => {
+                r.source_type = 'assigned';
             });
-            (Array.isArray(created) ? created : []).forEach(r => {
-                if (!r || !r._id) return;
-                if (!merged.has(r._id)) {
-                    merged.set(r._id, r);
-                    return;
-                }
-                const prev = merged.get(r._id);
-                const mergedRoutine = { ...prev, ...r };
-                if (!mergedRoutine.assigned_expires_at && prev.assigned_expires_at) {
-                    mergedRoutine.assigned_expires_at = prev.assigned_expires_at;
-                }
-                merged.set(r._id, mergedRoutine);
+
+            // Normalizar Created
+            created.forEach(r => {
+                r.source_type = 'created';
+                // Active por defecto true si no existe
+                if (r.is_active === undefined) r.is_active = true;
             });
-            routines = Array.from(merged.values());
-            filterRoutines();
+
+            // Merge simple para almacenar todo, but filtering will separate them
+            routines = [...created, ...assigned];
+
+            // Remove duplicates via ID mapping if creating overlaps (unlikely by design, but safe)
+            const map = new Map();
+            routines.forEach(r => {
+                // Key composite to handle if same displayed in both (shouldn't happen logic-wise but...)
+                // Let's just use ID. If same ID exists, Assigned props override for validity check
+                if (!map.has(r._id)) map.set(r._id, r);
+                else {
+                    const exist = map.get(r._id);
+                    // Merge properties
+                    map.set(r._id, { ...exist, ...r });
+                }
+            });
+            routines = Array.from(map.values());
+
+            setTab('created'); // Force start on created
         } catch (e) {
             console.error("Error loading routines", e);
         }
@@ -621,8 +634,12 @@
             // Tab Filter
             let tabMatch = true;
             if (activeTab === 'assigned') {
-                // Must have assigned_expires_at
-                tabMatch = !!r.assigned_expires_at;
+                tabMatch = !!r.source_type && r.source_type === 'assigned';
+            } else {
+                // Created tab
+                // Either explicitly created source OR authored by me (check user_id logic if available, or assume non-assigned source)
+                // Best approximation: source_type 'created' OR (no assigned_expires_at AND no source_type assigned)
+                tabMatch = (r.source_type === 'created');
             }
 
             return nameMatch && bodyMatch && dayMatch && tabMatch;
@@ -652,7 +669,7 @@
         if (filterBodyPart) filterBodyPart.value = "";
         if (filterDay) filterDay.value = "";
 
-        renderRoutines(routines);
+        filterRoutines();
     }
 
     function translateBodyPart(bp) {
@@ -701,7 +718,16 @@
             const partsLabel = getRoutineBodyPartsLabel(r);
             const exercises = getExerciseCount(r);
             const day = r.routine_day || "-";
-            const validity = r.assigned_expires_at ? formatDate(r.assigned_expires_at) : "";
+            const isActive = (r.is_active !== false); // Default True
+            const statusHtml = activeTab === 'created'
+                ? `
+                   <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="switch_${r._id}" 
+                               ${isActive ? 'checked' : ''} onchange="toggleRoutineDash('${r._id}')">
+                        <label class="form-check-label small text-secondary" for="switch_${r._id}">Dash</label>
+                   </div>
+                  `
+                : (r.assigned_expires_at ? `<div class="text-secondary small">Vence: ${formatDate(r.assigned_expires_at)}</div>` : '-');
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -712,7 +738,7 @@
                 <td><span class="badge bg-secondary">${partsLabel}</span></td>
                 <td>${day}</td>
                 <td>${exercises}</td>
-                <td>${validity ? `<div class="text-secondary small">Disponible hasta: ${validity}</div>` : "-"}</td>
+                <td>${statusHtml}</td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-info" onclick="openRoutineModal('${r._id}')" title="Ver detalle">
@@ -741,9 +767,15 @@
                     </div>
                     <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
                     <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
-                            ${validity ? `Disponible hasta: ${validity}` : "Disponible hasta: -"}
-                        </small>
+                        <div class="d-flex align-items-center">
+                            ${activeTab === 'created'
+                    ? `<div class="form-check form-switch me-2">
+                                     <input class="form-check-input" type="checkbox" role="switch" ${isActive ? 'checked' : ''} onchange="toggleRoutineDash('${r._id}')">
+                                     <label class="form-check-label small text-secondary">Dash</label>
+                                   </div>`
+                    : (r.assigned_expires_at ? `<small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">Vence: ${formatDate(r.assigned_expires_at)}</small>` : '-')
+                }
+                        </div>
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-info" onclick="openRoutineModal('${r._id}')">
                                 <i class="fas fa-eye"></i>
@@ -790,8 +822,8 @@
                         <div class="text-white">${exercises}</div>
                     </div>
                     <div class="col-6">
-                        <div class="text-secondary small">Disponible hasta</div>
-                        <div class="text-white">${validity || "-"}</div>
+                        <div class="text-secondary small">Estado</div>
+                        <div class="text-white">${validity || (routine.is_active !== false ? "Activa" : "Oculta")}</div>
                     </div>
                 </div>
                 <div class="routine-preview-scroll d-flex flex-column gap-2">${previewHtml}</div>
@@ -799,6 +831,25 @@
         `;
 
         new bootstrap.Modal(document.getElementById("routineModal")).show();
+    }
+
+    async function toggleRoutineDash(id) {
+        try {
+            const res = await fetch(`/workout/api/my-routines/${id}/toggle-dash`, { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || "Error al actualizar estado");
+                // revert check visually if possible or reload
+                return;
+            }
+            // Update local state
+            const r = routines.find(x => x._id === id);
+            if (r) r.is_active = data.is_active;
+
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión");
+        }
     }
 
     function buildRoutinePreviewHtml(routine) {

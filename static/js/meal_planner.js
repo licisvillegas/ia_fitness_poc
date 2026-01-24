@@ -40,15 +40,15 @@
         const out = data.output || {};
         const meals = out.meals || [];
 
-        // Calculate totals from items to ensure consistency
+        // Calcular totales de los items para asegurar consistencia
         let dailySumKcal = 0;
 
-        // Show summary container
+        // Mostrar contenedor de resumen
         const summaryContainer = document.getElementById('nutritionPlanSummary');
         const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
         if (summaryContainer) summaryContainer.style.display = 'flex';
 
-        // Prepare meal elements
+        // Preparar elementos de comida
         const mealElements = meals.map(m => {
             const card = document.createElement('div');
             card.className = 'meal-card';
@@ -63,7 +63,7 @@
             let mealKcalSum = 0;
             let mealP = 0, mealC = 0, mealF = 0;
 
-            // Render items and accumulate sums
+            // Renderizar items y acumular sumas
             (m.items || []).forEach(it => {
                 const li = document.createElement('li');
                 li.className = 'list-group-item d-flex justify-content-between align-items-center bg-transparent';
@@ -92,10 +92,10 @@
                 ul.appendChild(li);
             });
 
-            // Fallback to meal-level values if present and non-zero/valid, otherwise use calculated sums
+            // Usar valores a nivel de comida si están presentes y son válidos, de lo contrario usar sumas calculadas
             const displayKcal = (m.total_kcal != null) ? m.total_kcal : ((m.kcal != null && m.kcal !== '-') ? m.kcal : mealKcalSum);
 
-            // Only use calculated macros if meal.macros is missing or empty
+            // Solo usar macros calculados si meal.macros falta o está vacío
             const mac = m.macros || {};
             const valC = (mac.c ?? mac.carbs) != null ? (mac.c ?? mac.carbs) : mealC;
             const valP = (mac.p ?? mac.protein) != null ? (mac.p ?? mac.protein) : mealP;
@@ -118,13 +118,13 @@
             return card;
         });
 
-        // Display Daily Total
+        // Mostrar Total Diario
         const targetTotal = out.total_kcal;
         if (summaryTotalDiv) {
             summaryTotalDiv.innerHTML = `Total del día: <strong>${dailySumKcal} kcal</strong><br><span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
         }
 
-        // Append all cards
+        // Adjuntar todas las tarjetas
         mealElements.forEach(c => container.appendChild(c));
 
         const tips = out.tips || [];
@@ -207,7 +207,7 @@
                 if (msg) msg.textContent = 'No cuenta con plan de nutrición activo';
                 container.innerHTML = '';
                 if (btnSave) btnSave.style.display = 'none';
-                // Hide summary if no plan
+                // Ocultar resumen si no hay plan
                 const s = document.getElementById('nutritionPlanSummary');
                 if (s) s.style.display = 'none';
                 return;

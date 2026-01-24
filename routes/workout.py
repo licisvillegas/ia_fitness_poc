@@ -45,7 +45,7 @@ def _get_body_parts_map(db):
 
 @workout_bp.route("/dashboard")
 def dashboard():
-    """Render the Workout Dashboard."""
+    """Renderiza el Dashboard de Entrenamiento."""
     user_id = request.cookies.get("user_session")
     is_admin = False
     all_users = []
@@ -75,7 +75,7 @@ def dashboard():
 
 @workout_bp.route("/exercises")
 def exercises_page():
-    """Unified Catalog (Grid + List) secured endpoint."""
+    """Endpoint seguro del Catálogo Unificado (Cuadrícula + Lista)."""
     user_id = request.cookies.get("user_session")
     embed = request.args.get("embed") in ("1", "true", "yes")
     
@@ -105,12 +105,12 @@ def exercises_page():
 
 @workout_bp.route("/exercises/unified")
 def exercises_unified_page():
-    """Legacy alias for unified view."""
+    """Alias heredado para la vista unificada."""
     return exercises_page()
 
 @workout_bp.route("/rm-calculator")
 def rm_calculator_page():
-    """Render the 1RM calculator."""
+    """Renderiza la calculadora de 1RM."""
     return render_template("rm_calculator.html")
 
 @workout_bp.get("/api/exercises")
@@ -168,7 +168,7 @@ def list_public_exercises():
 
 @workout_bp.get("/api/exercises/search")
 def api_search_exercises():
-    """Search exercises with pagination for the user catalog."""
+    """Busca ejercicios con paginación para el catálogo de usuario."""
     db = get_db()
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
@@ -250,7 +250,7 @@ def api_search_exercises():
 
 @workout_bp.post("/api/rm/save")
 def api_save_rm_record():
-    """Saves a 1RM record for the authenticated user."""
+    """Guarda un registro de 1RM para el usuario autenticado."""
     try:
         user_id = request.cookies.get("user_session")
         if not user_id:
@@ -293,10 +293,10 @@ def api_save_rm_record():
 @workout_bp.get("/api/exercises/filter")
 def api_filter_exercises():
     """
-    Public API to filter exercises by muscle groups (comma separated).
-    Query params:
-    - muscles: "Pecho,Tríceps" or "all"
-    - q: search term (optional)
+    API pública para filtrar ejercicios por grupos musculares (separados por coma).
+    Parámetros de consulta:
+    - muscles: "Pecho,Tríceps" o "all"
+    - q: término de búsqueda (opcional)
     """
     db = get_db()
     if db is None: return jsonify([]), 503
@@ -379,7 +379,7 @@ def api_get_body_parts():
 
 @workout_bp.get("/api/exercises/metadata")
 def api_get_exercise_metadata():
-    """Returns distinct equipment and types from the database for dynamic filtering."""
+    """Devuelve equipamiento y tipos distintos de la base de datos para filtrado dinámico."""
     try:
         db = get_db()
         # MongoDB distinct handles arrays automatically for equipment
@@ -403,7 +403,7 @@ def api_get_exercise_metadata():
         return jsonify({"error": str(e)}), 500
 @workout_bp.get("/api/stats/heatmap")
 def api_stats_heatmap():
-    """Returns frequency map of workouts for the user (last year)."""
+    """Devuelve el mapa de frecuencia de entrenamientos del usuario (último año)."""
     try:
         # Relaxed Auth: Allow access via user_id arg (consistent with volume/sessions)
         req_user_id = request.args.get("user_id")
@@ -461,7 +461,7 @@ def api_stats_heatmap():
 
 @workout_bp.get("/api/routines")
 def api_get_user_routines():
-    """Returns the routines assigned to the user."""
+    """Devuelve las rutinas asignadas al usuario."""
     try:
         user_id = request.args.get("user_id")
         if not user_id: return jsonify({"error": "Missing user_id"}), 400
@@ -530,7 +530,7 @@ def user_routines_catalog_page():
 
 @workout_bp.route("/adherence")
 def adherence_dashboard_page():
-    """Render adherence dashboard."""
+    """Renderiza el dashboard de adherencia."""
     user_id = request.cookies.get("user_session")
     return render_template("adherence_dashboard.html", current_user_id=user_id)
 
@@ -578,7 +578,7 @@ def api_list_my_routines():
 
 @workout_bp.get("/api/adherence/config")
 def api_get_adherence_config():
-    """Returns user adherence configuration (target frequency)."""
+    """Devuelve la configuración de adherencia del usuario (frecuencia objetivo)."""
     try:
         user_id = request.cookies.get("user_session")
         if not user_id:
@@ -597,7 +597,7 @@ def api_get_adherence_config():
 
 @workout_bp.post("/api/adherence/config")
 def api_save_adherence_config():
-    """Saves user adherence configuration (target frequency)."""
+    """Guarda la configuración de adherencia del usuario (frecuencia objetivo)."""
     try:
         user_id = request.cookies.get("user_session")
         if not user_id:
@@ -706,9 +706,39 @@ def api_save_my_routine():
         logger.error(f"Error saving user routine: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
+@workout_bp.post("/api/my-routines/<routine_id>/toggle-dash")
+def api_toggle_dashboard_visibility(routine_id):
+    """Alterna la visibilidad de la rutina en el dashboard."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id: return jsonify({"error": "Unauthorized"}), 401
+        
+        if not ObjectId.is_valid(routine_id):
+            return jsonify({"error": "ID invalido"}), 400
+            
+        db = get_db()
+        if db is None: return jsonify({"error": "DB not ready"}), 503
+
+        # Toggle logic: find, flip, update
+        routine = db.routines.find_one({"_id": ObjectId(routine_id), "user_id": user_id})
+        if not routine:
+             return jsonify({"error": "Rutina no encontrada o no autorizada"}), 404
+             
+        new_val = not routine.get("is_active", True)
+        
+        db.routines.update_one(
+            {"_id": ObjectId(routine_id)},
+            {"$set": {"is_active": new_val, "updated_at": datetime.utcnow()}}
+        )
+        
+        return jsonify({"success": True, "is_active": new_val}), 200
+    except Exception as e:
+        logger.error(f"Error toggling routine visibility: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
 @workout_bp.get("/api/stats/volume")
 def api_stats_volume():
-    """Returns average weight per set grouped by day."""
+    """Devuelve el peso promedio por serie agrupado por día."""
     try:
         user_id = request.args.get("user_id")
         if not user_id: return jsonify({"error": "Missing user_id"}), 400
@@ -767,7 +797,7 @@ def api_stats_volume():
 
 @workout_bp.get("/api/stats/weekly")
 def api_stats_weekly():
-    """Returns weekly stats (volume and consistency) for the last 12 weeks."""
+    """Devuelve estadísticas semanales (volumen y consistencia) de las últimas 12 semanas."""
     try:
         user_id = request.args.get("user_id")
         if not user_id: return jsonify({"error": "Missing user_id"}), 400

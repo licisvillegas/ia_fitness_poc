@@ -181,9 +181,9 @@ class BodyAssessmentAgent:
                 try:
                     from openai import OpenAI
                     import httpx
-                    # Fix for "unexpected keyword argument 'proxies'":
-                    # We explicitly create the http_client to bypass OpenAI's internal client creation
-                    # that might be using deprecated args for newer httpx versions.
+                    # Solución para el error de argumento 'proxies':
+                    # Creamos explícitamente el cliente http para evitar la creación interna de cliente de OpenAI
+                    # que podría estar usando argumentos obsoletos para versiones más recientes de httpx.
                     http_client = httpx.Client()
                     self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                     logger.info(f"BodyAssessmentAgent initialized with OpenAI model: {self.model}")
@@ -227,7 +227,7 @@ class BodyAssessmentAgent:
         )
 
         # ------------------------------------------------------------------
-        # 1. Deterministic Calculation (US Navy Method) & Context Prep
+        # 1. Cálculo Determinístico (Método de la Marina de EE. UU.) y Preparación del Contexto
         # ------------------------------------------------------------------
         measurements = context.get("measurements") or {}
         weight = self._safe_float(measurements.get("weight_kg"))
@@ -239,7 +239,7 @@ class BodyAssessmentAgent:
         hip = self._safe_float(measurements.get("hip"))
         neck = self._safe_float(measurements.get("neck"))
         
-        # Bilateral Helpers
+        # Ayudantes Bilaterales
         def _get_avg(base_key):
              val = self._safe_float(measurements.get(base_key))
              if val is not None: return val
@@ -264,7 +264,7 @@ class BodyAssessmentAgent:
         height_m = height_cm / 100 if height_cm else 1.75
         bmi = weight / (height_m**2) if height_m > 0 else 22.0
 
-        # Strict Calc
+        # Cálculo Estricto
         calculated_body_fat = self._estimate_body_fat(
             sex=sex, height_cm=height_cm or 175, waist=waist, abdomen=abdomen, hip=hip, neck=neck, bmi=bmi, age=age
         )
@@ -272,7 +272,7 @@ class BodyAssessmentAgent:
         fat_mass = max(0.0, weight * (calculated_body_fat / 100)) if weight else 0.0
         lean_mass = max(0.0, (weight or 0.0) - fat_mass)
         
-        # Inject into prompt
+        # Inyectar en el prompt
         context["calculations"] = {
              "body_fat_percent": round(calculated_body_fat, 1),
              "lean_mass_kg": round(lean_mass, 1),
@@ -308,9 +308,9 @@ class BodyAssessmentAgent:
             result = self._run_mock({"_fallback_reason": f"provider_error: {str(e)}"})
         
         # ------------------------------------------------------------------
-        # 3. Post-Process & Overwrite
+        # 3. Post-Procesamiento y Sobrescritura
         # ------------------------------------------------------------------
-        # Ensure body composition reflects formula
+        # Asegurar que la composición corporal refleje la fórmula
         if "body_composition" not in result:
             result["body_composition"] = {}
         
@@ -318,7 +318,7 @@ class BodyAssessmentAgent:
         result["body_composition"]["lean_mass_kg"] = round(lean_mass, 1)
         result["body_composition"]["fat_mass_kg"] = round(fat_mass, 1)
         
-        # Muscle Percentage
+        # Porcentaje Muscular
         muscle_percent, muscle_mass_kg, muscle_notes = self._estimate_muscle_percent(
             sex=sex, lean_mass=lean_mass, weight=weight, height_cm=height_cm,
             arm_relaxed=arm_relaxed, arm_flexed=arm_flexed, thigh=thigh, calf=calf
@@ -328,7 +328,7 @@ class BodyAssessmentAgent:
         if "muscle_mass_kg" not in result["body_composition"] or result["body_composition"]["muscle_mass_kg"] == 0:
              result["body_composition"]["muscle_mass_kg"] = round(muscle_mass_kg, 1)
 
-        # Proportions
+        # Proporciones
         waist_metric = waist if (sex == "female" and waist) else (abdomen or waist or 80)
         waist_to_height = waist_metric / height_cm if height_cm else None
         waist_to_hip = waist_metric / hip if hip else None
@@ -342,7 +342,7 @@ class BodyAssessmentAgent:
         result["proportions"]["waist_to_height"] = round(waist_to_height, 3) if waist_to_height else None
         result["proportions"]["symmetry_notes"] = result["proportions"].get("symmetry_notes") or symmetry_notes
 
-        # Create Frontend Alias
+        # Crear Alias Frontend
         result["body_proportions"] = {
             "waist_to_height_ratio": round(waist_to_height, 3) if waist_to_height else None,
             "waist_to_hip_ratio": round(waist_to_hip, 3) if waist_to_hip else None,
@@ -350,7 +350,7 @@ class BodyAssessmentAgent:
             "symmetry_analysis": result["proportions"].get("symmetry_notes")
         }
 
-        # Energy Expenditure
+        # Gasto Energético
         try:
             if weight and height_cm and age:
                 energy = self._calculate_energy_expenditure(
@@ -446,10 +446,10 @@ class BodyAssessmentAgent:
             logger = logging.getLogger("ai_fitness")
             logger.info(f"[AgentRun] BodyAssessmentAgent gemini call | model={self.model}")
             
-            # Gemini usually expects text prompt. Configure generation config for JSON.
+            # Gemini generalmente espera un prompt de texto. Configurar config de generación para JSON.
             generation_config = {"response_mime_type": "application/json"}
             
-            # Since self._client is a GenerativeModel instance
+            # Dado que self._client es una instancia de GenerativeModel
             resp = self._client.generate_content(prompt, generation_config=generation_config)
             content = resp.text
             
@@ -473,9 +473,9 @@ class BodyAssessmentAgent:
                 data_b64 = img.get("data")
                 mime = img.get("mime") or "image/jpeg"
                 if data_b64:
-                    # Construct part for Gemini
-                    # google-generativeai expects a dict like {'mime_type':..., 'data':...}
-                    # or pure PIL image. Since we have b64, let's format it for the library.
+                    # Construir parte para Gemini
+                    # google-generativeai espera un dict como {'mime_type':..., 'data':...}
+                    # o imagen PIL pura. Como tenemos b64, vamos a formatearlo para la biblioteca.
                     image_blob = {"mime_type": mime, "data": data_b64}
                     inputs.append(image_blob)
             
@@ -601,7 +601,7 @@ class BodyAssessmentAgent:
                 "waist_to_chest": round(waist_to_chest, 3) if waist_to_chest else None,
                 "symmetry_notes": symmetry_notes,
             },
-            # Aliased for Frontend
+            # Aliado para Frontend
             "body_proportions": {
                 "waist_to_height_ratio": round(waist_to_height, 3) if waist_to_height else None,
                 "waist_to_hip_ratio": round(waist_to_hip, 3) if waist_to_hip else None,
@@ -630,27 +630,27 @@ class BodyAssessmentAgent:
         *,
         sex: str,
         height_cm: float,
-        waist: Optional[float],   # Narrowest (Women)
-        abdomen: Optional[float], # Navel (Men)
+        waist: Optional[float],   # Más estrecha (Mujeres)
+        abdomen: Optional[float], # Ombligo (Hombres)
         hip: Optional[float],
         neck: Optional[float],
-        weight: Optional[float] = None, # Unused for navy but kept for signature comp
+        weight: Optional[float] = None, # No usado para marina pero mantenido para firma comp
         bmi: float = 22.0,
         age: float = 30.0,
     ) -> float:
         """Estima % graso utilizando fórmula marina de EE.UU."""
         
-        # Ensure we have clean floats
+        # Asegurar float limpios
         h = height_cm
         n = neck
         
-        # Select measurement based on sex and instructions
-        # Uses Standard US Navy Method (Metric) based on Density
+        # Seleccionar medida basada en sexo e instrucciones
+        # Usa el Método Estándar de la Marina de EE. UU. (Métrico) basado en Densidad
         # %BF = (495 / Density) - 450
         
         if sex == "female":
-            # WOMEN: Density = 1.29579 - 0.35004 * log10(Waist + Hip - Neck) + 0.22100 * log10(Height)
-            w = waist if (waist and waist > 0) else abdomen # Fallback if waist missing
+            # MUJERES: Densidad = ...
+            w = waist if (waist and waist > 0) else abdomen # Fallback si falta cintura
             p = hip
             
             if w and p and n and h:
@@ -668,8 +668,8 @@ class BodyAssessmentAgent:
                 except Exception:
                     pass
         else:
-            # MEN: Density = 1.0324 - 0.19077 * log10(Waist - Neck) + 0.15456 * log10(Height)
-            a = abdomen if (abdomen and abdomen > 0) else waist # Fallback if abdomen missing
+            # HOMBRES: Densidad = ...
+            a = abdomen if (abdomen and abdomen > 0) else waist # Fallback si falta abdomen
             
             if a and n and h:
                 try:

@@ -1,11 +1,10 @@
 <section id="my-routines" class="mt-5" style="display:none;">
   <div class="card bg-panel border-0 shadow">
-    <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+    <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center"
+      role="button" data-bs-toggle="collapse" data-bs-target="#assignedRoutinesCollapse" aria-expanded="true"
+      aria-controls="assignedRoutinesCollapse" style="cursor: pointer;">
       <div><i class="fas fa-calendar-check text-cyber-green me-2"></i>Mis Rutinas Asignadas</div>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
-        data-bs-target="#assignedRoutinesCollapse" aria-expanded="true" aria-controls="assignedRoutinesCollapse">
-        <i class="fas fa-chevron-up"></i>
-      </button>
+      <i class="fas fa-chevron-up text-secondary"></i>
     </div>
     <div id="assignedRoutinesCollapse" class="collapse show">
       <div class="card-body">
@@ -23,12 +22,18 @@
       const collapseEl = document.getElementById('assignedRoutinesCollapse');
       if (collapseEl) {
         collapseEl.addEventListener('show.bs.collapse', function () {
-          const icon = document.querySelector('[data-bs-target="#assignedRoutinesCollapse"] i');
-          if (icon) icon.className = 'fas fa-chevron-up';
+          const icon = document.querySelector('[data-bs-target="#assignedRoutinesCollapse"] .fa-chevron-down, [data-bs-target="#assignedRoutinesCollapse"] .fa-chevron-up');
+          if (icon) {
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+          }
         });
         collapseEl.addEventListener('hide.bs.collapse', function () {
-          const icon = document.querySelector('[data-bs-target="#assignedRoutinesCollapse"] i');
-          if (icon) icon.className = 'fas fa-chevron-down';
+          const icon = document.querySelector('[data-bs-target="#assignedRoutinesCollapse"] .fa-chevron-down, [data-bs-target="#assignedRoutinesCollapse"] .fa-chevron-up');
+          if (icon) {
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+          }
         });
       }
     });

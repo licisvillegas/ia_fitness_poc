@@ -141,21 +141,65 @@
     if (bar) bar.style.width = `${Math.min(100, Math.round(pct))}%`;
   };
 
+  const getHistoryStart = (dates) => {
+    if (!dates || !dates.length) return new Date();
+    // Fechas ya vienen ordenadas por getUniqueDateList
+    // Parseamos la primera fecha
+    return new Date(dates[0]);
+  };
+
   const updateRollingAverage = (dates, rangeDays, weekKey) => {
     const target = Math.max(1, Number(state.targetFrequency) || 1);
-    const { weeks } = getWindowRange(rangeDays, weekKey);
-    const days = weeks * 7;
+
+    // 1. Determinar el rango teórico seleccionado
+    const { weeks: theoreticalWeeks } = getWindowRange(rangeDays, weekKey);
+    const theoreticalDays = theoreticalWeeks * 7;
+
+    // 2. Determinar el rango real disponible (Smart History)
+    // Solo aplica si NO es modo 'week' (que es fijo) y tenemos datos
+    let effectiveDays = theoreticalDays;
+    let isAdjusted = false;
+
+    if (rangeDays !== "week" && state.trainedDates.length > 0) {
+      const firstDate = getHistoryStart(state.trainedDates);
+      const today = new Date();
+      const diffTime = Math.abs(today - firstDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 incluye hoy
+
+      // Si la historia real es MENOR que el rango seleccionado (con un margen de error), ajustamos.
+      // Ejemplo: Selecciona 30 días, pero empezó hace 10. Usamos 10.
+      if (diffDays < theoreticalDays) {
+        effectiveDays = Math.max(1, diffDays);
+        isAdjusted = true;
+      }
+    }
+
+    // 3. Calcular semanas efectivas para el promedio
+    // Mínimo 1 semana para evitar divisiones locas en primeros días
+    const effectiveWeeks = Math.max(1, effectiveDays / 7);
+
     const count = dates.length;
-    const avgPerWeek = count / weeks;
+    const avgPerWeek = count / effectiveWeeks;
     const ratio = avgPerWeek / target;
     const pct = Math.min(1, ratio) * 100;
 
     const titleEl = document.getElementById("adherenceRollingTitle");
     if (titleEl) {
-      titleEl.textContent = `Semáforo ${weeks} ${weeks === 1 ? "semana" : "semanas"}`;
+      // Mostrar etiqueta semántica
+      let label = `${theoreticalWeeks} ${theoreticalWeeks === 1 ? "semana" : "semanas"}`;
+      if (isAdjusted) {
+        label += " (Ajustado)";
+      }
+      titleEl.textContent = `Semáforo ${label}`;
     }
+
     setText("adherenceRollingValue", `${avgPerWeek.toFixed(1)} / ${target}`);
-    setText("adherenceRollingMeta", `Promedio semanal en ${days} dias (${count} sesiones)`);
+
+    let metaText = `Promedio semanal en ${effectiveDays} días (${count} sesiones)`;
+    if (isAdjusted) {
+      metaText = `Historial real: ${effectiveDays} días (vs ${theoreticalDays} selec.) - ${count} sesiones`;
+    }
+    setText("adherenceRollingMeta", metaText);
 
     const badge = document.getElementById("adherenceRollingBadge");
     if (!badge) return;
@@ -169,7 +213,7 @@
       badge.className = "badge bg-danger text-white";
       badge.textContent = "Rojo";
     }
-    badge.setAttribute("title", `${Math.round(pct)}% de meta`);
+    badge.setAttribute("title", `${Math.round(pct)}% de meta (ajustada a historial)`);
   };
 
   const updateStreaks = (dates) => {
@@ -196,7 +240,7 @@
       }
     });
 
-    // Current streak checks from latest week backwards
+    // La racha actual verifica desde la última semana hacia atrás
     current = 0;
     for (let i = weeks.length - 1; i >= 0; i -= 1) {
       const wk = weeks[i];
@@ -276,6 +320,11 @@
       state.targetFrequency = Number.isFinite(target) && target > 0 ? target : 3;
       const select = document.getElementById("adherenceTargetSelect");
       if (select) select.value = String(state.targetFrequency);
+
+      const header = document.getElementById("adherenceGoalHeader");
+      if (header) {
+        header.textContent = `Objetivo semanal (${state.targetFrequency} días)`;
+      }
     } catch (e) {
       state.targetFrequency = 3;
     }
@@ -293,6 +342,12 @@
       if (!res.ok) throw new Error("Error guardando");
       state.targetFrequency = value;
       if (msg) msg.textContent = "Guardado";
+
+      const header = document.getElementById("adherenceGoalHeader");
+      if (header) {
+        header.textContent = `Objetivo semanal (${value} días)`;
+      }
+
       refreshUI();
     } catch (e) {
       if (msg) msg.textContent = "Error al guardar";
@@ -309,6 +364,33 @@
     const data = await res.json();
     state.sessions = Array.isArray(data) ? data : [];
     state.trainedDates = getUniqueDateList(state.sessions);
+
+    // Auto-select range logic based on active weeks
+    // "depending on the number of weeks of registered trainings"
+    if (state.trainedDates.length > 0) {
+      const weekCounts = buildWeekCounts(state.trainedDates);
+      const activeWeeks = weekCounts.size;
+
+      // Thresholds (Relaxed based on user feedback): 
+      // <= 6 weeks (approx 1.5 months) -> 30 days preference
+      // <= 12 weeks (approx 3 months) -> 60 days preference
+      // > 12 weeks -> 90 days
+      console.log("Auto-select debug: Active Weeks =", activeWeeks);
+
+      if (activeWeeks <= 6) {
+        state.windowRangeDays = 30;
+      } else if (activeWeeks <= 12) {
+        state.windowRangeDays = 60;
+      } else {
+        state.windowRangeDays = 90;
+      }
+
+      // Update Select UI if present
+      const windowSelect = document.getElementById("adherenceWindowSelect");
+      if (windowSelect) {
+        windowSelect.value = String(state.windowRangeDays);
+      }
+    }
   };
 
   const bindEvents = () => {

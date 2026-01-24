@@ -15,7 +15,7 @@ import logging
 import random
 from typing import Any, Dict, Optional, List
 
-# Logger configuration
+# Configuración del Logger
 logger = logging.getLogger("ai_fitness")
 
 # --- BASE DE DATOS HEURÍSTICA CON VALORES NUTRICIONALES (por 100g aprox) ---
@@ -103,7 +103,7 @@ class MealPlanAgent:
             try:
                 from openai import OpenAI
                 import httpx
-                # Explicit http_client to avoid proxies arg error with recent httpx
+                # Cliente http explícito para evitar error de argumento proxies con httpx reciente
                 http_client = httpx.Client()
                 self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                 logger.info(f"MealPlanAgent initialized with OpenAI model: {self.model}")
@@ -192,7 +192,7 @@ class MealPlanAgent:
             target_f = int(f_daily * r_norm)
             target_kcal = int(total_kcal * r_norm)
 
-            # Seguridad: Mínimo 20g de proteína en comidas principales (Tactical Athlete guideline)
+            # Seguridad: Mínimo 20g de proteína en comidas principales (guía de Atleta Táctico)
             if m_type in ["breakfast", "main"] and target_p < 20:
                 target_p = 25
 
@@ -211,7 +211,7 @@ class MealPlanAgent:
                 "items": items
             })
 
-        # Recalculate global totals based on actual generated meals for consistency
+        # Recalcular totales globales basados en comidas generadas reales para consistencia
         global_real_kcal = sum(m["kcal"] for m in meals_out)
         global_real_p = sum(m["macros"]["p"] for m in meals_out)
         global_real_c = sum(m["macros"]["c"] for m in meals_out)

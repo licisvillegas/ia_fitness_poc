@@ -55,10 +55,10 @@ Devuelve SOLO JSON con:
 
 
 class ReasoningAgent:
-    """Agent wrapper that can call OpenAI or a local mock.
-
-    If environment variable OPENAI_API_KEY is present, uses OpenAI responses.
-    Otherwise falls back to a deterministic mock suitable for offline testing.
+    """Envoltorio del agente que puede llamar a OpenAI o un mock local.
+    
+    Si la variable de entorno OPENAI_API_KEY está presente, utiliza respuestas de OpenAI.
+    De lo contrario, recurre a un mock determinístico adecuado para pruebas offline.
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
@@ -82,7 +82,7 @@ class ReasoningAgent:
                 try:
                     from openai import OpenAI
                     import httpx
-                    # Explicit http_client to avoid proxies arg error with recent httpx
+                    # Cliente http explícito para evitar error de argumento proxies con httpx reciente
                     http_client = httpx.Client()
                     self._client = OpenAI(api_key=self.api_key, http_client=http_client)
                     logger.info(f"ReasoningAgent initialized with OpenAI model: {self.model}")
@@ -115,10 +115,10 @@ class ReasoningAgent:
         return f"{self.provider.value}:{self.model}" if self.provider else "mock"
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the agent and return structured JSON as dict.
-
-        The context dict should be serializable to JSON. If OpenAI is unavailable,
-        produce a deterministic mock using simple heuristics on progress metrics.
+        """Ejecuta el agente y devuelve JSON estructurado como dict.
+        
+        El dict de contexto debe ser serializable a JSON. Si OpenAI no está disponible,
+        produce un mock determinístico usando heurísticas simples sobre métricas de progreso.
         """
         import logging
         logger = logging.getLogger("ai_fitness")
@@ -149,11 +149,11 @@ class ReasoningAgent:
     # Backends
     # -------------------------
     def _run_openai(self, prompt: str) -> Dict[str, Any]:
-        """Call OpenAI responses API expecting JSON output."""
-        # Using JSON mode via responses API (OpenAI Python SDK v1.x)
+        """Llama a la API de respuestas de OpenAI esperando salida JSON."""
+        # Usando modo JSON vía API de respuestas (OpenAI Python SDK v1.x)
         try:
-            # We default to text responses; user can switch to responses with JSON tool if desired.
-            # Here we nudge with system+user content and parse JSON.
+            # Por defecto respuestas de texto; el usuario puede cambiar a respuestas con tool JSON si lo desea.
+            # Aquí sugerimos con contenido system+user y parseamos JSON.
             import logging
             logger = logging.getLogger("ai_fitness")
             logger.info(
@@ -230,15 +230,15 @@ class ReasoningAgent:
             return self._run_mock({"_fallback_reason": f"gemini_error: {str(e)}"})
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Heuristic mock for offline/testing without API calls.
+        """Mock heurístico para offline/testing sin llamadas API.
 
-        Rules of thumb:
-        - If recent body_fat reduction has stalled or worsened while adherence < 80, decrease kcal by 8-12%.
-        - If performance dropped ≥5 points vs previous, reduce training volume by 10-15% and increase rest.
-        - If gaining muscle (performance↑ and body_fat stable/↓), small kcal surplus +5-8%.
-        - Cardio: add 2x-LISS 25-35' if fat loss stalled; otherwise maintain.
+        Reglas generales:
+        - Si la reducción de grasa corporal reciente se estancó o empeoró mientras adherencia < 80, reducir kcal en 8-12%.
+        - Si el rendimiento cayó ≥5 puntos vs anterior, reducir volumen de entrenamiento en 10-15% y aumentar descanso.
+        - Si ganando músculo (rendimiento↑ y grasa corporal estable/↓), pequeño superávit kcal +5-8%.
+        - Cardio: añadir 2x-LISS 25-35' si pérdida de grasa estancada; de lo contrario mantener.
         """
-        # Extract last two datapoints if present
+        # Extraer últimos dos puntos de datos si existen
         import logging
         logger = logging.getLogger("ai_fitness")
         logger.info(
@@ -269,7 +269,7 @@ class ReasoningAgent:
         perf_last = get(last, "performance", None)
         perf_prev = get(prev, "performance", perf_last)
 
-        # Defaults
+        # Valores por defecto
         kcal_obj = 2300
         kcal_delta = 0
         macros = {"p": 160, "c": 250, "g": 70}
@@ -278,7 +278,7 @@ class ReasoningAgent:
         razon = []
         revision = 10
 
-        # Heuristics
+        # Heurísticas
         fat_stall = (bf_last is not None and bf_prev is not None and (bf_last >= bf_prev - 0.1))
         perf_drop = (perf_last is not None and perf_prev is not None and (perf_last - perf_prev) <= -5)
         perf_gain = (perf_last is not None and perf_prev is not None and (perf_last - perf_prev) >= 3)
@@ -306,7 +306,7 @@ class ReasoningAgent:
             razon.append("Ajuste conservador manteniendo adherencia y seguridad")
             revision = 10
 
-        # Compose response
+        # Componer respuesta
         return {
             "ajustes": {
                 "plan_alimentacion": {

@@ -247,9 +247,54 @@ function updateSegmentalUI(scores) {
 
   if (emptyState) emptyState.classList.add('d-none');
 
+  // Calculate points
+  
   const values = [scores.sup, scores.cross, scores.vtaper, scores.xframe, scores.lateral];
+  const points = buildPentagonPoints(values); // Returns "x,y x,y ..." string
+  polygon.setAttribute('points', points);
 
-  polygon.setAttribute('points', buildPentagonPoints(values));
+  // Update interactive points
+  const pointCoords = points.split(' ').map(pair => {
+    const [x, y] = pair.split(',');
+    return { x, y };
+  });
+
+  const metrics = ['sup', 'cross', 'vtaper', 'xframe', 'lateral'];
+  const tooltips = {
+    'sup': 'Desarrollo superior relativo',
+    'cross': 'Equilibrio brazos/piernas',
+    'vtaper': 'Relación Hombros-Cintura',
+    'xframe': 'Desarrollo piernas vs cintura',
+    'lateral': 'Simetría izquierda/derecha'
+  };
+
+  const tooltipEl = document.getElementById('seg-tooltip');
+
+  metrics.forEach((metric, index) => {
+    const circle = document.getElementById(`pt-${metric}`);
+    if (circle && pointCoords[index]) {
+      circle.setAttribute('cx', pointCoords[index].x);
+      circle.setAttribute('cy', pointCoords[index].y);
+
+      // Add/Update listeners (removing old first to be safe, though typical pattern is simpler)
+      // Ideally use a delegate or just onclick if simple. For hover:
+      circle.onmouseenter = () => {
+        if (tooltipEl) {
+          const score = Math.round(values[index]);
+          const desc = tooltips[metric];
+          tooltipEl.innerHTML = `<strong class="text-white">${desc}</strong><br><span class="text-cyber-green">${score}/100</span>`;
+          tooltipEl.style.left = `${pointCoords[index].x}px`;
+          tooltipEl.style.top = `${pointCoords[index].y - 20}px`; // Offset up
+          tooltipEl.classList.remove('hidden');
+          circle.classList.add('active');
+        }
+      };
+      circle.onmouseleave = () => {
+        if (tooltipEl) tooltipEl.classList.add('hidden');
+        circle.classList.remove('active');
+      };
+    }
+  });
 
   const format = (value) => `${Math.round(value)}%`;
   const labels = {

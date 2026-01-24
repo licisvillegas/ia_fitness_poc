@@ -114,3 +114,55 @@
   opacity: 0.65;
   pointer-events: none;
 }
+
+/* --- Interactive Tooltips & Points --- */
+.segmental-card {
+  position: relative;
+  /* Anchor for tooltip absolute positioning */
+}
+
+.segmental-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  color: var(--text-main);
+  font-size: 0.75rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.segmental-tooltip.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmental-point {
+  fill: var(--bg-card);
+  stroke: var(--accent-cyan);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  r: 4;
+}
+
+.segmental-point:hover {
+  fill: var(--accent-cyan);
+  stroke: #fff;
+  stroke-width: 2;
+  r: 6;
+  filter: drop-shadow(0 0 6px var(--accent-cyan));
+}
+
+.segmental-point.active {
+  fill: var(--accent-cyan);
+}

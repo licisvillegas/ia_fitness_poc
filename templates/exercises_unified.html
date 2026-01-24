@@ -421,6 +421,18 @@
         margin-top: 4px;
     }
 
+    .muscle-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: rgba(255, 255, 255, 0.5);
+        background: #1e293b;
+    }
+
     /* Card Styles for Grid */
     .exercise-grid-card {
         background-color: var(--bg-card);
@@ -555,6 +567,64 @@
         other: { label: "Otro", icon: "fas fa-toolbox" }
     };
 
+    const TYPE_META = {
+        weight: "Peso",
+        time: "Tiempo",
+        cardio: "Cardio",
+        reps: "Repeticiones"
+    };
+
+    function capitalize(s) {
+        if (!s) return "";
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    async function loadMetadata() {
+        try {
+            const res = await fetch("/workout/api/exercises/metadata");
+            const data = await res.json();
+
+            // Populate Equipment
+            if (data.equipment && Array.isArray(data.equipment)) {
+                const sel = document.getElementById("filterEquipment");
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">Equipo</option>';
+
+                data.equipment.forEach(val => {
+                    if (!val) return;
+                    const meta = EQUIPMENT_META[val.toLowerCase()];
+                    const label = meta ? meta.label : capitalize(val);
+                    const opt = document.createElement("option");
+                    opt.value = val;
+                    opt.textContent = label;
+                    sel.appendChild(opt);
+                });
+                // Attempt to restore selection if valid
+                sel.value = currentVal;
+            }
+
+            // Populate Types
+            if (data.types && Array.isArray(data.types)) {
+                const sel = document.getElementById("filterType");
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">Tipo</option>';
+
+                data.types.forEach(val => {
+                    if (!val) return;
+                    const label = TYPE_META[val.toLowerCase()] || capitalize(val);
+                    const opt = document.createElement("option");
+                    opt.value = val;
+                    opt.textContent = label;
+                    sel.appendChild(opt);
+                });
+                sel.value = currentVal;
+            }
+
+        } catch (e) {
+            console.error("Error loading metadata", e);
+        }
+    }
+
     function normalizeEquipmentList(value) {
         if (!value) return [];
         if (Array.isArray(value)) {
@@ -649,12 +719,17 @@
         updateViewUI();
         loadBodyParts().then(() => {
             renderMuscleIcons();
+        });
+        loadMetadata().then(() => {
             loadExercisesPage(1);
         });
 
         // Listeners for filters
         document.getElementById("mainSearch").addEventListener("input", scheduleSearch);
-        document.getElementById("filterBodyPart").addEventListener("change", () => loadExercisesPage(1));
+        document.getElementById("filterBodyPart").addEventListener("change", () => {
+            updateIconSelectionFromDropdown();
+            loadExercisesPage(1);
+        });
         document.getElementById("filterEquipment").addEventListener("change", () => loadExercisesPage(1));
         document.getElementById("filterType").addEventListener("change", () => loadExercisesPage(1));
 
@@ -1297,7 +1372,7 @@
         { key: 'shoulders', img: 'hom.png', label: 'Hombro' },
         { key: 'biceps', img: 'bic.png', label: 'Bíceps' },
         { key: 'triceps', img: 'tri.png', label: 'Tríceps' },
-        { key: 'quadriceps', img: 'cua.png', label: 'Pierna' }, // Simplified
+        { key: 'quadriceps', img: 'cua.png', label: 'Pierna' },
         { key: 'abs', img: 'abs.png', label: 'Abdomen' },
         { key: 'glutes', img: 'glu.png', label: 'Glúteos' }
     ];
@@ -1307,33 +1382,81 @@
         container.innerHTML = muscleIcons.map(m => `
             <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
                 <div class="muscle-icon" id="icon-${m.key}">
-                    <img src="/static/images/muscles/male/${m.img}" alt="${m.label}">
+                    <img src="/static/images/muscles/male/${m.img}" alt="${m.label}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                    <div class="muscle-fallback d-none">${m.label.charAt(0)}</div>
                 </div>
                 <span class="muscle-label">${m.label}</span>
             </div>
         `).join("");
     }
 
+    // Sync Dropdown -> Icons
+    function updateIconSelectionFromDropdown() {
+        const sel = document.getElementById("filterBodyPart");
+        const val = sel.value;
+        const txt = sel.options[sel.selectedIndex]?.text?.toLowerCase() || "";
+
+        document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+
+        // Try exact key match
+        let match = muscleIcons.find(m => m.key === val);
+
+        // Try flexible match
+        if (!match && val) {
+            match = muscleIcons.find(m => txt.includes(m.label.toLowerCase()) || val.includes(m.key));
+        }
+
+        if (match) {
+            const icon = document.getElementById(`icon-${match.key}`);
+            if (icon) icon.classList.add('active');
+        }
+    }
+
     function filterByIcon(key) {
         const sel = document.getElementById("filterBodyPart");
-        // Simplified mapping logic
-        if (sel.value === key) {
+        const iconMeta = muscleIcons.find(m => m.key === key);
+
+        // Toggle logic
+        const currentActive = document.getElementById(`icon-${key}`).classList.contains('active');
+
+        if (currentActive) {
             sel.value = "";
-            document.getElementById(`icon-${key}`).classList.remove("active");
+            document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
         } else {
-            // Try to find matching option
-            let found = false;
+            // Find matching option
+            let foundInfo = false;
+
+            // 1. Try exact value match
             for (let opt of sel.options) {
-                if (opt.value === key || opt.text.toLowerCase().includes(key)) {
-                    sel.value = opt.value;
-                    found = true;
+                if (opt.value === key) {
+                    sel.value = key;
+                    foundInfo = true;
                     break;
                 }
             }
-            if (!found) sel.value = ""; // Fallback
 
+            // 2. Try label/text match if exact key failed
+            if (!foundInfo && iconMeta) {
+                const search = iconMeta.label.toLowerCase();
+                for (let opt of sel.options) {
+                    if (opt.text.toLowerCase().includes(search)) {
+                        sel.value = opt.value;
+                        foundInfo = true;
+                        break;
+                    }
+                }
+            }
+
+            // Update UI
             document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
-            if (found) document.getElementById(`icon-${key}`).classList.add("active");
+            if (foundInfo) {
+                document.getElementById(`icon-${key}`).classList.add("active");
+            } else {
+                // Fallback: Just clear filter if we can't map it, or maybe keep it? 
+                // Better to clear if we clicked an icon that has no data mapping
+                sel.value = "";
+            }
         }
         loadExercisesPage(1);
     }

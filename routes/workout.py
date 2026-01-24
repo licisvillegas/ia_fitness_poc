@@ -376,6 +376,31 @@ def api_get_body_parts():
     except Exception as e:
         logger.error(f"Error getting body parts: {e}")
         return jsonify({"error": str(e)}), 500
+
+@workout_bp.get("/api/exercises/metadata")
+def api_get_exercise_metadata():
+    """Returns distinct equipment and types from the database for dynamic filtering."""
+    try:
+        db = get_db()
+        # MongoDB distinct handles arrays automatically for equipment
+        equipment = db.exercises.distinct("equipment")
+        types = db.exercises.distinct("type")
+        
+        # Clean up data: filter None/Empty, sort
+        clean_equipment = sorted([str(e).lower().strip() for e in equipment if e])
+        clean_types = sorted([str(t).lower().strip() for t in types if t])
+        
+        # Unique after normalization
+        clean_equipment = sorted(list(set(clean_equipment)))
+        clean_types = sorted(list(set(clean_types)))
+        
+        return jsonify({
+            "equipment": clean_equipment,
+            "types": clean_types
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching metadata: {e}")
+        return jsonify({"error": str(e)}), 500
 @workout_bp.get("/api/stats/heatmap")
 def api_stats_heatmap():
     """Returns frequency map of workouts for the user (last year)."""

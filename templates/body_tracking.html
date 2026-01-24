@@ -772,18 +772,15 @@
                             {{
                             name_map.get(key, key|upper) }}{% if side_label %} {{ side_label }}{% endif %}</div>
 
-                        {% if 'izq' not in key and 'der' not in key %}
-                        <!-- Left side labels logic (visual tweak) -->
+                        <!-- Logic for Label Order based on Screen Side -->
                         {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq', 'antebrazo_izq'] %}
+                        <!-- Screen Left (Align Right): Change First -->
                         {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                         <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
                         {% else %}
-                        <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm {% if item.change %}<span
-                            class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
-                        {% endif %}
-                        {% else %}
-                        {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
+                        <!-- Screen Right / Center: Value First -->
                         <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
+                        {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                         {% endif %}
                     </div>
                     {% endif %}

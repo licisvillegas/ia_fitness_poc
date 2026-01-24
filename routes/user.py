@@ -659,11 +659,19 @@ def body_tracking_page():
 
             # Determine Arm key fallback
             arm_key = "arm_flexed"
-            if latest_meas and latest_meas.get("arm_relaxed") is not None and latest_meas.get("arm_flexed") is None:
+            
+            # Helper to check if any variant exists
+            def has_any(base):
+                return (latest_meas.get(base) is not None or 
+                        latest_meas.get(f"{base}_left") is not None or 
+                        latest_meas.get(f"{base}_right") is not None)
+
+            if has_any("arm_relaxed") and not has_any("arm_flexed"):
                  arm_key = "arm_relaxed"
+            
             # Fallback to Biceps if generic arm is missing
-            if latest_meas and latest_meas.get(arm_key) is None and latest_meas.get("biceps") is not None:
-                 arm_key = "biceps"
+            if not has_any(arm_key) and latest_meas.get("biceps") is not None:
+                 arm_key = "biceps" 
 
             mapping = {
                 "cuello": ("neck", "cm"),

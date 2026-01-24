@@ -1,0 +1,1341 @@
+{% extends 'layout.html' %}
+
+{% block sidebar %}
+{% if sidebar_template %}
+{% include sidebar_template %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <h2 class="fw-bold text-cyber-green mb-0 text-center text-md-start"><i
+                class="fas fa-dumbbell me-2"></i>Ejercicios</h2>
+
+        <div
+            class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-end w-100 w-md-auto">
+
+            <!-- Admin New Button -->
+            <div id="adminControls d-none">
+                <button class="btn btn-cyber-primary text-nowrap d-none" id="btnNewExercise"
+                    onclick="openExerciseModal()">
+                    <i class="fas fa-plus me-1"></i> <span class="d-none d-md-inline">Nuevo</span>
+                </button>
+            </div>
+
+            <!-- View Switcher -->
+            <div class="btn-group me-2" role="group" aria-label="View Mode">
+                <button type="button" class="btn btn-outline-secondary active" id="btnViewGrid"
+                    onclick="switchView('grid')" title="Vista Cuadrícula">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="btnViewList" onclick="switchView('list')"
+                    title="Vista Lista">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+
+            <div class="input-group" style="min-width: 200px; flex-grow: 1; max-width: 100%;">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                        class="fas fa-search"></i></span>
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
+                    placeholder="Buscar ejercicio...">
+            </div>
+
+            <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterBodyPart" style="min-width: 130px;">
+                    <option value="">Grupo</option>
+                    <!-- Options loaded via JS -->
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterEquipment" style="min-width: 130px;">
+                    <option value="">Equipo</option>
+                    <option value="barbell">Barra</option>
+                    <option value="dumbbell">Mancuernas</option>
+                    <option value="machine">Máquina</option>
+                    <option value="cable">Polea / Cable</option>
+                    <option value="band">Banda</option>
+                    <option value="bench">Banco</option>
+                    <option value="bodyweight">Peso Corporal</option>
+                    <option value="other">Otro</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterType" style="min-width: 100px;">
+                    <option value="">Tipo</option>
+                    <option value="weight">Peso</option>
+                    <option value="time">Tiempo</option>
+                    <option value="cardio">Cardio</option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
+                <button class="btn btn-outline-secondary text-nowrap flex-grow-1 flex-md-grow-0"
+                    onclick="resetFilters()">
+                    <i class="fas fa-undo me-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination moved to bottom floating bar -->
+
+<!-- Muscle Icons Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-3 overflow-auto py-2 px-1" id="muscleIconsContainer"
+            style="scrollbar-width: none; -ms-overflow-style: none;">
+            <!-- Icons injected by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- GRID VIEW CONTAINER -->
+<div id="viewGridContainer" class="row g-3">
+    <!-- Populated by JS -->
+</div>
+
+<!-- LIST VIEW CONTAINER -->
+<div id="viewListContainer" class="d-none">
+    <!-- Desktop Table View -->
+    <div class="card bg-panel border-0 shadow-lg d-none d-md-block">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle" id="exercisesTable">
+                    <thead>
+                        <tr class="text-cyber-blue">
+                            <th>Nombre</th>
+                            <th>Grupo Muscular</th>
+                            <th>Equipo</th>
+                            <th>Tipo</th>
+                            <th>Video</th>
+                            <th>Origen</th>
+                            <th class="admin-col d-none">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exercisesListBody">
+                        <!-- Completado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile List View -->
+    <div id="mobileExercisesList" class="d-md-none d-flex flex-column gap-3">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
+<!-- Loader & Empty States -->
+<div id="loader" class="text-center py-5 d-none">
+    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
+</div>
+<div id="emptyMsg" class="text-center py-5 text-muted d-none">
+    <i class="fas fa-dumbbell fa-3x mb-3"></i>
+    <p>No se encontraron ejercicios con los filtros seleccionados.</p>
+</div>
+
+<!-- Modal Detalle Ejercicio (View Only) -->
+<div class="modal fade" id="exerciseDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green" id="exerciseDetailsTitle">Ejercicio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="exercise-modal-hero mb-3 position-relative rounded overflow-hidden"
+                            style="height: 250px; background: #000;">
+                            <img id="exerciseDetailsImage" src="" alt="Ejercicio"
+                                style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3" id="exerciseDetailsBadges"></div>
+                        <div class="small text-secondary mb-3" id="exerciseDetailsMeta"></div>
+                        <div class="d-grid">
+                            <button id="exerciseDetailsVideoBtn" type="button" class="btn btn-outline-danger d-none">
+                                <i class="fab fa-youtube me-1"></i> Ver Video
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="mb-0">
+                            <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
+                            <div class="form-control bg-dark text-white border-secondary" style="min-height: 90px;"
+                                id="exerciseDetailsDesc"></div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label text-secondary">Sustitutos / Equivalentes</label>
+                            <div class="bg-dark border border-secondary rounded p-2" style="min-height: 80px;">
+                                <ul class="list-unstyled mb-0" id="exerciseDetailsSubs"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-info admin-only d-none" id="detailsEditBtn"
+                    onclick="">Editar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Ejercicio (Admin) -->
+<div class="modal fade" id="exerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Ejercicio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exerciseForm">
+                    <input type="hidden" id="exId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Nombre *</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="exName"
+                                required placeholder="Ej. Press Banca">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Parte del Cuerpo</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exBodyPart">
+                                <!-- Options loaded via JS -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Patrón</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exPattern">
+                                <option value="">Sin definir</option>
+                                <option value="Push">Push</option>
+                                <option value="Pull">Pull</option>
+                                <option value="Squat">Squat</option>
+                                <option value="Hinge">Hinge</option>
+                                <option value="Carry">Carry</option>
+                                <option value="Rotation">Rotation</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Plano</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exPlane">
+                                <option value="">Sin definir</option>
+                                <option value="Vertical">Vertical</option>
+                                <option value="Horizontal">Horizontal</option>
+                                <option value="Diagonal">Diagonal</option>
+                                <option value="Sagittal">Sagittal</option>
+                                <option value="Frontal">Frontal</option>
+                                <option value="Transversal">Transversal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Nivel</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exLevel">
+                                <option value="">Sin definir</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Tipo de Registro</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exType">
+                                <option value="weight">Peso (Series x Reps)</option>
+                                <option value="time">Tiempo (Duración)</option>
+                                <option value="cardio">Cardio (Distancia/Tiempo)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Equipo Requerido</label>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button"
+                                    id="dropdownEquipment" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Seleccionar equipo...
+                                </button>
+                                <ul class="dropdown-menu bg-dark border-secondary w-100 p-0"
+                                    aria-labelledby="dropdownEquipment" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Populated via JS manually to support multiple select style logic if needed, or just use native select multiple? Native select multiple is ugly. Let's use native for speed. -->
+                                </ul>
+                            </div>
+                            <!-- Fallback to native multiple select for reliability in this POC -->
+                            <select class="form-select bg-dark text-white border-secondary mt-1" id="exEquipment"
+                                multiple size="4">
+                                <option value="barbell">Barra</option>
+                                <option value="dumbbell">Mancuernas</option>
+                                <option value="machine">Máquina</option>
+                                <option value="cable">Polea / Cable</option>
+                                <option value="band">Banda</option>
+                                <option value="bench">Banco</option>
+                                <option value="bodyweight">Peso Corporal</option>
+                                <option value="other">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label text-secondary">Músculo Primario</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                id="exPrimaryMuscle" placeholder="Ej. Lats">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="exUnilateral">
+                                <label class="form-check-label text-secondary" for="exUnilateral">Unilateral</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Nombres Alternativos</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                id="exAlternativeNames" placeholder="Separa con comas">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Video Demostrativo (URL)</label>
+                            <input type="url" class="form-control bg-dark text-white border-secondary" id="exVideo"
+                                placeholder="https://youtube.com/...">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="exDescription"
+                                rows="3"></textarea>
+                        </div>
+
+                        <!-- Substitutes section omitted for brevity only if needed, but requested to have same functionality. We'll simplify substitutes to a search box that adds IDs, or skip complex sub-management for this quick iteration if not strictly demanded? User said "tenga su funcionalidad cada boton". So we should try. -->
+                        <div class="col-12">
+                            <label class="form-label text-secondary">Sustitutos</label>
+                            <input type="text"
+                                class="form-control form-control-sm bg-dark text-white border-secondary mb-2"
+                                id="subSearch" placeholder="Buscar sustitutos...">
+                            <div class="bg-input border border-secondary rounded p-2"
+                                style="max-height: 150px; overflow-y: auto;" id="substitutesContainer"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveExercise()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mensajes -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Mensaje</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" id="messageCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageConfirm">Confirmar</button>
+                <button type="button" class="btn btn-cyber-primary" id="messageOk"
+                    data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Video -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <!-- Same Video Modal as others -->
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyber-green">Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoFrame" src="" title="Video ejercicio"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Reuse styles */
+    .text-cyber-green {
+        color: #00ff9d;
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .border-cyber {
+        border: 1px solid rgba(0, 210, 255, 0.3);
+    }
+
+    /* Icons */
+    .muscle-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 2px solid var(--border-color);
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s;
+        flex-shrink: 0;
+        background: var(--bg-panel);
+    }
+
+    .muscle-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.8;
+    }
+
+    .muscle-icon.active {
+        border-color: #00ff9d;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        transform: scale(1.1);
+    }
+
+    .muscle-icon:hover {
+        border-color: #00d2ff;
+        transform: translateY(-2px);
+    }
+
+    .muscle-label {
+        font-size: 0.7rem;
+        text-align: center;
+        color: #aaa;
+        margin-top: 4px;
+    }
+
+    /* Card Styles for Grid */
+    .exercise-grid-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        height: 100%;
+        transition: 0.3s;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .exercise-grid-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.2);
+        border-color: var(--accent-cyan);
+    }
+
+    .exercise-grid-img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        background-color: #000;
+    }
+
+    /* Modal Specifics */
+    .exercise-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        background: rgba(15, 23, 42, 0.7);
+        color: #dbeafe;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    /* Admin Overlays */
+    .admin-actions {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        padding: 4px;
+    }
+
+    .exercise-grid-card:hover .admin-actions {
+        opacity: 1;
+    }
+
+    /* Override sidebar z-index if needed for modal */
+    .modal-backdrop {
+        z-index: 1040;
+    }
+
+    .modal {
+        z-index: 1050;
+    }
+
+    /* Floating Pagination */
+    #paginationControls {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1030;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    #paginationControls:hover {
+        background: rgba(15, 23, 42, 0.95);
+        border-color: rgba(0, 210, 255, 0.4);
+        box-shadow: 0 10px 30px rgba(0, 210, 255, 0.2);
+    }
+
+    /* Ensure content doesn't get hidden behind pagination */
+    body {
+        padding-bottom: 80px;
+    }
+</style>
+
+<!-- Floating Pagination Container -->
+<div class="d-flex justify-content-center align-items-center gap-3" id="paginationControls">
+    <button class="btn btn-outline-light btn-sm rounded-circle shadow-none" id="prevPageBtn"
+        style="width: 32px; height: 32px;"><i class="fas fa-chevron-left"></i></button>
+    <span class="text-light small fw-bold user-select-none" id="pageInfo"
+        style="min-width: 100px; text-align: center;">Cargando...</span>
+    <button class="btn btn-outline-light btn-sm rounded-circle shadow-none" id="nextPageBtn"
+        style="width: 32px; height: 32px;"><i class="fas fa-chevron-right"></i></button>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    // Security: Only enable admin mode if URL param requests it AND Server confirms admin role
+    const serverIsAdmin = {{ is_admin| tojson }};
+    const isAdmin = (urlParams.get('admin') === 'true') && serverIsAdmin;
+    const isEmbed = {{ embed| tojson }};
+
+    let currentView = localStorage.getItem('exercises_view_mode') || 'grid';
+    let allExercises = []; // Current page items
+    let exerciseLookup = {};
+    let exerciseLookupByName = {};
+    let currentPage = 1;
+    let totalItems = 0;
+    const pageSize = 24;
+    let searchTimer = null;
+    let bodyPartMap = {};
+
+    // Admin helpers
+    let currentExerciseId = null;
+    let currentBodyPartForEdit = null;
+    let messageModalInstance = null;
+
+    const EQUIPMENT_META = {
+        barbell: { label: "Barra", icon: "fas fa-grip-lines" },
+        dumbbell: { label: "Mancuerna", icon: "fas fa-dumbbell" },
+        machine: { label: "Máquina", icon: "fas fa-cogs" },
+        cable: { label: "Polea", icon: "fas fa-wave-square" },
+        band: { label: "Banda", icon: "fas fa-link" },
+        bench: { label: "Banco", icon: "fas fa-chair" },
+        bodyweight: { label: "Corporal", icon: "fas fa-running" },
+        other: { label: "Otro", icon: "fas fa-toolbox" }
+    };
+
+    function normalizeEquipmentList(value) {
+        if (!value) return [];
+        if (Array.isArray(value)) {
+            return value.map(v => String(v).trim()).filter(Boolean);
+        }
+        if (typeof value === "string") {
+            return value.split(",").map(v => v.trim()).filter(Boolean);
+        }
+        return [String(value).trim()].filter(Boolean);
+    }
+
+    function getEquipmentLabels(value) {
+        const list = normalizeEquipmentList(value);
+        return list.map(item => {
+            const key = String(item).toLowerCase();
+            return (EQUIPMENT_META[key] || { label: item }).label;
+        });
+    }
+
+    function getPrimaryEquipment(value) {
+        const list = normalizeEquipmentList(value);
+        return list.length ? String(list[0]).toLowerCase() : "";
+    }
+
+    function switchView(mode) {
+        currentView = mode;
+        localStorage.setItem('exercises_view_mode', mode);
+        updateViewUI();
+    }
+
+    function updateViewUI() {
+        const gridContainer = document.getElementById('viewGridContainer');
+        const listContainer = document.getElementById('viewListContainer');
+        const btnGrid = document.getElementById('btnViewGrid');
+        const btnList = document.getElementById('btnViewList');
+
+        if (currentView === 'grid') {
+            gridContainer.classList.remove('d-none');
+            listContainer.classList.add('d-none');
+            btnGrid.classList.add('active');
+            btnList.classList.remove('active');
+        } else {
+            gridContainer.classList.add('d-none');
+            listContainer.classList.remove('d-none');
+            btnGrid.classList.remove('active');
+            btnList.classList.add('active');
+        }
+    }
+
+    async function sendSelection(idOrObj) {
+        let ex = idOrObj;
+        if (typeof idOrObj === 'string') {
+            ex = exerciseLookup[idOrObj] || allExercises.find(e => e._id === idOrObj);
+        }
+
+        if (!ex) {
+            console.error("Exercise not found for selection:", idOrObj);
+            return;
+        }
+
+        const name = ex.name || "este ejercicio";
+        const message = `¿Deseas seleccionar "${name}"?`;
+
+        let ok = false;
+        if (window.showConfirmModal) {
+            ok = await window.showConfirmModal("Confirmar ejercicio", message, "success");
+        } else {
+            ok = confirm(message);
+        }
+
+        if (!ok) return;
+
+        if (window.parent) {
+            window.parent.postMessage({
+                type: "rm-exercise-select",
+                exercise: {
+                    name: ex.name,
+                    id: ex._id,
+                    body_part: ex.body_part,
+                    type: ex.type
+                }
+            }, "*");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (isAdmin) {
+            document.getElementById("btnNewExercise").classList.remove("d-none");
+            document.querySelectorAll(".admin-col").forEach(el => el.classList.remove("d-none"));
+        }
+
+        updateViewUI();
+        loadBodyParts().then(() => {
+            renderMuscleIcons();
+            loadExercisesPage(1);
+        });
+
+        // Listeners for filters
+        document.getElementById("mainSearch").addEventListener("input", scheduleSearch);
+        document.getElementById("filterBodyPart").addEventListener("change", () => loadExercisesPage(1));
+        document.getElementById("filterEquipment").addEventListener("change", () => loadExercisesPage(1));
+        document.getElementById("filterType").addEventListener("change", () => loadExercisesPage(1));
+
+        document.getElementById("prevPageBtn").addEventListener("click", () => loadExercisesPage(currentPage - 1));
+        document.getElementById("nextPageBtn").addEventListener("click", () => loadExercisesPage(currentPage + 1));
+
+        // Admin listeners 
+        const subSearch = document.getElementById("subSearch");
+        if (subSearch) {
+            subSearch.addEventListener("input", () => {
+                // search local items for substitutes
+                populateSubstitutes(allExercises, currentExerciseId, getSelectedSubstitutes());
+            });
+        }
+    });
+
+    async function loadBodyParts() {
+        try {
+            const res = await fetch("/workout/api/body-parts");
+            const parts = await res.json();
+            const filterSel = document.getElementById("filterBodyPart");
+            const exSel = document.getElementById("exBodyPart");
+
+            filterSel.innerHTML = '<option value="">Grupo</option>';
+            if (exSel) exSel.innerHTML = '';
+
+            parts.forEach(p => {
+                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
+
+                // Filter dropdown
+                const opt = document.createElement("option");
+                opt.value = p.key;
+                opt.textContent = bodyPartMap[p.key];
+                filterSel.appendChild(opt);
+
+                // Admin dropdown
+                if (exSel) {
+                    const opt2 = document.createElement("option");
+                    opt2.value = p.key;
+                    opt2.textContent = bodyPartMap[p.key];
+                    exSel.appendChild(opt2);
+                }
+            });
+        } catch (e) {
+            console.error("Error loading body parts", e);
+        }
+    }
+
+    function buildQueryParams(page) {
+        const term = document.getElementById("mainSearch").value.trim();
+        const bodyPart = document.getElementById("filterBodyPart").value;
+        const equipment = document.getElementById("filterEquipment").value;
+        const type = document.getElementById("filterType").value;
+
+        const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
+        if (term) params.set("q", term);
+        if (bodyPart) params.set("body_part", bodyPart);
+        if (equipment) params.set("equipment", equipment);
+        if (type) params.set("type", type);
+        return params;
+    }
+
+    function scheduleSearch() {
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadExercisesPage(1), 300);
+    }
+
+    function addToLookup(ex) {
+        if (!ex) return;
+        const rawId = ex._id && typeof ex._id === "object" ? (ex._id.$oid || ex._id.oid || ex._id.id) : ex._id;
+        const idValue = rawId != null ? String(rawId) : null;
+        if (idValue) exerciseLookup[idValue] = ex;
+        if (ex.exercise_id) exerciseLookup[String(ex.exercise_id)] = ex;
+        const nameKey = (ex.name || ex.exercise_name || "").trim().toLowerCase();
+        if (nameKey) exerciseLookupByName[nameKey] = ex;
+    }
+
+    async function loadExercisesPage(page = currentPage) {
+        const loader = document.getElementById("loader");
+        const emptyMsg = document.getElementById("emptyMsg");
+        const gridEl = document.getElementById("viewGridContainer");
+        const tbody = document.getElementById("exercisesListBody");
+
+        loader.classList.remove("d-none");
+        emptyMsg.classList.add("d-none");
+        gridEl.innerHTML = "";
+        tbody.innerHTML = "";
+
+        try {
+            const params = buildQueryParams(page);
+            const res = await fetch(`/workout/api/exercises/search?${params}`);
+            const data = await res.json();
+
+            currentPage = data.page || 1;
+            totalItems = data.total || 0;
+            const items = data.items || [];
+            allExercises = items;
+
+            items.forEach(addToLookup);
+
+            if (items.length === 0) {
+                emptyMsg.classList.remove("d-none");
+            } else {
+                renderGrid(items);
+                renderList(items);
+            }
+            updatePagination();
+
+        } catch (e) {
+            console.error(e);
+            emptyMsg.classList.remove("d-none");
+            emptyMsg.textContent = "Error al cargar ejercicios.";
+        } finally {
+            loader.classList.add("d-none");
+        }
+    }
+
+    function updatePagination() {
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        document.getElementById("pageInfo").textContent = `Página ${currentPage} de ${totalPages} (${totalItems})`;
+        document.getElementById("prevPageBtn").disabled = currentPage <= 1;
+        document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
+    }
+
+    function resolveImage(ex) {
+        if (ex.image_url && ex.image_url.trim()) return ex.image_url;
+        if (ex.thumbnail_url && ex.thumbnail_url.trim()) return ex.thumbnail_url;
+        if (ex.image && ex.image.trim()) return ex.image;
+        if (ex.img && ex.img.trim()) return ex.img;
+        return "/static/images/gym.png";
+    }
+
+    function renderGrid(items) {
+        const container = document.getElementById("viewGridContainer");
+        items.forEach(ex => {
+            const img = resolveImage(ex);
+            const hasVideo = ex.video_url && ex.video_url.trim();
+            const bodyPartLabel = bodyPartMap[ex.body_part] || ex.body_part;
+
+            const adminHtml = isAdmin ? `
+                <div class="admin-actions d-flex gap-1" onclick="event.stopPropagation()">
+                    <button class="btn btn-sm btn-warning" onclick="duplicateExercise('${ex._id}')"><i class="fas fa-copy"></i></button>
+                    <button class="btn btn-sm btn-info" onclick="openExerciseModal('${ex._id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            ` : '';
+
+            const col = document.createElement("div");
+            col.className = "col-sm-6 col-md-4 col-lg-3";
+            const clickAction = isEmbed ? `sendSelection('${ex._id}')` : `openExerciseDetails('${ex._id}')`;
+            const selectableClass = isEmbed ? 'rm-selectable' : '';
+
+            col.innerHTML = `
+                <div class="exercise-grid-card position-relative ${selectableClass}" onclick="${clickAction}">
+                    ${hasVideo ? `
+                    <button class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-2 shadow" 
+                            onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver Video" style="z-index:2">
+                        <i class="fas fa-play"></i>
+                    </button>` : ''}
+                    
+                    ${adminHtml}
+
+                    <img src="${img}" class="exercise-grid-img" alt="${ex.name}">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold text-white text-truncate mb-1" title="${ex.name}">${ex.name}</h6>
+                        <div class="d-flex gap-1 mb-2">
+                             <span class="badge bg-secondary" style="font-size: 0.65rem;">${bodyPartLabel}</span>
+                             <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">${ex.type || 'N/A'}</span>
+                        </div>
+                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripción'}</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(col);
+        });
+    }
+
+    function renderList(items) {
+        const tbody = document.getElementById("exercisesListBody");
+        const mobileContainer = document.getElementById("mobileExercisesList");
+
+        tbody.innerHTML = "";
+        if (mobileContainer) mobileContainer.innerHTML = "";
+
+        items.forEach(ex => {
+            const bodyPartLabel = bodyPartMap[ex.body_part] || ex.body_part;
+            const hasVideo = ex.video_url && ex.video_url.trim();
+
+            /* DESKTOP ROW */
+            const adminTd = isAdmin ? `
+                <td onclick="event.stopPropagation()">
+                   <div class="btn-group btn-group-sm">
+                       <button class="btn btn-outline-warning" onclick="duplicateExercise('${ex._id}')"><i class="fas fa-copy"></i></button>
+                       <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')"><i class="fas fa-edit"></i></button>
+                       <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>
+                   </div>
+                </td>
+            ` : `<td class="admin-col d-none"></td>`;
+
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            if (isEmbed) {
+                tr.onclick = () => sendSelection(ex._id);
+                tr.classList.add("rm-selectable");
+            } else {
+                tr.onclick = () => openExerciseDetails(ex._id);
+            }
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-bold text-white">${ex.name}</div>
+                    <small class="text-secondary text-truncate d-block" style="max-width: 200px;">${ex.description || ''}</small>
+                </td>
+                <td><span class="badge bg-secondary">${bodyPartLabel}</span></td>
+                <td><small class="text-info">${ex.equipment || 'N/A'}</small></td>
+                <td>${ex.type || 'N/A'}</td>
+                <td>
+                    ${hasVideo ? `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '-'}
+                </td>
+                <td>${ex.is_custom ? 'Custom' : 'Global'}</td>
+                ${adminTd}
+            `;
+            tbody.appendChild(tr);
+
+            /* MOBILE CARD */
+            if (mobileContainer) {
+                const card = document.createElement("div");
+                card.className = "card bg-panel border-secondary shadow-sm";
+                if (isEmbed) {
+                    card.classList.add("rm-selectable");
+                    card.onclick = () => sendSelection(ex._id);
+                } else {
+                    card.onclick = () => openExerciseDetails(ex._id);
+                }
+
+                const videoBtnMobile = hasVideo ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); openVideoModal('${ex.video_url}')"><i class="fab fa-youtube"></i></button>` : '';
+
+                // Admin Buttons for Mobile
+                const adminMobile = isAdmin ? `
+                    <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2" onclick="event.stopPropagation()">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
+                            <i class="fas fa-dumbbell me-1"></i> ${ex.type || 'N/A'}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-warning" onclick="duplicateExercise('${ex._id}')"><i class="fas fa-copy"></i></button>
+                            <button class="btn btn-outline-info" onclick="openExerciseModal('${ex._id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-outline-danger" onclick="deleteExercise('${ex._id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="border-top border-secondary pt-2 mt-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem;">
+                            <i class="fas fa-dumbbell me-1"></i> ${ex.type || 'N/A'}
+                        </small>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h5 class="card-title text-white fw-bold mb-1 d-flex align-items-center">
+                                    ${ex.name}
+                                    ${videoBtnMobile}
+                                </h5>
+                                <div class="d-flex flex-wrap gap-1 mb-1">
+                                    <span class="badge bg-secondary" style="font-size: 0.7rem;">${bodyPartLabel}</span>
+                                    <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.7rem;">${getEquipmentLabels(ex.equipment).join(', ') || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <span class="badge ${ex.is_custom ? 'bg-info text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.65rem;">
+                                ${ex.is_custom ? 'CUSTOM' : 'GLOBAL'}
+                            </span>
+                        </div>
+                        <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripción'}</p>
+                        ${adminMobile}
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            }
+        });
+
+        if (isAdmin) {
+            document.querySelectorAll(".admin-col").forEach(el => el.classList.remove("d-none"));
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById("mainSearch").value = "";
+        document.getElementById("filterBodyPart").value = "";
+        document.getElementById("filterEquipment").value = "";
+        document.getElementById("filterType").value = "";
+        document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+        loadExercisesPage(1);
+    }
+
+    /* READ-ONLY DETAIL MODAL */
+    function openExerciseDetails(id) {
+        const ex = exerciseLookup[id];
+        if (!ex) return;
+        const titleEl = document.getElementById("exerciseDetailsTitle");
+        const imgEl = document.getElementById("exerciseDetailsImage");
+        const badgesEl = document.getElementById("exerciseDetailsBadges");
+        const metaEl = document.getElementById("exerciseDetailsMeta");
+        const descEl = document.getElementById("exerciseDetailsDesc");
+        const subsEl = document.getElementById("exerciseDetailsSubs");
+        const videoBtn = document.getElementById("exerciseDetailsVideoBtn");
+        const editBtn = document.getElementById("detailsEditBtn");
+
+        const primaryEquip = getPrimaryEquipment(ex.equipment);
+        const equipMeta = EQUIPMENT_META[primaryEquip] || { label: getEquipmentLabels(ex.equipment).join(', ') || "N/A", icon: "fas fa-dumbbell" };
+        titleEl.textContent = ex.name || "Ejercicio";
+        imgEl.src = resolveImage(ex);
+        imgEl.alt = ex.name || "Ejercicio";
+        if (descEl) descEl.textContent = ex.description || "Sin descripción disponible.";
+
+        if (badgesEl) {
+            badgesEl.innerHTML = `
+                <span class="exercise-meta-pill"><i class="fas fa-dumbbell"></i>${bodyPartMap[ex.body_part] || ex.body_part || "General"}</span>
+                <span class="exercise-meta-pill"><i class="${equipMeta.icon}"></i>${equipMeta.label}</span>
+                <span class="exercise-meta-pill"><i class="fas fa-clipboard"></i>${ex.type || "N/A"}</span>
+            `;
+        }
+
+        if (metaEl) {
+            const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names : [];
+            const items = [
+                { label: "Patrón", value: ex.pattern },
+                { label: "Plano", value: ex.plane },
+                { label: "Unilateral", value: ex.unilateral ? "Si" : "No" },
+                { label: "Músculo primario", value: ex.primary_muscle },
+                { label: "Nivel", value: ex.level },
+                { label: "Nombres alternativos", value: altNames.join(", ") }
+            ].filter(item => item.value);
+            if (items.length) {
+                metaEl.innerHTML = items.map(item => `<div><strong class="text-light">${item.label}:</strong> ${item.value}</div>`).join("");
+            } else {
+                metaEl.innerHTML = "";
+            }
+        }
+
+        if (subsEl) {
+            const rawSubs = ex.substitutes || ex.equivalents || ex.equivalent_exercises || [];
+            const subs = Array.isArray(rawSubs) ? rawSubs : [];
+            const resolved = subs.map(sub => {
+                if (typeof sub === "string" || typeof sub === "number") {
+                    const key = String(sub);
+                    return exerciseLookup[key] || exerciseLookupByName[key.toLowerCase()] || { name: key, _fallback: true };
+                }
+                if (sub && typeof sub === "object") return sub;
+                return null;
+            }).filter(Boolean);
+
+            if (resolved.length === 0) {
+                subsEl.innerHTML = `<li class="text-secondary small">Sin sustitutos disponibles.</li>`;
+            } else {
+                subsEl.innerHTML = resolved.map(sub => {
+                    const subName = sub.name || sub.exercise_name || "Ejercicio";
+                    if (sub._fallback) return `<li class="text-secondary small mb-1">• ${subName}</li>`;
+                    const subBody = bodyPartMap[sub.body_part] || sub.body_part || "General";
+                    return `<li class="border border-secondary rounded px-2 py-2 bg-dark mb-2"><div class="text-white fw-bold">${subName}</div><span class="badge bg-secondary" style="font-size:0.6rem">${subBody}</span></li>`;
+                }).join("");
+            }
+        }
+
+        if (ex.video_url && ex.video_url.trim() !== "") {
+            videoBtn.classList.remove("d-none");
+            videoBtn.onclick = () => openVideoModal(ex.video_url);
+        } else {
+            videoBtn.classList.add("d-none");
+            videoBtn.onclick = null;
+        }
+
+        if (isAdmin && editBtn) {
+            editBtn.classList.remove("d-none");
+            editBtn.onclick = () => {
+                const detailsModal = bootstrap.Modal.getInstance(document.getElementById("exerciseDetailsModal"));
+                detailsModal.hide();
+                openExerciseModal(id);
+            };
+        }
+
+        new bootstrap.Modal(document.getElementById("exerciseDetailsModal")).show();
+    }
+
+    /* ADMIN ACTIONS */
+    function openExerciseModal(id = null) {
+        if (!isAdmin) return;
+
+        const form = document.getElementById("exerciseForm");
+        form.reset();
+        document.getElementById("exId").value = "";
+        currentExerciseId = id;
+
+        const modalTitle = document.querySelector("#exerciseModal .modal-title");
+        let subIds = [];
+
+        if (id) {
+            const ex = exerciseLookup[id];
+            if (ex) {
+                modalTitle.textContent = "Editar Ejercicio";
+                document.getElementById("exId").value = ex._id;
+                document.getElementById("exName").value = ex.name;
+                document.getElementById("exBodyPart").value = ex.body_part;
+                document.getElementById("exType").value = ex.type || "weight";
+
+                // Multi-select equipment
+                const equipOpts = document.getElementById("exEquipment");
+                if (equipOpts) {
+                    const list = normalizeEquipmentList(ex.equipment);
+                    Array.from(equipOpts.options).forEach(opt => opt.selected = list.includes(opt.value));
+                }
+
+                document.getElementById("exPattern").value = ex.pattern || "";
+                document.getElementById("exPlane").value = ex.plane || "";
+                document.getElementById("exLevel").value = ex.level || "";
+                document.getElementById("exPrimaryMuscle").value = ex.primary_muscle || "";
+                document.getElementById("exUnilateral").checked = !!ex.unilateral;
+                document.getElementById("exAlternativeNames").value = (ex.alternative_names || []).join(", ");
+                document.getElementById("exDescription").value = ex.description || '';
+                document.getElementById("exVideo").value = ex.video_url || '';
+
+                subIds = ex.substitutes || [];
+            }
+        } else {
+            modalTitle.textContent = "Nuevo Ejercicio";
+        }
+
+        populateSubstitutes(allExercises, id, subIds);
+        new bootstrap.Modal(document.getElementById("exerciseModal")).show();
+    }
+
+    function populateSubstitutes(exercises, currentId, selectedIds = []) {
+        // Only populates from current page loaded exercises for this POC
+        const container = document.getElementById("substitutesContainer");
+        const searchTerm = (document.getElementById("subSearch").value || "").toLowerCase();
+
+        container.innerHTML = "";
+
+        exercises.forEach(ex => {
+            if (ex._id === currentId) return;
+            if (searchTerm && !ex.name.toLowerCase().includes(searchTerm)) return;
+
+            const isChecked = selectedIds.includes(ex._id) ? "checked" : "";
+            const item = document.createElement("div");
+            item.className = "form-check sub-item border-bottom border-secondary py-2";
+            item.innerHTML = `
+                <input class="form-check-input border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}" ${isChecked}>
+                <label class="form-check-label w-100 cursor-pointer" for="sub_${ex._id}">
+                    <span class="fw-bold text-white">${ex.name}</span>
+                </label>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function getSelectedSubstitutes() {
+        const checkboxes = document.querySelectorAll("#substitutesContainer input[type='checkbox']:checked");
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function ensureMessageModalInstance() {
+        if (!messageModalInstance) {
+            const modalEl = document.getElementById("messageModal");
+            messageModalInstance = new bootstrap.Modal(modalEl);
+        }
+        return messageModalInstance;
+    }
+
+    const getLocalMessageModal = () => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return null;
+        return bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+
+    const localShowConfirmModal = (title, message, tone = "warning") => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) return Promise.resolve(confirm(message || title || "Confirmar"));
+
+        const modalTitle = modalEl.querySelector(".modal-title");
+        const modalBody = modalEl.querySelector(".modal-body");
+        const confirmBtn = modalEl.querySelector("#messageConfirm");
+        const cancelBtn = modalEl.querySelector("#messageCancel");
+        const okBtn = modalEl.querySelector("#messageOk");
+
+        modalTitle.textContent = title || "Confirmar";
+        modalBody.textContent = message || "";
+        confirmBtn.classList.remove("d-none");
+        cancelBtn.classList.remove("d-none");
+        okBtn.classList.add("d-none");
+
+        confirmBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-success";
+        cancelBtn.className = "btn btn-outline-secondary";
+
+        return new Promise(resolve => {
+            const onConfirm = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            const onCancel = () => {
+                resolve(false);
+            };
+            confirmBtn.onclick = onConfirm;
+            cancelBtn.onclick = onCancel;
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(false), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
+
+    const localShowAlertModal = (title, message, tone = "warning") => {
+        const modalEl = document.getElementById("messageModal");
+        if (!modalEl) {
+            alert(message || title || "Aviso");
+            return Promise.resolve(true);
+        }
+        const modalTitle = modalEl.querySelector(".modal-title");
+        const modalBody = modalEl.querySelector(".modal-body");
+        const confirmBtn = modalEl.querySelector("#messageConfirm");
+        const cancelBtn = modalEl.querySelector("#messageCancel");
+        const okBtn = modalEl.querySelector("#messageOk");
+
+        modalTitle.textContent = title || "Aviso";
+        modalBody.textContent = message || "";
+        confirmBtn.classList.add("d-none");
+        cancelBtn.classList.add("d-none");
+        okBtn.classList.remove("d-none");
+        okBtn.className = tone === "danger" ? "btn btn-outline-danger" : "btn btn-outline-light";
+
+        return new Promise(resolve => {
+            okBtn.onclick = () => {
+                getLocalMessageModal()?.hide();
+                resolve(true);
+            };
+            modalEl.addEventListener("hidden.bs.modal", () => resolve(true), { once: true });
+            getLocalMessageModal()?.show();
+        });
+    };
+
+    async function saveExercise() {
+        const id = document.getElementById("exId").value;
+        const name = document.getElementById("exName").value;
+        const bodyPart = document.getElementById("exBodyPart").value;
+        const type = document.getElementById("exType").value;
+        const equipment = Array.from(document.getElementById("exEquipment").selectedOptions).map(o => o.value);
+
+        if (!name) {
+            localShowAlertModal("Campo requerido", "El nombre es obligatorio", "warning");
+            return;
+        }
+
+        const payload = {
+            id, name, body_part: bodyPart, type, equipment,
+            pattern: document.getElementById("exPattern").value,
+            plane: document.getElementById("exPlane").value,
+            level: document.getElementById("exLevel").value,
+            primary_muscle: document.getElementById("exPrimaryMuscle").value,
+            unilateral: document.getElementById("exUnilateral").checked,
+            alternative_names: document.getElementById("exAlternativeNames").value.split(",").map(c => c.trim()).filter(Boolean),
+            video_url: document.getElementById("exVideo").value,
+            description: document.getElementById("exDescription").value,
+            substitutes: getSelectedSubstitutes()
+        };
+
+        try {
+            await fetch("/api/exercises/save", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            bootstrap.Modal.getInstance(document.getElementById("exerciseModal")).hide();
+            loadExercisesPage(currentPage); // Reload page
+        } catch (e) {
+            localShowAlertModal("Error", "Ocurrió un error al guardar", "danger");
+        }
+    }
+
+    async function deleteExercise(id) {
+        const confirmed = await localShowConfirmModal("Eliminar ejercicio", "¿Estás seguro de que deseas eliminar este ejercicio?", "danger");
+        if (!confirmed) return;
+
+        try {
+            await fetch(`/api/exercises/delete/${id}`, { method: "DELETE" });
+            loadExercisesPage(currentPage);
+        } catch (e) {
+            localShowAlertModal("Error", "Error al eliminar", "danger");
+        }
+    }
+
+    async function duplicateExercise(id) {
+        const ex = exerciseLookup[id];
+        if (!ex) return;
+
+        const confirmed = await localShowConfirmModal("Duplicar Ejercicio", `¿Deseas crear una copia personalizada de "${ex.name}"?`);
+        if (!confirmed) return;
+
+        try {
+            // Create copy payload similar to existing
+            const payload = { ...ex, id: null, name: ex.name + " (Copia)", _id: undefined };
+            await fetch("/api/exercises/save", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            loadExercisesPage(currentPage);
+        } catch (e) {
+            localShowAlertModal("Error", "Error al duplicar", "danger");
+        }
+    }
+
+
+    /* Video Modal Helpers */
+    function toEmbedUrl(url) {
+        const trimmed = (url || "").trim();
+        if (!trimmed) return "";
+        if (trimmed.includes("youtube.com/watch")) {
+            const match = trimmed.match(/[?&]v=([^&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (trimmed.includes("youtu.be/")) {
+            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        return trimmed;
+    }
+
+    function openVideoModal(url) {
+        const iframe = document.getElementById("videoFrame");
+        iframe.src = toEmbedUrl(url);
+
+        // Handle Stacking
+        const modalEl = document.getElementById("videoModal");
+        const modal = new bootstrap.Modal(modalEl);
+        modalEl.style.zIndex = "1060";
+
+        modal.show();
+        modalEl.addEventListener("hidden.bs.modal", () => { iframe.src = ""; modalEl.style.zIndex = ""; }, { once: true });
+    }
+
+    /* Muscle Icons (Hardcoded for visual appeal) */
+    const muscleIcons = [
+        { key: 'chest', img: 'pec.png', label: 'Pecho' },
+        { key: 'back', img: 'esp.png', label: 'Espalda' },
+        { key: 'shoulders', img: 'hom.png', label: 'Hombro' },
+        { key: 'biceps', img: 'bic.png', label: 'Bíceps' },
+        { key: 'triceps', img: 'tri.png', label: 'Tríceps' },
+        { key: 'quadriceps', img: 'cua.png', label: 'Pierna' }, // Simplified
+        { key: 'abs', img: 'abs.png', label: 'Abdomen' },
+        { key: 'glutes', img: 'glu.png', label: 'Glúteos' }
+    ];
+
+    function renderMuscleIcons() {
+        const container = document.getElementById("muscleIconsContainer");
+        container.innerHTML = muscleIcons.map(m => `
+            <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
+                <div class="muscle-icon" id="icon-${m.key}">
+                    <img src="/static/images/muscles/male/${m.img}" alt="${m.label}">
+                </div>
+                <span class="muscle-label">${m.label}</span>
+            </div>
+        `).join("");
+    }
+
+    function filterByIcon(key) {
+        const sel = document.getElementById("filterBodyPart");
+        // Simplified mapping logic
+        if (sel.value === key) {
+            sel.value = "";
+            document.getElementById(`icon-${key}`).classList.remove("active");
+        } else {
+            // Try to find matching option
+            let found = false;
+            for (let opt of sel.options) {
+                if (opt.value === key || opt.text.toLowerCase().includes(key)) {
+                    sel.value = opt.value;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) sel.value = ""; // Fallback
+
+            document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+            if (found) document.getElementById(`icon-${key}`).classList.add("active");
+        }
+        loadExercisesPage(1);
+    }
+</script>
+{% endblock %}

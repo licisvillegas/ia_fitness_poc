@@ -75,9 +75,38 @@ def dashboard():
 
 @workout_bp.route("/exercises")
 def exercises_page():
-    """Catalog of exercises for users (read-only)."""
+    """Unified Catalog (Grid + List) secured endpoint."""
+    user_id = request.cookies.get("user_session")
     embed = request.args.get("embed") in ("1", "true", "yes")
-    return render_template("exercises_catalog_user.html", embed=embed)
+    
+    is_admin = False
+    
+    if user_id and extensions.db is not None:
+        try:
+             role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
+             if role_doc and role_doc.get("role") == "admin":
+                 is_admin = True
+        except Exception as e:
+            logger.error(f"Error checking admin role in unified view: {e}")
+
+    # Sidebar Logic
+    sidebar_template = "components/sidebar.html"
+    request_admin_mode = request.args.get("admin") == "true"
+    
+    if embed:
+        sidebar_template = None
+    elif is_admin and request_admin_mode:
+        sidebar_template = "components/sidebar_admin.html"
+
+    return render_template("exercises_unified.html", 
+                         is_admin=is_admin, 
+                         sidebar_template=sidebar_template,
+                         embed=embed)
+
+@workout_bp.route("/exercises/unified")
+def exercises_unified_page():
+    """Legacy alias for unified view."""
+    return exercises_page()
 
 @workout_bp.route("/rm-calculator")
 def rm_calculator_page():

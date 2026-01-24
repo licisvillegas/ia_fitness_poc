@@ -1150,8 +1150,8 @@
             if (currentGender === 'male') {
                 currentGender = 'female';
                 img.src = imgFemale;
-                // Increase scale (~1.08) and move down 20px
-                img.style.transform = "scale(1.08) translateY(20px)";
+                // Set to match male image styling
+                img.style.transform = "none";
                 // Switch icon to Male (to switch back)
                 icon.classList.remove('fa-female');
                 icon.classList.add('fa-male');

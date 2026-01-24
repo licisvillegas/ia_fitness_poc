@@ -64,6 +64,9 @@ def init_db(app):
         logger.error(f"❌ Error al conectar a MongoDB Atlas: {str(e)}", exc_info=True)
         db = None
         return None
+        
+def get_db():
+    return db
 
 
 def create_indexes(db_instance):

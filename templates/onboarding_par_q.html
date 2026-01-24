@@ -1,0 +1,237 @@
+{% extends "layout.html" %}
+
+{% block title %}Onboarding - Evaluación de Salud{% endblock %}
+
+{% block content %}
+<div class="container d-flex flex-column" style="min-height: calc(100vh - 80px);">
+    <!-- Header with Accessibility Controls -->
+    <div class="d-flex justify-content-between align-items-center py-4">
+        <h1 class="h2 mb-0 text-cyber-blue fw-bold" id="pageTitle">Evaluación PAR-Q+</h1>
+        <button class="btn btn-outline-light rounded-circle shadow-none" onclick="toggleFontSize()"
+            title="Aumentar Texto">
+            <i class="fas fa-text-height"></i>
+        </button>
+    </div>
+
+    <!-- Intro Card -->
+    <div class="card bg-panel border-cyber mb-4" id="introCard">
+        <div class="card-body">
+            <h5 class="card-title text-success mb-3"><i class="fas fa-shield-alt me-2"></i>Seguridad Primero</h5>
+            <p class="card-text text-gray-300 mb-0 adaptive-text">
+                Por favor, responde estas 7 preguntas con total honestidad. Tu seguridad es nuestra prioridad antes de
+                asignarte cargas de entrenamiento.
+            </p>
+        </div>
+    </div>
+
+    <!-- Questionnaire -->
+    <form id="parqForm" class="flex-grow-1">
+        <div class="accordion accordion-flush bg-transparent" id="parqAccordion">
+            {% for q in questions %}
+            <div class="card bg-panel border-secondary mb-3 shadow">
+                <div class="card-body p-4">
+                    <p class="mb-4 fw-bold text-white adaptive-text">{{ q.q_id }}. {{ q.question_text }}</p>
+
+                    <div class="d-flex gap-2 w-100">
+                        <!-- Botón NO -->
+                        <input type="radio" class="btn-check" name="q_{{ q.q_id }}" id="q_{{ q.q_id }}_no" value="false"
+                            autocomplete="off" onchange="checkCompletion()">
+                        <label class="btn btn-outline-secondary flex-fill py-3 adaptive-text option-btn"
+                            for="q_{{ q.q_id }}_no">
+                            NO
+                        </label>
+
+                        <!-- Botón SÍ -->
+                        <input type="radio" class="btn-check" name="q_{{ q.q_id }}" id="q_{{ q.q_id }}_yes" value="true"
+                            autocomplete="off" onchange="checkCompletion()">
+                        <label class="btn btn-outline-danger flex-fill py-3 adaptive-text option-btn"
+                            for="q_{{ q.q_id }}_yes">
+                            SÍ
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+
+    <!-- Footer Actions -->
+    <div class="fixed-bottom bg-panel border-top border-secondary p-3 d-flex justify-content-center"
+        style="z-index: 1040;">
+        <button type="button" class="btn btn-cyber-primary w-100 p-3 fw-bold rounded-pill" id="submitBtn"
+            onclick="submitParQ()" disabled style="max-width: 600px;">
+            Confirmar y Continuar
+        </button>
+    </div>
+
+    <!-- Padding for fixed bottom -->
+    <div style="height: 100px;"></div>
+</div>
+
+<!-- Modal de Resultado -->
+<div class="modal fade" id="resultModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <i id="resultIcon" class="fas fa-check-circle fa-4x text-success"></i>
+                </div>
+                <h3 id="resultTitle" class="mb-3 text-white">¡Todo Listo!</h3>
+                <p id="resultMsg" class="text-gray-300 mb-4">Estás apto para comenzar.</p>
+                <div class="d-grid gap-2">
+                    <a href="/workout/dashboard" id="resultAction" class="btn btn-success btn-lg">Ir al Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-panel {
+        background-color: #1e293b;
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .border-cyber {
+        border: 1px solid rgba(0, 210, 255, 0.3);
+    }
+
+    .text-gray-300 {
+        color: #cbd5e1 !important;
+        /* Slate-300, much lighter than text-secondary */
+    }
+
+    /* Override Bootstrap text-secondary locally if needed, but better to use custom class */
+
+    /* Estilos para estado seleccionado */
+    .btn-check:checked+.btn-outline-secondary {
+        background-color: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+
+    .btn-check:checked+.btn-outline-danger {
+        background-color: #ef4444;
+        color: white;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    }
+
+    /* Improve visibility of unselected buttons in dark mode */
+    .btn-outline-secondary {
+        color: #e2e8f0;
+        border-color: #475569;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #334155;
+        border-color: #94a3b8;
+        color: white;
+    }
+
+    .btn-cyber-primary {
+        background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4);
+    }
+
+    .btn-cyber-primary:disabled {
+        background: #334155;
+        box-shadow: none;
+        color: #94a3b8;
+    }
+
+    /* Accessibility Classes */
+    .text-large {
+        font-size: 1.3rem !important;
+    }
+
+    .text-xlarge {
+        font-size: 1.5rem !important;
+    }
+</style>
+
+<script>
+    let fontScale = 1.0;
+    const totalQuestions = {{ questions| length }};
+
+    function toggleFontSize() {
+        fontScale = fontScale === 1.0 ? 1.3 : 1.0;
+        document.querySelectorAll('.adaptive-text').forEach(el => {
+            el.classList.toggle('text-large', fontScale > 1.0);
+        });
+    }
+
+    function checkCompletion() {
+        const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+        document.getElementById('submitBtn').disabled = answered < totalQuestions;
+    }
+
+    async function submitParQ() {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+
+        // Collect responses
+        const responses = [];
+        for (let i = 1; i <= totalQuestions; i++) {
+            const yesRb = document.getElementById(`q_${i}_yes`);
+            responses.push({
+                q_id: i,
+                answer: yesRb.checked // true = 'SÍ' (Riesgo)
+            });
+        }
+
+        try {
+            const res = await fetch('/onboarding/api/par-q', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ responses })
+            });
+
+            if (!res.ok) throw new Error('Error en el servidor');
+
+            const data = await res.json();
+            showResult(data);
+
+        } catch (e) {
+            console.error(e);
+            alert("Error al enviar el formulario. Intenta nuevamente.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirmar y Continuar';
+        }
+    }
+
+    function showResult(data) {
+        const modalEl = document.getElementById('resultModal');
+        const modal = new bootstrap.Modal(modalEl);
+
+        const icon = document.getElementById('resultIcon');
+        const title = document.getElementById('resultTitle');
+        const msg = document.getElementById('resultMsg');
+        const action = document.getElementById('resultAction');
+
+        if (data.is_cleared) {
+            icon.className = "fas fa-check-circle fa-4x text-success";
+            title.textContent = "¡Todo Listo!";
+            msg.textContent = "Estás apto para comenzar tu entrenamiento sin restricciones.";
+            action.textContent = "Ir al Dashboard";
+            action.className = "btn btn-success btn-lg";
+            action.href = "/workout/dashboard";
+        } else {
+            icon.className = "fas fa-exclamation-triangle fa-4x text-warning";
+            title.textContent = "Atención Médica Requerida";
+            msg.textContent = "Basado en tus respuestas, necesitamos validar tu estado de salud antes de asignarte ejercicios intensos.";
+            action.textContent = "Entendido";
+            action.className = "btn btn-outline-light btn-lg";
+            action.href = "#"; // Aquí iría al flujo de upload certificado
+            action.onclick = () => alert("En una app real, aquí subirías tu certificado médico.");
+        }
+
+        modal.show();
+    }
+</script>
+{% endblock %}

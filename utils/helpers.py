@@ -75,7 +75,7 @@ def normalize_body_part(value: Any, db_override=None) -> Optional[str]:
     if not cleaned:
         return None
 
-    db_conn = db_override or db
+    db_conn = db_override if db_override is not None else db
     if db_conn is None:
         return cleaned.lower()
 

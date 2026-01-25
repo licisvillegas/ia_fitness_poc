@@ -91,6 +91,7 @@ class MongoRoutineAgent:
     ) -> Dict[str, Any]:
         goal_key = _normalize_goal(goal)
         defaults = _goal_defaults(goal_key)
+        defaults["goal_key"] = goal_key
 
         exercises = self._load_exercises(equipment, body_parts)
         if not exercises:
@@ -177,51 +178,116 @@ class MongoRoutineAgent:
 
         remaining = [ex for ex in exercises if ex not in picked]
         random.shuffle(remaining)
-        max_exercises = 7 if len(target_parts) >= 4 else 6
+        max_exercises = 8 if len(target_parts) >= 4 else 7
         while len(picked) < max_exercises and remaining:
             picked.append(remaining.pop(0))
 
         if include_cardio and cardio_pool:
             picked.append(random.choice(cardio_pool))
 
+        # --- Dynamic Grouping Logic ---
         items = []
         now = int(time.time() * 1000)
-        group_id = ""
-        if level in ("Intermedio", "Avanzado") and len(picked) >= 2:
-            group_id = f"group_{now}"
-            items.append(
-                {
+        
+        # Determine grouping parameters based on Level & Goal
+        allow_trisets = False
+        group_prob = 0.0 # Chance to start a group at any point
+        
+        if level == "Principiante":
+            group_prob = 0.1
+        elif level == "Intermedio":
+            group_prob = 0.4
+            if "fat_loss" in _normalize_goal(defaults.get("goal_key", "")): 
+                 group_prob = 0.6
+        elif level == "Avanzado":
+            group_prob = 0.6
+            if "fat_loss" in _normalize_goal(defaults.get("goal_key", "")):
+                group_prob = 0.8
+            allow_trisets = True
+
+        idx = 0
+        group_counter = 1
+        routine_body_parts = []
+
+        while idx < len(picked):
+            # Check if we should start a group
+            # Conditions:
+            # 1. Random chance meets threshold
+            # 2. We have at least 2 exercises left to group
+            # 3. Current exercise is not cardio (usually keep cardio separate or at end)
+            ex_curr = picked[idx]
+            is_cardio = (ex_curr.get("type") or "") == "cardio"
+            
+            remaining_count = len(picked) - idx
+            do_group = (not is_cardio) and (remaining_count >= 2) and (random.random() < group_prob)
+            
+            if do_group:
+                # Decide group size: 2 (Biserie) or 3 (Triserie)
+                group_size = 2
+                if allow_trisets and remaining_count >= 3 and random.random() < 0.3:
+                    group_size = 3
+                
+                group_type = "triserie" if group_size == 3 else "biserie"
+                group_name = f"{group_type.capitalize()} {group_counter}"
+                group_id = f"group_{now}_{group_counter}"
+                
+                # Add Group Header
+                items.append({
                     "item_type": "group",
                     "_id": group_id,
-                    "group_name": "Biserie 1",
-                    "group_type": "biserie",
+                    "group_name": group_name,
+                    "group_type": group_type,
                     "note": "",
-                }
-            )
+                })
 
-        routine_body_parts = []
-        grouped_count = 0
-        for ex in picked:
-            group_ref = group_id if group_id and grouped_count < 2 else ""
-            if group_ref:
-                grouped_count += 1
-            item = self._exercise_item(ex, defaults, group_ref, now + len(items) + 1)
-            items.append(item)
-            bp = ex.get("body_part")
-            if bp and bp not in routine_body_parts:
-                routine_body_parts.append(bp)
+                # Add exercises in the group
+                for i in range(group_size):
+                    ex = picked[idx + i]
+                    item = self._exercise_item(ex, defaults, group_id, now + len(items) + 1)
+                    # For exercises inside a group, rest usually applies AFTER the whole group
+                    # So internal rest is 0 or minimal, except for the last one if we want valid JSON validation
+                    # But usually the 'rest' item handles the actual rest period.
+                    item["rest_seconds"] = 0 
+                    items.append(item)
+                    
+                    bp = ex.get("body_part")
+                    if bp and bp not in routine_body_parts:
+                        routine_body_parts.append(bp)
 
-            if grouped_count == 2 and group_id:
-                items.append(
-                    {
+                # Add Rest after group
+                items.append({
+                    "item_type": "rest",
+                    "_id": f"rest_{now + len(items) + 1}",
+                    "rest_seconds": max(30, defaults["rest"] + 30), # Extract extra rest after superset
+                    "note": "Descanso entre series",
+                    "group_id": group_id,
+                })
+                
+                idx += group_size
+                group_counter += 1
+            
+            else:
+                # Straight Set
+                ex = picked[idx]
+                item = self._exercise_item(ex, defaults, "", now + len(items) + 1)
+                items.append(item)
+                
+                bp = ex.get("body_part")
+                if bp and bp not in routine_body_parts:
+                    routine_body_parts.append(bp)
+                
+                # Add Rest if it's not the very last item of the day
+                # (Or always add it for consistency, user can ignore last rest)
+                if idx < len(picked) - 1:
+                    items.append({
                         "item_type": "rest",
                         "_id": f"rest_{now + len(items) + 1}",
-                        "rest_seconds": max(30, defaults["rest"]),
+                        "rest_seconds": defaults["rest"],
                         "note": "Descanso",
-                        "group_id": group_id,
-                    }
-                )
-                group_id = ""
+                        "group_id": "",
+                    })
+                
+                idx += 1
 
         return {
             "name": f"Rutina {day_label}",

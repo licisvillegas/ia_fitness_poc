@@ -267,8 +267,8 @@
 
     list.innerHTML = filtered
       .map((r) => {
-        const badge = r.is_active === false ? "Inactiva" : "Activa";
-        const badgeClass = r.is_active === false ? "bg-secondary" : "bg-success";
+        const badge = r.source === "ai" ? "AI Generated" : (r.is_active === false ? "Inactiva" : "Activa");
+        const badgeClass = r.source === "ai" ? "bg-cyber-blue" : (r.is_active === false ? "bg-secondary" : "bg-success");
         return `
           <div class="guided-config-card mb-2">
             <div class="d-flex justify-content-between align-items-start">
@@ -330,27 +330,27 @@
     const exists = state.routine.items.some((item) => String(item.exercise_id) === String(exercise._id || exercise.id));
     if (exists && !pendingReplaceId) return;
 
-      if (pendingReplaceId) {
-        const idx = state.routine.items.findIndex((item) => item._id === pendingReplaceId);
-        if (idx >= 0) {
-          const existing = state.routine.items[idx];
-          const exerciseType = exercise.type || "weight";
-          const timeBased = isTimeBasedExercise(exerciseType);
-          state.routine.items[idx] = {
-            ...existing,
-            exercise_id: exercise._id || exercise.id,
-            exercise_name: exercise.name || "Ejercicio",
-            exercise_type: exerciseType,
-            equipment: exercise.equipment || "",
-            body_part: exercise.body_part || "",
-            video_url: exercise.video_url || "",
-            substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
-            target_time_seconds: timeBased ? (existing.target_time_seconds || 600) : 0,
-            target_reps: timeBased ? 0 : (existing.target_reps || "8-12"),
-            manual_rest_enabled: existing.manual_rest_enabled !== false,
-          };
-          normalizeItemTargets(state.routine.items[idx]);
-        }
+    if (pendingReplaceId) {
+      const idx = state.routine.items.findIndex((item) => item._id === pendingReplaceId);
+      if (idx >= 0) {
+        const existing = state.routine.items[idx];
+        const exerciseType = exercise.type || "weight";
+        const timeBased = isTimeBasedExercise(exerciseType);
+        state.routine.items[idx] = {
+          ...existing,
+          exercise_id: exercise._id || exercise.id,
+          exercise_name: exercise.name || "Ejercicio",
+          exercise_type: exerciseType,
+          equipment: exercise.equipment || "",
+          body_part: exercise.body_part || "",
+          video_url: exercise.video_url || "",
+          substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
+          target_time_seconds: timeBased ? (existing.target_time_seconds || 600) : 0,
+          target_reps: timeBased ? 0 : (existing.target_reps || "8-12"),
+          manual_rest_enabled: existing.manual_rest_enabled !== false,
+        };
+        normalizeItemTargets(state.routine.items[idx]);
+      }
       pendingReplaceId = "";
     } else {
       let inheritedSets = 3;
@@ -362,25 +362,25 @@
       }
       const exerciseType = exercise.type || "weight";
       const timeBased = isTimeBasedExercise(exerciseType);
-        state.routine.items.push({
-          item_type: "exercise",
-          _id: makeId("ex"),
-          exercise_id: exercise._id || exercise.id,
-          exercise_name: exercise.name || "Ejercicio",
-          exercise_type: exerciseType,
-          equipment: exercise.equipment || "",
-          body_part: exercise.body_part || "",
-          video_url: exercise.video_url || "",
-          substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
-          target_sets: inheritedSets,
-          target_reps: timeBased ? 0 : "8-12",
-          rest_seconds: 60,
-          target_time_seconds: timeBased ? 600 : 0,
-          group_id: groupId || "",
-          comment: "",
-          manual_rest_enabled: true,
-        });
-      }
+      state.routine.items.push({
+        item_type: "exercise",
+        _id: makeId("ex"),
+        exercise_id: exercise._id || exercise.id,
+        exercise_name: exercise.name || "Ejercicio",
+        exercise_type: exerciseType,
+        equipment: exercise.equipment || "",
+        body_part: exercise.body_part || "",
+        video_url: exercise.video_url || "",
+        substitutes: Array.isArray(exercise.substitutes) ? exercise.substitutes : [],
+        target_sets: inheritedSets,
+        target_reps: timeBased ? 0 : "8-12",
+        rest_seconds: 60,
+        target_time_seconds: timeBased ? 600 : 0,
+        group_id: groupId || "",
+        comment: "",
+        manual_rest_enabled: true,
+      });
+    }
 
     updateSummary();
     renderExerciseList();
@@ -522,13 +522,13 @@
       groupItemsMap.get(item.group_id).push({ item, idx });
     });
 
-      const renderExerciseCard = (item, idx) => {
-        const isTime = isTimeBasedExercise(item.exercise_type || item.type);
-        const manualTimeEnabled = Boolean(item.manual_time_enabled);
-        const manualRestEnabled = item.manual_rest_enabled !== false;
-        const currentSeconds = Number(item.target_time_seconds) || 600;
-        const currentMinutes = Math.max(1, Math.round(currentSeconds / 60));
-        return `
+    const renderExerciseCard = (item, idx) => {
+      const isTime = isTimeBasedExercise(item.exercise_type || item.type);
+      const manualTimeEnabled = Boolean(item.manual_time_enabled);
+      const manualRestEnabled = item.manual_rest_enabled !== false;
+      const currentSeconds = Number(item.target_time_seconds) || 600;
+      const currentMinutes = Math.max(1, Math.round(currentSeconds / 60));
+      return `
           <div class="guided-config-card">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="text-white fw-bold">${item.exercise_name || "Ejercicio"}</div>
@@ -548,9 +548,8 @@
               </div>
               <div class="col-4 guided-field-reps">
                 <label class="text-secondary small">${isTime ? "Tiempo" : "Reps"}</label>
-                ${
-                  isTime
-                    ? `<div class="d-flex align-items-center gap-2">
+                ${isTime
+          ? `<div class="d-flex align-items-center gap-2">
                         ${!manualTimeEnabled ? `
                           <select class="form-select form-select-sm bg-dark text-white border-secondary" data-field="target_time_seconds" data-idx="${idx}">
                             ${TIME_OPTIONS.map((opt) => `<option value="${opt}" ${Number(item.target_time_seconds) === opt ? "selected" : ""}>${Math.round(opt / 60)} min</option>`).join("")}
@@ -565,11 +564,11 @@
                           <i class="fas fa-pen"></i>
                         </button>
                       </div>`
-                    : `<select class="form-select form-select-sm bg-dark text-white border-secondary guided-compact-select" data-field="target_reps" data-idx="${idx}">
+          : `<select class="form-select form-select-sm bg-dark text-white border-secondary guided-compact-select" data-field="target_reps" data-idx="${idx}">
                         ${REPS_OPTIONS.map((opt) => `<option value="${opt}" ${getRepsSelectValue(item.target_reps) === opt ? "selected" : ""}>${opt}</option>`).join("")}
                       </select>
                       <input type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary mt-1" data-field="target_reps_exact" data-idx="${idx}" placeholder="Reps fijas" value="${getExactRepsValue(item.target_reps)}" style="display: ${isExactRepsValue(item.target_reps) ? 'block' : 'none'};" ${isExactRepsValue(item.target_reps) ? '' : 'disabled'}>`
-                }
+        }
               </div>
               <div class="col-4 guided-field-rest">
                 <label class="text-secondary small">Descanso</label>
@@ -1138,9 +1137,19 @@
 
   const loadRoutines = async () => {
     try {
-      const res = await fetch(isAdminBuilder ? "/workout/api/my-routines?all=1" : "/workout/api/my-routines");
-      const data = await res.json();
-      state.routines = Array.isArray(data) ? data : [];
+      const promises = [
+        fetch(isAdminBuilder ? "/workout/api/my-routines?all=1" : "/workout/api/my-routines").then(r => r.json())
+      ];
+      if (isAdminBuilder) {
+        promises.push(fetch("/workout/api/ai-routines").then(r => r.json()));
+      }
+      const [myRoutines, aiRoutines] = await Promise.all(promises);
+      const combined = [
+        ...(Array.isArray(myRoutines) ? myRoutines : []),
+        ...(Array.isArray(aiRoutines) ? aiRoutines : [])
+      ];
+      // Sort by created desc
+      state.routines = combined.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       renderRoutineList();
     } catch (e) {
       state.routines = [];
@@ -1184,38 +1193,38 @@
           note: item.note || "",
         };
       }
-        if (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null)) {
-          return {
-            item_type: "rest",
-            _id: item._id || makeId("rest"),
-            rest_seconds: item.rest_seconds || 60,
-            note: item.note || "Descanso",
-            group_id: item.group_id || "",
-            manual_rest_enabled: item.manual_rest_enabled !== false,
-          };
-        }
-      const exerciseId = item.exercise_id || item._id || item.id;
-      const lookupExercise = exerciseLookup[exerciseId] || {};
-        const mapped = {
-          item_type: "exercise",
-          _id: item._id || makeId("ex"),
-          exercise_id: exerciseId,
-          exercise_name: item.exercise_name || item.name || lookupExercise.name || "Ejercicio",
-          exercise_type: item.exercise_type || item.type || lookupExercise.type || "weight",
-          equipment: item.equipment || lookupExercise.equipment || "",
-          body_part: item.body_part || lookupExercise.body_part || "",
-          video_url: item.video_url || lookupExercise.video_url || "",
-          substitutes: Array.isArray(item.substitutes) && item.substitutes.length
-            ? item.substitutes
-            : (Array.isArray(lookupExercise.substitutes) ? lookupExercise.substitutes : []),
-          target_sets: item.target_sets || 3,
-          target_reps: item.target_reps || "8-12",
-          rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
-          target_time_seconds: item.target_time_seconds || 600,
+      if (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null)) {
+        return {
+          item_type: "rest",
+          _id: item._id || makeId("rest"),
+          rest_seconds: item.rest_seconds || 60,
+          note: item.note || "Descanso",
           group_id: item.group_id || "",
-          comment: item.comment || "",
           manual_rest_enabled: item.manual_rest_enabled !== false,
         };
+      }
+      const exerciseId = item.exercise_id || item._id || item.id;
+      const lookupExercise = exerciseLookup[exerciseId] || {};
+      const mapped = {
+        item_type: "exercise",
+        _id: item._id || makeId("ex"),
+        exercise_id: exerciseId,
+        exercise_name: item.exercise_name || item.name || lookupExercise.name || "Ejercicio",
+        exercise_type: item.exercise_type || item.type || lookupExercise.type || "weight",
+        equipment: item.equipment || lookupExercise.equipment || "",
+        body_part: item.body_part || lookupExercise.body_part || "",
+        video_url: item.video_url || lookupExercise.video_url || "",
+        substitutes: Array.isArray(item.substitutes) && item.substitutes.length
+          ? item.substitutes
+          : (Array.isArray(lookupExercise.substitutes) ? lookupExercise.substitutes : []),
+        target_sets: item.target_sets || 3,
+        target_reps: item.target_reps || "8-12",
+        rest_seconds: item.rest_seconds != null ? item.rest_seconds : 60,
+        target_time_seconds: item.target_time_seconds || 600,
+        group_id: item.group_id || "",
+        comment: item.comment || "",
+        manual_rest_enabled: item.manual_rest_enabled !== false,
+      };
       return normalizeItemTargets(mapped);
     });
   };
@@ -1223,7 +1232,15 @@
   const loadRoutineById = async (id, options) => {
     if (!id) return;
     try {
-      const res = await fetch(isAdminBuilder ? `/workout/api/my-routines/${id}?all=1` : `/workout/api/my-routines/${id}`);
+      // Check if it's an AI routine from state
+      const routineRef = state.routines.find(r => String(r._id) === String(id));
+      const isAI = routineRef && routineRef.source === "ai";
+      let url = isAdminBuilder ? `/workout/api/my-routines/${id}?all=1` : `/workout/api/my-routines/${id}`;
+      if (isAI) {
+        url = `/workout/api/ai-routines/${id}`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       normalizeRoutine(data, options);
@@ -1334,21 +1351,21 @@
       modal.show();
     });
 
-  document.getElementById("guidedSaveBtn")?.addEventListener("click", async () => {
-    clearMessage();
-    closeOpenModals();
-    try {
-      state.routine.name = document.getElementById("guidedName").value.trim();
-      state.routine.description = document.getElementById("guidedDesc").value.trim();
-      state.routine.routine_day = document.getElementById("guidedDay").value;
-      state.routine.is_active = document.getElementById("guidedActive").checked;
-      const selectedParts = Array.from(document.querySelectorAll(".guided-bodypart:checked")).map((el) => el.value);
-      state.routine.routine_body_parts = selectedParts;
-      if (!state.routine.name) {
-        showMessage("Debes ingresar un nombre.", "warning");
-        return;
-      }
-      if (window.showLoader) window.showLoader("Guardando rutina...");
+    document.getElementById("guidedSaveBtn")?.addEventListener("click", async () => {
+      clearMessage();
+      closeOpenModals();
+      try {
+        state.routine.name = document.getElementById("guidedName").value.trim();
+        state.routine.description = document.getElementById("guidedDesc").value.trim();
+        state.routine.routine_day = document.getElementById("guidedDay").value;
+        state.routine.is_active = document.getElementById("guidedActive").checked;
+        const selectedParts = Array.from(document.querySelectorAll(".guided-bodypart:checked")).map((el) => el.value);
+        state.routine.routine_body_parts = selectedParts;
+        if (!state.routine.name) {
+          showMessage("Debes ingresar un nombre.", "warning");
+          return;
+        }
+        if (window.showLoader) window.showLoader("Guardando rutina...");
         const payload = {
           id: state.routine.id || undefined,
           name: state.routine.name,
@@ -1395,13 +1412,13 @@
       renderExerciseList();
       renderConfigList();
       updateSummary();
-      });
+    });
 
-      document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
-        const field = event.target.getAttribute("data-field");
-        const idx = Number(event.target.getAttribute("data-idx"));
-        if (!field || Number.isNaN(idx)) return;
-        const value = event.target.value;
+    document.getElementById("guidedConfigList")?.addEventListener("change", (event) => {
+      const field = event.target.getAttribute("data-field");
+      const idx = Number(event.target.getAttribute("data-idx"));
+      if (!field || Number.isNaN(idx)) return;
+      const value = event.target.value;
       if (!state.routine.items[idx]) return;
       if (["group_name", "note", "comment"].includes(field)) {
         if (field == "group_name") {
@@ -1454,30 +1471,30 @@
         return;
       }
 
-        if (field === "target_reps_exact") {
-          state.routine.items[idx].target_reps = value;
-          state.routine.items[idx].target_time_seconds = 0;
-          return;
-        }
+      if (field === "target_reps_exact") {
+        state.routine.items[idx].target_reps = value;
+        state.routine.items[idx].target_time_seconds = 0;
+        return;
+      }
 
-        if (field === "target_time_minutes") {
-          const minutes = Math.max(1, Number(value) || 1);
-          state.routine.items[idx].target_time_seconds = minutes * 60;
-          state.routine.items[idx].target_reps = 0;
-          return;
-        }
+      if (field === "target_time_minutes") {
+        const minutes = Math.max(1, Number(value) || 1);
+        state.routine.items[idx].target_time_seconds = minutes * 60;
+        state.routine.items[idx].target_reps = 0;
+        return;
+      }
 
-        if (field === "rest_seconds_manual") {
-          const seconds = Math.max(1, Math.min(1800, Number(value) || 1));
-          state.routine.items[idx].rest_seconds = seconds;
-          return;
-        }
+      if (field === "rest_seconds_manual") {
+        const seconds = Math.max(1, Math.min(1800, Number(value) || 1));
+        state.routine.items[idx].rest_seconds = seconds;
+        return;
+      }
 
-        const parsedValue = field.includes("sets") || field.includes("seconds") ? Number(value) : value;
-        state.routine.items[idx][field] = parsedValue;
-        if (field === "target_time_seconds") {
-          state.routine.items[idx].target_reps = 0;
-        }
+      const parsedValue = field.includes("sets") || field.includes("seconds") ? Number(value) : value;
+      state.routine.items[idx][field] = parsedValue;
+      if (field === "target_time_seconds") {
+        state.routine.items[idx].target_reps = 0;
+      }
       if (field === "target_sets") {
         const item = state.routine.items[idx];
         if (item && item.group_id) {
@@ -1491,23 +1508,23 @@
       }
     });
 
-      document.getElementById("guidedConfigList")?.addEventListener("click", async (event) => {
-        const toggleTimeBtn = event.target.closest("[data-toggle-time-input]");
-        if (toggleTimeBtn) {
-          const idx = Number(toggleTimeBtn.dataset.toggleTimeInput);
-          if (Number.isNaN(idx) || !state.routine.items[idx]) return;
-          state.routine.items[idx].manual_time_enabled = !state.routine.items[idx].manual_time_enabled;
-          renderConfigList();
-          return;
-        }
-        const toggleRestBtn = event.target.closest("[data-toggle-rest-input]");
-        if (toggleRestBtn) {
-          const idx = Number(toggleRestBtn.dataset.toggleRestInput);
-          if (Number.isNaN(idx) || !state.routine.items[idx]) return;
-          state.routine.items[idx].manual_rest_enabled = !state.routine.items[idx].manual_rest_enabled;
-          renderConfigList();
-          return;
-        }
+    document.getElementById("guidedConfigList")?.addEventListener("click", async (event) => {
+      const toggleTimeBtn = event.target.closest("[data-toggle-time-input]");
+      if (toggleTimeBtn) {
+        const idx = Number(toggleTimeBtn.dataset.toggleTimeInput);
+        if (Number.isNaN(idx) || !state.routine.items[idx]) return;
+        state.routine.items[idx].manual_time_enabled = !state.routine.items[idx].manual_time_enabled;
+        renderConfigList();
+        return;
+      }
+      const toggleRestBtn = event.target.closest("[data-toggle-rest-input]");
+      if (toggleRestBtn) {
+        const idx = Number(toggleRestBtn.dataset.toggleRestInput);
+        if (Number.isNaN(idx) || !state.routine.items[idx]) return;
+        state.routine.items[idx].manual_rest_enabled = !state.routine.items[idx].manual_rest_enabled;
+        renderConfigList();
+        return;
+      }
       const replaceBtn = event.target.closest("[data-replace]");
       if (replaceBtn) {
         pendingReplaceId = replaceBtn.dataset.replace;
@@ -1647,7 +1664,7 @@
         renderConfigList();
         renderExerciseList();
         updateSummary();
-            return;
+        return;
       }
 
       const btn = event.target.closest("[data-remove]");
@@ -1673,7 +1690,7 @@
       renderConfigList();
       renderExerciseList();
       updateSummary();
-      });
+    });
 
     document.getElementById("guidedOpenExerciseModal")?.addEventListener("click", () => {
       pendingReplaceId = "";

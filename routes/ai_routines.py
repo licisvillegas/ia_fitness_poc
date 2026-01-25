@@ -151,8 +151,9 @@ def api_save_routine_mongo():
                         rest_seconds = int(rest_seconds)
                     except (TypeError, ValueError):
                         return jsonify({"error": "rest_seconds invalido"}), 400
-                    if rest_seconds < 30 or rest_seconds > 180:
-                        return jsonify({"error": "rest_seconds fuera de rango"}), 400
+                    if rest_seconds < 0 or rest_seconds > 600:
+                        logger.error(f"Validation Error: rest_seconds={rest_seconds} out of range [0-600]")
+                        return jsonify({"error": f"rest_seconds {rest_seconds} fuera de rango [0-600]"}), 400
                 gid = item.get("group_id") or ""
                 if gid:
                     group_usage[gid] = group_usage.get(gid, 0) + 1
@@ -162,8 +163,9 @@ def api_save_routine_mongo():
                     rest_seconds = int(rest_seconds)
                 except (TypeError, ValueError):
                     return jsonify({"error": "rest_seconds invalido"}), 400
-                if rest_seconds < 30 or rest_seconds > 180:
-                    return jsonify({"error": "rest_seconds fuera de rango"}), 400
+                if rest_seconds < 0 or rest_seconds > 600:
+                    logger.error(f"Validation Error: rest_seconds={rest_seconds} out of range [0-600]")
+                    return jsonify({"error": f"rest_seconds {rest_seconds} fuera de rango [0-600]"}), 400
                 gid = item.get("group_id") or ""
                 if gid:
                     group_usage[gid] = group_usage.get(gid, 0) + 1

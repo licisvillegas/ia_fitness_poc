@@ -296,6 +296,16 @@
     }
   };
 
+  const setHeatmapRange = (value) => {
+    state.heatmapRange = value;
+    document.querySelectorAll("[data-heatmap-range]").forEach((btnEl) => {
+      const isActive = Number(btnEl.getAttribute("data-heatmap-range")) === value;
+      btnEl.classList.toggle("btn-outline-info", isActive);
+      btnEl.classList.toggle("text-dark", isActive);
+      btnEl.classList.toggle("btn-outline-secondary", !isActive);
+    });
+  };
+
   const refreshUI = () => {
     const dates = state.trainedDates;
     const weekCounts = buildWeekCounts(dates);
@@ -390,6 +400,9 @@
       if (windowSelect) {
         windowSelect.value = String(state.windowRangeDays);
       }
+
+      // Auto-select heatmap range using the same thresholds
+      setHeatmapRange(state.windowRangeDays);
     }
   };
 
@@ -431,13 +444,7 @@
     document.querySelectorAll("[data-heatmap-range]").forEach((button) => {
       button.addEventListener("click", () => {
         const value = Number(button.getAttribute("data-heatmap-range")) || 90;
-        state.heatmapRange = value;
-        document.querySelectorAll("[data-heatmap-range]").forEach((btnEl) => {
-          const isActive = Number(btnEl.getAttribute("data-heatmap-range")) === value;
-          btnEl.classList.toggle("btn-outline-info", isActive);
-          btnEl.classList.toggle("text-dark", isActive);
-          btnEl.classList.toggle("btn-outline-secondary", !isActive);
-        });
+        setHeatmapRange(value);
         renderHeatmap(state.trainedDates);
       });
     });

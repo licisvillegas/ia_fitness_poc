@@ -431,27 +431,23 @@ def api_stats_heatmap():
              user_id = req_user_id
         
         # Robust Logic: Fetch raw and process in Python to handle Mixed Types (Date/String)
-        # Fetch only needed fields from 'workout_sessions'
-        cursor = db.workout_sessions.find(
-            {"user_id": user_id}, 
-            {"completed_at": 1}
-        )
+        # Robust Logic: Use Aggregation to count by date at DB level
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$project": {
+                "dateStr": {
+                    "$cond": {
+                        "if": {"$eq": [{"$type": "$completed_at"}, "date"]},
+                        "then": {"$dateToString": {"format": "%Y-%m-%d", "date": "$completed_at"}},
+                        "else": {"$substr": ["$completed_at", 0, 10]}
+                    }
+                }
+            }},
+            {"$group": {"_id": "$dateStr", "count": {"$sum": 1}}}
+        ]
         
-        heatmap_data = {}
-        
-        for s in cursor:
-            # Determine date
-            raw_date = s.get("completed_at")
-            date_str = None
-            
-            if isinstance(raw_date, datetime):
-                date_str = raw_date.strftime("%Y-%m-%d")
-            elif isinstance(raw_date, str):
-                # Try parsing if it's a full ISO string, or just take first 10 chars
-                date_str = raw_date[:10]
-            
-            if date_str:
-                heatmap_data[date_str] = heatmap_data.get(date_str, 0) + 1
+        results = list(db.workout_sessions.aggregate(pipeline))
+        heatmap_data = {r["_id"]: r["count"] for r in results if r["_id"]}
         
         return jsonify(heatmap_data), 200
         
@@ -746,49 +742,51 @@ def api_stats_volume():
         db = get_db()
         if db is None: return jsonify([]), 503
         
-        # Fetch sessions for this user
-        cursor = db.workout_sessions.find(
-            {"user_id": user_id},
-            {"sets": 1, "started_at": 1, "created_at": 1}
-        ).sort([("created_at", 1)])
+        # Optimization: Limit to last 6 months to prevent scanning years of history
+        six_months_ago = datetime.utcnow() - timedelta(days=180)
         
-        daily_weights = {}
-        for s in cursor:
-            raw_date = s.get("started_at") or s.get("created_at")
-            if not raw_date: continue
-            
-            date_str = None
-            if isinstance(raw_date, datetime):
-                date_str = raw_date.strftime("%Y-%m-%d")
-            elif isinstance(raw_date, str):
-                date_str = raw_date[:10]
-            
-            if not date_str: continue
-            
-            sets = s.get("sets", [])
-            for st in sets:
-                try:
-                    w = float(st.get("weight", 0))
-                    # Only count sets with weight > 0 if we want a meaningful average of weights used
-                    if w > 0:
-                        if date_str not in daily_weights:
-                            daily_weights[date_str] = {"total_weight": 0, "count": 0}
-                        daily_weights[date_str]["total_weight"] += w
-                        daily_weights[date_str]["count"] += 1
-                except (ValueError, TypeError):
-                    continue
-            
-        # Convert to list of averages
+        pipeline = [
+            {"$match": {
+                "user_id": user_id,
+                "$or": [
+                    {"started_at": {"$gte": six_months_ago}},
+                    {"created_at": {"$gte": six_months_ago}}
+                ]
+            }},
+            {"$project": {
+                "date": {"$ifNull": ["$started_at", "$created_at"]},
+                "sets": 1
+            }},
+            {"$unwind": "$sets"},
+            {"$project": {
+                "dateStr": {
+                    "$cond": {
+                        "if": {"$eq": [{"$type": "$date"}, "date"]},
+                        "then": {"$dateToString": {"format": "%Y-%m-%d", "date": "$date"}},
+                        "else": {"$substr": ["$date", 0, 10]}
+                    }
+                },
+                "weight": {"$toDouble": "$sets.weight"}
+            }},
+            {"$match": {"weight": {"$gt": 0}}},
+            {"$group": {
+                "_id": "$dateStr",
+                "avgVolume": {"$avg": "$weight"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        
+        results = list(db.workout_sessions.aggregate(pipeline))
+        
         data = []
-        sorted_dates = sorted(daily_weights.keys())
-        for d in sorted_dates:
-            if daily_weights[d]["count"] > 0:
-                avg = daily_weights[d]["total_weight"] / daily_weights[d]["count"]
+        for r in results:
+            if r["_id"]:
                 data.append({
-                    "date": d,
-                    "volume": round(avg, 2)
+                    "date": r["_id"],
+                    "volume": round(r["avgVolume"], 2)
                 })
-            
+
         # Return last 30 daily points
         return jsonify(data[-30:]), 200
     except Exception as e:

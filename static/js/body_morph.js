@@ -5,12 +5,18 @@ const imgOver = document.getElementById('img-over');
 const themeSelect = document.getElementById('body-theme-select');
 const playBtn = document.getElementById('body-play');
 const genderToggle = document.getElementById('gender-toggle');
+const themeToggle = document.getElementById('body-theme-toggle');
 
 const themes = {
   HD2: [
     '/static/images/body/male/01front_d2.png',
     '/static/images/body/male/01front_d.png',
     '/static/images/body/male/01front_d3.png',
+  ],
+  MaleFitness: [
+    '/static/images/body/male/fh01.png',
+    '/static/images/body/male/fh02.png',
+    '/static/images/body/male/fh03.png',
   ],
   HR1: [
     '/static/images/body/male/1front2.png',
@@ -30,25 +36,39 @@ const femaleThemes = {
     '/static/images/body/female/f_front_d.png',
     '/static/images/body/female/f_front_d3.png',
   ],
+  FemaleFitness: [
+    '/static/images/body/female/ff01.png',
+    '/static/images/body/female/ff02.png',
+    '/static/images/body/female/ff03.png',
+  ],
 };
 
 let currentGender = 'male';
 
 function applyTheme(themeKey) {
-  const theme = themes[themeKey] || themes.HD2;
+  console.log('Applying theme:', themeKey);
+  const theme = themes[themeKey] || themes.MaleFitness || themes.HD2;
+  console.log('Resolved theme images:', theme);
+  if (!theme) {
+    console.error('Theme not found for key:', themeKey);
+    return;
+  }
   imgThin.src = theme[0];
   imgMuscle.src = theme[1];
   imgOver.src = theme[2];
 }
 
+let activeMaleTheme = 'HD2';
+let activeFemaleTheme = 'FD1';
+
 function applyGender() {
   if (currentGender === 'female') {
-    const theme = femaleThemes.FD1;
+    const theme = femaleThemes[activeFemaleTheme] || femaleThemes.FemaleFitness || femaleThemes.FD1;
     imgThin.src = theme[0];
     imgMuscle.src = theme[1];
     imgOver.src = theme[2];
   } else {
-    applyTheme(themeSelect ? themeSelect.value : 'HD2');
+    applyTheme(activeMaleTheme);
   }
 }
 
@@ -134,11 +154,39 @@ if (playBtn) {
 
 if (themeSelect && imgThin && imgMuscle && imgOver) {
   themeSelect.addEventListener('change', (e) => {
-    applyTheme(e.target.value);
+    activeMaleTheme = e.target.value;
+    activeFemaleTheme = 'FD1'; // Basic override if simple select
+    applyGender();
   });
   applyGender();
   updateThemeVisibility();
   setInterval(updateThemeVisibility, 1000);
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    console.log('Theme toggle clicked. Current gender:', currentGender);
+    if (currentGender === 'male') {
+      // Toggle between MaleFitness and HD2
+      activeMaleTheme = (activeMaleTheme === 'MaleFitness') ? 'HD2' : 'MaleFitness';
+      console.log('Switched male theme to:', activeMaleTheme);
+    } else {
+      // Toggle between FemaleFitness and FD1
+      activeFemaleTheme = (activeFemaleTheme === 'FemaleFitness') ? 'FD1' : 'FemaleFitness';
+      console.log('Switched female theme to:', activeFemaleTheme);
+    }
+
+    // Add visual feedback
+    if (activeMaleTheme === 'MaleFitness' || activeFemaleTheme === 'FemaleFitness') {
+      themeToggle.classList.remove('btn-outline-warning');
+      themeToggle.classList.add('btn-warning');
+    } else {
+      themeToggle.classList.add('btn-outline-warning');
+      themeToggle.classList.remove('btn-warning');
+    }
+
+    applyGender();
+  });
 }
 
 if (genderToggle && imgThin && imgMuscle && imgOver) {

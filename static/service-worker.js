@@ -1,5 +1,7 @@
-const CACHE_NAME = 'synapse-fit-v1';
+const CACHE_NAME = 'synapse-fit-v2';
+const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = [
+    OFFLINE_URL,
     '/',
     '/static/css/theme.css',
     '/static/css/sidebar.css',
@@ -34,11 +36,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                return response || fetch(event.request);
+    const { request } = event;
+
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request).catch(async () => {
+                const cache = await caches.open(CACHE_NAME);
+                return cache.match(OFFLINE_URL);
             })
+        );
+        return;
+    }
+
+    event.respondWith(
+        caches.match(request).then((response) => response || fetch(request))
     );
 });
 

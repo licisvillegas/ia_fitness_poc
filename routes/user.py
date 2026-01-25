@@ -62,6 +62,10 @@ def muscle_map_page():
 def body_morph_page():
     return render_template("body_morph.html")
 
+@user_bp.route("/offline.html")
+def offline_page():
+    return render_template("offline.html")
+
 @user_bp.get("/api/user/body_assessment/latest")
 def api_latest_body_assessment():
     user_id = request.args.get("user_id") or request.cookies.get("user_session")

@@ -233,6 +233,10 @@
     });
   };
 
+  const getRoutineDisplayName = (routine) => {
+    return routine?.name || routine?.routine_name || routine?.title || routine?.routine_title || "Rutina";
+  };
+
   const renderRoutineList = () => {
     const list = document.getElementById("guidedRoutineList");
     const termRaw = document.getElementById("guidedRoutineSearch")?.value || "";
@@ -241,7 +245,7 @@
     const collapseEl = document.getElementById("guidedRoutineCollapse");
     if (!list) return;
     const filtered = state.routines.filter((r) => {
-      const name = (r.name || "").toLowerCase();
+      const name = getRoutineDisplayName(r).toLowerCase();
       return !term || name.includes(term);
     });
     const collapseInstance = collapseEl ? bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }) : null;
@@ -267,19 +271,20 @@
 
     list.innerHTML = filtered
       .map((r) => {
-        const badge = r.source === "ai" ? "AI Generated" : (r.is_active === false ? "Inactiva" : "Activa");
-        const badgeClass = r.source === "ai" ? "bg-cyber-blue" : (r.is_active === false ? "bg-secondary" : "bg-success");
+        const isAi = r.source === "ai";
+        const badge = isAi ? "AI Generated" : (r.is_active === false ? "Inactiva" : "Activa");
+        const badgeClass = isAi ? "bg-warning text-dark" : (r.is_active === false ? "bg-secondary" : "bg-success");
         return `
           <div class="guided-config-card mb-2">
             <div class="d-flex justify-content-between align-items-start">
               <div>
-                <div class="text-white fw-bold">${r.name || "Rutina"}</div>
+                <div class="text-white fw-bold">${getRoutineDisplayName(r)}</div>
                 <div class="text-secondary small">${r.description || ""}</div>
               </div>
               <span class="badge ${badgeClass} text-dark">${badge}</span>
             </div>
             <div class="guided-inline-actions mt-2">
-              <button class="btn btn-sm btn-outline-info" data-load="${r._id}">Cargar</button>
+              ${isAi ? "" : `<button class="btn btn-sm btn-outline-info" data-load="${r._id}">Cargar</button>`}
               <button class="btn btn-sm btn-outline-secondary" data-dup="${r._id}">Duplicar</button>
             </div>
           </div>
@@ -1144,12 +1149,16 @@
         promises.push(fetch("/workout/api/ai-routines").then(r => r.json()));
       }
       const [myRoutines, aiRoutines] = await Promise.all(promises);
-      const combined = [
+    const combined = [
         ...(Array.isArray(myRoutines) ? myRoutines : []),
         ...(Array.isArray(aiRoutines) ? aiRoutines : [])
       ];
+      const normalized = combined.map((routine) => ({
+        ...routine,
+        name: getRoutineDisplayName(routine),
+      }));
       // Sort by created desc
-      state.routines = combined.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      state.routines = normalized.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       renderRoutineList();
     } catch (e) {
       state.routines = [];

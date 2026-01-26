@@ -1257,6 +1257,11 @@ def admin_assign_routine_page():
     source = request.args.get("source") or "admin"
     return render_template("assign_routine.html", source=source)
 
+@admin_bp.get("/admin/routines/assign-v2")
+def admin_assign_routine_page_v2():
+    source = request.args.get("source") or "admin"
+    return render_template("assign_routine_v2.html", source=source)
+
 @admin_bp.post("/api/admin/routines/assign")
 def admin_api_assign_routine():
     """Asigna una rutina a un usuario (tabla de enlace)"""

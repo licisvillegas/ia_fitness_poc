@@ -1036,17 +1036,34 @@ def api_list_ai_routines():
 
         # Fetch summarized list
         cursor = db.ai_routines.find({}, {
-            "routine_name": 1, 
-            "level": 1, 
-            "goal": 1, 
+            "routine_name": 1,
+            "name": 1,
+            "title": 1,
+            "plan_name": 1,
+            "meta": 1,
+            "level": 1,
+            "goal": 1,
             "created_at": 1,
-            "days": 1 # To estimate size/complexity
+            "days": 1  # To estimate size/complexity and fallback name
         }).sort("created_at", -1).limit(50)
 
         results = []
         for r in cursor:
             # Synthetic name if missing
-            name = r.get("routine_name") or f"AI {r.get('goal', 'Rutina')} - {r.get('level', '')}"
+            name = (
+                r.get("routine_name")
+                or r.get("name")
+                or r.get("title")
+                or r.get("plan_name")
+                or (r.get("meta") or {}).get("name")
+            )
+            if not name and r.get("days"):
+                first_day = r.get("days")[0] if isinstance(r.get("days"), list) else None
+                name = (first_day or {}).get("routine", {}).get("name")
+            if not name:
+                name = f"AI Rutina - {r.get('goal', '')}".strip()
+                if r.get("level"):
+                    name = f"{name} ({r.get('level')})"
             # Description from AI metadata
             desc = f"{r.get('goal', '')} | {r.get('level', '')} | {len(r.get('days', []))} dias"
             

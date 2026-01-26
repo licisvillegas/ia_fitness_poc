@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+
+{% block title %}Asignar Rutinas | Synapse Fit{% endblock %}
+
+{% block sidebar %}
+{% include 'components/sidebar_admin.html' %}
+{% endblock %}
+
+{% block head %}
+<link href="/static/css/assign/assign_v2.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="assign-page">
+    {% include 'partials/assign_v2/header.html' %}
+
+    <div class="assign-layout">
+        {% include 'partials/assign_v2/user_selector.html' %}
+        {% include 'partials/assign_v2/routines_panel.html' %}
+    </div>
+
+    {% include 'partials/assign_v2/toast.html' %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+{% include 'partials/assign_v2/scripts.html' %}
+{% endblock %}

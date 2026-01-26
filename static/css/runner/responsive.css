@@ -1,0 +1,385 @@
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .visual-stage {
+        padding: 0.5rem;
+        justify-content: flex-start;
+        padding-top: 1rem;
+    }
+
+    .active-card {
+        padding: 1rem;
+        border-radius: 16px;
+        max-width: 100%;
+        border-width: 1px;
+    }
+
+    .heading-wrap {
+        font-size: 1.5rem;
+        line-height: 1.2;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .input-hud {
+        font-size: 1.5rem;
+        height: 48px;
+        width: 80px !important;
+    }
+
+    .pending-panel input,
+    .pending-panel select,
+    .pending-panel textarea {
+        font-size: 16px !important;
+    }
+
+    .btn-control-hud {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .btn-action {
+        padding: 12px;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+    }
+
+    .mobile-compact-mb {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .mobile-hide {
+        display: none !important;
+    }
+
+    .controls-section {
+        padding: 10px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 768px) {
+    .header-section {
+        position: relative;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .header-info {
+        width: 100%;
+        text-align: center;
+    }
+
+    .header-timer {
+        position: static !important;
+        transform: none !important;
+        order: 2;
+    }
+
+    .header-controls {
+        width: 100%;
+        justify-content: center !important;
+        order: 3;
+    }
+
+    .pending-panel {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 60vh;
+        border-left: none;
+        border-top: 1px solid #222;
+        transform: translateY(100%);
+    }
+
+    .pending-panel.open {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .active-card input,
+    .active-card select,
+    .active-card textarea,
+    .plate-modal input,
+    .plate-modal select,
+    .plate-modal textarea,
+    .rm-modal input,
+    .rm-modal select,
+    .rm-modal textarea {
+        font-size: 16px !important;
+    }
+
+    .active-card input.input-hud {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .pre-start-container select,
+    .pre-start-container input,
+    .pre-start-container textarea {
+        font-size: 16px !important;
+    }
+}
+
+@media (orientation: portrait) {
+    .rm-icon-btn-horizontal {
+        display: none;
+    }
+
+    .exercise-note-btn {
+        display: none;
+    }
+}
+
+@media (orientation: landscape) {
+    .rm-icon-btn-vertical {
+        display: none;
+    }
+}
+
+@media (orientation: landscape) {
+    .input-icon-slot .rm-icon-btn-vertical {
+        display: inline-flex;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .rm-modal {
+        width: min(720px, 94vw);
+        max-height: 90vh;
+    }
+
+    .rm-modal-body {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .rm-modal .rm-grid {
+        grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+        gap: 0.6rem;
+    }
+
+    .rm-modal .rm-tile {
+        padding: 0.5rem;
+        border-radius: 10px;
+    }
+
+    .rm-modal .rm-primary-value {
+        font-size: 1.9rem;
+    }
+}
+
+@media (orientation: landscape) {
+    .timer-controls {
+        position: relative;
+    }
+
+    .timer-pause-icon-btn {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .timer-pause-btn {
+        display: none;
+    }
+}
+
+@media (orientation: portrait) {
+    .timer-pause-btn {
+        display: none;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .active-card.time-mode {
+        padding: 1rem;
+    }
+
+    .timer-controls {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    .timer-controls .display-1 {
+        font-size: clamp(2.4rem, 7vw, 3.4rem);
+        margin-bottom: 0.25rem !important;
+    }
+
+    .timer-controls p {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .timer-controls .timer-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .timer-controls .btn-action {
+        padding: 10px 18px;
+        font-size: 0.95rem;
+    }
+
+    .timer-controls .btn-outline-light {
+        padding: 10px 18px;
+    }
+
+    .timer-controls .btn-outline-secondary.btn-sm {
+        margin-top: 0 !important;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .plate-modal {
+        width: 85vw !important;
+        max-width: 650px !important;
+    }
+
+    .plate-modal-body {
+        display: flex;
+        gap: 20px;
+        padding-bottom: 0;
+    }
+
+    .plate-mode-row {
+        width: 100%;
+        padding-top: 0;
+    }
+
+    .plate-modal-body {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        grid-template-rows: auto 1fr;
+        column-gap: 20px;
+    }
+
+    .plate-mode-row {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .plate-grid {
+        grid-column: 1;
+        grid-row: 2;
+        gap: 8px;
+        overflow-y: auto;
+        max-height: 50vh;
+    }
+
+    .plate-calc-details {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-left: 1px solid var(--border-color);
+        padding-left: 20px;
+    }
+
+    .plate-tile {
+        padding: 4px;
+    }
+
+    .plate-tile img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .plate-counter button {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+    .countdown-overlay {
+        flex-direction: row;
+        gap: 2rem;
+    }
+
+    .focus-mode-toggle-btn {
+        display: none !important;
+    }
+
+    .countdown-image {
+        width: 250px;
+        height: 250px;
+        margin-bottom: 0;
+    }
+
+    .countdown-text {
+        font-size: 4rem;
+    }
+
+    .pre-start-container .visual-stage {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .pre-start-container .card {
+        width: 95% !important;
+        max-width: 800px;
+        margin: 0.5rem auto !important;
+        min-height: 200px;
+    }
+
+    .pre-start-container .card-body {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        grid-template-rows: 100%;
+        gap: 1.5rem;
+        padding: 1rem !important;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .pre-start-container .card-body > .text-center {
+        grid-column: 1;
+        margin-bottom: 0 !important;
+        text-align: left !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .pre-start-container .card-body > .text-center h2 {
+        font-size: 1.4rem !important;
+    }
+
+    .pre-start-container .card-body > .text-center p {
+        font-size: 0.9rem;
+    }
+
+    .pre-start-container .card-body > .custom-scroll {
+        grid-column: 2;
+        max-height: 55vh !important;
+        height: 100%;
+        margin-bottom: 0 !important;
+    }
+
+    .pre-start-container .controls-section {
+        padding: 4px;
+    }
+
+    .pre-start-container .btn-action {
+        padding: 8px;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+
+    .pre-start-container .card-body .text-secondary.m-0 {
+        display: block;
+    }
+}

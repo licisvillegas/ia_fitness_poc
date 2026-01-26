@@ -63,6 +63,193 @@
       padding: 2rem 0;
       margin-top: 3rem;
     }
+
+    .methodology {
+      position: relative;
+      padding: 3.5rem 0;
+      border-radius: 24px;
+      background: radial-gradient(circle at top right, rgba(0, 210, 255, 0.15), transparent 45%),
+        radial-gradient(circle at bottom left, rgba(0, 255, 157, 0.12), transparent 40%),
+        linear-gradient(135deg, rgba(10, 18, 30, 0.85), rgba(8, 12, 20, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+
+    .methodology::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(135deg,
+          rgba(255, 255, 255, 0.04) 0 2px,
+          transparent 2px 10px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .methodology-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .methodology-header h2 {
+      letter-spacing: 0.08em;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      text-transform: uppercase;
+    }
+
+    .methodology-header span {
+      display: inline-block;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      background: rgba(0, 210, 255, 0.12);
+      border: 1px solid rgba(0, 210, 255, 0.3);
+    }
+
+    .pillars-grid {
+      position: relative;
+      z-index: 1;
+      margin-top: 2.5rem;
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    }
+
+    .pillar-card {
+      background: rgba(10, 16, 28, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .pillar-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0, 255, 157, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .pillar-card summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .pillar-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .pillar-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .pillar-title span {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+    }
+
+    .pillar-title strong {
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .pillar-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      background: rgba(0, 210, 255, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(0, 210, 255, 0.35);
+    }
+
+    .pillar-card[open] .pillar-icon {
+      background: rgba(0, 255, 157, 0.18);
+      color: #00ff9d;
+      border-color: rgba(0, 255, 157, 0.45);
+    }
+
+    .pillar-body {
+      margin-top: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    .pillar-body ul {
+      margin: 0.75rem 0 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .pillar-body li::marker {
+      color: #00d2ff;
+    }
+
+    @media (max-width: 768px) {
+      .methodology {
+        padding: 2.5rem 1.25rem;
+      }
+    }
+
+    [data-theme="light"] .methodology {
+      background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 45%),
+        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.12), transparent 40%),
+        linear-gradient(135deg, #f8fafc, #eef2ff);
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    [data-theme="light"] .methodology::after {
+      background: repeating-linear-gradient(135deg,
+          rgba(15, 23, 42, 0.04) 0 2px,
+          transparent 2px 10px);
+      opacity: 0.15;
+    }
+
+    [data-theme="light"] .pillar-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    [data-theme="light"] .pillar-card:hover {
+      border-color: rgba(59, 130, 246, 0.45);
+      box-shadow: 0 18px 30px rgba(59, 130, 246, 0.18);
+    }
+
+    [data-theme="light"] .pillar-title span {
+      color: #475569;
+    }
+
+    [data-theme="light"] .pillar-body {
+      color: #475569;
+    }
+
+    [data-theme="light"] .pillar-icon {
+      background: rgba(59, 130, 246, 0.12);
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+
+    [data-theme="light"] .pillar-card[open] .pillar-icon {
+      background: rgba(16, 185, 129, 0.18);
+      color: #059669;
+      border-color: rgba(5, 150, 105, 0.4);
+    }
   </style>
 </head>
 
@@ -126,6 +313,90 @@
           </div>
         </div>
       </div>
+      <section class="methodology mt-5">
+        <div class="methodology-header">
+          <span>METODOLOGÍA</span>
+          <h2 class="mt-3">SYNAPSEFIT</h2>
+          <p class="text-secondary mt-2 mb-0">
+            Un enfoque integral de entrenamiento basado en ciencia, rendimiento y bienestar, estructurado en cuatro pilares.
+          </p>
+        </div>
+
+        <div class="pillars-grid">
+          <details class="pillar-card">
+            <summary>
+              <div class="pillar-title">
+                <span>🧱 ESTRUCTURA</span>
+                <strong>Hipertrofia y desarrollo muscular</strong>
+              </div>
+              <div class="pillar-icon"><i class="fas fa-dumbbell"></i></div>
+            </summary>
+            <div class="pillar-body">
+              Enfocada en el aumento de masa muscular mediante métodos de sobrecarga progresiva.
+              <ul>
+                <li>Uniseries</li>
+                <li>Biseries</li>
+                <li>Supersets</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="pillar-card">
+            <summary>
+              <div class="pillar-title">
+                <span>⚡ PERFORMANCE</span>
+                <strong>Rendimiento deportivo</strong>
+              </div>
+              <div class="pillar-icon"><i class="fas fa-bolt"></i></div>
+            </summary>
+            <div class="pillar-body">
+              Diseñada para mejorar la capacidad física, potencia y desempeño funcional.
+              <ul>
+                <li>Circuitos funcionales</li>
+                <li>HIIT (Entrenamiento Interválico de Alta Intensidad)</li>
+                <li>Entrenamiento concurrente (formato HYROX)</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="pillar-card">
+            <summary>
+              <div class="pillar-title">
+                <span>🌿 WELLNESS</span>
+                <strong>Bienestar y salud integral</strong>
+              </div>
+              <div class="pillar-icon"><i class="fas fa-seedling"></i></div>
+            </summary>
+            <div class="pillar-body">
+              Orientada a la movilidad, calidad de vida y longevidad funcional.
+              <ul>
+                <li>Starter (adaptaciones anatómicas y base motriz)</li>
+                <li>Healthy (mantenimiento activo y equilibrio físico)</li>
+                <li>Just Move (programa para adultos mayores)</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="pillar-card">
+            <summary>
+              <div class="pillar-title">
+                <span>🔥 METABÓLICO</span>
+                <strong>Cardio y acondicionamiento energético</strong>
+              </div>
+              <div class="pillar-icon"><i class="fas fa-fire"></i></div>
+            </summary>
+            <div class="pillar-body">
+              Entrenamiento cardiovascular enfocado en eficiencia metabólica.
+              <ul>
+                <li>Cardio continuo uniforme</li>
+                <li>Cardio continuo variable</li>
+                <li>Cardio intermitente</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </section>
+
     </main>
 
     <!-- Footer -->

@@ -28,6 +28,8 @@
     <link rel="apple-touch-icon" sizes="167x167" href="/static/images/icon/synapse_fit_180.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/static/images/icon/synapse_fit_180.png">
 
+    {% block head %}{% endblock %}
+
     <style>
         html,
         body {
@@ -448,6 +450,8 @@
             });
         }
     </script>
+
+    {% block page_scripts %}{% endblock %}
 </body>
 
 </html>

@@ -1,0 +1,79 @@
+/* Base layout and reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    height: var(--app-height, 100dvh);
+    width: 100vw;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+#react-root {
+    height: 100%;
+    width: 100%;
+}
+
+.main-content {
+    margin: 0 !important;
+    padding-top: 0 !important;
+}
+
+.main-content > main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+.player-container {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-body);
+}
+
+.header-section {
+    flex: 0 0 auto;
+    z-index: 10;
+    background: var(--overlay-panel);
+    backdrop-filter: blur(10px);
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.visual-stage {
+    flex: 1 1 auto;
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    perspective: 1000px;
+    padding: 1rem;
+}
+
+.controls-section {
+    flex: 0 0 auto;
+    background: var(--bg-body);
+    border-top: 1px solid var(--border-color);
+    padding: 15px;
+    padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    z-index: 20;
+}

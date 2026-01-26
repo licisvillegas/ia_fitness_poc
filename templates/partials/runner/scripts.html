@@ -1,0 +1,46 @@
+<!-- DEPENDENCIAS (CDN) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+    window.__RUNNER__ = {
+        routine: {{ routine | tojson }},
+        currentUserName: {{ current_user_name | default ('', true) | tojson }},
+        currentUserId: {{ current_user_id | default ('', true) | tojson }},
+        restoredState: {{ restored_state | tojson }}
+    };
+
+    window.initialRoutine = window.__RUNNER__.routine;
+    window.currentUserName = window.__RUNNER__.currentUserName;
+    window.currentUserId = window.__RUNNER__.currentUserId;
+    window.restoredState = window.__RUNNER__.restoredState;
+</script>
+
+<script src="/static/js/runner/bootstrap.js"></script>
+
+<!-- Arquitectura modular -->
+<script src="/static/js/runner/namespace.js"></script>
+<script src="/static/js/runner/utils.js"></script>
+<script src="/static/js/runner/constants.js"></script>
+<script src="/static/js/runner/logic.js"></script>
+<script type="text/babel" src="/static/js/runner/hooks/useWorkout.js"></script>
+<script type="text/babel" src="/static/js/runner/components/MessageBar.js"></script>
+<script type="text/babel" src="/static/js/runner/components/ConfirmModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/RPEHelpModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/PlateCalculatorModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/SubstitutesModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/RMCalculatorModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/RoutineDetails.js"></script>
+<script type="text/babel" src="/static/js/runner/components/PreStart.js"></script>
+<script type="text/babel" src="/static/js/runner/components/TimerControls.js"></script>
+<script type="text/babel" src="/static/js/runner/components/InputControls.js"></script>
+<script type="text/babel" src="/static/js/runner/components/RestOverlay.js"></script>
+<script type="text/babel" src="/static/js/runner/components/ActiveExercise.js"></script>
+<script type="text/babel" src="/static/js/runner/components/NextUpBar.js"></script>
+<script type="text/babel" src="/static/js/runner/components/Header.js"></script>
+<script type="text/babel" src="/static/js/runner/components/PendingPanel.js"></script>
+<script type="text/babel" src="/static/js/runner/components/NavigationWrapper.js"></script>
+<script type="text/babel" src="/static/js/runner/components/App.js"></script>
+<script src="/static/js/runner/entry.js"></script>

@@ -1,0 +1,86 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+            <h2 class="fw-bold text-cyber-green mb-0 text-center text-lg-start">
+                <i class="fas fa-dumbbell me-2"></i>Ejercicios
+            </h2>
+
+            <div class="w-100">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-end gap-2">
+                    <!-- Admin New Button -->
+                    <div id="adminControls d-none">
+                        <button class="btn btn-cyber-primary text-nowrap d-none" id="btnNewExercise"
+                            onclick="openExerciseModal()">
+                            <i class="fas fa-plus me-1"></i> <span class="d-none d-md-inline">Nuevo</span>
+                        </button>
+                    </div>
+
+                    <!-- View Switcher -->
+                    <div class="btn-group" role="group" aria-label="View Mode">
+                        <button type="button" class="btn btn-outline-secondary active" id="btnViewGrid"
+                            onclick="switchView('grid')" title="Vista Cuadrícula">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnViewList"
+                            onclick="switchView('list')" title="Vista Lista">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group flex-grow-1 flex-lg-grow-0" style="min-width: 220px; max-width: 420px;">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                                class="fas fa-search"></i></span>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="mainSearch"
+                            placeholder="Buscar ejercicio...">
+                    </div>
+
+                    <button class="btn btn-outline-secondary text-nowrap" onclick="resetFilters()"
+                        title="Restablecer filtros">
+                        <i class="fas fa-undo me-1"></i>
+                    </button>
+                </div>
+
+                <div class="row g-2 mt-2 align-items-end">
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <select class="form-select bg-dark text-white border-secondary w-100" id="filterSection">
+                            <option value="">Sección...</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <select class="form-select bg-dark text-white border-secondary w-100" id="filterGroup" disabled>
+                            <option value="">Grupo...</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <select class="form-select bg-dark text-white border-secondary w-100" id="filterMuscle"
+                            disabled>
+                            <option value="">Músculo...</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <select class="form-select bg-dark text-white border-secondary w-100" id="filterEquipment">
+                            <option value="">Equipo</option>
+                            <option value="barbell">Barra</option>
+                            <option value="dumbbell">Mancuernas</option>
+                            <option value="machine">Máquina</option>
+                            <option value="cable">Polea / Cable</option>
+                            <option value="band">Banda</option>
+                            <option value="bench">Banco</option>
+                            <option value="bodyweight">Peso Corporal</option>
+                            <option value="other">Otro</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <select class="form-select bg-dark text-white border-secondary w-100" id="filterType">
+                            <option value="">Tipo</option>
+                            <option value="weight">Peso</option>
+                            <option value="time">Tiempo</option>
+                            <option value="cardio">Cardio</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -263,17 +263,64 @@ function computePentagonScores(measurements) {
   return scores;
 }
 
+function computeSymmetryScores(measurements) {
+  if (!measurements) return null;
+  const data = measurements.measurements || {};
+
+  const bicepsL = toNumber(data.biceps_left);
+  const bicepsR = toNumber(data.biceps_right);
+  const forearmL = toNumber(data.forearm_left);
+  const forearmR = toNumber(data.forearm_right);
+
+  const thighL = toNumber(data.thigh_left);
+  const thighR = toNumber(data.thigh_right);
+  const calfL = toNumber(data.calf_left);
+  const calfR = toNumber(data.calf_right);
+
+  const shoulders = toNumber(data.shoulders);
+  const waist = toNumber(data.waist);
+
+  // Aggregates
+  const armL = bicepsL + forearmL;
+  const armR = bicepsR + forearmR;
+  const legL = thighL + calfL;
+  const legR = thighR + calfR;
+
+  // Rule of three relative to average
+  const calcScore = (val, counterpart) => {
+    if (!val && !counterpart) return 80;
+    const avg = (val + counterpart) / 2;
+    return (val / avg) * 100;
+  };
+
+  const scoreArmL = calcScore(armL, armR);
+  const scoreArmR = calcScore(armR, armL);
+  const scoreLegL = calcScore(legL, legR);
+  const scoreLegR = calcScore(legR, legL);
+
+  // Trunk: V-Taper score relative to 1.618 ideal
+  const currentVtaper = shoulders / (waist || 1);
+  const scoreTrunk = (currentVtaper / 1.618) * 100;
+
+  return {
+    sup: scoreTrunk,       // Top
+    cross: scoreArmR,      // Right (Upper)
+    vtaper: scoreLegR,     // Bottom Right (Lower)
+    xframe: scoreLegL,     // Bottom Left (Lower)
+    lateral: scoreArmL     // Left (Upper)
+  };
+}
+
 function buildPentagonPoints(values) {
   const center = 110;
-  const minRadius = 38;
-  const maxRadius = 88;
-  const maxValue = 100;
+  // Radius mapping: 100% = 65 (middle grid), 50% = 40 (inner), 150% = 90 (outer)
+  // formula: radius = 15 + (score * 0.5)
   const angles = [-90, -18, 54, 126, 198];
 
   return angles
     .map((deg, index) => {
-      const ratio = values[index] / maxValue;
-      const radius = minRadius + ratio * (maxRadius - minRadius);
+      const score = Math.max(0, values[index] || 0);
+      const radius = 15 + (score * 0.5);
       const rad = (deg * Math.PI) / 180;
       const x = center + radius * Math.cos(rad);
       const y = center + radius * Math.sin(rad);
@@ -308,12 +355,27 @@ function updateSegmentalUI(scores) {
   });
 
   const metrics = ['sup', 'cross', 'vtaper', 'xframe', 'lateral'];
-  const tooltips = {
-    'sup': 'Desarrollo superior relativo',
-    'cross': 'Equilibrio brazos/piernas',
-    'vtaper': 'Relación Hombros-Cintura',
-    'xframe': 'Desarrollo piernas vs cintura',
-    'lateral': 'Simetría izquierda/derecha'
+  const tooltipInfo = {
+    'sup': {
+      proportion: 'Desarrollo superior relativo (Brazos vs Cuello)',
+      symmetry: 'Desarrollo del Tronco (V-Taper vs Ideal)'
+    },
+    'cross': {
+      proportion: 'Equilibrio brazos/piernas (Simetría cruzada)',
+      symmetry: 'Volumen Brazo Derecho (Bíceps + Antebrazo)'
+    },
+    'vtaper': {
+      proportion: 'Relación Hombros-Cintura (V-Taper Score)',
+      symmetry: 'Volumen Pierna Derecha (Muslo + Pantorrilla)'
+    },
+    'xframe': {
+      proportion: 'Desarrollo piernas vs cintura (X-Frame Score)',
+      symmetry: 'Volumen Pierna Izquierda (Muslo + Pantorrilla)'
+    },
+    'lateral': {
+      proportion: 'Simetría/Balance Lateral general',
+      symmetry: 'Volumen Brazo Izquierdo (Bíceps + Antebrazo)'
+    }
   };
 
   const tooltipEl = document.getElementById('seg-tooltip');
@@ -324,17 +386,11 @@ function updateSegmentalUI(scores) {
       circle.setAttribute('cx', pointCoords[index].x);
       circle.setAttribute('cy', pointCoords[index].y);
 
-      // Add/Update listeners (removing old first to be safe, though typical pattern is simpler)
-      // Idealmente usar un delegado o solo onclick si es simple. Para hover:
-      // Usar un manejador común para mostrar el tooltip
       const showTooltip = (e) => {
-        // Prevenir acciones táctiles predeterminadas si es necesario para evitar disparo doble en algunos dispositivos
-        // e.preventDefault(); 
-
         if (tooltipEl) {
           const score = Math.round(values[index]);
-          const desc = tooltips[metric];
-          tooltipEl.innerHTML = `<strong class="text-white">${desc}</strong><br><span class="text-cyber-green">${score}/100</span>`;
+          const desc = tooltipInfo[metric][currentChartMode];
+          tooltipEl.innerHTML = `<strong class="text-white">${desc}</strong><br><span class="text-cyber-green">${score}%</span>`;
 
           if (window.innerWidth <= 768) {
             // Móvil: Centro fijo (dejar que CSS maneje top/left 50%)
@@ -387,19 +443,65 @@ function updateSegmentalUI(scores) {
   });
 
   const format = (value) => `${Math.round(value)}%`;
+
+  const getStatus = (score) => {
+    if (score < 90) return 'Bajo';
+    if (score > 110) return 'Alto';
+    return 'Normal';
+  };
+
   const labels = {
-    'seg-sup': `Brazo/Cuello ${format(scores.sup)}`,
-    'seg-cross': `Pant/Brazo ${format(scores.cross)}`,
-    'seg-vtaper': `V-Taper ${format(scores.vtaper)}`,
-    'seg-xframe': `Muslo/Cint ${format(scores.xframe)}`,
-    'seg-lateral': `Balance Lat ${format(scores.lateral)}`,
+    'seg-sup': {
+      proportion: `Brazo/Cuello ${format(scores.sup)}`,
+      symmetry: `${format(scores.sup)} ${getStatus(scores.sup)} Tronco`
+    },
+    'seg-cross': {
+      proportion: `Pant/Brazo ${format(scores.cross)}`,
+      symmetry: `${format(scores.cross)} ${getStatus(scores.cross)} Brazo Der`
+    },
+    'seg-vtaper': {
+      proportion: `V-Taper ${format(scores.vtaper)}`,
+      symmetry: `${format(scores.vtaper)} ${getStatus(scores.vtaper)} Pierna Der`
+    },
+    'seg-xframe': {
+      proportion: `Muslo/Cint ${format(scores.xframe)}`,
+      symmetry: `${format(scores.xframe)} ${getStatus(scores.xframe)} Pierna Izq`
+    },
+    'seg-lateral': {
+      proportion: `Balance Lat ${format(scores.lateral)}`,
+      symmetry: `${format(scores.lateral)} ${getStatus(scores.lateral)} Brazo Izq`
+    },
   };
 
   Object.keys(labels).forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = labels[id];
+    if (el) el.textContent = labels[id][currentChartMode];
   });
 }
+
+let currentChartMode = 'proportion'; // 'proportion' or 'symmetry'
+let cachedMeasurements = null;
+
+const toggleChartBtn = document.getElementById('toggle-chart-mode');
+if (toggleChartBtn) {
+  toggleChartBtn.addEventListener('click', () => {
+    currentChartMode = currentChartMode === 'proportion' ? 'symmetry' : 'proportion';
+
+    // Update Icon
+    toggleChartBtn.innerHTML = currentChartMode === 'proportion'
+      ? '<i class="fas fa-random"></i>'
+      : '<i class="fas fa-balance-scale"></i>';
+
+    // Re-render
+    if (cachedMeasurements) {
+      const scores = currentChartMode === 'proportion'
+        ? computePentagonScores({ measurements: cachedMeasurements })
+        : computeSymmetryScores({ measurements: cachedMeasurements });
+      updateSegmentalUI(scores);
+    }
+  });
+}
+
 
 async function loadSegmentalData() {
   const chart = document.getElementById('segmental-chart');
@@ -412,7 +514,13 @@ async function loadSegmentalData() {
       return;
     }
     const data = await resp.json();
-    const scores = computePentagonScores(data);
+    cachedMeasurements = data.measurements || {};
+
+    // Initial render based on default mode
+    const scores = currentChartMode === 'proportion'
+      ? computePentagonScores(data)
+      : computeSymmetryScores(data);
+
     updateSegmentalUI(scores);
   } catch (e) {
     updateSegmentalUI(null);

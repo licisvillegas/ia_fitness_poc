@@ -452,30 +452,70 @@ function updateSegmentalUI(scores) {
 
   const labels = {
     'seg-sup': {
-      proportion: `Brazo/Cuello ${format(scores.sup)}`,
-      symmetry: `${format(scores.sup)} ${getStatus(scores.sup)} Tronco`
+      proportion: 'Brazo/Cuello',
+      symmetry: {
+        status: getStatus(scores.sup),
+        label: 'Tronco'
+      }
     },
     'seg-cross': {
-      proportion: `Pant/Brazo ${format(scores.cross)}`,
-      symmetry: `${format(scores.cross)} ${getStatus(scores.cross)} Brazo Der`
+      proportion: 'Pant/Braz',
+      symmetry: {
+        status: getStatus(scores.cross),
+        label: 'Brazo Der'
+      }
     },
     'seg-vtaper': {
-      proportion: `V-Taper ${format(scores.vtaper)}`,
-      symmetry: `${format(scores.vtaper)} ${getStatus(scores.vtaper)} Pierna Der`
+      proportion: 'V-Taper',
+      symmetry: {
+        status: getStatus(scores.vtaper),
+        label: 'Piern Der'
+      }
     },
     'seg-xframe': {
-      proportion: `Muslo/Cint ${format(scores.xframe)}`,
-      symmetry: `${format(scores.xframe)} ${getStatus(scores.xframe)} Pierna Izq`
+      proportion: 'Muslo/Cint',
+      symmetry: {
+        status: getStatus(scores.xframe),
+        label: 'Piern Izq'
+      }
     },
     'seg-lateral': {
-      proportion: `Balance Lat ${format(scores.lateral)}`,
-      symmetry: `${format(scores.lateral)} ${getStatus(scores.lateral)} Brazo Izq`
+      proportion: 'Bal Lat',
+      symmetry: {
+        status: getStatus(scores.lateral),
+        label: 'Brazo Izq'
+      }
     },
+  };
+
+  const setSvgText = (el, value) => {
+    if (!el) return;
+    if (currentChartMode !== 'symmetry') {
+      el.textContent = value;
+      return;
+    }
+    const x = el.getAttribute('x');
+    const y = el.getAttribute('y');
+    const ns = 'http://www.w3.org/2000/svg';
+    el.textContent = '';
+
+    const line1 = document.createElementNS(ns, 'tspan');
+    line1.setAttribute('x', x);
+    line1.setAttribute('y', y);
+    line1.textContent = value.status;
+    el.appendChild(line1);
+
+    const line2 = document.createElementNS(ns, 'tspan');
+    line2.setAttribute('x', x);
+    line2.setAttribute('dy', '0.9em');
+    line2.textContent = value.label;
+    el.appendChild(line2);
   };
 
   Object.keys(labels).forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = labels[id][currentChartMode];
+    const value = labels[id][currentChartMode];
+    setSvgText(el, value);
   });
 }
 

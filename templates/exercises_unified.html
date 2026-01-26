@@ -44,9 +44,16 @@
 
             <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
-                    id="filterBodyPart" style="min-width: 130px;">
-                    <option value="">Grupo</option>
-                    <!-- Options loaded via JS -->
+                    id="filterSection" style="max-width: 140px;">
+                    <option value="">Sección...</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterGroup" style="max-width: 140px;" disabled>
+                    <option value="">Grupo...</option>
+                </select>
+                <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
+                    id="filterMuscle" style="max-width: 140px;" disabled>
+                    <option value="">Músculo...</option>
                 </select>
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
                     id="filterEquipment" style="min-width: 130px;">
@@ -193,130 +200,148 @@
                 <h5 class="modal-title text-cyber-green">Ejercicio</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="exerciseForm">
                     <input type="hidden" id="exId">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-secondary">Nombre *</label>
+
+                    <!-- Basic Info & Taxonomy -->
+                    <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Información Básica</h6>
+                    <div class="row g-3 mb-4">
+
+                        <div class="col-12">
+                            <label class="form-label text-secondary small text-uppercase fw-bold">Nombre del Ejercicio
+                                *</label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="exName"
-                                required placeholder="Ej. Press Banca">
+                                required placeholder="Ej. Press Banca Plano">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-secondary">Parte del Cuerpo</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exBodyPart">
-                                <!-- Options loaded via JS -->
-                            </select>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label text-secondary">Patrón</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exPattern">
-                                <option value="">Sin definir</option>
-                                <option value="Push">Push</option>
-                                <option value="Pull">Pull</option>
-                                <option value="Squat">Squat</option>
-                                <option value="Hinge">Hinge</option>
-                                <option value="Carry">Carry</option>
-                                <option value="Rotation">Rotation</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-secondary">Plano</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exPlane">
-                                <option value="">Sin definir</option>
-                                <option value="Vertical">Vertical</option>
-                                <option value="Horizontal">Horizontal</option>
-                                <option value="Diagonal">Diagonal</option>
-                                <option value="Sagittal">Sagittal</option>
-                                <option value="Frontal">Frontal</option>
-                                <option value="Transversal">Transversal</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-secondary">Nivel</label>
-                            <select class="form-select bg-dark text-white border-secondary" id="exLevel">
-                                <option value="">Sin definir</option>
-                                <option value="Beginner">Beginner</option>
-                                <option value="Intermediate">Intermediate</option>
-                                <option value="Advanced">Advanced</option>
-                            </select>
+                        <div class="col-12">
+                            <label class="form-label text-secondary small">Nombres Alternativos</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                id="exAlternativeNames" placeholder="Separa con comas...">
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label text-secondary">Tipo de Registro</label>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Sección</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exSection">
+                                <option value="">Selecciona...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Grupo Muscular</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exGroup" disabled>
+                                <option value="">Selecciona...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Músculo Específico</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exMuscle" disabled>
+                                <option value="">Selecciona...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Technical Details -->
+                    <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Detalles Técnicos</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Tipo de Registro</label>
                             <select class="form-select bg-dark text-white border-secondary" id="exType">
                                 <option value="weight">Peso (Series x Reps)</option>
                                 <option value="time">Tiempo (Duración)</option>
                                 <option value="cardio">Cardio (Distancia/Tiempo)</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-secondary">Equipo Requerido</label>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button"
-                                    id="dropdownEquipment" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Seleccionar equipo...
-                                </button>
-                                <ul class="dropdown-menu bg-dark border-secondary w-100 p-0"
-                                    aria-labelledby="dropdownEquipment" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- Populated via JS manually to support multiple select style logic if needed, or just use native select multiple? Native select multiple is ugly. Let's use native for speed. -->
-                                </ul>
-                            </div>
-                            <!-- Fallback to native multiple select for reliability in this POC -->
-                            <select class="form-select bg-dark text-white border-secondary mt-1" id="exEquipment"
-                                multiple size="4">
-                                <option value="barbell">Barra</option>
-                                <option value="dumbbell">Mancuernas</option>
-                                <option value="machine">Máquina</option>
-                                <option value="cable">Polea / Cable</option>
-                                <option value="band">Banda</option>
-                                <option value="bench">Banco</option>
-                                <option value="bodyweight">Peso Corporal</option>
-                                <option value="other">Otro</option>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Nivel de Dificultad</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exLevel">
+                                <option value="">Sin definir</option>
+                                <option value="Beginner">Principiante</option>
+                                <option value="Intermediate">Intermedio</option>
+                                <option value="Advanced">Avanzado</option>
                             </select>
                         </div>
-
-                        <div class="col-md-8">
-                            <label class="form-label text-secondary">Músculo Primario</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                id="exPrimaryMuscle" placeholder="Ej. Lats">
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary small">Equipo Requerido</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exEquipment" multiple
+                                size="3">
+                                <!-- Populated by JS -->
+                            </select>
+                            <div class="form-text text-muted" style="font-size: 0.7rem;">Mantén Ctrl para selección
+                                múltiple</div>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <div class="form-check form-switch">
+
+                        <div class="col-md-3">
+                            <label class="form-label text-secondary small">Patrón de Movimiento</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exPattern">
+                                <option value="">Sin definir</option>
+                                <option value="Push">Empuje (Push)</option>
+                                <option value="Pull">Jalón (Pull)</option>
+                                <option value="Squat">Sentadilla (Squat)</option>
+                                <option value="Hinge">Bisagra (Hinge)</option>
+                                <option value="Carry">Transporte (Carry)</option>
+                                <option value="Rotation">Rotación</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-secondary small">Plano de Movimiento</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="exPlane">
+                                <option value="">Sin definir</option>
+                                <option value="Vertical">Vertical</option>
+                                <option value="Horizontal">Horizontal</option>
+                                <option value="Sagittal">Sagital</option>
+                                <option value="Frontal">Frontal</option>
+                                <option value="Transversal">Transversal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-secondary small">Músculo Primario (Texto)</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                id="exPrimaryMuscle" placeholder="Ej. Dorsal Ancho">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center pt-4">
+                            <div class="form-check form-switch w-100">
                                 <input class="form-check-input" type="checkbox" id="exUnilateral">
-                                <label class="form-check-label text-secondary" for="exUnilateral">Unilateral</label>
+                                <label class="form-check-label text-white" for="exUnilateral">¿Es Unilateral?</label>
                             </div>
                         </div>
+                    </div>
 
+                    <!-- Content & Media -->
+                    <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Contenido y Multimedia</h6>
+                    <div class="row g-3 mb-4">
                         <div class="col-12">
-                            <label class="form-label text-secondary">Nombres Alternativos</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                id="exAlternativeNames" placeholder="Separa con comas">
+                            <label class="form-label text-secondary small">Video URL (YouTube/MP4)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                                        class="fab fa-youtube"></i></span>
+                                <input type="url" class="form-control bg-dark text-white border-secondary" id="exVideo"
+                                    placeholder="https://...">
+                            </div>
                         </div>
-
                         <div class="col-12">
-                            <label class="form-label text-secondary">Video Demostrativo (URL)</label>
-                            <input type="url" class="form-control bg-dark text-white border-secondary" id="exVideo"
-                                placeholder="https://youtube.com/...">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label text-secondary">Descripción / Notas Técnicas</label>
+                            <label class="form-label text-secondary small">Descripción y Notas Técnicas</label>
                             <textarea class="form-control bg-dark text-white border-secondary" id="exDescription"
-                                rows="3"></textarea>
-                        </div>
-
-                        <!-- Substitutes section omitted for brevity only if needed, but requested to have same functionality. We'll simplify substitutes to a search box that adds IDs, or skip complex sub-management for this quick iteration if not strictly demanded? User said "tenga su funcionalidad cada boton". So we should try. -->
-                        <div class="col-12">
-                            <label class="form-label text-secondary">Sustitutos</label>
-                            <input type="text"
-                                class="form-control form-control-sm bg-dark text-white border-secondary mb-2"
-                                id="subSearch" placeholder="Buscar sustitutos...">
-                            <div class="bg-input border border-secondary rounded p-2"
-                                style="max-height: 150px; overflow-y: auto;" id="substitutesContainer"></div>
+                                rows="3" placeholder="Describe la técnica correcta..."></textarea>
                         </div>
                     </div>
+
+                    <!-- Substitutes -->
+                    <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Ejercicios Sustitutos</h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                                        class="fas fa-search"></i></span>
+                                <input type="text" class="form-control bg-dark text-white border-secondary"
+                                    id="subSearch" placeholder="Buscar ejercicios equivalentes...">
+                            </div>
+                            <div class="bg-input border border-secondary rounded p-2 custom-scrollbar"
+                                style="max-height: 200px; overflow-y: auto;" id="substitutesContainer">
+                                <!-- Populated JS -->
+                            </div>
+                        </div>
+                    </div>
+
                 </form>
             </div>
             <div class="modal-footer border-secondary">
@@ -535,6 +560,7 @@
 </div>
 
 <script>
+    console.log("SCRIPT START - User Unified View");
     const urlParams = new URLSearchParams(window.location.search);
     // Security: Only enable admin mode if URL param requests it AND Server confirms admin role
     const serverIsAdmin = {{ is_admin| tojson }};
@@ -554,7 +580,10 @@
     // Admin helpers
     let currentExerciseId = null;
     let currentBodyPartForEdit = null;
+
     let messageModalInstance = null;
+    let fullExerciseCatalog = [];
+    let fullCatalogLoaded = false;
 
     const EQUIPMENT_META = {
         barbell: { label: "Barra", icon: "fas fa-grip-lines" },
@@ -726,10 +755,17 @@
 
         // Listeners for filters
         document.getElementById("mainSearch").addEventListener("input", scheduleSearch);
-        document.getElementById("filterBodyPart").addEventListener("change", () => {
-            updateIconSelectionFromDropdown();
+
+        document.getElementById("filterSection").addEventListener("change", (e) => {
+            updateGroupOptions(e.target.value);
             loadExercisesPage(1);
         });
+        document.getElementById("filterGroup").addEventListener("change", (e) => {
+            updateMuscleOptions(document.getElementById("filterSection").value, e.target.value);
+            loadExercisesPage(1);
+        });
+        document.getElementById("filterMuscle").addEventListener("change", () => loadExercisesPage(1));
+
         document.getElementById("filterEquipment").addEventListener("change", () => loadExercisesPage(1));
         document.getElementById("filterType").addEventListener("change", () => loadExercisesPage(1));
 
@@ -746,47 +782,84 @@
         }
     });
 
+    let taxonomyData = [];
+
     async function loadBodyParts() {
         try {
-            const res = await fetch("/workout/api/body-parts");
-            const parts = await res.json();
-            const filterSel = document.getElementById("filterBodyPart");
-            const exSel = document.getElementById("exBodyPart");
+            const res = await fetch("/workout/api/taxonomy");
+            taxonomyData = await res.json();
 
-            filterSel.innerHTML = '<option value="">Grupo</option>';
-            if (exSel) exSel.innerHTML = '';
+            const sectionSel = document.getElementById("filterSection");
+            sectionSel.innerHTML = '<option value="">Sección...</option>';
 
-            parts.forEach(p => {
-                bodyPartMap[p.key] = p.label_es || p.label_en || p.key;
-
-                // Filter dropdown
+            taxonomyData.forEach(sect => {
                 const opt = document.createElement("option");
-                opt.value = p.key;
-                opt.textContent = bodyPartMap[p.key];
-                filterSel.appendChild(opt);
-
-                // Admin dropdown
-                if (exSel) {
-                    const opt2 = document.createElement("option");
-                    opt2.value = p.key;
-                    opt2.textContent = bodyPartMap[p.key];
-                    exSel.appendChild(opt2);
-                }
+                opt.value = sect.id;
+                opt.textContent = sect.name;
+                sectionSel.appendChild(opt);
             });
+
         } catch (e) {
-            console.error("Error loading body parts", e);
+            console.error("Error loading taxonomy", e);
+        }
+    }
+
+    function updateGroupOptions(sectionId) {
+        const groupSel = document.getElementById("filterGroup");
+        const muscleSel = document.getElementById("filterMuscle");
+
+        groupSel.innerHTML = '<option value="">Grupo...</option>';
+        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        groupSel.disabled = !sectionId;
+        muscleSel.disabled = true;
+
+        if (!sectionId) return;
+
+        const section = taxonomyData.find(s => s.id === sectionId);
+        if (section && section.groups) {
+            section.groups.forEach(g => {
+                const opt = document.createElement("option");
+                opt.value = g.id;
+                opt.textContent = g.name;
+                groupSel.appendChild(opt);
+            });
+        }
+    }
+
+    function updateMuscleOptions(sectionId, groupId) {
+        const muscleSel = document.getElementById("filterMuscle");
+        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        muscleSel.disabled = !groupId;
+
+        if (!sectionId || !groupId) return;
+
+        const section = taxonomyData.find(s => s.id === sectionId);
+        if (section) {
+            const group = section.groups.find(g => g.id === groupId);
+            if (group && group.muscles) {
+                group.muscles.forEach(m => {
+                    const opt = document.createElement("option");
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    muscleSel.appendChild(opt);
+                });
+            }
         }
     }
 
     function buildQueryParams(page) {
         const term = document.getElementById("mainSearch").value.trim();
-        const bodyPart = document.getElementById("filterBodyPart").value;
+        const section = document.getElementById("filterSection").value;
+        const group = document.getElementById("filterGroup").value;
+        const muscle = document.getElementById("filterMuscle").value;
         const equipment = document.getElementById("filterEquipment").value;
         const type = document.getElementById("filterType").value;
 
         const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
         if (term) params.set("q", term);
-        if (bodyPart) params.set("body_part", bodyPart);
+        if (section) params.set("section", section);
+        if (group) params.set("group", group);
+        if (muscle) params.set("muscle", muscle);
         if (equipment) params.set("equipment", equipment);
         if (type) params.set("type", type);
         return params;
@@ -867,7 +940,7 @@
         items.forEach(ex => {
             const img = resolveImage(ex);
             const hasVideo = ex.video_url && ex.video_url.trim();
-            const bodyPartLabel = bodyPartMap[ex.body_part] || ex.body_part;
+            const bodyPartLabel = bodyPartMap[ex.body_part_key] || bodyPartMap[ex.body_part] || ex.body_part;
 
             const adminHtml = isAdmin ? `
                 <div class="admin-actions d-flex gap-1" onclick="event.stopPropagation()">
@@ -915,7 +988,7 @@
         if (mobileContainer) mobileContainer.innerHTML = "";
 
         items.forEach(ex => {
-            const bodyPartLabel = bodyPartMap[ex.body_part] || ex.body_part;
+            const bodyPartLabel = bodyPartMap[ex.body_part_key] || bodyPartMap[ex.body_part] || ex.body_part;
             const hasVideo = ex.video_url && ex.video_url.trim();
 
             /* DESKTOP ROW */
@@ -1018,16 +1091,48 @@
 
     function resetFilters() {
         document.getElementById("mainSearch").value = "";
-        document.getElementById("filterBodyPart").value = "";
+        document.getElementById("filterSection").value = "";
+        updateGroupOptions("");
         document.getElementById("filterEquipment").value = "";
         document.getElementById("filterType").value = "";
         document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
         loadExercisesPage(1);
     }
 
+    /* FULL CATALOG LOADER FOR ADMIN */
+    async function ensureFullCatalog() {
+        if (fullCatalogLoaded && fullExerciseCatalog.length > 0) return;
+        try {
+            const res = await fetch("/workout/api/exercises?limit=1000");
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                fullExerciseCatalog = data;
+                data.forEach(addToLookup);
+                fullCatalogLoaded = true;
+                console.log("Full catalog loaded for admin:", data.length);
+            }
+        } catch (e) {
+            console.error("Error loading full catalog", e);
+        }
+    }
+
+
+
     /* READ-ONLY DETAIL MODAL */
-    function openExerciseDetails(id) {
-        const ex = exerciseLookup[id];
+    async function openExerciseDetails(id) {
+        // Fetch fresh details with populated substitutes
+        let ex = exerciseLookup[id];
+        try {
+            const res = await fetch(`/workout/api/exercises/${id}`);
+            if (res.ok) {
+                ex = await res.json();
+                // Update local lookup with fresh data
+                addToLookup(ex);
+            }
+        } catch (e) {
+            console.error("Error fetching detail:", e);
+        }
+
         if (!ex) return;
         const titleEl = document.getElementById("exerciseDetailsTitle");
         const imgEl = document.getElementById("exerciseDetailsImage");
@@ -1040,6 +1145,9 @@
 
         const primaryEquip = getPrimaryEquipment(ex.equipment);
         const equipMeta = EQUIPMENT_META[primaryEquip] || { label: getEquipmentLabels(ex.equipment).join(', ') || "N/A", icon: "fas fa-dumbbell" };
+
+        // Use populated_substitutes from API if available, otherwise fallback to local resolution
+        const substitutesList = ex.populated_substitutes || ex.substitutes || [];
         titleEl.textContent = ex.name || "Ejercicio";
         imgEl.src = resolveImage(ex);
         imgEl.alt = ex.name || "Ejercicio";
@@ -1071,14 +1179,24 @@
         }
 
         if (subsEl) {
-            const rawSubs = ex.substitutes || ex.equivalents || ex.equivalent_exercises || [];
-            const subs = Array.isArray(rawSubs) ? rawSubs : [];
-            const resolved = subs.map(sub => {
+            // Prioritize the populated list from API
+            const finalSubs = ex.populated_substitutes && ex.populated_substitutes.length > 0
+                ? ex.populated_substitutes
+                : (ex.substitutes || ex.equivalents || ex.equivalent_exercises || []);
+
+            const resolved = finalSubs.map(sub => {
+                // If we have a full object from API, use it directly
+                if (sub && typeof sub === "object" && sub.name && !sub._fallback) return sub;
+
+                // Fallback for legacy string IDs (if API didn't return populated)
                 if (typeof sub === "string" || typeof sub === "number") {
                     const key = String(sub);
                     return exerciseLookup[key] || exerciseLookupByName[key.toLowerCase()] || { name: key, _fallback: true };
                 }
+
+                // If valid object but maybe missing key fields, pass through
                 if (sub && typeof sub === "object") return sub;
+
                 return null;
             }).filter(Boolean);
 
@@ -1087,9 +1205,35 @@
             } else {
                 subsEl.innerHTML = resolved.map(sub => {
                     const subName = sub.name || sub.exercise_name || "Ejercicio";
-                    if (sub._fallback) return `<li class="text-secondary small mb-1">• ${subName}</li>`;
+
+                    // Show fallback/missing items specifically
+                    if (sub._fallback || sub._is_missing) {
+                        return `<li class="text-secondary small mb-1">• ${subName} <span class="badge bg-danger" style="font-size:0.5rem">No encontrado</span></li>`;
+                    }
+
                     const subBody = bodyPartMap[sub.body_part] || sub.body_part || "General";
-                    return `<li class="border border-secondary rounded px-2 py-2 bg-dark mb-2"><div class="text-white fw-bold">${subName}</div><span class="badge bg-secondary" style="font-size:0.6rem">${subBody}</span></li>`;
+                    const subEquip = getEquipmentLabels(sub.equipment).join(', ') || 'N/A';
+                    const hasVideo = sub.video_url && sub.video_url.trim();
+
+                    const videoBtn = hasVideo
+                        ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); openVideoModal('${sub.video_url}')" title="Ver Video"><i class="fas fa-play"></i></button>`
+                        : '';
+
+                    return `
+                    <li class="border border-secondary rounded px-3 py-2 bg-dark mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white fw-bold mb-1">${subName}</div>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-secondary" style="font-size:0.6rem">${subBody}</span>
+                                    <span class="badge bg-dark border border-secondary text-secondary" style="font-size:0.6rem">${subEquip}</span>
+                                </div>
+                            </div>
+                            <div class="ms-2">
+                                ${videoBtn}
+                            </div>
+                        </div>
+                    </li>`;
                 }).join("");
             }
         }
@@ -1115,8 +1259,11 @@
     }
 
     /* ADMIN ACTIONS */
-    function openExerciseModal(id = null) {
+    async function openExerciseModal(id = null) {
         if (!isAdmin) return;
+
+        // Ensure we have all candidates for substitutes
+        await ensureFullCatalog();
 
         const form = document.getElementById("exerciseForm");
         form.reset();
@@ -1125,19 +1272,66 @@
 
         const modalTitle = document.querySelector("#exerciseModal .modal-title");
         let subIds = [];
+        let specificPopulatedSubs = [];
 
         if (id) {
+            // Try to fetch fresh specific details to get populated substitutes
+            try {
+                const res = await fetch(`/workout/api/exercises/${id}`);
+                if (res.ok) {
+                    const freshEx = await res.json();
+                    addToLookup(freshEx);
+                    // Use the specific populated list
+                    if (freshEx.populated_substitutes) {
+                        specificPopulatedSubs = freshEx.populated_substitutes;
+                        // Also sync subIds just in case
+                        subIds = specificPopulatedSubs.map(s => s._id);
+                    } else {
+                        subIds = freshEx.substitutes || [];
+                    }
+
+                    // Update form values with fresh data
+                    document.getElementById("exName").value = freshEx.name;
+                    document.getElementById("exDescription").value = freshEx.description || '';
+                    document.getElementById("exVideo").value = freshEx.video_url || '';
+                    // ... other fields are less critical or handled by generic fill if lookup existed ...
+                } else {
+                    // Fallback to local lookup
+                    const ex = exerciseLookup[id];
+                    if (ex) subIds = ex.substitutes || [];
+                }
+            } catch (e) {
+                console.warn("Could not fetch fresh details, using local", e);
+                const ex = exerciseLookup[id];
+                if (ex) subIds = ex.substitutes || [];
+            }
+
+            // Re-get local object in case we updated it
             const ex = exerciseLookup[id];
             if (ex) {
                 modalTitle.textContent = "Editar Ejercicio";
                 document.getElementById("exId").value = ex._id;
                 document.getElementById("exName").value = ex.name;
-                document.getElementById("exBodyPart").value = ex.body_part;
+                // Populate Taxonomy Selects
+                await populateModalTaxonomy(ex);
+
                 document.getElementById("exType").value = ex.type || "weight";
 
                 // Multi-select equipment
                 const equipOpts = document.getElementById("exEquipment");
                 if (equipOpts) {
+                    // Sync options (ensure existing)
+                    const sourceOpts = document.getElementById("filterEquipment").options;
+                    if (sourceOpts && sourceOpts.length > 0) {
+                        equipOpts.innerHTML = "";
+                        Array.from(sourceOpts).forEach(src => {
+                            if (!src.value) return;
+                            const opt = document.createElement("option");
+                            opt.value = src.value;
+                            opt.textContent = src.text;
+                            equipOpts.appendChild(opt);
+                        });
+                    }
                     const list = normalizeEquipmentList(ex.equipment);
                     Array.from(equipOpts.options).forEach(opt => opt.selected = list.includes(opt.value));
                 }
@@ -1150,40 +1344,246 @@
                 document.getElementById("exAlternativeNames").value = (ex.alternative_names || []).join(", ");
                 document.getElementById("exDescription").value = ex.description || '';
                 document.getElementById("exVideo").value = ex.video_url || '';
-
-                subIds = ex.substitutes || [];
             }
         } else {
             modalTitle.textContent = "Nuevo Ejercicio";
+            // Populate sections for new exercise
+            updateModalGroupOptions("");
         }
 
-        populateSubstitutes(allExercises, id, subIds);
+        populateSubstitutes(fullExerciseCatalog, id, subIds, currentExerciseId, specificPopulatedSubs);
         new bootstrap.Modal(document.getElementById("exerciseModal")).show();
     }
 
-    function populateSubstitutes(exercises, currentId, selectedIds = []) {
-        // Only populates from current page loaded exercises for this POC
+    // Helper to populate taxonomy in modal
+    async function populateModalTaxonomy(ex) {
+        // Ensure options are built first? They should be built by page load or on modal open if not exists.
+        // We reuse taxonomyData global from filter logic
+
+        const sectionSel = document.getElementById("exSection");
+        sectionSel.innerHTML = '<option value="">Selecciona...</option>';
+        taxonomyData.forEach(sect => {
+            const opt = document.createElement("option");
+            opt.value = sect.id;
+            opt.textContent = sect.name;
+            sectionSel.appendChild(opt);
+        });
+
+        const tax = ex.taxonomy || {};
+        // If existing taxonomy found
+        if (tax.section_id) {
+            sectionSel.value = tax.section_id;
+            updateModalGroupOptions(tax.section_id);
+            if (tax.group_id) {
+                document.getElementById("exGroup").value = tax.group_id;
+                updateModalMuscleOptions(tax.section_id, tax.group_id);
+                if (tax.muscle_id) {
+                    document.getElementById("exMuscle").value = tax.muscle_id;
+                }
+            }
+        } else {
+            // Try fallback mapping if no taxonomy but legacy data? 
+            // Logic handled by migration script already. User can manually fix here.
+        }
+
+    }
+
+    // Listeners for Modal Taxonomy
+    document.getElementById("exSection").addEventListener("change", (e) => {
+        updateModalGroupOptions(e.target.value);
+    });
+
+    document.getElementById("exGroup").addEventListener("change", (e) => {
+        updateModalMuscleOptions(document.getElementById("exSection").value, e.target.value);
+    });
+
+    function updateModalGroupOptions(sectionId) {
+        const groupSel = document.getElementById("exGroup");
+        const muscleSel = document.getElementById("exMuscle");
+
+        groupSel.innerHTML = '<option value="">Selecciona...</option>';
+        muscleSel.innerHTML = '<option value="">Selecciona...</option>';
+        groupSel.disabled = !sectionId;
+        muscleSel.disabled = true;
+
+        if (!sectionId) return;
+
+        const section = taxonomyData.find(s => s.id === sectionId);
+        if (section && section.groups) {
+            section.groups.forEach(g => {
+                const opt = document.createElement("option");
+                opt.value = g.id;
+                opt.textContent = g.name;
+                groupSel.appendChild(opt);
+            });
+        }
+    }
+
+    function updateModalMuscleOptions(sectionId, groupId) {
+        const muscleSel = document.getElementById("exMuscle");
+        muscleSel.innerHTML = '<option value="">Selecciona...</option>';
+        muscleSel.disabled = !groupId;
+
+        if (!sectionId || !groupId) return;
+
+        const section = taxonomyData.find(s => s.id === sectionId);
+        if (section) {
+            const group = section.groups.find(g => g.id === groupId);
+            if (group && group.muscles) {
+                group.muscles.forEach(m => {
+                    const opt = document.createElement("option");
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    muscleSel.appendChild(opt);
+                });
+            }
+        }
+    }
+
+    function populateSubstitutes(exercises, currentId, selectedIds = [], exIdForFilter = null, preloadedObjects = []) {
         const container = document.getElementById("substitutesContainer");
         const searchTerm = (document.getElementById("subSearch").value || "").toLowerCase();
 
+        // Find current exercise taxonomy to boost relevance
+        let boostGroup = null;
+        if (exIdForFilter) {
+            const ex = exerciseLookup[exIdForFilter];
+            if (ex && ex.taxonomy) boostGroup = ex.taxonomy.group_id;
+            // fallback to legacy body part if no taxonomy
+            else if (ex) boostGroup = ex.body_part_key || ex.body_part;
+        }
+
         container.innerHTML = "";
 
-        exercises.forEach(ex => {
-            if (ex._id === currentId) return;
-            if (searchTerm && !ex.name.toLowerCase().includes(searchTerm)) return;
+        // SPLIT VIEW: Selected vs Available
 
-            const isChecked = selectedIds.includes(ex._id) ? "checked" : "";
-            const item = document.createElement("div");
-            item.className = "form-check sub-item border-bottom border-secondary py-2";
-            item.innerHTML = `
-                <input class="form-check-input border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}" ${isChecked}>
-                <label class="form-check-label w-100 cursor-pointer" for="sub_${ex._id}">
-                    <span class="fw-bold text-white">${ex.name}</span>
-                </label>
-            `;
-            container.appendChild(item);
+        // Construct selected list from PRELOADED objects first (authoritative), then fallback to specific lookup, then full catalog
+        let selectedList = [];
+        if (preloadedObjects && preloadedObjects.length > 0) {
+            selectedList = preloadedObjects;
+        } else {
+            selectedList = exercises.filter(ex => selectedIds.includes(ex._id));
+        }
+
+        const availableList = exercises.filter(ex => {
+            if (ex._id === currentId) return false;
+            if (selectedIds.includes(ex._id)) return false;
+            if (searchTerm) return ex.name.toLowerCase().includes(searchTerm);
+            // Default: Show recommendations (Same Group)
+            if (boostGroup) {
+                const g = ex.taxonomy?.group_id || ex.body_part_key || ex.body_part;
+                return g === boostGroup;
+            }
+            return false;
         });
+
+        // 1. RENDER SELECTED SECTION
+        if (selectedList.length > 0) {
+            const selHeader = document.createElement("h6");
+            selHeader.className = "text-cyber-green border-bottom border-secondary pb-2 mb-3 mt-2";
+            selHeader.innerHTML = `<i class="fas fa-check-circle me-2"></i>Seleccionados (${selectedList.length})`;
+            container.appendChild(selHeader);
+
+            selectedList.forEach(ex => {
+                const hasVideo = ex.video_url && ex.video_url.trim();
+                const equipLabel = getEquipmentLabels(ex.equipment).join(', ') || 'N/A';
+                const videoAction = hasVideo
+                    ? `<button type="button" class="btn btn-sm btn-outline-danger ms-2 z-index-2" 
+                         onclick="event.preventDefault(); event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver Video">
+                         <i class="fas fa-play"></i>
+                       </button>`
+                    : '';
+
+                const div = document.createElement("div");
+                div.className = "p-3 mb-2 bg-dark border border-success rounded shadow-sm position-relative";
+                div.style.cursor = "pointer";
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input bg-dark border-success" type="checkbox" value="${ex._id}" checked id="sub_${ex._id}">
+                            <label class="form-check-label text-white fw-bold d-block" style="cursor:pointer" for="sub_${ex._id}">
+                                ${ex.name}
+                            </label>
+                            <div class="text-secondary small mt-1">
+                                <span class="badge bg-secondary border border-secondary text-light" style="font-size:0.6rem">${bodyPartMap[ex.body_part_key] || ex.body_part || "General"}</span>
+                                <span class="badge bg-transparent border border-secondary text-secondary" style="font-size:0.6rem">${equipLabel}</span>
+                            </div>
+                        </div>
+                        <div class="ms-2 d-flex align-items-center">
+                            ${videoAction}
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" title="Remover"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                `;
+                // Click handler specifically for removing
+                div.onclick = (e) => {
+                    // If clicking video or actual checkbox, let it propagate naturally? 
+                    // Actually, if clicking the card, toggle the checkbox
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
+                    const cb = div.querySelector('input[type="checkbox"]');
+                    cb.checked = !cb.checked;
+                    cb.dispatchEvent(new Event('change'));
+                };
+                container.appendChild(div);
+            });
+        }
+
+        // 2. RENDER AVAILABLE / SEARCH SECTION
+        const availHeader = document.createElement("h6");
+        availHeader.className = "text-info border-bottom border-secondary pb-2 mb-3 mt-4";
+        availHeader.innerHTML = searchTerm
+            ? `<i class="fas fa-search me-2"></i>Resultados de búsqueda`
+            : `<i class="fas fa-lightbulb me-2"></i>Recomendados (Mismo Grupo)`;
+        container.appendChild(availHeader);
+
+        if (availableList.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "text-muted small text-center py-3";
+            empty.textContent = searchTerm ? "No se encontraron ejercicios." : "No hay recomendaciones directas. Usa el buscador.";
+            container.appendChild(empty);
+        } else {
+            const sortedAvail = availableList.sort((a, b) => a.name.localeCompare(b.name));
+            sortedAvail.forEach(ex => {
+                const hasVideo = ex.video_url && ex.video_url.trim();
+                const equipLabel = getEquipmentLabels(ex.equipment).join(', ') || 'N/A';
+                const videoAction = hasVideo
+                    ? `<button type="button" class="btn btn-sm btn-outline-danger ms-2 z-index-2" 
+                         onclick="event.preventDefault(); event.stopPropagation(); openVideoModal('${ex.video_url}')" title="Ver Video">
+                         <i class="fas fa-play"></i>
+                       </button>`
+                    : '';
+
+                const div = document.createElement("div");
+                div.className = "p-2 mb-2 bg-dark border border-secondary rounded shadow-sm position-relative substitute-item";
+                div.style.cursor = "pointer";
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input bg-dark border-secondary" type="checkbox" value="${ex._id}" id="sub_${ex._id}">
+                            <label class="form-check-label text-white d-block" style="cursor:pointer" for="sub_${ex._id}">
+                                ${ex.name}
+                            </label>
+                            <div class="text-secondary small">
+                                <span class="badge bg-secondary border border-secondary text-info" style="font-size:0.6rem">${bodyPartMap[ex.body_part_key] || ex.body_part || "General"}</span>
+                                <span class="badge bg-transparent border border-secondary text-secondary" style="font-size:0.6rem">${equipLabel}</span>
+                            </div>
+                        </div>
+                        <div class="ms-2">
+                             ${videoAction}
+                        </div>
+                    </div>
+                `;
+                div.onclick = (e) => {
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
+                    const cb = div.querySelector('input[type="checkbox"]');
+                    cb.checked = !cb.checked;
+                    cb.dispatchEvent(new Event('change'));
+                };
+                container.appendChild(div);
+            });
+        }
     }
+
 
     function getSelectedSubstitutes() {
         const checkboxes = document.querySelectorAll("#substitutesContainer input[type='checkbox']:checked");
@@ -1270,7 +1670,12 @@
     async function saveExercise() {
         const id = document.getElementById("exId").value;
         const name = document.getElementById("exName").value;
-        const bodyPart = document.getElementById("exBodyPart").value;
+
+        // Taxonomy
+        const sectionId = document.getElementById("exSection").value;
+        const groupId = document.getElementById("exGroup").value;
+        const muscleId = document.getElementById("exMuscle").value;
+
         const type = document.getElementById("exType").value;
         const equipment = Array.from(document.getElementById("exEquipment").selectedOptions).map(o => o.value);
 
@@ -1280,7 +1685,13 @@
         }
 
         const payload = {
-            id, name, body_part: bodyPart, type, equipment,
+            id, name, type, equipment,
+            body_part_key: groupId, // Maintain compatibility
+            taxonomy: {
+                section_id: sectionId,
+                group_id: groupId,
+                muscle_id: muscleId
+            },
             pattern: document.getElementById("exPattern").value,
             plane: document.getElementById("exPlane").value,
             level: document.getElementById("exLevel").value,
@@ -1392,73 +1803,100 @@
     }
 
     // Sync Dropdown -> Icons
+    // Sync Dropdown -> Icons
     function updateIconSelectionFromDropdown() {
-        const sel = document.getElementById("filterBodyPart");
-        const val = sel.value;
-        const txt = sel.options[sel.selectedIndex]?.text?.toLowerCase() || "";
+        const groupVal = document.getElementById("filterGroup").value;
+        const muscleVal = document.getElementById("filterMuscle").value;
 
         document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
 
-        // Try exact key match
-        let match = muscleIcons.find(m => m.key === val);
+        if (!groupVal && !muscleVal) return;
 
-        // Try flexible match
-        if (!match && val) {
-            match = muscleIcons.find(m => txt.includes(m.label.toLowerCase()) || val.includes(m.key));
+        // Find matches
+        // 1. Exact match with Muscle
+        if (muscleVal) {
+            const match = muscleIcons.find(m => m.key === muscleVal);
+            if (match) {
+                document.getElementById(`icon-${match.key}`)?.classList.add('active');
+                return;
+            }
         }
 
-        if (match) {
-            const icon = document.getElementById(`icon-${match.key}`);
-            if (icon) icon.classList.add('active');
+        // 2. Match with Group
+        if (groupVal) {
+            const match = muscleIcons.find(m => m.key === groupVal);
+            if (match) {
+                document.getElementById(`icon-${match.key}`)?.classList.add('active');
+                return;
+            }
         }
     }
 
     function filterByIcon(key) {
-        const sel = document.getElementById("filterBodyPart");
-        const iconMeta = muscleIcons.find(m => m.key === key);
+        // Find if key is Muscle, Group, or neither
+        let foundSection = null;
+        let foundGroup = null;
+        let foundMuscle = null;
 
-        // Toggle logic
-        const currentActive = document.getElementById(`icon-${key}`).classList.contains('active');
-
-        if (currentActive) {
-            sel.value = "";
-            document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
-        } else {
-            // Find matching option
-            let foundInfo = false;
-
-            // 1. Try exact value match
-            for (let opt of sel.options) {
-                if (opt.value === key) {
-                    sel.value = key;
-                    foundInfo = true;
-                    break;
-                }
-            }
-
-            // 2. Try label/text match if exact key failed
-            if (!foundInfo && iconMeta) {
-                const search = iconMeta.label.toLowerCase();
-                for (let opt of sel.options) {
-                    if (opt.text.toLowerCase().includes(search)) {
-                        sel.value = opt.value;
-                        foundInfo = true;
-                        break;
+        if (taxonomyData && taxonomyData.length) {
+            outerLoop:
+            for (const sect of taxonomyData) {
+                for (const grp of sect.groups) {
+                    if (grp.id === key) {
+                        foundSection = sect;
+                        foundGroup = grp;
+                        break outerLoop;
+                    }
+                    if (grp.muscles) {
+                        for (const m of grp.muscles) {
+                            if (m.id === key) {
+                                foundSection = sect;
+                                foundGroup = grp;
+                                foundMuscle = m;
+                                break outerLoop;
+                            }
+                        }
                     }
                 }
             }
+        }
 
-            // Update UI
+        const secSel = document.getElementById("filterSection");
+        const grpSel = document.getElementById("filterGroup");
+        const musSel = document.getElementById("filterMuscle");
+
+        const currentActive = document.getElementById(`icon-${key}`).classList.contains('active');
+
+        if (currentActive) {
+            // Deselect: Clear all taxonomy filters
+            secSel.value = "";
+            updateGroupOptions("");
             document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
-            if (foundInfo) {
+        } else {
+            if (foundSection && foundGroup) {
+                secSel.value = foundSection.id;
+                updateGroupOptions(foundSection.id);
+                grpSel.value = foundGroup.id;
+                updateMuscleOptions(foundSection.id, foundGroup.id);
+
+                if (foundMuscle) {
+                    musSel.value = foundMuscle.id;
+                } else {
+                    musSel.value = "";
+                }
+
+                document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
                 document.getElementById(`icon-${key}`).classList.add("active");
             } else {
-                // Fallback: Just clear filter if we can't map it, or maybe keep it? 
-                // Better to clear if we clicked an icon that has no data mapping
-                sel.value = "";
+                console.warn("No mapping found for icon key:", key);
+                // Fallback: try setting group directly if possible or do nothing?
+                // For now, do nothing if not mapped.
             }
         }
         loadExercisesPage(1);
     }
+
+
+
 </script>
 {% endblock %}

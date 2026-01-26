@@ -914,6 +914,7 @@ def save_exercise():
             "plane": plane,
             "unilateral": unilateral,
             "primary_muscle": primary_muscle,
+            "taxonomy": data.get("taxonomy"), # Added taxonomy field
             "level": level,
             "is_custom": False, # Admin created -> Global
             "updated_at": datetime.utcnow()

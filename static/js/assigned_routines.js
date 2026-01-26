@@ -18,7 +18,7 @@ window.loadBodyParts = async function loadBodyParts() {
 
 window.loadExercises = async function loadExercises() {
   try {
-    const res = await fetch("/workout/api/exercises");
+    const res = await fetch("/workout/api/exercises?limit=1000");
     const data = await res.json();
     if (Array.isArray(data)) {
       window.exerciseLookup = data.reduce((acc, ex) => {
@@ -339,24 +339,38 @@ window.buildRoutinePreviewHtml = function buildRoutinePreviewHtml(routine) {
           <span class="badge bg-secondary">${bodyPartLabel}</span>
           <span class="badge bg-dark border border-secondary text-info"><i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}</span>
         </div>
-        ${substitutes.length
+        ${(() => {
+        if (exId && !baseExercise) {
+          console.warn("Exercise lookup failed for ID:", exId, "Item:", item);
+        }
+        return substitutes.length
+      })()
         ? `
             <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">Sustitutos (${substitutes.length})</button>
             <div class="collapse mt-2" id="${subsId}">
               <div class="d-flex flex-column gap-2">
                 ${substitutes
-          .map(
-            (sub) => `<div class="routine-preview-item d-flex align-items-center justify-content-between">
-                      <div>
-                        <div class="fw-bold text-white">${sub.name || "Ejercicio"}</div>
-                        <div class="text-secondary small"><i class="${window.getEquipmentMeta(sub.equipment).icon} me-1"></i>${window.getEquipmentMeta(sub.equipment).label}</div>
+          .map((sub) => {
+            const hasSubVideo = sub.video_url && sub.video_url.trim().length > 0;
+            const subVideoBtn = hasSubVideo
+              ? `<button class="btn btn-sm btn-outline-danger" onclick="event.preventDefault(); event.stopPropagation(); openVideoModal('${sub.video_url}')" title="Ver video"><i class="fas fa-play"></i></button>`
+              : "";
+
+            return `<div class="p-3 mb-2 bg-dark border border-secondary rounded shadow-sm">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                           <div class="text-white fw-bold mb-1">${sub.name || "Ejercicio"}</div>
+                           <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-secondary text-light" style="font-size:0.65rem"><i class="${window.getEquipmentMeta(sub.equipment).icon} me-1"></i>${window.getEquipmentMeta(sub.equipment).label}</span>
+                                <span class="badge bg-transparent border border-secondary text-secondary" style="font-size:0.65rem">${window.translateBodyPart(sub.body_part) || "General"}</span>
+                           </div>
+                        </div>
+                        <div class="ms-3">
+                            ${subVideoBtn}
+                        </div>
                       </div>
-                      ${sub.video_url
-                ? `<button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')"><i class="fab fa-youtube"></i></button>`
-                : ""
-              }
-                    </div>`
-          )
+                    </div>`;
+          })
           .join("")}
               </div>
             </div>`

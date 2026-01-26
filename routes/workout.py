@@ -39,9 +39,92 @@ def _get_body_parts_map(db):
             mapping[label.lower()] = key
         if label_es:
             mapping[label_es.lower()] = key
-
     cache_set(cache_key, mapping, 300)
     return mapping
+
+# --- SHARED HELPERS ---
+def hydrate_routines_with_substitutes(routines, db):
+    """
+    Recursively finds all substitute/equivalent IDs in a list of routines (or items),
+    fetches their details in bulk, and replaces the IDs with populated objects.
+    Modifies the routines list in-place.
+    """
+    if not routines: return
+
+    # Helper to collect IDs
+    def collect_ids(items, ids_set):
+        for item in items:
+            if item.get("item_type") == "group" and "items" in item:
+                collect_ids(item["items"], ids_set)
+            else:
+                subs = item.get("substitutes") or item.get("equivalents") or []
+                for s in subs:
+                    # Handle both strings and objects with ID
+                    sid = None
+                    if isinstance(s, dict):
+                         sid = s.get("exercise_id") or s.get("_id") or s.get("id") or s.get("$oid")
+                    elif isinstance(s, (str, ObjectId)):
+                         sid = s
+                    
+                    if sid: ids_set.add(str(sid))
+
+    # Helper to populate
+    def populate(items, lookup_map):
+        for item in items:
+            if item.get("item_type") == "group" and "items" in item:
+                populate(item["items"], lookup_map)
+            else:
+                subs = item.get("substitutes") or item.get("equivalents") or []
+                if not subs: continue
+                
+                new_subs = []
+                for s in subs:
+                    sid = None
+                    if isinstance(s, dict):
+                         sid = s.get("exercise_id") or s.get("_id") or s.get("id") or s.get("$oid")
+                    elif isinstance(s, (str, ObjectId)):
+                         sid = str(s)
+                    
+                    if sid and str(sid) in lookup_map:
+                        new_subs.append(lookup_map[str(sid)])
+                    elif sid:
+                         # Keep placeholder with error marker
+                         new_subs.append({
+                            "_id": str(sid), 
+                            "name": f"No encontrado ({str(sid)[-6:]})", 
+                            "body_part": "Desconocido", 
+                            "equipment": "other",
+                            "_is_missing": True
+                        })
+                
+                if new_subs:
+                    item["substitutes"] = new_subs
+
+    # 1. Collect all Unique IDs across ALL routines
+    all_ids = set()
+    for r in routines:
+        if "items" in r:
+            collect_ids(r["items"], all_ids)
+            
+    # 2. Bulk Fetch
+    if not all_ids: return
+
+    found_map = {}
+    query_ids = []
+    for i in all_ids:
+        if ObjectId.is_valid(i): query_ids.append(ObjectId(i))
+        else: query_ids.append(i)
+        
+    cursor = db.exercises.find({"_id": {"$in": query_ids}})
+    for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        found_map[doc["_id"]] = doc
+        
+    # 3. Apply changes
+    for r in routines:
+        if "items" in r:
+            populate(r["items"], found_map)
+
 
 @workout_bp.route("/dashboard")
 def dashboard():
@@ -136,6 +219,7 @@ def list_public_exercises():
                     "exercise_id": 1,
                     "name": 1,
                     "body_part": 1,
+                    "body_part_key": 1,
                     "difficulty": 1,
                     "equipment": 1,
                     "type": 1,
@@ -165,6 +249,83 @@ def list_public_exercises():
         logger.error(f"Error listing public exercises: {e}")
         return jsonify({"error": "Error interno"}), 500
 
+@workout_bp.get("/api/exercises/<exercise_id>")
+def api_get_exercise_details(exercise_id):
+    """Fetch a single exercise with fully populated substitutes."""
+    db = get_db()
+    if db is None:
+        return jsonify({"error": "DB not ready"}), 503
+    try:
+        query = {}
+        if ObjectId.is_valid(exercise_id):
+            query = {"$or": [{"_id": ObjectId(exercise_id)}, {"exercise_id": exercise_id}]}
+        else:
+            query = {"exercise_id": exercise_id}
+            
+        ex = db.exercises.find_one(query)
+        
+        if not ex:
+            # Fallback: try searching by string _id just in case
+            ex = db.exercises.find_one({"_id": exercise_id})
+            
+        if not ex:
+            return jsonify({"error": "Exercise not found"}), 404
+        
+        ex["_id"] = str(ex["_id"])
+        
+        # Populate substitutes
+        raw_subs = ex.get("substitutes", [])
+        populated_subs = []
+        
+        if raw_subs:
+            # 1. Resolve all valid ObjectIds
+            target_ids = []
+            original_id_map = [] # Keep track of order and raw ID
+            
+            for s in raw_subs:
+                sid = None
+                if isinstance(s, dict):
+                    sid = s.get("exercise_id") or s.get("_id") or s.get("id") or s.get("$oid") or s.get("oid")
+                elif isinstance(s, (str, ObjectId)):
+                    sid = s
+                
+                if sid:
+                    original_id_map.append(str(sid))
+                    try:
+                        target_ids.append(ObjectId(sid))
+                    except:
+                        pass
+                else:
+                    original_id_map.append(None)
+
+            # 2. Fetch found documents
+            found_docs = {}
+            if target_ids:
+                cursor = db.exercises.find({"_id": {"$in": target_ids}})
+                for doc in cursor:
+                    doc["_id"] = str(doc["_id"])
+                    found_docs[doc["_id"]] = doc
+            
+            # 3. Reconstruct list preserving order and handling missing
+            for raw_id_str in original_id_map:
+                if raw_id_str and raw_id_str in found_docs:
+                    populated_subs.append(found_docs[raw_id_str])
+                elif raw_id_str:
+                    # Placeholder for missing/deleted exercise
+                    populated_subs.append({
+                        "_id": raw_id_str, 
+                        "name": f"Ejercicio no encontrado ({raw_id_str[-6:]})", 
+                        "body_part": "Desconocido",
+                        "equipment": "other",
+                        "_is_missing": True
+                    })
+            
+        ex["populated_substitutes"] = populated_subs
+        return jsonify(ex), 200
+    except Exception as e:
+        logger.error(f"Error fetching exercise details: {e}")
+        return jsonify({"error": "Internal Error"}), 500
+
 
 @workout_bp.get("/api/exercises/search")
 def api_search_exercises():
@@ -177,8 +338,8 @@ def api_search_exercises():
         page = int(request.args.get("page", 1))
         if limit < 1:
             limit = 50
-        if limit > 200:
-            limit = 200
+        if limit > 1000:
+            limit = 1000
         if page < 1:
             page = 1
         skip = (page - 1) * limit
@@ -190,7 +351,10 @@ def api_search_exercises():
 
         query = {}
         if body_part:
-            query["body_part"] = body_part
+            query["$or"] = [
+                {"body_part": body_part},
+                {"body_part_key": body_part}
+            ]
 
         if equipment:
             escaped_equipment = re.escape(equipment)
@@ -199,6 +363,15 @@ def api_search_exercises():
         if ex_type:
             escaped_type = re.escape(ex_type)
             query["type"] = {"$regex": f"^{escaped_type}$", "$options": "i"}
+            
+        # Taxonomy Filters (Hierarchical)
+        section_id = request.args.get("section")
+        group_id = request.args.get("group")
+        muscle_id = request.args.get("muscle")
+        
+        if section_id: query["taxonomy.section_id"] = section_id
+        if group_id: query["taxonomy.group_id"] = group_id
+        if muscle_id: query["taxonomy.muscle_id"] = muscle_id
 
         if term:
             escaped_term = re.escape(term)
@@ -215,6 +388,8 @@ def api_search_exercises():
                     "exercise_id": 1,
                     "name": 1,
                     "body_part": 1,
+                    "body_part_key": 1,
+                    "taxonomy": 1,
                     "difficulty": 1,
                     "equipment": 1,
                     "type": 1,
@@ -327,7 +502,11 @@ def api_filter_exercises():
                 resolved_parts.add(p)
                 
         if resolved_parts:
-            query["body_part"] = {"$in": list(resolved_parts)}
+            # Query against standardized key OR legacy field for robustness
+            query["$or"] = [
+                {"body_part_key": {"$in": list(resolved_parts)}},
+                {"body_part": {"$in": list(resolved_parts)}}
+            ]
 
     # Equipment Filter
     if equipment_arg:
@@ -345,7 +524,7 @@ def api_filter_exercises():
     try:
         # Projection: keep it light
         cursor = db.exercises.find(query, {
-            "exercise_id": 1, "name": 1, "body_part": 1,
+            "exercise_id": 1, "name": 1, "body_part": 1, "body_part_key": 1, "taxonomy": 1,
             "difficulty": 1, "equipment": 1, "video_url": 1,
             "description": 1, "image_url": 1,
             "substitutes": 1, "equivalents": 1, "equivalent_exercises": 1,
@@ -375,6 +554,44 @@ def api_get_body_parts():
         return jsonify(parts), 200
     except Exception as e:
         logger.error(f"Error getting body parts: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@workout_bp.get("/api/taxonomy")
+def api_get_taxonomy():
+    """Retorna la jerarquía completa de músculos (Muscle Taxonomy)."""
+    try:
+        db = get_db()
+        cache_key = "muscle_taxonomy_tree"
+        cached = cache_get(cache_key)
+        if cached: return jsonify(cached), 200
+        
+        # Fetch all groups
+        taxonomy_docs = list(db.muscle_taxonomy.find({}).sort("name", 1))
+        
+        # Organize by Section -> Group
+        sections = {}
+        for doc in taxonomy_docs:
+            sect_id = doc["section"]["id"]
+            sect_name = doc["section"]["name"]
+            
+            if sect_id not in sections:
+                sections[sect_id] = {
+                    "id": sect_id,
+                    "name": sect_name,
+                    "groups": []
+                }
+            
+            sections[sect_id]["groups"].append({
+                "id": doc["_id"],
+                "name": doc["name"],
+                "muscles": doc["muscles"]
+            })
+            
+        tree = list(sections.values())
+        cache_set(cache_key, tree, 3600) # Cache for 1 hour
+        return jsonify(tree), 200
+    except Exception as e:
+        logger.error(f"Error fetching taxonomy: {e}")
         return jsonify({"error": str(e)}), 500
 
 @workout_bp.get("/api/exercises/metadata")
@@ -500,10 +717,14 @@ def api_get_user_routines():
             routines_cursor = db.routines.find({"_id": {"$in": assigned_ids}})
             for r in routines_cursor:
                 r["_id"] = str(r["_id"])
-                # Ensure items array exists
                 if "items" not in r: r["items"] = []
                 r["assigned_expires_at"] = assignment_map.get(r["_id"])
                 routines.append(r)
+        
+        # Hydrate substitutes for robust display
+        if routines:
+            hydrate_routines_with_substitutes(routines, db)
+
         
         return jsonify(routines), 200
         
@@ -567,6 +788,11 @@ def api_list_my_routines():
         for r in cursor:
             r["_id"] = str(r["_id"])
             results.append(r)
+            
+        # Hydrate substitutes for robust display
+        if results:
+            hydrate_routines_with_substitutes(results, db)
+            
         return jsonify(results), 200
     except Exception as e:
         logger.error(f"Error listing user routines: {e}")
@@ -1094,7 +1320,15 @@ def run_routine(routine_id):
         routine["_id"] = str(routine["_id"])
         routine["id"] = str(routine["_id"])
         
-        # Ensure items exist
+        
+        if "items" not in routine:
+            routine["items"] = []
+            
+        # Hydrate substitutes using shared helper
+        hydrate_routines_with_substitutes([routine], db)
+
+
+        # Ensure items exist (fallback)
         if "items" not in routine:
             routine["items"] = []
             

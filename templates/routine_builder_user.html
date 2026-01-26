@@ -77,7 +77,8 @@
                     <label class="text-secondary small">Estado de la rutina</label>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="routineActive" checked>
-                        <label class="form-check-label text-secondary" for="routineActive">Mostrar en Rutinas creadas</label>
+                        <label class="form-check-label text-secondary" for="routineActive">Mostrar en Rutinas
+                            creadas</label>
                     </div>
                 </div>
 
@@ -588,7 +589,8 @@
         availableExercises = await res.json();
         collapsedBodyParts.clear();
         availableExercises.forEach(ex => {
-            if (ex.body_part) collapsedBodyParts.add(ex.body_part);
+            if (ex.body_part_key) collapsedBodyParts.add(ex.body_part_key);
+            else if (ex.body_part) collapsedBodyParts.add(ex.body_part);
         });
         filterExercises();
     }
@@ -905,7 +907,7 @@
     function renderByBodyPart(items, type) {
         if (!items.length) return "";
         const grouped = items.reduce((acc, ex) => {
-            const key = ex.body_part || "Other";
+            const key = ex.body_part_key || ex.body_part || "Other";
             if (!acc[key]) acc[key] = [];
             acc[key].push(ex);
             return acc;
@@ -960,6 +962,10 @@
 
     function translateBodyPart(bp) {
         return bodyPartMap[bp] || bp;
+    }
+
+    function translateExBodyPart(ex) {
+        return bodyPartMap[ex.body_part_key] || bodyPartMap[ex.body_part] || ex.body_part || "General";
     }
 
     async function loadBodyPartsConfig() {
@@ -1035,7 +1041,7 @@
             const equipText = equipList.join(" ");
             const exType = (ex.type || "").toLowerCase();
             const termMatch = !term || name.includes(term) || body.includes(term) || equipText.includes(term) || exType.includes(term);
-            const bodyMatch = !bodyPart || ex.body_part === bodyPart;
+            const bodyMatch = !bodyPart || (ex.body_part_key === bodyPart) || (ex.body_part === bodyPart);
             const equipMatch = !equipment || equipList.includes(String(equipment).toLowerCase());
             const typeMatch = !type || ex.type === type;
             const routineMatch = routineBodyParts.length === 0 || routineBodyParts.includes(ex.body_part);

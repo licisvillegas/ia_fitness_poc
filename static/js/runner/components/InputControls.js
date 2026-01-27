@@ -95,7 +95,7 @@
                     }
                 }, 350);
             }
-        }, [step, sessionLog, historyMaxByExercise]);
+        }, [step, sessionLog, historyMaxByExercise, unit]);
 
         useEffect(() => {
             setIsCompleting(false);
@@ -188,26 +188,26 @@
                 <div className="row g-2 justify-content-center mb-2">
                     {!compact && (
                         <div className="col-6">
-                        <div className="weight-header">
-                            <div className="d-flex align-items-center justify-content-center gap-1">
-                                <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
-                                <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
-                                    {unit.toUpperCase()}
-                                </button>
+                            <div className="weight-header">
+                                <div className="d-flex align-items-center justify-content-center gap-1">
+                                    <label className="text-secondary small fw-bold m-0" style={{ fontSize: '0.7rem' }}>PESO</label>
+                                    <button className="btn btn-sm btn-dark border border-secondary py-0 px-1 small font-monospace" onClick={toggleUnit} style={{ fontSize: '0.65rem' }}>
+                                        {unit.toUpperCase()}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        {!hideRPE && (
-                            <div className="input-icon-slot">
-                                <button
-                                    type="button"
-                                    className="plate-icon-btn"
-                                    title="Calculadora de discos"
-                                    onClick={() => setPlateModalOpen(true)}
-                                >
-                                    <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
-                                </button>
-                            </div>
-                        )}
+                            {!hideRPE && (
+                                <div className="input-icon-slot">
+                                    <button
+                                        type="button"
+                                        className="plate-icon-btn"
+                                        title="Calculadora de discos"
+                                        onClick={() => setPlateModalOpen(true)}
+                                    >
+                                        <img src="/static/images/disc/45.png" alt="Disco" className="plate-icon-img" />
+                                    </button>
+                                </div>
+                            )}
                             <div className="d-flex align-items-center justify-content-center gap-1">
                                 <button
                                     className="btn btn-outline-secondary btn-control-hud d-flex align-items-center justify-content-center"

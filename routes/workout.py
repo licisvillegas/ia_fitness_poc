@@ -1333,23 +1333,14 @@ def run_routine(routine_id):
         if not routine:
             return render_template("404.html", message="Rutina no encontrada"), 404
             
-        # Convert ObjectId to string
         routine["_id"] = str(routine["_id"])
         routine["id"] = str(routine["_id"])
         
-        
         if "items" not in routine:
             routine["items"] = []
             
-        # Hydrate substitutes using shared helper
         hydrate_routines_with_substitutes([routine], db)
 
-
-        # Ensure items exist (fallback)
-        if "items" not in routine:
-            routine["items"] = []
-            
-        # Get Current User Name (for personalized hello)
         user_id = request.cookies.get("user_session")
         user_name = ""
         restored_state = None
@@ -1358,15 +1349,13 @@ def run_routine(routine_id):
              u = db.users.find_one({"user_id": user_id})
              if u:
                  user_name = u.get("name") or u.get("username")
-                 
-             # Check for active session to restore
+             
              active_session = db.active_workout_sessions.find_one({
                  "user_id": user_id, 
                  "routine_id": str(routine_id)
              })
              
              if active_session:
-                 # Convert ObjectId if needed and prepare state
                  if "_id" in active_session: active_session["_id"] = str(active_session["_id"])
                  restored_state = active_session
 
@@ -1377,6 +1366,55 @@ def run_routine(routine_id):
                                restored_state=restored_state)
     except Exception as e:
         logger.error(f"Error running routine: {e}")
+        return f"Error interno: {e}", 500
+
+@workout_bp.route("/proposal/<routine_id>")
+def run_routine_proposal(routine_id):
+    """
+    Renders the workout runner with the UX proposals for testing.
+    """
+    try:
+        db = get_db()
+        if not ObjectId.is_valid(routine_id):
+            return render_template("404.html", message="ID de rutina inválido"), 400
+            
+        routine = db.routines.find_one({"_id": ObjectId(routine_id)})
+        if not routine:
+            return render_template("404.html", message="Rutina no encontrada"), 404
+            
+        routine["_id"] = str(routine["_id"])
+        routine["id"] = str(routine["_id"])
+        
+        if "items" not in routine:
+            routine["items"] = []
+            
+        hydrate_routines_with_substitutes([routine], db)
+
+        user_id = request.cookies.get("user_session")
+        user_name = ""
+        restored_state = None
+        
+        if user_id:
+             u = db.users.find_one({"user_id": user_id})
+             if u:
+                 user_name = u.get("name") or u.get("username")
+             
+             active_session = db.active_workout_sessions.find_one({
+                 "user_id": user_id, 
+                 "routine_id": str(routine_id)
+             })
+             
+             if active_session:
+                 if "_id" in active_session: active_session["_id"] = str(active_session["_id"])
+                 restored_state = active_session
+
+        return render_template("workout_runner_proposal.html", 
+                               routine=routine,
+                               current_user_id=user_id,
+                               current_user_name=user_name,
+                               restored_state=restored_state)
+    except Exception as e:
+        logger.error(f"Error running routine proposal: {e}")
         return f"Error interno: {e}", 500
 
 @workout_bp.post("/api/session/start")
@@ -1437,6 +1475,7 @@ def api_update_progress():
             {"$set": {
                 "cursor": data.get("cursor", 0),
                 "session_log": data.get("session_log", []),
+                "unit": data.get("unit", "lb"),
                 "updated_at": datetime.now()
             }}
         )

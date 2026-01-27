@@ -245,7 +245,7 @@
 
 .pending-tab.active {
     color: var(--text-main);
-    border-bottom-color: var(--cyber-green);
+    border-bottom-color: var(--accent-green);
     background: rgba(0, 230, 118, 0.05);
 }
 

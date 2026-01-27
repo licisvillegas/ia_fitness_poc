@@ -58,9 +58,9 @@
             return Object.entries(rmPercentages)
                 .filter(([rep]) => Number(rep) <= maxRm)
                 .map(([rep, pct]) => ({
-                rep,
-                value: Math.round(oneRm * pct)
-            }));
+                    rep,
+                    value: Math.round(oneRm * pct)
+                }));
         }, [oneRm, showAllResults]);
 
         const handleToggleUnit = () => {
@@ -106,13 +106,17 @@
                             </div>
                         </div>
                         <div className="rm-grid">
-                            {results.map(item => (
-                                <div key={item.rep} className={`rm-tile ${Number(item.rep) === 1 ? "highlight" : ""}`}>
-                                    <div className="rm-label">{item.rep}RM</div>
-                                    <div className="rm-value">{item.value}</div>
-                                    <div className="rm-unit">{unit}</div>
-                                </div>
-                            ))}
+                            {results.map(item => {
+                                const isOneRm = Number(item.rep) === 1;
+                                const isSource = Number(item.rep) === Number(reps);
+                                return (
+                                    <div key={item.rep} className={`rm-tile ${isOneRm ? "highlight" : ""} ${isSource ? "source" : ""}`}>
+                                        <div className="rm-label">{item.rep}RM</div>
+                                        <div className="rm-value">{item.value}</div>
+                                        <div className="rm-unit">{unit}</div>
+                                    </div>
+                                );
+                            })}
                             {!results.length && (
                                 <div className="text-secondary small">Ingresa peso y repeticiones para ver resultados.</div>
                             )}

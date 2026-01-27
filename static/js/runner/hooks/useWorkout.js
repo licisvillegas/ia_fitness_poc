@@ -10,6 +10,7 @@
         const [queue, setQueue] = useState([]);
         const [cursor, setCursor] = useState(0); // Index in Queue
         const [status, setStatus] = useState('LOADING'); // LOADING | IDLE | WORK | REST | FINISHED
+        console.log("WorkoutProvider Initialized. Initial Status:", status);
         const [sessionLog, setSessionLog] = useState([]);
         const [historyMaxByExercise, setHistoryMaxByExercise] = useState({});
         const [exerciseLookup, setExerciseLookup] = useState({});
@@ -20,7 +21,7 @@
         const [showCompletionIcon, setShowCompletionIcon] = useState(false);
         const [showCountdown, setShowCountdown] = useState(false);
         const [countdownValue, setCountdownValue] = useState(3);
-        const [unit, setUnit] = useState('lb');
+        const [unit, setUnit] = useState(window.RESTORED_STATE?.unit || 'lb');
         const [notificationPermission, setNotificationPermission] = useState('default'); // default, granted, denied
         const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
         const [showPending, setShowPending] = useState(false); // New state lifted from App.js
@@ -28,7 +29,7 @@
         const [currentInput, setCurrentInput] = useState({
             weight: "",
             reps: "",
-            unit: "kg",
+            unit: window.RESTORED_STATE?.unit || 'lb',
             exerciseName: ""
         });
         const [routineState, setRoutineState] = useState(routine);
@@ -259,41 +260,44 @@
 
         useEffect(() => {
             if (routineState) {
-                const q = buildQueue(routineState);
-                setQueue(q);
-                setStatus('IDLE');
+                console.log("routineState changed, building queue...", routineState);
+                try {
+                    const q = buildQueue(routineState);
+                    console.log("Queue Built Successfully:", q);
+                    setQueue(q);
+                    setStatus('IDLE');
 
-                // Hydrate from restored state
-                // Assumes RESTORED_STATE is a global variable from the Jinja template
-                if (window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
-                    console.log("RESTORING STATE:", window.RESTORED_STATE);
-                    if (window.RESTORED_STATE.cursor > 0 && window.RESTORED_STATE.cursor < q.length) {
-                        setCursor(window.RESTORED_STATE.cursor);
+                    // Hydrate from restored state
+                    // Assumes RESTORED_STATE is a global variable from the Jinja template
+                    if (window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
+                        console.log("RESTORING STATE:", window.RESTORED_STATE);
+                        if (window.RESTORED_STATE.cursor > 0 && window.RESTORED_STATE.cursor < q.length) {
+                            setCursor(window.RESTORED_STATE.cursor);
 
-                        // AUTO-RESUME: Set status to WORK and ensure timer logic runs
-                        // We check the upcoming step type to decide WORK vs REST
-                        const resumeStep = q[window.RESTORED_STATE.cursor];
-                        if (resumeStep) {
-                            if (resumeStep.type === 'rest') {
-                                setStatus('REST');
-                                setStepTimer(resumeStep.duration); // Reset timer to full duration? Or should we save timer state? 
-                                // User asked "resume where leftover", assuming step is enough.
-                                setIsTimerRunning(true);
-                            } else {
-                                setStatus('WORK');
-                                setStepTimer(resumeStep.isTimeBased ? resumeStep.target.time : 0);
-                                setIsTimerRunning(resumeStep.isTimeBased);
+                            // AUTO-RESUME: Set status to WORK and ensure timer logic runs
+                            const resumeStep = q[window.RESTORED_STATE.cursor];
+                            if (resumeStep) {
+                                if (resumeStep.type === 'rest') {
+                                    setStatus('REST');
+                                    setStepTimer(resumeStep.duration);
+                                    setIsTimerRunning(true);
+                                } else {
+                                    setStatus('WORK');
+                                    setStepTimer(resumeStep.isTimeBased ? resumeStep.target.time : 0);
+                                    setIsTimerRunning(resumeStep.isTimeBased);
+                                }
                             }
                         }
+                        if (window.RESTORED_STATE.session_log) {
+                            setSessionLog(window.RESTORED_STATE.session_log);
+                            sessionLogRef.current = window.RESTORED_STATE.session_log;
+                        }
                     }
-                    if (window.RESTORED_STATE.session_log) {
-                        setSessionLog(window.RESTORED_STATE.session_log);
-                        sessionLogRef.current = window.RESTORED_STATE.session_log;
-                    }
+                    console.log("Queue Built:", q);
+                    queueRef.current = q; // Update ref
+                } catch (e) {
+                    console.error("CRITICAL ERROR building queue:", e);
                 }
-
-                console.log("Queue Built:", q);
-                queueRef.current = q; // Update ref
             }
         }, [routineState]);
 
@@ -335,7 +339,9 @@
             const init = async () => {
                 if (window.showLoader) window.showLoader("Cargando motor...");
                 try {
+                    console.log("Starting engine initialization (exercises, body parts)...");
                     await Promise.all([loadExercises(), loadBodyParts()]);
+                    console.log("Engine initialization complete.");
                 } finally {
                     if (window.hideLoader) window.hideLoader();
                 }
@@ -790,7 +796,8 @@
                     body: JSON.stringify({
                         routine_id: (routineState?.id || routine?.id),
                         cursor: idx,
-                        session_log: log || sessionLogRef.current
+                        session_log: log || sessionLogRef.current,
+                        unit: unit
                     })
                 });
             } catch (e) { console.error("Sync error", e); }

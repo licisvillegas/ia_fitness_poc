@@ -2,14 +2,19 @@
     const { useState, useEffect } = React;
 
     window.Runner.components.PlateCalculatorModal = ({ isOpen, onClose, onApply, unit }) => {
-        const [plateCounts, setPlateCounts] = useState({
-            2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0
-        });
-        const [plateCountMode, setPlateCountMode] = useState('per_side');
-        const [includeBar, setIncludeBar] = useState(false);
-        const [barWeight, setBarWeight] = useState(20);
+        const isMetric = unit === 'kg';
 
-        const plateOptions = [
+        const metricPlates = [
+            { value: 1.25, label: "1.25", src: "/static/images/disc/2_5.png" }, // Using existing images as proxy
+            { value: 2.5, label: "2.5", src: "/static/images/disc/2_5.png" },
+            { value: 5, label: "5", src: "/static/images/disc/5.png" },
+            { value: 10, label: "10", src: "/static/images/disc/10.png" },
+            { value: 15, label: "15", src: "/static/images/disc/25.png" },
+            { value: 20, label: "20", src: "/static/images/disc/35.png" },
+            { value: 25, label: "25", src: "/static/images/disc/45.png" }
+        ];
+
+        const imperialPlates = [
             { value: 2.5, label: "2.5", src: "/static/images/disc/2_5.png" },
             { value: 5, label: "5", src: "/static/images/disc/5.png" },
             { value: 10, label: "10", src: "/static/images/disc/10.png" },
@@ -18,13 +23,23 @@
             { value: 45, label: "45", src: "/static/images/disc/45.png" }
         ];
 
-        // Reset when opening
+        const plateOptions = isMetric ? metricPlates : imperialPlates;
+
+        const [plateCounts, setPlateCounts] = useState({});
+        const [plateCountMode, setPlateCountMode] = useState('per_side');
+        const [includeBar, setIncludeBar] = useState(false);
+        const [barWeight, setBarWeight] = useState(isMetric ? 20 : 45);
+
+        // Reset when opening or unit changes
         useEffect(() => {
             if (isOpen) {
-                setPlateCounts({ 2.5: 0, 5: 0, 10: 0, 25: 0, 35: 0, 45: 0 });
+                const initialCounts = {};
+                plateOptions.forEach(p => initialCounts[p.value] = 0);
+                setPlateCounts(initialCounts);
                 setIncludeBar(false);
+                setBarWeight(isMetric ? 20 : 45);
             }
-        }, [isOpen]);
+        }, [isOpen, unit]);
 
         const formatWeight = (val) => {
             const rounded = Math.round(val * 10) / 10;
@@ -41,20 +56,14 @@
         };
 
         const plateMultiplier = plateCountMode === 'per_side' ? 2 : 1;
-        const totalPlatesLb = plateOptions.reduce((acc, plate) => {
+        const totalPlates = plateOptions.reduce((acc, plate) => {
             const count = plateCounts[plate.value] || 0;
             return acc + (count * plate.value * plateMultiplier);
         }, 0);
-        const totalWithBarLb = totalPlatesLb + (includeBar ? (parseFloat(barWeight) || 0) : 0);
+        const totalWithBar = totalPlates + (includeBar ? (parseFloat(barWeight) || 0) : 0);
 
         const handleApply = () => {
-            if (unit === 'kg') {
-                // Convert result (always calculated in LB here) to KG
-                const valKg = totalWithBarLb / 2.20462;
-                onApply(formatWeight(valKg));
-            } else {
-                onApply(formatWeight(totalWithBarLb));
-            }
+            onApply(formatWeight(totalWithBar));
             onClose();
         };
 
@@ -63,15 +72,15 @@
         return ReactDOM.createPortal(
             <div className="plate-modal-backdrop" onClick={onClose}>
                 <div className="plate-modal" onClick={(e) => e.stopPropagation()}>
-                    <div className="plate-modal-header">
-                        <div className="fw-bold">Discos (lb)</div>
+                    <div className="plate-modal-header text-white">
+                        <div className="fw-bold">Calculadora de Discos ({unit})</div>
                         <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
                             <i className="fas fa-times"></i>
                         </button>
                     </div>
                     <div className="plate-modal-body">
                         <div className="plate-mode-row">
-                            <div className="plate-mode-label">Conteo</div>
+                            <div className="plate-mode-label text-muted small uppercase">Modo de Conteo</div>
                             <div className="btn-group btn-group-sm" role="group">
                                 <button type="button" className={`btn ${plateCountMode === 'per_side' ? 'btn-info text-dark' : 'btn-outline-secondary'}`} onClick={() => setPlateCountMode('per_side')}>Por lado</button>
                                 <button type="button" className={`btn ${plateCountMode === 'total' ? 'btn-info text-dark' : 'btn-outline-secondary'}`} onClick={() => setPlateCountMode('total')}>Total</button>
@@ -80,43 +89,45 @@
                         <div className="plate-grid">
                             {plateOptions.map(plate => (
                                 <div key={plate.value} className="plate-tile">
-                                    <img src={plate.src} alt={`${plate.label} lb`} />
-                                    <div className="text-secondary small">{plate.label} lb</div>
+                                    <img src={plate.src} alt={`${plate.label} ${unit}`} style={{ opacity: plateCounts[plate.value] > 0 ? 1 : 0.4 }} />
+                                    <div className="text-secondary small">{plate.label} {unit}</div>
                                     <div className="plate-counter">
-                                        <button type="button" onClick={() => updatePlateCount(plate.value, -1)}>-</button>
-                                        <div className="fw-bold text-theme" style={{ minWidth: '18px' }}>{plateCounts[plate.value] || 0}</div>
-                                        <button type="button" onClick={() => updatePlateCount(plate.value, 1)}>+</button>
+                                        <button type="button" onClick={() => updatePlateCount(plate.value, -1)} className="btn-min">-</button>
+                                        <div className="fw-bold text-white px-2" style={{ minWidth: '24px' }}>{plateCounts[plate.value] || 0}</div>
+                                        <button type="button" onClick={() => updatePlateCount(plate.value, 1)} className="btn-plus">+</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="plate-calc-details">
-                            <div className="mt-3 d-flex align-items-center justify-content-between">
-                                <div className="text-secondary small">Total discos {plateCountMode === 'per_side' ? '(por lado x2)' : '(total)'}</div>
-                                <div className="plate-total">{totalPlatesLb.toFixed(1)} lb</div>
+                        <div className="plate-calc-details bg-dark-glass p-3 rounded-4 mt-3">
+                            <div className="d-flex align-items-center justify-content-between mb-2">
+                                <div className="text-secondary small">Suma de discos</div>
+                                <div className="plate-total fw-bold text-white">{totalPlates.toFixed(1)} {unit}</div>
                             </div>
 
-                            <div className="mt-3 d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center justify-content-between mb-2">
                                 <div className="text-secondary small">Peso de barra</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="form-check form-switch m-0">
                                         <input className="form-check-input" type="checkbox" checked={includeBar} onChange={(e) => setIncludeBar(e.target.checked)} />
                                     </div>
-                                    <input type="number" min="0" className="form-control form-control-sm border-secondary" style={{ width: '80px' }} value={barWeight} onChange={(e) => setBarWeight(e.target.value)} disabled={!includeBar} />
-                                    <span className="text-secondary small">lb</span>
+                                    <input type="number" min="0" className="form-control form-control-sm bg-dark border-secondary text-white text-center" style={{ width: '70px' }} value={barWeight} onChange={(e) => setBarWeight(e.target.value)} disabled={!includeBar} />
+                                    <span className="text-secondary small">{unit}</span>
                                 </div>
                             </div>
 
-                            <div className="mt-3 d-flex align-items-center justify-content-between">
-                                <div className="text-secondary small">Total</div>
-                                <div className="plate-total">{totalWithBarLb.toFixed(1)} lb</div>
+                            <hr className="border-secondary opacity-25 my-2" />
+
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div className="text-cyber-primary small fw-bold">PESO TOTAL</div>
+                                <div className="plate-total-final fw-bold text-cyber-primary" style={{ fontSize: '1.4rem' }}>{totalWithBar.toFixed(1)} {unit}</div>
                             </div>
                         </div>
                     </div>
                     <div className="plate-modal-footer">
-                        <button className="btn btn-outline-secondary" onClick={onClose}>Cancelar</button>
-                        <button className="btn btn-info text-dark fw-bold" onClick={handleApply}>Aplicar</button>
+                        <button className="btn btn-outline-secondary border-0" onClick={onClose}>Cancelar</button>
+                        <button className="btn btn-info text-dark fw-bold px-4 rounded-pill" onClick={handleApply}>Aplicar al entrenamiento</button>
                     </div>
                 </div>
             </div>,

@@ -87,7 +87,7 @@
 .rm-modal .rm-primary-value {
     font-size: 2.2rem;
     font-weight: 700;
-    color: var(--cyber-green);
+    color: var(--accent-green);
 }
 
 .rm-modal .rm-grid {
@@ -114,12 +114,22 @@
     box-shadow: 0 0 12px rgba(255, 157, 0, 0.35);
 }
 
+.rm-modal .rm-tile.source {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 12px rgba(0, 255, 157, 0.25);
+}
+
 .rm-modal .rm-label {
     font-size: 0.7rem;
     font-weight: 700;
     color: #ffb347;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.rm-modal .rm-tile.source .rm-label,
+.rm-modal .rm-tile.source .rm-value {
+    color: var(--accent-green) !important;
 }
 
 .rm-modal .rm-value {

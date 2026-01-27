@@ -87,7 +87,7 @@
   {% include 'components/sidebar_admin.html' %}
 
   <div class="main-content">
-    <!-- Navbar Removed -->
+    <!-- Barra de navegacion removida -->
 
     <main class="container py-4">
       <h2 class="mb-3">Planes de nutrición (Admin)</h2>
@@ -109,7 +109,7 @@
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
-                <!-- Hidden field for compatibility -->
+                <!-- Campo oculto por compatibilidad -->
                 <input id="adminUserId" type="hidden">
                 <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
                   style="z-index: 1000; display: none; width: 90%;"></div>
@@ -135,7 +135,7 @@
               <small id="adminPlanMeta" class="muted"></small>
               <hr />
 
-              <!-- AI Generator (Collapsible) -->
+              <!-- Generador AI (colapsable) -->
               <div class="mb-3 border border-primary rounded p-2 bg-card">
                 <div class="d-flex justify-content-between align-items-center cursor-pointer"
                   onclick="document.getElementById('aiGenBody').style.display = document.getElementById('aiGenBody').style.display==='none'?'block':'none'">
@@ -182,10 +182,10 @@
                 </div>
 
                 <div class="col-12 mt-4">
-                  <!-- Input Summary -->
+                  <!-- Resumen de entrada -->
                   <div id="adminPlanInputSummary" class="d-flex flex-wrap gap-2 mb-3"></div>
 
-                  <!-- TABS -->
+                  <!-- Pestanas -->
                   <ul class="nav nav-tabs border-secondary mb-3" id="planTabs" role="tablist">
                     <li class="nav-item">
                       <button class="nav-link active text-theme bg-transparent" id="tab-visual-btn" data-bs-toggle="tab"
@@ -202,7 +202,7 @@
                   </ul>
 
                   <div class="tab-content" id="planTabsContent">
-                    <!-- Visual Tab -->
+                    <!-- Pestana visual -->
                     <div class="tab-pane fade show active" id="tab-visual" role="tabpanel">
                       <div class="p-3 border border-secondary rounded"
                         style="background: var(--bg-panel); min-height: 300px;">
@@ -212,7 +212,7 @@
                       </div>
                     </div>
 
-                    <!-- Visual Editor Tab -->
+                    <!-- Pestana editor visual -->
                     <div class="tab-pane fade" id="tab-editor" role="tabpanel">
                       <div class="p-3 border border-secondary rounded"
                         style="background: var(--bg-panel); min-height: 400px;">
@@ -225,7 +225,7 @@
                       </div>
                     </div>
 
-                    <!-- JSON Tab -->
+                    <!-- Pestana JSON -->
                     <div class="tab-pane fade" id="tab-json" role="tabpanel">
                       <label class="form-label small text-secondary">Output JSON</label>
                       <textarea id="fOutput" class="form-control font-monospace small" rows="16"
@@ -862,7 +862,7 @@
         });
       })();
     </script>
-  </div> <!-- End main-content -->
+  </div> <!-- Fin de main-content -->
 </body>
 
 </html>

@@ -199,11 +199,11 @@
 </head>
 
 <body>
-  <!-- Navbar -->
+  <!-- Barra de navegacion -->
   {% include 'components/sidebar.html' %}
   <div class="main-content">
 
-    <!-- Hero -->
+    <!-- Seccion hero -->
     <section class="hero">
       <div class="container">
         <!-- Título principal y subtítulo del dashboard -->
@@ -291,7 +291,7 @@
       <!-- Tarjetas con último registro (peso, grasa, rendimiento, adherencia) -->
       <div class="row g-4">
 
-        <!-- Admin Card (Visible only if is_admin) -->
+        <!-- Tarjeta admin (visible solo si is_admin) -->
         {% if is_admin %}
         <div class="col-12 col-md-12 mb-2">
           <a href="/workout/assign-routine" class="text-decoration-none">
@@ -343,7 +343,7 @@
           </div>
         </div>
 
-        <!-- Heatmap Card (Moved) -->
+        <!-- Tarjeta mapa de calor (movida) -->
         <div class="col-12 col-md-12 mb-3 mt-4">
           <div class="card bg-panel border-0 shadow">
             <div class="card-header border-secondary text-white fw-bold text-center">
@@ -367,15 +367,15 @@
     <section id="workout-modules" class="container mt-4">
       <div class="row g-4 dashboard-modules">
         <div class="col-12">
-          <!-- My Routines Section -->
+          <!-- Seccion mis rutinas -->
           {% include 'components/assigned_routines.html' %}
         </div>
         <div class="col-12">
-          <!-- My Created Routines Section -->
+          <!-- Seccion mis rutinas creadas -->
           {% include 'components/created_routines.html' %}
         </div>
         <div class="col-12">
-          <!-- Session History Section -->
+          <!-- Seccion historial de sesiones -->
           {% include 'components/session_history.html' %}
         </div>
       </div>

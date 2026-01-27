@@ -1,4 +1,4 @@
-<!-- Modal Detalle Ejercicio (View Only) -->
+<!-- Modal detalle ejercicio (solo lectura) -->
 <div class="modal fade" id="exerciseDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">
@@ -46,7 +46,7 @@
     </div>
 </div>
 
-<!-- Modal Crear/Editar Ejercicio (Admin) -->
+<!-- Modal crear/editar ejercicio (admin) -->
 <div class="modal fade" id="exerciseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-panel text-white border-cyber">
@@ -58,7 +58,7 @@
                 <form id="exerciseForm">
                     <input type="hidden" id="exId">
 
-                    <!-- Basic Info & Taxonomy -->
+                    <!-- Info basica y taxonomia -->
                     <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Información Básica</h6>
                     <div class="row g-3 mb-4">
 
@@ -94,7 +94,7 @@
                         </div>
                     </div>
 
-                    <!-- Technical Details -->
+                    <!-- Detalles tecnicos -->
                     <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Detalles Técnicos</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
@@ -118,7 +118,7 @@
                             <label class="form-label text-secondary small">Equipo Requerido</label>
                             <select class="form-select bg-dark text-white border-secondary" id="exEquipment" multiple
                                 size="3">
-                                <!-- Populated by JS -->
+                                <!-- Cargado por JS -->
                             </select>
                             <div class="form-text text-muted" style="font-size: 0.7rem;">Mantén Ctrl para selección
                                 múltiple</div>
@@ -160,7 +160,7 @@
                         </div>
                     </div>
 
-                    <!-- Content & Media -->
+                    <!-- Contenido y media -->
                     <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Contenido y Multimedia</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-12">
@@ -179,7 +179,7 @@
                         </div>
                     </div>
 
-                    <!-- Substitutes -->
+                    <!-- Sustitutos -->
                     <h6 class="text-cyber-blue border-bottom border-secondary pb-2 mb-3">Ejercicios Sustitutos</h6>
                     <div class="row g-3">
                         <div class="col-12">
@@ -191,7 +191,7 @@
                             </div>
                             <div class="bg-input border border-secondary rounded p-2 custom-scrollbar"
                                 style="max-height: 200px; overflow-y: auto;" id="substitutesContainer">
-                                <!-- Populated JS -->
+                                <!-- Cargado por JS -->
                             </div>
                         </div>
                     </div>
@@ -227,11 +227,11 @@
 </div>
 
 
-<!-- Modal Video -->
+<!-- Modal de video -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">
-            <!-- Same Video Modal as others -->
+            <!-- Mismo modal de video que otros -->
             <div class="modal-header border-secondary">
                 <h5 class="modal-title text-cyber-green">Video</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

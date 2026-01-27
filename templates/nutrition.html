@@ -440,18 +440,18 @@
 </head>
 
 <body>
-  <!-- Navbar -->
-  <!-- Navbar -->
+  <!-- Barra de navegacion -->
+  <!-- Barra de navegacion -->
   <input type="hidden" id="current_user_id" value="{{ current_user.user_id if current_user else '' }}">
   {% include 'components/sidebar.html' %}
   {% include 'components/loader.html' %}
   <div class="main-content">
-    <!-- Hero -->
+    <!-- Seccion hero -->
     <section class="hero">
-      <!-- Video background (fallback to poster image if video missing) -->
+      <!-- Video de fondo (usa poster si falta el video) -->
       <video autoplay="" class="hero-video" loop="" muted="" playsinline="" poster="/static/images/IMG_1571.jpg">
         <source src="/static/videos/B6C7D05D-8000-462D-89CE-BE94145A4123.MP4" type="video/mp4" />
-        <!-- If video not supported, the poster/background will be shown -->
+        <!-- Si no hay soporte de video, se muestra el poster/fondo -->
       </video>
       <div aria-hidden="true" class="hero-overlay">
       </div>
@@ -470,7 +470,7 @@
       <div class="container mt-4">
         <h3 class="text-center mb-4 text-white">Plan de Nutrición (AI)</h3>
 
-        <!-- Summary & Print Control -->
+        <!-- Resumen y control de impresion -->
         <div id="nutritionPlanSummary" class="d-flex justify-content-between align-items-center mb-3 px-1"
           style="display:none;">
           <div id="nutritionPlanTotal" class="h5 text-white mb-0"></div>

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container d-flex flex-column" style="min-height: calc(100vh - 80px);">
-    <!-- Header with Accessibility Controls -->
+    <!-- Encabezado con controles de accesibilidad -->
     <div class="d-flex justify-content-between align-items-center py-4">
         <h1 class="h2 mb-0 text-cyber-blue fw-bold" id="pageTitle">Evaluación PAR-Q+</h1>
         <button class="btn btn-outline-light rounded-circle shadow-none" onclick="toggleFontSize()"
@@ -13,7 +13,7 @@
         </button>
     </div>
 
-    <!-- Intro Card -->
+    <!-- Tarjeta de introduccion -->
     <div class="card bg-panel border-cyber mb-4" id="introCard">
         <div class="card-body">
             <h5 class="card-title text-success mb-3"><i class="fas fa-shield-alt me-2"></i>Seguridad Primero</h5>
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <!-- Questionnaire -->
+    <!-- Cuestionario -->
     <form id="parqForm" class="flex-grow-1">
         <div class="accordion accordion-flush bg-transparent" id="parqAccordion">
             {% for q in questions %}
@@ -55,7 +55,7 @@
         </div>
     </form>
 
-    <!-- Footer Actions -->
+    <!-- Acciones del pie -->
     <div class="fixed-bottom bg-panel border-top border-secondary p-3 d-flex justify-content-center"
         style="z-index: 1040;">
         <button type="button" class="btn btn-cyber-primary w-100 p-3 fw-bold rounded-pill" id="submitBtn"
@@ -64,7 +64,7 @@
         </button>
     </div>
 
-    <!-- Padding for fixed bottom -->
+    <!-- Espaciado para pie fijo -->
     <div style="height: 100px;"></div>
 </div>
 

@@ -312,13 +312,13 @@
                                 </div>
                             </div>
 
-                            <!-- Admin Search Removed in User Template -->
+                            <!-- Busqueda admin removida en template de usuario -->
 
                             <form id="assessment-form">
                                 <section class="mb-4">
                                     <h2 class="section-title h5 mb-3">Información general</h2>
                                     <div class="row g-3">
-                                        <!-- User Field hidden/readonly -->
+                                        <!-- Campo de usuario oculto/solo lectura -->
                                         <div class="col-md-6" style="display:none;">
                                             <label class="form-label">Usuario</label>
                                             <input type="hidden" id="user_id" name="user_id" />
@@ -463,7 +463,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Visual Examples Carousel -->
+                                    <!-- Carrusel de ejemplos visuales -->
                                     <div class="mt-4 border-top border-secondary pt-3">
                                         <h6 class="text-secondary small text-uppercase fw-bold mb-3">Referencias
                                             Visuales</h6>
@@ -536,21 +536,21 @@
                                     <option value="new">Nuevo Análisis</option>
                                 </select>
                             </div>
-                            <!-- History Button placed below selector as requested -->
+                            <!-- Boton historial colocado debajo del selector segun lo solicitado -->
                             <div class="mb-3 text-end">
                                 <button type="button" class="btn btn-outline-info btn-sm" onclick="goToHistory()">
                                     <i class="fas fa-history me-2"></i>Ver Historial Completo
                                 </button>
                             </div>
 
-                            <!-- Placeholder State -->
+                            <!-- Estado placeholder -->
                             <div id="result-placeholder"
                                 class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-secondary opacity-75">
                                 <i class="fas fa-chart-pie fa-3x mb-3 opacity-25"></i>
                                 <p class="mb-0 fw-light small text-uppercase letter-spacing-1">Esperando datos...</p>
                             </div>
 
-                            <!-- Visual Report Container -->
+                            <!-- Contenedor de reporte visual -->
                             <div id="result-container" class="d-none flex-column h-100">
                                 <ul class="nav nav-tabs border-secondary mb-3 flex-nowrap overflow-auto" role="tablist"
                                     style="white-space: nowrap;">
@@ -575,20 +575,20 @@
                                 </ul>
 
                                 <div class="tab-content flex-grow-1" style="overflow-y:auto; padding-right:5px;">
-                                    <!-- Visual Tab -->
+                                    <!-- Pestana visual -->
                                     <div class="tab-pane fade show active" id="tab-visual">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <span class="badge bg-secondary font-monospace" id="res-backend"></span>
                                             <span class="badge bg-primary badge-focus" id="res-focus"></span>
                                         </div>
 
-                                        <!-- Metrics (Always Visible) -->
+                                        <!-- Metricas (siempre visibles) -->
                                         <div class="row g-2 mb-4" id="res-metrics"></div>
 
-                                        <!-- Accordion for detailed sections -->
+                                        <!-- Acordeon para secciones detalladas -->
                                         <div class="accordion" id="assessmentAccordion">
 
-                                            <!-- Summary -->
+                                            <!-- Resumen -->
                                             <div class="accordion-item bg-transparent border-secondary">
                                                 <h2 class="accordion-header" id="headingSummary">
                                                     <button
@@ -606,7 +606,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Energy Expenditure -->
+                                            <!-- Gasto energetico -->
                                             <div class="accordion-item bg-transparent border-secondary">
                                                 <h2 class="accordion-header" id="headingEnergy">
                                                     <button
@@ -643,7 +643,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Proportions -->
+                                            <!-- Proporciones -->
                                             <div class="accordion-item bg-transparent border-secondary">
                                                 <h2 class="accordion-header" id="headingProps">
                                                     <button
@@ -670,7 +670,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Recommendations -->
+                                            <!-- Recomendaciones -->
                                             <div class="accordion-item bg-transparent border-secondary">
                                                 <h2 class="accordion-header" id="headingActions">
                                                     <button
@@ -690,7 +690,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Photo Feedback -->
+                                            <!-- Feedback de fotos -->
                                             <div class="accordion-item bg-transparent border-secondary">
                                                 <h2 class="accordion-header" id="headingPhotos">
                                                     <button
@@ -770,7 +770,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- JSON Tab -->
+                                    <!-- Pestana JSON -->
                                     <div class="tab-pane fade admin-only d-none" id="tab-json">
                                         <pre id="result-output" class="result-pre text-small"></pre>
                                     </div>
@@ -788,7 +788,7 @@
         <script src="/static/js/lang.js"></script>
         <script src="/static/js/theme.js"></script>
 
-        <!-- Body Tracking Modal -->
+        <!-- Modal de seguimiento corporal -->
         <div class="modal fade" id="bodyTrackingModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-xl">
                 <div class="modal-content bg-dark border-secondary">
@@ -805,7 +805,7 @@
             </div>
         </div>
 
-        <!-- Image Zoom Modal -->
+        <!-- Modal de zoom de imagen -->
         <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content bg-dark border-secondary">
@@ -1130,7 +1130,7 @@
                         <option value="otro" ${initial.view && !['frontal', 'perfil', 'posterior'].includes(initial.view) ? 'selected' : ''}>Otro</option>
                     </select>
                 </div>
-                <!-- Hidden Fields for Compatibility -->
+                <!-- Campos ocultos por compatibilidad -->
                 <div class="d-none">
                     <select class="photo-quality"><option value="alta" selected>Alta</option></select>
                     <input type="hidden" class="photo-notes" value="" />

@@ -24,11 +24,11 @@
             </div>
 
             <div class="d-flex gap-2 w-100 w-md-auto overflow-auto pb-1 pb-md-0" style="scrollbar-width: none;">
-                <!-- Scrollable filters on tiny screens -->
+                <!-- Filtros desplazables en pantallas pequenas -->
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
                     id="filterBodyPart" style="min-width: 130px;">
                     <option value="">Grupo</option>
-                    <!-- Options loaded via JS -->
+                    <!-- Opciones cargadas por JS -->
                 </select>
                 <select class="form-select bg-dark text-white border-secondary flex-grow-1 flex-md-grow-0"
                     id="filterEquipment" style="min-width: 130px;">
@@ -67,12 +67,12 @@
     <button class="btn btn-outline-secondary btn-sm" id="nextPageBtn">Siguiente</button>
 </div>
 
-<!-- Muscle Icons Bar -->
+<!-- Barra de iconos musculares -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex gap-3 overflow-auto py-2 px-1" id="muscleIconsContainer"
             style="scrollbar-width: none; -ms-overflow-style: none;">
-            <!-- Icons injected by JS -->
+            <!-- Iconos inyectados por JS -->
         </div>
     </div>
 </div>
@@ -99,14 +99,14 @@
     </div>
 </div>
 
-<!-- Mobile List View -->
+<!-- Vista de lista movil -->
 <div id="mobileExercisesList" class="d-md-none d-flex flex-column gap-3">
-    <!-- Populated by JS -->
+    <!-- Cargado por JS -->
 </div>
 
 
 
-<!-- Modal Video -->
+<!-- Modal de video -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">
@@ -658,7 +658,7 @@
                 <div class="muscle-icon skeleton-pulse" id="icon-${m.key}">
                     <img src="/static/images/muscles/male/${m.img}" alt="${m.label}" onload="this.classList.add('loaded'); this.parentElement.classList.remove('skeleton-pulse')">
                 </div>
-                <!-- Show mapped label if available, otherwise default -->
+                <!-- Muestra etiqueta mapeada si existe; si no, usa la predeterminada -->
                 <span class="muscle-label">${m.mappedLabel || m.label}</span>
             </div>
         `).join("");

@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Custom CSS -->
+    <!-- CSS personalizado -->
     <link href="/static/css/theme.css" rel="stylesheet">
     <link href="/static/css/sidebar.css" rel="stylesheet">
 
@@ -698,14 +698,14 @@
     {% endif %}
 
     <div class="main-content">
-        <div class="container-fluid" style="max-width: 600px;"> <!-- Limiting width for app-feel -->
+        <div class="container-fluid" style="max-width: 600px;"> <!-- Ancho limitado para sensacion de app -->
 
             <div class="tracking-header">
                 <div class="top-bar">
                     <div class="brand-custom">
-                        <!-- Logo removed as requested -->
+                        <!-- Logo removido segun lo solicitado -->
                     </div>
-                    <!-- Icon moved to dashboard-container -->
+                    <!-- Icono movido a dashboard-container -->
                 </div>
 
                 <nav class="header-nav">
@@ -720,7 +720,7 @@
             <!-- TAB: CUERPO -->
             <div id="cuerpo" class="tab-content active">
                 <div class="dashboard-container">
-                    <!-- Gender Toggle (Moved here) -->
+                    <!-- Selector de genero (movido aqui) -->
                     <div onclick="toggleGender()" class="text-secondary"
                         style="position: absolute; top: 20px; left: 20px; z-index: 10; cursor: pointer; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
                         title="Cambiar Género">
@@ -732,17 +732,17 @@
                             aria-label="Opacidad de la imagen">
                     </div>
                     <div class="body-image-container skeleton-pulse">
-                        <!-- Placeholder or user provided image if available. Defaulting to a placeholder if specific file doesn't exist -->
+                        <!-- Placeholder o imagen del usuario si existe. Se usa placeholder si no existe el archivo -->
                         <img id="bodyImage" src="/static/images/examples/ref1.png" class="img-skeleton"
                             onerror="this.src='/static/images/icon/tx1.png'; this.style.opacity='0.2';"
                             onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
                             alt="Body Outline">
                     </div>
 
-                    <!-- Etiquetas de medidas simuladas (Backend injected) -->
+                    <!-- Etiquetas de medidas simuladas (inyectado por backend) -->
                     {% if data and data.measurements %}
                     {% for key, item in data.measurements.items() %}
-                    <!-- Mapping keys to classes -->
+                    <!-- Mapeo de claves a clases -->
                     {% set cls_map = {
                     'cuello': 'l-cuello', 'torax': 'l-torax', 'pecho': 'l-torax',
                     'biceps_izq': 'l-biceps-izq', 'biceps_der': 'l-biceps-der',
@@ -772,13 +772,13 @@
                             {{
                             name_map.get(key, key|upper) }}{% if side_label %} {{ side_label }}{% endif %}</div>
 
-                        <!-- Logic for Label Order based on Screen Side -->
+                        <!-- Logica de orden de etiquetas segun lado de pantalla -->
                         {% if key in ['biceps_izq', 'cadera', 'muslo_izq', 'pantorrilla_izq', 'antebrazo_izq'] %}
-                        <!-- Screen Left (Align Right): Change First -->
+                        <!-- Pantalla izquierda (alinear derecha): cambio primero -->
                         {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                         <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
                         {% else %}
-                        <!-- Screen Right / Center: Value First -->
+                        <!-- Pantalla derecha/centro: valor primero -->
                         <span class="val" id="val-{{ key }}">{{ item.value }}</span>cm
                         {% if item.change %}<span class="change {{ item.trend }}">{{ item.change }}</span>{% endif %}
                         {% endif %}
@@ -861,7 +861,7 @@
                 </div>
                 {% endif %}
 
-                <!-- Left Side Menu (Toggled by FAB) -->
+                <!-- Menu lateral izquierdo (con FAB) -->
                 <div class="fab-menu-left" id="fabMenuLeft">
                     <!-- 1. Grasa -->
                     <div class="menu-item-left" onclick="openValueModal('body_fat_percent', null, '0.0')"
@@ -893,7 +893,7 @@
                             <span class="menu-label">PANTORRILLA</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/pan.png" alt="Pantorrilla"></div>
                         </div>
-                        <!-- 2. Muslos (using Muslo logic) -->
+                        <!-- 2. Muslos (usando logica de Muslo) -->
                         <div class="menu-item" onclick="openSideModal('Muslo')">
                             <span class="menu-label">MUSLOS</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/mus.png" alt="Muslo"></div>
@@ -903,7 +903,7 @@
                             <span class="menu-label">CADERA</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/cd2.png" alt="Cadera"></div>
                         </div>
-                        <!-- 4. Abdomen/Cintura (using Abdomen logic) -->
+                        <!-- 4. Abdomen/Cintura (usando logica de Abdomen) -->
                         <div class="menu-item" onclick="openValueModal('Abdomen', null, '0.0')">
                             <span class="menu-label">ABDOMEN/CINTURA</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/cn.png" alt="Abdomen"></div>
@@ -913,17 +913,17 @@
                             <span class="menu-label">ANTEBRAZO</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/ant.png" alt="Antebrazo"></div>
                         </div>
-                        <!-- 6. Brazo Superior (using Biceps logic) -->
+                        <!-- 6. Brazo Superior (usando logica de Biceps) -->
                         <div class="menu-item" onclick="openSideModal('Bíceps')">
                             <span class="menu-label">BRAZO SUPERIOR</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/bic.png" alt="Biceps"></div>
                         </div>
-                        <!-- 7. Toráx (using Pecho logic) -->
+                        <!-- 7. Toráx (usando logica de Pecho) -->
                         <div class="menu-item" onclick="openValueModal('Pecho', null, '0.0')">
                             <span class="menu-label">TORÁX</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/tx1.png" alt="Pecho"></div>
                         </div>
-                        <!-- 8. Hombros (using Hombro logic) -->
+                        <!-- 8. Hombros (usando logica de Hombro) -->
                         <div class="menu-item" onclick="openValueModal('Hombro', null, '0.0')">
                             <span class="menu-label">HOMBROS</span>
                             <div class="menu-icon"><img src="/static/images/icon/male/hm.png" alt="Hombro"></div>
@@ -937,7 +937,7 @@
 
                     <div class="fab-main" id="fabButton"><i class="fas fa-plus"></i></div>
                 </div>
-            </div> <!-- End of Tab Cuerpo -->
+            </div> <!-- Fin de pestana Cuerpo -->
 
             <!-- TAB: PESO -->
             <div id="peso" class="tab-content hidden" style="padding-top:20px;">
@@ -974,7 +974,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modales -->
     <div class="modal-overlay" id="sideModal">
         <div class="modal-custom-content">
             <div class="side-select-header">

@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    <!-- Admin Identity -->
+    <!-- Identidad admin -->
     <div class="d-flex align-items-center text-theme text-decoration-none mb-3 px-2 py-2 rounded"
         style="background-color: rgba(239, 68, 68, 0.1);">
         <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container"
@@ -71,7 +71,7 @@
                 'Usuario')) }}</span></strong>
     </div>
 
-    <!-- Admin User Search -->
+    <!-- Busqueda de usuario admin -->
     <div class="px-2 mb-2 sidebar-section position-relative">
         <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
         <div class="input-group input-group-sm">
@@ -93,7 +93,7 @@
     <hr class="border-theme" style="margin: 1rem 0;">
 
     <ul class="nav nav-pills flex-column mb-auto">
-        <!-- Section: Platform -->
+        <!-- Seccion: plataforma -->
         <li class="nav-item text-secondary small text-uppercase fw-bold mt-3 mb-2 px-3 sidebar-section">
             Plataforma
         </li>
@@ -102,7 +102,7 @@
         {{ macros.nav_link('/admin/privileges', 'Gestor Roles', 'fas fa-user-shield') }}
         {{ macros.nav_link('/onboarding/par-q', 'Onboarding PAR-Q', 'fas fa-heartbeat') }}
 
-        <!-- Section: Modules -->
+        <!-- Seccion: modulos -->
         <li class="nav-item sidebar-section">
             Inteligencia Artificial
         </li>
@@ -110,7 +110,7 @@
         {{ macros.nav_link('/ai/routine/generator', 'Rutinas AI', 'fas fa-robot') }}
         {{ macros.nav_link('/ai/routine/generator_mongo', 'Routine Mongo', 'fas fa-database') }}
 
-        <!-- Section: Workout -->
+        <!-- Seccion: entrenamiento -->
         <li class="nav-item sidebar-section">
             Entrenamiento
         </li>
@@ -121,13 +121,13 @@
         {{ macros.nav_link('/workout/dashboard', 'Runner / Historial', 'fas fa-running') }}
         {{ macros.nav_link('/admin/plans', 'Planes (Gym)', 'fas fa-clipboard-check') }}
 
-        <!-- Section: Nutrition -->
+        <!-- Seccion: nutricion -->
         <li class="nav-item sidebar-section">
             Nutrición
         </li>
         {{ macros.nav_link('/admin/meal_plans', 'Meal Plans', 'fas fa-utensils') }}
 
-        <!-- Section: Reports -->
+        <!-- Seccion: reportes -->
         <li class="nav-item sidebar-section">
             Reportes
         </li>
@@ -137,7 +137,7 @@
         {{ macros.nav_link('/admin/logout', 'Salir de Admin', 'fas fa-sign-out-alt') }}
     </ul>
 
-    <!-- Sidebar Settings (Only visible when expanded) -->
+    <!-- Ajustes del sidebar (solo visible expandido) -->
     <div class="mb-3 px-1 mt-4" id="sidebar-settings">
         <label class="text-secondary small fw-bold mb-1 d-block"
             style="font-size: 0.7rem; text-transform: uppercase;">Posición</label>
@@ -152,7 +152,7 @@
     </div>
 </div>
 
-<!-- Mobile Fixed Navbar (Visible only on mobile) -->
+<!-- Barra fija movil (solo visible en movil) -->
 <nav class="navbar navbar-dark bg-dark fixed-top d-lg-none shadow-sm sidebar-mobile-nav"
     style="height: 60px; z-index: 1040;">
     <div class="container-fluid">
@@ -165,7 +165,7 @@
     </div>
 </nav>
 
-<!-- Sidebar Overlay (Backdrop for mobile) -->
+<!-- Overlay del sidebar (fondo para movil) -->
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <script src="/static/js/user_search.js"></script>

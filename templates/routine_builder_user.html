@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="row">
-    <!-- Mobile View Navigation -->
+    <!-- Navegacion vista movil -->
     <div class="d-lg-none mb-3">
         <ul class="nav nav-pills nav-fill bg-dark rounded p-1 border border-secondary" id="mobileBuilderNav">
             <li class="nav-item">
@@ -26,7 +26,7 @@
         </ul>
     </div>
 
-    <!-- Left: Builder Form -->
+    <!-- Izquierda: formulario builder -->
     <div class="col-lg-8 mobile-view-pane active" id="builderFormCol">
         <div class="card bg-panel border-0 shadow text-white mb-4">
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
@@ -57,7 +57,7 @@
                 <div class="mb-3">
                     <label class="text-secondary small">Grupos Musculares de la Rutina</label>
                     <div class="d-flex flex-wrap gap-2" id="routineBodyPartsContainer">
-                        <!-- Loaded via JS -->
+                        <!-- Cargado por JS -->
                     </div>
                 </div>
                 <div class="mb-3">
@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <!-- Right: Exercise Picker -->
+    <!-- Derecha: selector de ejercicios -->
     <div class="col-lg-4 mobile-view-pane" id="builderSidebarCol">
         <div class="card bg-panel border-0 shadow text-white sticky-top builder-sidebar-card"
             style="top: 80px; height: 85vh;">
@@ -136,7 +136,7 @@
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="filterBodyPart">
-                                <!-- Loaded JS -->
+                                <!-- Cargado por JS -->
                             </select>
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="filterEquipment">
@@ -171,7 +171,7 @@
                         </div>
                     </div>
                     <div class="card-body p-0 overflow-auto" id="exercisePicker">
-                        <!-- Loaded via JS -->
+                        <!-- Cargado por JS -->
                     </div>
                 </div>
                 <div class="tab-pane fade" id="panel-routines" role="tabpanel" aria-labelledby="tab-routines">
@@ -186,7 +186,7 @@
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <select class="form-select form-select-sm bg-dark text-white border-secondary"
                                 id="routineFilterBodyPart">
-                                <!-- Loaded JS -->
+                                <!-- Cargado por JS -->
                             </select>
                             <button class="btn btn-sm btn-outline-secondary" type="button"
                                 onclick="resetRoutineFilters()">
@@ -199,7 +199,7 @@
                             </button>
                         </div>
                     </div>
-                    <!-- Moved routineList outside the header padding div -->
+                    <!-- routineList movido fuera del padding del header -->
                     <div id="routineList" class="card-body p-0 overflow-auto"></div>
                 </div>
             </div>
@@ -286,7 +286,7 @@
     </div>
 </div>
 
-<!-- Modal Video -->
+<!-- Modal de video -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-panel text-white border-cyber">

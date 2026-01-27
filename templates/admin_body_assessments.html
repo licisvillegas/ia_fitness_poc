@@ -144,7 +144,7 @@
     <div class="main-content">
         <main class="container-fluid px-0 h-100">
             <div class="d-flex flex-column h-100">
-                <!-- Header (Hidden on print) -->
+                <!-- Encabezado (oculto al imprimir) -->
                 <div
                     class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center bg-dark">
                     <h1 class="h5 mb-0 text-primary fw-bold"><i class="fas fa-chart-line me-2"></i>Evaluaciones
@@ -152,12 +152,12 @@
                     <span class="badge bg-secondary">Vista Administrador</span>
                 </div>
 
-                <!-- Main Work Area -->
+                <!-- Area principal de trabajo -->
                 <div class="row g-0 flex-grow-1 overflow-hidden">
 
-                    <!-- LEFT COLUMN: SEARCH + LIST -->
+                    <!-- COLUMNA IZQUIERDA: BUSQUEDA + LISTA -->
                     <div class="col-md-3 history-list-col d-flex flex-column">
-                        <!-- Search Component -->
+                        <!-- Componente de busqueda -->
                         <div class="p-3 border-bottom border-secondary bg-dark position-relative">
                             <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
                             <div class="input-group input-group-sm">
@@ -171,7 +171,7 @@
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            <!-- Results Dropdown -->
+                            <!-- Desplegable de resultados -->
                             <div id="userSearchResults"
                                 class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
                                 style="display: none; z-index: 1050; top: 100%;"></div>
@@ -180,7 +180,7 @@
                             <div id="searchMsg" class="text-info small mt-2 fst-italic"></div>
                         </div>
 
-                        <!-- History List -->
+                        <!-- Lista de historial -->
                         <div id="history-list" class="flex-grow-1 overflow-auto p-0">
                             <div class="p-4 text-center text-muted small">
                                 <i class="fas fa-user-clock fa-2x mb-2 opacity-50"></i><br>
@@ -189,10 +189,10 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT COLUMN: DETAIL VIEW -->
+                    <!-- COLUMNA DERECHA: VISTA DETALLE -->
                     <div class="col-md-9 h-100 overflow-auto position-relative">
 
-                        <!-- Empty State -->
+                        <!-- Estado vacio -->
                         <div id="empty-state"
                             class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary p-5">
                             <i class="fas fa-clipboard-check fa-4x mb-3 opacity-25"></i>
@@ -200,10 +200,10 @@
                             <small>Selecciona una evaluación de la lista.</small>
                         </div>
 
-                        <!-- Detail Container -->
+                        <!-- Contenedor de detalle -->
                         <div class="p-4" id="detail-container" style="display:none;">
 
-                            <!-- Header Info -->
+                            <!-- Informacion de encabezado -->
                             <div
                                 class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
                                 <div>
@@ -346,7 +346,7 @@
         </main>
     </div>
 
-    <!-- Image Modal -->
+    <!-- Modal de imagen -->
     <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content bg-dark border-secondary">

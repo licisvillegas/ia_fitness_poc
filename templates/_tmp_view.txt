@@ -1,0 +1,197 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   AI Fitness | Acceder
+  </title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body { font-family: 'Poppins', sans-serif; background-color: #0a0a0a; color: #e5e7eb; }
+    .navbar { background-color: #111827; }
+    .navbar-brand { color: #3b82f6 !important; font-weight: 700; letter-spacing: 1px; }
+    .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .auth-card { background-color: #111827; border-radius: 16px; box-shadow: 0 0 20px rgba(59,130,246,0.3); overflow: hidden; max-width: 960px; width: 100%; }
+    .auth-left { background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(0,0,0,0.4)), url('/static/images/IMG_1552.jpg'); background-size: cover; background-position: center; }
+    .auth-left .overlay { backdrop-filter: blur(2px); padding: 2rem; height: 100%; display: flex; flex-direction: column; justify-content: end; }
+    .auth-title { font-weight: 700; }
+    .nav-pills .nav-link { color: #9ca3af; }
+    .nav-pills .nav-link.active { background-color: #2563eb; }
+    label { font-weight: 600; color: #e5e7eb; }
+    .form-control, .form-select { background-color: #0f172a; border: 1px solid #1f2937; color: #e5e7eb; }
+    .form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 .2rem rgba(59,130,246,.25); }
+    .btn-primary { background-color: #2563eb; border: none; }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .text-muted a { color: #93c5fd; text-decoration: none; }
+    .text-muted a:hover { text-decoration: underline; }
+    footer { background-color: #111827; color: #9ca3af; padding: 1rem 0; text-align: center; }
+  </style>
+ </head>
+ <body>
+  <nav class="navbar navbar-expand-lg navbar-dark">
+   <div class="container">
+    <a class="navbar-brand" href="/">
+     AI Fitness
+    </a>
+    <div class="d-flex align-items-center">
+     <div aria-label="Language selector" class="btn-group ms-3" role="group">
+      <button class="btn btn-sm btn-outline-light" id="lang-es">
+       ES
+      </button>
+      <button class="btn btn-sm btn-outline-light" id="lang-en">
+       EN
+      </button>
+     </div>
+    </div>
+   </div>
+  </nav>
+  <section class="auth-wrapper">
+   <div class="auth-card row g-0">
+    <!-- Lado visual -->
+    <div class="col-lg-5 auth-left d-none d-lg-block">
+     <div class="overlay">
+      <h2 class="auth-title" data-i18n="auth_left_title">
+       Impulsa tu progreso
+      </h2>
+      <p class="mb-0" data-i18n="auth_left_subtitle">
+       Entrena y alim&eacute;ntate con un plan inteligente.
+      </p>
+     </div>
+    </div>
+    <!-- Lado formularios -->
+    <div class="col-lg-7 p-4 p-md-5">
+     <div class="alert d-none" id="authAlert" role="alert">
+     </div>
+     <ul class="nav nav-pills mb-4" id="authTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+      </li>
+     </ul>
+     <div class="tab-content" id="authTabsContent">
+      <!-- Admin Token Only -->
+      <div aria-labelledby="login-tab" class="tab-pane fade show active" id="login" role="tabpanel">
+       <form class="needs-validation" id="loginForm" novalidate>
+        <div class="mb-3" id="adminTokenGroup">
+         <label class="form-label" for="adminToken">Token administrador</label>
+         <input class="form-control" id="adminToken" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required />
+         <div class="invalid-feedback">Ingresa el token de administrador.</div>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">Entrar</button>
+       </form>
+      </div>
+      
+     </div>
+    </div>
+   </div>
+  </section>
+  <footer>
+   <p>
+    &copy; 2025 AI Fitness | Desarrollado por Ismael Villegas
+   </p>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <script>
+   (() => {
+      const alertBox = document.getElementById('authAlert');
+      // Vista admin: solo token
+      const loginForm = document.getElementById('loginForm');
+      const adminTokenInput = document.getElementById('adminToken');
+
+      const showAlert = (variant, message) => {
+        if (!alertBox) {
+          return;
+        }
+        alertBox.textContent = message;
+        alertBox.className = `alert alert-${variant}`;
+      };
+
+      const clearAlert = () => {
+        if (!alertBox) {
+          return;
+        }
+        alertBox.textContent = '';
+        alertBox.className = 'alert d-none';
+      };
+
+      const setLoading = (form, isLoading) => {
+        if (!form) {
+          return;
+        }
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) {
+          return;
+        }
+        if (isLoading) {
+          submitBtn.dataset.originalText = submitBtn.textContent;
+          submitBtn.textContent = 'Procesando...';
+          submitBtn.disabled = true;
+        } else {
+          submitBtn.disabled = false;
+          if (submitBtn.dataset.originalText) {
+            submitBtn.textContent = submitBtn.dataset.originalText;
+          }
+        }
+      };
+
+      const parseResponse = async (response) => {
+        try {
+          return await response.json();
+        } catch (error) {
+          return {};
+        }
+      };
+
+      // Registro deshabilitado: no se agrega manejador ni UI
+
+      if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          loginForm.classList.add('was-validated');
+          if (!loginForm.checkValidity()) {
+            return;
+          }
+
+          clearAlert();
+          setLoading(loginForm, true);
+
+          const adminToken = (adminTokenInput && adminTokenInput.value.trim()) || '';
+          if (!adminToken) {
+            // Token vacío: mostrar error y re-habilitar botón
+            setLoading(loginForm, false);
+            showAlert('danger', 'Ingresa el token de administrador.');
+            return;
+          }
+
+          try {
+            const vres = await fetch(`/admin/validate?token=${encodeURIComponent(adminToken)}`);
+            const vjson = await parseResponse(vres);
+            if (!vres.ok || (vjson && vjson.ok === false)) {
+              // Token inválido: mostrar error y re-habilitar botón
+              setLoading(loginForm, false);
+              showAlert('danger', (vjson && (vjson.error || vjson.message)) || 'Token de administrador inválido.');
+              return;
+            }
+            // OK: redirigir a la vista admin
+            window.location.href = `/admin/plans?token=${encodeURIComponent(adminToken)}`;
+          } catch (error) {
+            // Error de red o servidor: mostrar alerta y re-habilitar
+            setLoading(loginForm, false);
+            showAlert('danger', 'No se pudo validar el token de administrador.');
+          }
+        });
+      }
+
+      // Vista admin sin toggles
+    })();
+  </script>
+  <script src="/static/js/lang.js">
+  </script>
+ </body>
+</html>
+
+
+

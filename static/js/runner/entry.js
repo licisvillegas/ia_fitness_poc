@@ -1,4 +1,5 @@
 (function initRunnerApp() {
+    // Monta la app React del runner cuando las dependencias estan listas
     const MAX_TRIES = 80;
     const RETRY_MS = 50;
 

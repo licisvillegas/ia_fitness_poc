@@ -10,8 +10,10 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
+  <!-- Bloque para CSS/links adicionales por vista -->
   {% block extra_head %}{% endblock %}
 
+  <!-- Estilos base compartidos (se pueden sobreescribir en vistas hijas) -->
   {% block page_styles %}
   <style>
     body {
@@ -87,6 +89,7 @@
 </head>
 
 <body>
+  <!-- Sidebar (admin o usuario) -->
   {% block sidebar %}{% endblock %}
   <div class="main-content">
     <main class="container">
@@ -94,26 +97,34 @@
         <div class="col-12 col-xl-7">
           <div class="card h-100">
             <div class="card-body">
+              <!-- Encabezado principal -->
               {% block header %}{% endblock %}
+              <!-- Busqueda/admin selector -->
               {% block search_block %}{% endblock %}
+              <!-- Formulario de evaluacion -->
               {% block form_block %}{% endblock %}
             </div>
           </div>
         </div>
         <div class="col-12 col-xl-5">
+          <!-- Panel de historial/resultados -->
           {% block history_block %}{% endblock %}
         </div>
       </div>
     </main>
   </div>
 
+  <!-- Footer opcional -->
   {% block footer_block %}{% endblock %}
+  <!-- Modales compartidos -->
   {% block modals_block %}{% endblock %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/lang.js"></script>
   <script src="/static/js/theme.js"></script>
+  <!-- Scripts principales de la vista -->
   {% block scripts_block %}{% endblock %}
+  <!-- Scripts adicionales/override -->
   {% block extra_scripts %}{% endblock %}
 </body>
 

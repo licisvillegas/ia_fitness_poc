@@ -1,4 +1,5 @@
 (function initExerciseConsts() {
+    // Constantes de UI: paginacion, etiquetas y iconos
     window.ExercisesConsts = {
         pageSize: 24,
         equipmentMeta: {

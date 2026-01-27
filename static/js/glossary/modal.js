@@ -1,4 +1,5 @@
 (function initGlossaryModal() {
+    // Controla el modal de imagen y navegacion por referencias
     const state = window.GlossaryState;
     const data = window.GlossaryData || { muscleDescriptions: {} };
 
@@ -15,6 +16,7 @@
         if (nextBtn) nextBtn.disabled = !hasRef || state.currentRefIndex === state.refImages.length - 1;
     }
 
+    // Abre imagen de referencia por indice
     function showRefAt(index) {
         const img = state.refImages[index];
         if (!img) return;
@@ -29,6 +31,7 @@
         updateNav();
     }
 
+    // Abre el modal al hacer click en una card
     function showCard(card) {
         const { modalElement, modalImage, modalTitle, modalDesc } = state.elements;
         const img = card.querySelector('img');

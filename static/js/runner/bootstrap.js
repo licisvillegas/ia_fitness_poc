@@ -1,4 +1,5 @@
 (function initAppHeight() {
+    // Ajusta CSS var para viewport en mobile
     function setAppHeight() {
         const doc = document.documentElement;
         const height = window.innerHeight;
@@ -11,11 +12,12 @@
 })();
 
 (function initNavigationGuard() {
+    // Evita salir accidentalmente del runner
     window.history.pushState({ guard: true }, '', window.location.href);
 
     window.addEventListener('popstate', function () {
         const confirmExit = confirm(
-            '¿Estás seguro de que quieres salir del entrenamiento? Tu progreso actual podría no guardarse automáticamente.'
+            'Â¿EstÃ¡s seguro de que quieres salir del entrenamiento? Tu progreso actual podrÃ­a no guardarse automÃ¡ticamente.'
         );
 
         if (confirmExit) {

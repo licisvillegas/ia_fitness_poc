@@ -1,4 +1,6 @@
 (function initExercisesActions() {
+    // Acciones CRUD y seleccion embebida de ejercicios
+    // Envia seleccion al parent window (modo embed)
     async function sendSelection(idOrObj) {
         const state = window.ExercisesState;
         let ex = idOrObj;
@@ -12,7 +14,7 @@
         }
 
         const name = ex.name || 'este ejercicio';
-        const message = `¿Deseas seleccionar "${name}"?`;
+        const message = `Â¿Deseas seleccionar "${name}"?`;
 
         let ok = false;
         if (window.showConfirmModal) {
@@ -36,6 +38,7 @@
         }
     }
 
+    // Guarda ejercicio (crear/editar)
     async function saveExercise() {
         const state = window.ExercisesState;
         const id = document.getElementById('exId').value;
@@ -81,12 +84,12 @@
             bootstrap.Modal.getInstance(document.getElementById('exerciseModal')).hide();
             window.ExercisesApi.loadExercisesPage(state.currentPage);
         } catch (e) {
-            window.ExercisesModals.localShowAlertModal('Error', 'Ocurrió un error al guardar', 'danger');
+            window.ExercisesModals.localShowAlertModal('Error', 'OcurriÃ³ un error al guardar', 'danger');
         }
     }
 
     async function deleteExercise(id) {
-        const confirmed = await window.ExercisesModals.localShowConfirmModal('Eliminar ejercicio', '¿Estás seguro de que deseas eliminar este ejercicio?', 'danger');
+        const confirmed = await window.ExercisesModals.localShowConfirmModal('Eliminar ejercicio', 'Â¿EstÃ¡s seguro de que deseas eliminar este ejercicio?', 'danger');
         if (!confirmed) return;
 
         try {
@@ -102,7 +105,7 @@
         const ex = state.exerciseLookup[id];
         if (!ex) return;
 
-        const confirmed = await window.ExercisesModals.localShowConfirmModal('Duplicar Ejercicio', `¿Deseas crear una copia personalizada de "${ex.name}"?`);
+        const confirmed = await window.ExercisesModals.localShowConfirmModal('Duplicar Ejercicio', `Â¿Deseas crear una copia personalizada de "${ex.name}"?`);
         if (!confirmed) return;
 
         try {

@@ -1,9 +1,11 @@
 (function initAssignRender() {
+    // Renderiza tarjetas y contadores del panel de rutinas
     function updateCounts(total) {
         const countEl = document.getElementById('routinesCount');
         if (countEl) countEl.textContent = `${total} rutinas`;
     }
 
+    // Dibuja lista de rutinas con estado de asignacion
     function renderRoutines(routines) {
         const routinesGrid = document.getElementById('routinesGrid');
         const emptyState = document.getElementById('emptyState');
@@ -42,6 +44,7 @@
                 ? (ownerName ? `${ownerName} (${routine.user_id})` : routine.user_id)
                 : '';
 
+            // Plantilla HTML de tarjeta de rutina
             card.innerHTML = `
                 <div class="routine-header">
                     <h5 class="mb-0 text-truncate fw-bold" title="${routine.name}">${routine.name}</h5>

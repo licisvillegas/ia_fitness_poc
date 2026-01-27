@@ -1,3 +1,4 @@
+// Descripciones extendidas por grupo muscular (HTML enriquecido)
 window.GlossaryData = {
     muscleDescriptions: {
 "hombros": `<strong>Nombres alternativos:</strong> Deltoides, "Deltos".<br><br><strong>Descripción y Partes:</strong> Músculo que envuelve la articulación del hombro, dando forma redondeada.<br>• <strong>Deltoides Anterior:</strong> Parte frontal (empujes).<br>• <strong>Deltoides Lateral (Medial):</strong> Parte lateral (anchura).<br>• <strong>Deltoides Posterior:</strong> Parte trasera (tracción).`,

@@ -1,4 +1,5 @@
 (function initExercisesBootstrap() {
+    // Inicializa eventos y carga inicial del catalogo
     function onReady() {
         const state = window.ExercisesState;
         if (state.isAdmin) {
@@ -7,6 +8,7 @@
         }
 
         window.ExercisesRender.updateViewUI();
+        // Carga metadatos y lista inicial
         window.ExercisesApi.loadBodyParts().then(() => {
             window.ExercisesFilters.renderMuscleIcons();
         });

@@ -440,6 +440,7 @@
 </head>
 
 <body>
+  <!-- Estructura general: hero, generador AI, recetas y equivalencias. -->
   <!-- Barra de navegacion -->
   <!-- Barra de navegacion -->
   <input type="hidden" id="current_user_id" value="{{ current_user.user_id if current_user else '' }}">
@@ -447,7 +448,8 @@
   {% include 'components/loader.html' %}
   <div class="main-content">
     <!-- Seccion hero -->
-    <section class="hero">
+    <!-- Hero con video y descripcion -->
+<section class="hero">
       <!-- Video de fondo (usa poster si falta el video) -->
       <video autoplay="" class="hero-video" loop="" muted="" playsinline="" poster="/static/images/IMG_1571.jpg">
         <source src="/static/videos/B6C7D05D-8000-462D-89CE-BE94145A4123.MP4" type="video/mp4" />
@@ -520,7 +522,9 @@
     </section>
 
     <!-- Recetas -->
-    <section class="recipes">
+    <!-- Recetas recomendadas -->
+<!-- Listado de recetas sugeridas -->
+<section class="recipes">
       <div class="container text-center mb-5">
         <h2 id="recipes-title" class="fw-bold text-theme">Recetas Fitness</h2>
         <p id="recipes-sub" class="text-secondary">Fáciles, nutritivas y llenas de energó­a para acompaó±ar tus
@@ -573,7 +577,9 @@
     </section>
 
     <!-- Equivalencias -->
-    <section class="equivalences">
+    <!-- Tabla de equivalencias -->
+<!-- Equivalencias y swaps -->
+<section class="equivalences">
       <div class="container text-center">
         <h2 id="equivalences-title" data-i18n="equivalences_title">Equivalencias de Alimentos</h2>
         <p id="equivalences-sub" class="text-secondary mb-4" data-i18n="equivalences_sub">Comprende có³mo sustituir

@@ -1,5 +1,7 @@
+{# Determina modo segun query: ?source=admin|user #}
 {% set source = source or request.args.get('source', 'user') %}
 
+{# Carga template completo segun el modo #}
 {% if source == 'admin' %}
   {% include 'body_assessment.html' %}
 {% else %}

@@ -1,4 +1,5 @@
 (function initExercisesRender() {
+    // Renderizado de tarjetas/lista y paginacion
     const Utils = window.ExercisesUtils;
     const { equipmentMeta: EQUIPMENT_META, pageSize } = window.ExercisesConsts;
 
@@ -27,7 +28,7 @@
         const totalPages = Math.max(1, Math.ceil(state.totalItems / pageSize));
         const pageInfo = document.getElementById('pageInfo');
         if (pageInfo) {
-            pageInfo.textContent = `P�gina ${state.currentPage} de ${totalPages} (${state.totalItems})`;
+            pageInfo.textContent = `PÃ¡gina ${state.currentPage} de ${totalPages} (${state.totalItems})`;
         }
         const prevBtn = document.getElementById('prevPageBtn');
         const nextBtn = document.getElementById('nextPageBtn');
@@ -82,7 +83,7 @@
                              <span class="badge bg-secondary" style="font-size: 0.65rem;">${bodyPartLabel}</span>
                              <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">${ex.type || 'N/A'}</span>
                         </div>
-                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripci�n'}</p>
+                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripciÃ³n'}</p>
                     </div>
                 </div>
             `;

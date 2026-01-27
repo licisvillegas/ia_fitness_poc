@@ -1,4 +1,5 @@
 (function initAssignState() {
+    // Estado global simple para orquestar UI de asignacion
     window.AssignState = {
         selectedUserId: null,
         allRoutines: [],

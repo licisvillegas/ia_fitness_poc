@@ -1,4 +1,5 @@
 (function initExerciseUtils() {
+    // Utilidades comunes para formato y URLs
     window.ExercisesUtils = {
         capitalize(value) {
             if (!value) return "";

@@ -1,4 +1,5 @@
 (function initAssignBootstrap() {
+    // Orquestador principal de la vista (eventos + carga inicial)
     const routinesGrid = document.getElementById('routinesGrid');
     const loadingRoutines = document.getElementById('loadingRoutines');
 
@@ -9,6 +10,7 @@
     const badgeUserEmail = document.getElementById('badgeUserEmail');
     const userStatusBadge = document.getElementById('userStatusBadge');
 
+    // Cuando se selecciona un usuario desde el buscador
     function handleUserSelect(user) {
         if (!user || !user.user_id) return;
         window.AssignState.selectedUserId = user.user_id;
@@ -22,6 +24,7 @@
             .then(() => window.AssignFilters.applyFilters());
     }
 
+    // Limpia usuario seleccionado y resetea estado
     function clearSelectedUser() {
         window.AssignState.selectedUserId = null;
         selectedUserDisplay.style.display = 'none';
@@ -31,6 +34,7 @@
         window.AssignFilters.applyFilters();
     }
 
+    // Configura el buscador admin reutilizable
     function initSearch() {
         initUserSearch({
             inputId: 'userSearchTerm',
@@ -44,6 +48,7 @@
         });
     }
 
+    // Carga rutinas + usuarios y render inicial
     async function initData() {
         try {
             await Promise.all([
@@ -61,6 +66,7 @@
         }
     }
 
+    // Inyecta lista de musculos al dropdown
     async function initMuscleFilter() {
         try {
             const parts = await window.AssignApi.loadBodyParts();
@@ -88,6 +94,7 @@
         }
     }
 
+    // Filtro de texto en tiempo real
     function bindSearchFilter() {
         const routineFilter = document.getElementById('passFilter');
         routineFilter.addEventListener('input', () => {

@@ -1,18 +1,21 @@
 (function initExercisesFilters() {
+    // Filtros y helpers de UI (seccion, grupo, musculo, equipo)
     const { pageSize, muscleIcons } = window.ExercisesConsts;
 
+    // Cambia entre vista grid/lista
     function switchView(mode) {
         window.ExercisesStateHelpers.setCurrentView(mode);
         window.ExercisesRender.updateViewUI();
     }
 
+    // Actualiza combos de grupo segun seccion
     function updateGroupOptions(sectionId) {
         const state = window.ExercisesState;
         const groupSel = document.getElementById('filterGroup');
         const muscleSel = document.getElementById('filterMuscle');
 
         groupSel.innerHTML = '<option value="">Grupo...</option>';
-        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
         groupSel.disabled = !sectionId;
         muscleSel.disabled = true;
 
@@ -29,10 +32,11 @@
         }
     }
 
+    // Actualiza combos de musculo segun grupo
     function updateMuscleOptions(sectionId, groupId) {
         const state = window.ExercisesState;
         const muscleSel = document.getElementById('filterMuscle');
-        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
         muscleSel.disabled = !groupId;
 
         if (!sectionId || !groupId) return;
@@ -51,6 +55,7 @@
         }
     }
 
+    // Construye query string para el endpoint
     function buildQueryParams(page) {
         const term = document.getElementById('mainSearch').value.trim();
         const section = document.getElementById('filterSection').value;
@@ -69,6 +74,7 @@
         return params;
     }
 
+    // Debounce para busqueda
     function scheduleSearch() {
         const state = window.ExercisesState;
         if (state.searchTimer) clearTimeout(state.searchTimer);

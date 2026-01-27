@@ -199,6 +199,7 @@
 </head>
 
 <body>
+  <!-- Estructura general: navbar, resumen, tarjetas, graficos y sesiones. -->
   <!-- Barra de navegacion -->
   {% include 'components/sidebar.html' %}
   <div class="main-content">
@@ -217,7 +218,8 @@
     </section>
 
     <!-- Selector de usuario (Visible solo si Token Admin OK) -->
-    <div id="admin-controls" class="container text-center mt-5" style="display:none;">
+    <!-- Controles admin (mostrar solo si admin_unlocked) -->
+<div id="admin-controls" class="container text-center mt-5" style="display:none;">
       <!-- Input del ID de usuario y bootón -->
       <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
       <div class="input-group mb-3 justify-content-center" style="max-width: 720px; margin: 0 auto; gap: 8px;">
@@ -229,6 +231,7 @@
         <a href="/workout/assign-routine" class="btn btn-warning"><i class="fas fa-tasks me-1"></i> Asignar Rutinas</a>
         {% endif %}
       </div>
+      <!-- Script: muestra controles admin si el token esta desbloqueado -->
       <script>
         (function () {
           try {
@@ -243,7 +246,8 @@
     </div>
 
     <!-- Ajustes del Agente -->
-    <section id="ai-section" class="container mt-5" style="display:none;">
+    <!-- Bloque de ajustes AI (se muestra al solicitar) -->
+<section id="ai-section" class="container mt-5" style="display:none;">
       <div class="card ai-card-theme" style="border-radius:12px;">
         <div class="card-body">
           <h4 class="card-title mb-3">Ajustes recomendados por el Agente</h4>
@@ -382,7 +386,8 @@
     </section>
 
     <!-- Gráficos -->
-    <section id="charts" class="container mt-5">
+    <!-- Seccion de graficos de progreso -->
+<section id="charts" class="container mt-5">
       <!-- 4 gráficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
       <div class="row g-4">
         <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas>
@@ -410,6 +415,7 @@
   {% include 'components/loader.html' %}
 
   <script src="/static/js/loader.js"></script>
+  <!-- Scripts de rutinas asignadas/creadas -->
   <script src="/static/js/assigned_routines.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/lang.js"></script>

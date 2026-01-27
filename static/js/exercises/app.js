@@ -1,3 +1,4 @@
+// Script legacy del catalogo (posible reemplazo por modulos)
 console.log("SCRIPT START - User Unified View");
     const urlParams = new URLSearchParams(window.location.search);
     const bootstrapData = window.__EXERCISES__ || {};
@@ -108,7 +109,7 @@ console.log("SCRIPT START - User Unified View");
         }
 
         const name = ex.name || "este ejercicio";
-        const message = `¿Deseas seleccionar "${name}"?`;
+        const message = `Â¿Deseas seleccionar "${name}"?`;
 
         let ok = false;
         if (window.showConfirmModal) {
@@ -183,7 +184,7 @@ console.log("SCRIPT START - User Unified View");
             taxonomyData = await res.json();
 
             const sectionSel = document.getElementById("filterSection");
-            sectionSel.innerHTML = '<option value="">Sección...</option>';
+            sectionSel.innerHTML = '<option value="">SecciÃ³n...</option>';
 
             taxonomyData.forEach(sect => {
                 const opt = document.createElement("option");
@@ -202,7 +203,7 @@ console.log("SCRIPT START - User Unified View");
         const muscleSel = document.getElementById("filterMuscle");
 
         groupSel.innerHTML = '<option value="">Grupo...</option>';
-        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
         groupSel.disabled = !sectionId;
         muscleSel.disabled = true;
 
@@ -221,7 +222,7 @@ console.log("SCRIPT START - User Unified View");
 
     function updateMuscleOptions(sectionId, groupId) {
         const muscleSel = document.getElementById("filterMuscle");
-        muscleSel.innerHTML = '<option value="">Músculo...</option>';
+        muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
         muscleSel.disabled = !groupId;
 
         if (!sectionId || !groupId) return;
@@ -315,7 +316,7 @@ console.log("SCRIPT START - User Unified View");
 
     function updatePagination() {
         const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-        document.getElementById("pageInfo").textContent = `Página ${currentPage} de ${totalPages} (${totalItems})`;
+        document.getElementById("pageInfo").textContent = `PÃ¡gina ${currentPage} de ${totalPages} (${totalItems})`;
         document.getElementById("prevPageBtn").disabled = currentPage <= 1;
         document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
     }
@@ -365,7 +366,7 @@ console.log("SCRIPT START - User Unified View");
                              <span class="badge bg-secondary" style="font-size: 0.65rem;">${bodyPartLabel}</span>
                              <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">${ex.type || 'N/A'}</span>
                         </div>
-                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripción'}</p>
+                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripciÃ³n'}</p>
                     </div>
                 </div>
             `;
@@ -469,7 +470,7 @@ console.log("SCRIPT START - User Unified View");
                                 ${ex.is_custom ? 'CUSTOM' : 'GLOBAL'}
                             </span>
                         </div>
-                        <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripción'}</p>
+                        <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripciÃ³n'}</p>
                         ${adminMobile}
                     </div>
                 `;
@@ -544,7 +545,7 @@ console.log("SCRIPT START - User Unified View");
         titleEl.textContent = ex.name || "Ejercicio";
         imgEl.src = resolveImage(ex);
         imgEl.alt = ex.name || "Ejercicio";
-        if (descEl) descEl.textContent = ex.description || "Sin descripción disponible.";
+        if (descEl) descEl.textContent = ex.description || "Sin descripciÃ³n disponible.";
 
         if (badgesEl) {
             badgesEl.innerHTML = `
@@ -557,10 +558,10 @@ console.log("SCRIPT START - User Unified View");
         if (metaEl) {
             const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names : [];
             const items = [
-                { label: "Patrón", value: ex.pattern },
+                { label: "PatrÃ³n", value: ex.pattern },
                 { label: "Plano", value: ex.plane },
                 { label: "Unilateral", value: ex.unilateral ? "Si" : "No" },
-                { label: "Músculo primario", value: ex.primary_muscle },
+                { label: "MÃºsculo primario", value: ex.primary_muscle },
                 { label: "Nivel", value: ex.level },
                 { label: "Nombres alternativos", value: altNames.join(", ") }
             ].filter(item => item.value);
@@ -601,7 +602,7 @@ console.log("SCRIPT START - User Unified View");
 
                     // Show fallback/missing items specifically
                     if (sub._fallback || sub._is_missing) {
-                        return `<li class="text-secondary small mb-1">• ${subName} <span class="badge bg-danger" style="font-size:0.5rem">No encontrado</span></li>`;
+                        return `<li class="text-secondary small mb-1">â¢ ${subName} <span class="badge bg-danger" style="font-size:0.5rem">No encontrado</span></li>`;
                     }
 
                     const subBody = bodyPartMap[sub.body_part] || sub.body_part || "General";
@@ -925,7 +926,7 @@ console.log("SCRIPT START - User Unified View");
         const availHeader = document.createElement("h6");
         availHeader.className = "text-info border-bottom border-secondary pb-2 mb-3 mt-4";
         availHeader.innerHTML = searchTerm
-            ? `<i class="fas fa-search me-2"></i>Resultados de búsqueda`
+            ? `<i class="fas fa-search me-2"></i>Resultados de bÃºsqueda`
             : `<i class="fas fa-lightbulb me-2"></i>Recomendados (Mismo Grupo)`;
         container.appendChild(availHeader);
 
@@ -1104,12 +1105,12 @@ console.log("SCRIPT START - User Unified View");
             bootstrap.Modal.getInstance(document.getElementById("exerciseModal")).hide();
             loadExercisesPage(currentPage); // Reload page
         } catch (e) {
-            localShowAlertModal("Error", "Ocurrió un error al guardar", "danger");
+            localShowAlertModal("Error", "OcurriÃ³ un error al guardar", "danger");
         }
     }
 
     async function deleteExercise(id) {
-        const confirmed = await localShowConfirmModal("Eliminar ejercicio", "¿Estás seguro de que deseas eliminar este ejercicio?", "danger");
+        const confirmed = await localShowConfirmModal("Eliminar ejercicio", "Â¿EstÃ¡s seguro de que deseas eliminar este ejercicio?", "danger");
         if (!confirmed) return;
 
         try {
@@ -1124,7 +1125,7 @@ console.log("SCRIPT START - User Unified View");
         const ex = exerciseLookup[id];
         if (!ex) return;
 
-        const confirmed = await localShowConfirmModal("Duplicar Ejercicio", `¿Deseas crear una copia personalizada de "${ex.name}"?`);
+        const confirmed = await localShowConfirmModal("Duplicar Ejercicio", `Â¿Deseas crear una copia personalizada de "${ex.name}"?`);
         if (!confirmed) return;
 
         try {

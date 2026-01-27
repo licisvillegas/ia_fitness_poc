@@ -1,8 +1,10 @@
 (function initGlossaryBootstrap() {
+    // Inicializa comportamiento de detalles + modal del glosario
     function onReady() {
         if (window.showLoader) window.showLoader('Sincronizando glosario...');
 
         const state = window.GlossaryState;
+        // Acordeon manual: solo un <details> abierto
         const allDetails = document.querySelectorAll('details');
 
         allDetails.forEach(details => {
@@ -36,6 +38,7 @@
             state.modal = new bootstrap.Modal(state.elements.modalElement);
         }
 
+        // Cards clickeables que abren el modal
         const clickableCards = document.querySelectorAll('.muscle-card, .ref-card');
         clickableCards.forEach(card => {
             card.style.cursor = 'pointer';

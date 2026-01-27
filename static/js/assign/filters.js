@@ -1,4 +1,5 @@
 (function initAssignFilters() {
+    // Filtros UI: musculos, estado y alcance
     function handleMuscleCheckboxChange(target) {
         const allCheck = document.getElementById('checkAll');
         const checkboxes = document.querySelectorAll('.muscle-check:not(#checkAll)');
@@ -35,11 +36,11 @@
         const btn = document.getElementById('muscleFilterBtn');
         if (!btn) return;
         if (window.AssignState.currentMuscles === 'all') {
-            btn.textContent = 'Filtrar músculos';
+            btn.textContent = 'Filtrar mÃºsculos';
             return;
         }
         const count = Array.isArray(window.AssignState.currentMuscles) ? window.AssignState.currentMuscles.length : 0;
-        btn.textContent = `Músculos (${count})`;
+        btn.textContent = `MÃºsculos (${count})`;
     }
 
     function updateChips() {
@@ -74,6 +75,7 @@
         return Array.from(parts);
     }
 
+    // Aplica filtros y re-renderiza la lista
     function applyFilters() {
         const term = document.getElementById('passFilter').value.toLowerCase();
         const selected = window.AssignState.currentMuscles;
@@ -106,6 +108,7 @@
         window.AssignRender.renderRoutines(filtered);
     }
 
+    // Enlaza botones de filtro con el estado global
     function bindFilterButtons() {
         const statusButtons = document.querySelectorAll('[data-filter]');
         statusButtons.forEach(btn => {

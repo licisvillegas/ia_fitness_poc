@@ -1,4 +1,5 @@
 (function initExercisesApi() {
+    // Capa API para catalogo de ejercicios
     const Utils = window.ExercisesUtils;
     const { equipmentMeta: EQUIPMENT_META, typeMeta: TYPE_META } = window.ExercisesConsts;
 
@@ -51,7 +52,7 @@
             state.taxonomyData = await res.json();
 
             const sectionSel = document.getElementById('filterSection');
-            sectionSel.innerHTML = '<option value="">Sección...</option>';
+            sectionSel.innerHTML = '<option value="">SecciÃ³n...</option>';
 
             state.taxonomyData.forEach(sect => {
                 const opt = document.createElement('option');

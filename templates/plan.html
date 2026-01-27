@@ -145,6 +145,7 @@
 </head>
 
 <body>
+  <!-- Estructura general: hero, secciones de planes y alimentacion. -->
 
   <!-- Navbar (unificada con dashboard.html) -->
   <!-- Navbar (unificada con dashboard.html) -->
@@ -152,7 +153,8 @@
   <div class="main-content">
 
     <!-- Seccion hero -->
-    <section class="hero">
+    <!-- Hero del plan -->
+<section class="hero">
       <div class="container">
         <h1 id="plan-hero-title">Plan de Alimentación y Entrenamiento</h1>
         <p id="plan-hero-p" class="lead text-light mt-3">Descubre cómo equilibrar tu nutrición y potenciar tus
@@ -162,7 +164,9 @@
     {% include 'components/assigned_routines.html' %}
 
     <!-- Sección de Entrenamientos -->
-    <section class="workouts">
+    <!-- Entrenamientos sugeridos -->
+<!-- Grid de entrenamientos sugeridos -->
+<section class="workouts">
       <div class="container">
         <h2 id="workouts-title" class="text-center mb-5" data-i18n="workouts_title">Entrenamientos por Grupo Muscular
         </h2>
@@ -342,7 +346,8 @@
     </section>
 
     <!-- Sección de Alimentación -->
-    <section class="nutrition">
+    <!-- Seccion de alimentacion -->
+<section class="nutrition">
       <div class="container">
         <div class="row align-items-center">
           <div class="col-md-6">

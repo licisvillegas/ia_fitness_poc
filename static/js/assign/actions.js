@@ -1,4 +1,5 @@
 (function initAssignActions() {
+    // Acciones principales: asignar, actualizar vigencia y remover
     function showToast(msg, bgClass = 'bg-primary') {
         const toastEl = document.getElementById('liveToast');
         const toastBody = document.getElementById('toastMessage');
@@ -8,6 +9,7 @@
         toast.show();
     }
 
+    // Asignar rutina al usuario seleccionado
     async function assignRoutine(routineId, evt) {
         if (!window.AssignState.selectedUserId) {
             showToast('Debes seleccionar un usuario primero', 'bg-warning');
@@ -17,7 +19,7 @@
         const daysInput = document.getElementById(`days-${routineId}`);
         const validDays = parseInt(daysInput ? daysInput.value : '0', 10);
         if (!validDays || validDays <= 0) {
-            showToast('Selecciona días de vigencia válidos', 'bg-warning');
+            showToast('Selecciona dÃ­as de vigencia vÃ¡lidos', 'bg-warning');
             return;
         }
 
@@ -41,7 +43,7 @@
 
             const data = await resp.json();
             if (resp.ok) {
-                showToast(data.message || 'Asignada con éxito', 'bg-success');
+                showToast(data.message || 'Asignada con Ã©xito', 'bg-success');
                 await window.AssignApi.loadAssignmentsForUser(window.AssignState.selectedUserId);
                 window.AssignFilters.applyFilters();
             } else {
@@ -49,7 +51,7 @@
             }
         } catch (e) {
             console.error(e);
-            showToast('Error de conexión', 'bg-danger');
+            showToast('Error de conexiÃ³n', 'bg-danger');
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -58,6 +60,7 @@
         }
     }
 
+    // Actualizar vigencia de una asignacion existente
     async function updateAssignment(routineId, evt) {
         if (!window.AssignState.selectedUserId) {
             showToast('Debes seleccionar un usuario primero', 'bg-warning');
@@ -66,14 +69,14 @@
 
         const assignmentInfo = window.AssignState.assignedMap[routineId];
         if (!assignmentInfo || !assignmentInfo.assignment_id) {
-            showToast('Asignación no encontrada', 'bg-danger');
+            showToast('AsignaciÃ³n no encontrada', 'bg-danger');
             return;
         }
 
         const daysInput = document.getElementById(`days-${routineId}`);
         const validDays = parseInt(daysInput ? daysInput.value : '0', 10);
         if (!validDays || validDays <= 0) {
-            showToast('Selecciona días de vigencia válidos', 'bg-warning');
+            showToast('Selecciona dÃ­as de vigencia vÃ¡lidos', 'bg-warning');
             return;
         }
 
@@ -106,7 +109,7 @@
             }
         } catch (e) {
             console.error(e);
-            showToast('Error de conexión', 'bg-danger');
+            showToast('Error de conexiÃ³n', 'bg-danger');
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -115,6 +118,7 @@
         }
     }
 
+    // Remover asignacion de rutina
     async function unassignRoutine(routineId, evt) {
         if (!window.AssignState.selectedUserId) {
             showToast('Debes seleccionar un usuario primero', 'bg-warning');
@@ -148,7 +152,7 @@
             }
         } catch (e) {
             console.error(e);
-            showToast('Error de conexión', 'bg-danger');
+            showToast('Error de conexiÃ³n', 'bg-danger');
         } finally {
             if (btn) {
                 btn.disabled = false;

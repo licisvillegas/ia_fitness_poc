@@ -1,4 +1,5 @@
 (function initAssignApi() {
+    // Capa API para la vista de asignacion
     async function loadRoutines() {
         try {
             const res = await fetch('/api/routines');
@@ -9,6 +10,7 @@
         }
     }
 
+    // Mapea usuarios para mostrar nombre legible en el UI
     async function loadUsers() {
         try {
             const res = await fetch('/api/admin/users');
@@ -24,6 +26,7 @@
         }
     }
 
+    // Carga asignaciones actuales del usuario seleccionado
     async function loadAssignmentsForUser(userId) {
         if (!userId) {
             window.AssignState.assignedMap = {};
@@ -44,6 +47,7 @@
         }
     }
 
+    // Lista de grupos musculares para filtros
     async function loadBodyParts() {
         try {
             const res = await fetch('/workout/api/body-parts');

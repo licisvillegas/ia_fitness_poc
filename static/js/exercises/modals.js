@@ -1,7 +1,9 @@
 (function initExercisesModals() {
+    // Helpers de modales (alerta, confirmacion, edicion)
     const Utils = window.ExercisesUtils;
     const { equipmentMeta: EQUIPMENT_META } = window.ExercisesConsts;
 
+    // Instancia bootstrap del modal de mensajes
     function ensureMessageModalInstance() {
         const state = window.ExercisesState;
         if (!state.messageModalInstance) {
@@ -125,7 +127,7 @@
         titleEl.textContent = ex.name || 'Ejercicio';
         imgEl.src = window.ExercisesRender.resolveImage(ex);
         imgEl.alt = ex.name || 'Ejercicio';
-        if (descEl) descEl.textContent = ex.description || 'Sin descripción disponible.';
+        if (descEl) descEl.textContent = ex.description || 'Sin descripciÃ³n disponible.';
 
         if (badgesEl) {
             badgesEl.innerHTML = `
@@ -138,10 +140,10 @@
         if (metaEl) {
             const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names : [];
             const items = [
-                { label: 'Patrón', value: ex.pattern },
+                { label: 'PatrÃ³n', value: ex.pattern },
                 { label: 'Plano', value: ex.plane },
-                { label: 'Unilateral', value: ex.unilateral ? 'Sí' : 'No' },
-                { label: 'Músculo primario', value: ex.primary_muscle },
+                { label: 'Unilateral', value: ex.unilateral ? 'SÃ­' : 'No' },
+                { label: 'MÃºsculo primario', value: ex.primary_muscle },
                 { label: 'Nivel', value: ex.level },
                 { label: 'Nombres alternativos', value: altNames.join(', ') }
             ].filter(item => item.value);
@@ -174,7 +176,7 @@
                     const subName = sub.name || sub.exercise_name || 'Ejercicio';
 
                     if (sub._fallback || sub._is_missing) {
-                        return `<li class="text-secondary small mb-1">• ${subName} <span class="badge bg-danger" style="font-size:0.5rem">No encontrado</span></li>`;
+                        return `<li class="text-secondary small mb-1">Â• ${subName} <span class="badge bg-danger" style="font-size:0.5rem">No encontrado</span></li>`;
                     }
 
                     const subBody = state.bodyPartMap[sub.body_part] || sub.body_part || 'General';
@@ -460,7 +462,7 @@
         const availHeader = document.createElement('h6');
         availHeader.className = 'text-info border-bottom border-secondary pb-2 mb-3 mt-4';
         availHeader.innerHTML = searchTerm
-            ? `<i class="fas fa-search me-2"></i>Resultados de búsqueda`
+            ? `<i class="fas fa-search me-2"></i>Resultados de bÃºsqueda`
             : `<i class="fas fa-lightbulb me-2"></i>Recomendados (Mismo Grupo)`;
         container.appendChild(availHeader);
 

@@ -1,9 +1,11 @@
+/* Layout principal de la pagina */
 .assign-page {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
+/* Header con titulo y KPIs */
 .assign-header {
     display: flex;
     justify-content: space-between;
@@ -23,6 +25,7 @@
     margin-bottom: 0.25rem;
 }
 
+/* Panel reutilizable */
 .panel {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -48,12 +51,14 @@
     border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+/* Grilla de columnas (sidebar + contenido) */
 .assign-layout {
     display: grid;
     gap: 1.5rem;
     grid-template-columns: minmax(280px, 360px) 1fr;
 }
 
+/* Buscador de usuario */
 .user-search {
     position: relative;
 }
@@ -72,6 +77,7 @@
     border-radius: 12px;
 }
 
+/* Tarjeta del usuario seleccionado */
 .user-selected {
     display: none;
     margin-top: 1rem;
@@ -104,6 +110,7 @@
     gap: 0.5rem;
 }
 
+/* Chips informativos dentro de la tarjeta */
 .meta-pill {
     padding: 0.25rem 0.6rem;
     border-radius: 999px;
@@ -113,6 +120,7 @@
     color: var(--text-secondary);
 }
 
+/* Estado vacio en listas */
 .empty-hint {
     display: block;
     padding: 0.75rem;

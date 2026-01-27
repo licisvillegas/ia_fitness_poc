@@ -1,4 +1,5 @@
 (function initExercisesState() {
+    // Estado global del catalogo (filtros, pagina, cache)
     const urlParams = new URLSearchParams(window.location.search);
     const bootstrapData = window.__EXERCISES__ || {};
     const serverIsAdmin = !!bootstrapData.serverIsAdmin;

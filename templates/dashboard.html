@@ -11,203 +11,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Estilos base del dashboard (tema oscuro) -->
+  <!-- Estilos base del dashboard -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
   <link href="/static/css/sidebar.css" rel="stylesheet">
   <link href="/static/css/assigned_routines.css" rel="stylesheet">
   <link href="/static/css/loader.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-    }
-
-    .navbar {
-      background-color: var(--bg-panel);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .navbar-brand {
-      color: var(--primary) !important;
-      font-weight: 700;
-    }
-
-    .hero {
-      background: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(37, 99, 235, 0.4)),
-        url('/static/images/IMG_1552.jpg');
-      background-size: cover;
-      background-position: center;
-      height: 65vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: #ffffff !important;
-    }
-
-    .hero h1,
-    .hero p {
-      color: #ffffff !important;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Stats Cards */
-    #stats .row {
-      align-items: stretch;
-    }
-
-    #stats .col-md-3 {
-      display: flex;
-    }
-
-    .stat-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 15px;
-      padding: 1.25rem;
-      text-align: center;
-      transition: 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      flex: 1;
-      min-height: 160px;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
-      background-color: var(--bg-card-hover);
-    }
-
-    .stat-icon {
-      font-size: 2.5rem;
-      color: var(--primary);
-      margin-bottom: 10px;
-    }
-
-
-    .stat-card h5 {
-      color: var(--text-main);
-    }
-
-    .stat-card h3 {
-      color: var(--text-main);
-    }
-
-    .progress-bar {
-      background-color: var(--primary);
-    }
-
-    canvas {
-      background-color: var(--bg-card);
-      border-radius: 10px;
-      padding: 10px;
-      min-height: 280px;
-      width: 100%;
-      border: 1px solid var(--border-color);
-    }
-
-    .chart-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 1rem;
-      background: rgba(17, 24, 39, 0.75);
-      /* Keep dark overlay for now or adjust */
-      border-radius: 10px;
-      visibility: hidden;
-    }
-
-    footer {
-      background-color: var(--bg-panel);
-      color: var(--text-muted);
-      text-align: center;
-      padding: 1rem 0;
-      margin-top: 3rem;
-      border-top: 1px solid var(--border-color);
-    }
-
-    #message {
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: 500;
-      color: var(--text-main) !important;
-    }
-
-    /* AI Section Overrides */
-    .ai-card-theme {
-      background-color: var(--bg-card) !important;
-      color: var(--text-main) !important;
-      border: 1px solid var(--border-color);
-    }
-
-    .ai-subcard-theme {
-      background: var(--bg-card-hover) !important;
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-    }
-
-    .list-group-item-theme {
-      background: var(--bg-card) !important;
-      color: var(--text-main) !important;
-      border-color: var(--border-color) !important;
-    }
-
-    /* Heatmap Grid */
-    .heatmap-grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 4px;
-      width: 100%;
-      max-width: 280px;
-    }
-
-    .heatmap-cell {
-      aspect-ratio: 1;
-      background-color: #2c3035;
-      border-radius: 2px;
-    }
-
-    .heatmap-cell.level-1 {
-      background-color: #0e4429;
-    }
-
-    .heatmap-cell.level-2 {
-      background-color: #006d32;
-    }
-
-    .heatmap-cell.level-3 {
-      background-color: #26a641;
-    }
-
-    .heatmap-cell.level-4 {
-      background-color: #39d353;
-      box-shadow: 0 0 5px #39d353;
-    }
-
-    .dashboard-modules section {
-      margin-top: 0 !important;
-    }
-  </style>
+  <!-- Estilos modularizados del dashboard -->
+  <link href="/static/css/dashboard.css" rel="stylesheet">
 </head>
 
 <body>
-  <!-- Estructura general: navbar, resumen, tarjetas, graficos y sesiones. -->
-  <!-- Barra de navegacion -->
+  <!-- Estructura general: navbar, resumen, tarjetas, gráficos y sesiones. -->
+
+  <!-- Barra de navegación lateral -->
   {% include 'components/sidebar.html' %}
+
   <div class="main-content">
 
-    <!-- Seccion hero -->
+    <!-- Sección Hero -->
     <section class="hero">
       <div class="container">
-        <!-- Título principal y subtítulo del dashboard -->
         <h1 id="dashboard-hero-title">Monitorea tu evolución</h1>
         <p id="dashboard-hero-p" class="lead mt-3">Selecciona tu usuario, carga tus datos y observa tu progreso en
           tiempo real.</p>
@@ -217,10 +41,8 @@
       </div>
     </section>
 
-    <!-- Selector de usuario (Visible solo si Token Admin OK) -->
-    <!-- Controles admin (mostrar solo si admin_unlocked) -->
-<div id="admin-controls" class="container text-center mt-5" style="display:none;">
-      <!-- Input del ID de usuario y bootón -->
+    <!-- Controles Admin y Selector de Usuario -->
+    <div id="admin-controls" class="container text-center mt-5" style="display:none;">
       <label id="select-user-label" class="fw-bold text-primary mb-2">Selecciona tu ID de usuario</label>
       <div class="input-group mb-3 justify-content-center" style="max-width: 720px; margin: 0 auto; gap: 8px;">
         <input type="text" id="userIdInput" class="form-control text-center" placeholder="Ejemplo: usr_001">
@@ -231,7 +53,8 @@
         <a href="/workout/assign-routine" class="btn btn-warning"><i class="fas fa-tasks me-1"></i> Asignar Rutinas</a>
         {% endif %}
       </div>
-      <!-- Script: muestra controles admin si el token esta desbloqueado -->
+
+      <!-- Lógica para mostrar controles admin -->
       <script>
         (function () {
           try {
@@ -241,18 +64,19 @@
           } catch (e) { }
         })();
       </script>
+
       <p id="message" class="text-light"></p>
       <div id="active-plan-indicator" class="mt-2" style="display:none; color:#10b981;"></div>
     </div>
 
-    <!-- Ajustes del Agente -->
-    <!-- Bloque de ajustes AI (se muestra al solicitar) -->
-<section id="ai-section" class="container mt-5" style="display:none;">
+    <!-- Ajustes del Agente AI -->
+    <section id="ai-section" class="container mt-5" style="display:none;">
       <div class="card ai-card-theme" style="border-radius:12px;">
         <div class="card-body">
           <h4 class="card-title mb-3">Ajustes recomendados por el Agente</h4>
           <div id="ai-loading" class="text-info mb-2" style="display:none;">Calculando ajustes...</div>
           <div id="ai-error" class="text-danger mb-2" style="display:none;"></div>
+
           <div id="ai-content" style="display:none;">
             <div class="row g-3">
               <div class="col-md-6">
@@ -280,10 +104,12 @@
               </div>
             </div>
           </div>
+
           <hr class="text-secondary" />
+
           <div>
-            <h5 class="mb-2">Histórico de ajustes</h5>
-            <div id="ai-history-loading" class="text-info mb-2" style="display:none;">Cargando histórico...</div>
+            <h5 class="mb-2">Historial de ajustes</h5>
+            <div id="ai-history-loading" class="text-info mb-2" style="display:none;">Cargando historial...</div>
             <div id="ai-history-error" class="text-danger mb-2" style="display:none;"></div>
             <ul id="ai-history-list" class="list-group list-group-flush" style="background:transparent;"></ul>
           </div>
@@ -291,11 +117,10 @@
       </div>
     </section>
 
+    <!-- Tarjetas de Estadísticas Principales -->
     <section id="stats" class="mt-5 container">
-      <!-- Tarjetas con último registro (peso, grasa, rendimiento, adherencia) -->
       <div class="row g-4">
-
-        <!-- Tarjeta admin (visible solo si is_admin) -->
+        <!-- Panel de Entrenador (Solo Admin) -->
         {% if is_admin %}
         <div class="col-12 col-md-12 mb-2">
           <a href="/workout/assign-routine" class="text-decoration-none">
@@ -312,14 +137,12 @@
         </div>
         {% endif %}
 
-
-
         <div class="col-6 col-md-3">
           <div class="stat-card">
             <div class="stat-icon">⚖️</div>
             <h5 id="stat-weight-title">Peso Actual</h5>
             <h3 id="stat-weight" class="text-theme">—</h3>
-            <p id="stat-last-0" class="text-secondary">Último registro</p>
+            <p class="text-secondary">Último registro</p>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -327,7 +150,7 @@
             <div class="stat-icon">💪</div>
             <h5 id="stat-fat-title">Grasa Corporal</h5>
             <h3 id="stat-fat" class="text-theme">—</h3>
-            <p id="stat-last-1" class="text-secondary">Último registro</p>
+            <p class="text-secondary">Último registro</p>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -347,7 +170,7 @@
           </div>
         </div>
 
-        <!-- Tarjeta mapa de calor (movida) -->
+        <!-- Mapa de Calor y Consistencia -->
         <div class="col-12 col-md-12 mb-3 mt-4">
           <div class="card bg-panel border-0 shadow">
             <div class="card-header border-secondary text-white fw-bold text-center">
@@ -368,27 +191,23 @@
       </div>
     </section>
 
+    <!-- Módulos de Rutinas y Sesiones -->
     <section id="workout-modules" class="container mt-4">
       <div class="row g-4 dashboard-modules">
         <div class="col-12">
-          <!-- Seccion mis rutinas -->
           {% include 'components/assigned_routines.html' %}
         </div>
         <div class="col-12">
-          <!-- Seccion mis rutinas creadas -->
           {% include 'components/created_routines.html' %}
         </div>
         <div class="col-12">
-          <!-- Seccion historial de sesiones -->
           {% include 'components/session_history.html' %}
         </div>
       </div>
     </section>
 
-    <!-- Gráficos -->
-    <!-- Seccion de graficos de progreso -->
-<section id="charts" class="container mt-5">
-      <!-- 4 gráficos (peso, grasa, rendimiento, adherencia) con overlays de "Sin datos" -->
+    <!-- Gráficos de Progreso -->
+    <section id="charts" class="container mt-5">
       <div class="row g-4">
         <div class="col-md-6 position-relative"><canvas id="weightChart"></canvas>
           <div class="chart-overlay" id="msg-weight">Sin datos disponibles</div>
@@ -412,474 +231,21 @@
     <small class="text-secondary d-block">v. beta 1.1.0</small>
   </footer>
 
+  <!-- Loader y Scripts -->
   {% include 'components/loader.html' %}
 
-  <script src="/static/js/loader.js"></script>
-  <!-- Scripts de rutinas asignadas/creadas -->
-  <script src="/static/js/assigned_routines.js"></script>
+  <!-- Scripts Externos -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/loader.js"></script>
+  <script src="/static/js/assigned_routines.js"></script>
   <script src="/static/js/lang.js"></script>
   <script src="/static/js/theme.js"></script>
 
-  <script>
-    const btn = document.getElementById("loadDataBtn");
-    const userIdInput = document.getElementById("userIdInput");
-    const message = document.getElementById("message");
-    let charts = [];
-    const routinesMap = window.routinesMap;
+  <!-- Lógica Modularizada del Dashboard -->
+  <script src="/static/js/dashboard_charts.js"></script>
+  <script src="/static/js/dashboard_api.js"></script>
+  <script src="/static/js/dashboard_ui.js"></script>
 
-    async function loadProgress(userId) {
-      if (!userId) return;
-      message.textContent = "";
-      showLoader("Cargando progreso...");
-
-      try {
-        const res = await fetch(`/get_progress/${userId}`);
-        const data = await res.json();
-
-        // Oculta overlays de "Sin datos" antes de validar la respuesta
-        const overlays = ["weight", "fat", "performance", "metabolism"];
-        overlays.forEach(id => {
-          const el = document.getElementById(`msg-${id}`);
-          if (el) el.style.visibility = "hidden";
-        });
-
-        // Manejo de error o falta de datos: limpiar UI y mostrar overlays
-        if (res.status !== 200 || !Array.isArray(data) || data.length === 0) {
-          message.textContent = data.error || "❌ No se encontraron registros de progreso.";
-          clearDashboard();
-          overlays.forEach(id => {
-            const el = document.getElementById(`msg-${id}`);
-            if (el) el.style.visibility = "visible";
-          });
-          hideLoader();
-          return;
-        }
-
-        message.textContent = t('data_loaded');
-        localStorage.setItem("ai_fitness_uid", userId);
-
-        const last = data[data.length - 1];
-        document.getElementById("stat-weight").innerText = `${last.weight_kg} kg`;
-        document.getElementById("stat-fat").innerText = `${last.body_fat}%`;
-
-        // --- FETCH LATEST METRICS FROM BODY ASSESSMENTS ---
-        let latestUserWeight = null;
-        try {
-          const mRes = await fetch(`/api/user/${userId}/latest_metrics`);
-          if (mRes.ok) {
-            const mData = await mRes.json();
-            if (mData.weight_kg) {
-              document.getElementById("stat-weight").innerText = `${mData.weight_kg} kg`;
-              latestUserWeight = mData.weight_kg;
-            }
-            if (mData.body_fat) document.getElementById("stat-fat").innerText = `${mData.body_fat}%`;
-            if (mData.tmb) document.getElementById("stat-tmb").innerText = `${mData.tmb}`;
-            if (mData.tdee) document.getElementById("stat-diet").innerText = `${mData.tdee}`;
-          }
-        } catch (e) { console.error("Error fetching latest metrics", e); }
-
-        charts.forEach(c => c.destroy());
-        charts = [];
-
-        const labels = data.map(d => d.date);
-        const weights = data.map(d => d.weight_kg);
-        const fats = data.map(d => d.body_fat);
-        const performance = data.map(d => d.performance);
-        const tmbArr = data.map(d => d.tmb);
-        const tdeeArr = data.map(d => d.tdee);
-
-        // --- FETCH WEEKLY STATS FOR VOLUME & CONSISTENCY ---
-        let weeklyLabels = [];
-        let weeklyVolumes = [];
-        let weeklySessions = [];
-        try {
-          const wRes = await fetch(`/workout/api/stats/weekly?user_id=${userId}`);
-          if (wRes.ok) {
-            const wData = await wRes.json();
-            weeklyLabels = wData.map(d => d.date_label);
-            weeklyVolumes = wData.map(d => d.volume);
-            weeklySessions = wData.map(d => d.sessions);
-          }
-        } catch (e) { console.error("Error fetching weekly stats", e); }
-
-        // --- FETCH DAILY VOLUME STATS ---
-        let dailyVolumeLabels = [];
-        let dailyVolumes = [];
-        try {
-          const vRes = await fetch(`/workout/api/stats/volume?user_id=${userId}`);
-          if (vRes.ok) {
-            const vData = await vRes.json();
-            dailyVolumeLabels = vData.map(d => d.date);
-            dailyVolumes = vData.map(d => d.volume);
-          }
-        } catch (e) { console.error("Error fetching daily volume stats", e); }
-
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const textColor = isLight ? '#374151' : '#e5e7eb';
-        const gridColor = isLight ? '#e5e7eb' : '#374151';
-
-        const colors = { blue: "#3b82f6", green: "#10b981", yellow: "#facc15", red: "#ef4444" };
-        const opts = {
-          plugins: { legend: { labels: { color: textColor } } },
-          scales: {
-            x: { ticks: { color: textColor }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { color: gridColor } }
-          }
-        };
-
-        if (document.getElementById("weightChart")) {
-          charts.push(new Chart("weightChart", { type: "line", data: { labels, datasets: [{ label: t('chart_weight'), data: weights, borderColor: colors.blue, backgroundColor: "rgba(59,130,246,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        }
-        if (document.getElementById("fatChart")) {
-          charts.push(new Chart("fatChart", { type: "line", data: { labels, datasets: [{ label: t('chart_fat'), data: fats, borderColor: colors.red, backgroundColor: "rgba(239,68,68,0.2)", fill: true, tension: 0.3 }] }, options: opts }));
-        }
-        if (document.getElementById("performanceChart")) {
-          const chartLabels = dailyVolumeLabels.length > 0 ? dailyVolumeLabels : labels;
-          charts.push(new Chart("performanceChart", {
-            type: "line",
-            data: {
-              labels: chartLabels,
-              datasets: [
-                {
-                  label: 'Volumen Avg. (kg)',
-                  data: dailyVolumes.length > 0 ? dailyVolumes : performance,
-                  borderColor: colors.green,
-                  backgroundColor: "rgba(16,185,129,0.2)",
-                  fill: true,
-                  tension: 0.4,
-                  spanGaps: true,
-                  yAxisID: 'y'
-                },
-                latestUserWeight ? {
-                  label: 'Peso Corporal (kg)',
-                  data: chartLabels.map(() => latestUserWeight),
-                  borderColor: colors.red,
-                  borderDash: [5, 5],
-                  fill: false,
-                  pointRadius: 0,
-                  tension: 0
-                } : null
-              ].filter(d => d !== null)
-            },
-            options: {
-              ...opts,
-              interaction: { mode: 'index', intersect: false },
-              scales: {
-                x: opts.scales.x,
-                y: {
-                  type: 'linear',
-                  display: true,
-                  position: 'left',
-                  beginAtZero: true,
-                  ticks: { color: textColor },
-                  grid: opts.scales.y.grid
-                }
-              }
-            }
-          }));
-        }
-        if (document.getElementById("metabolismChart")) {
-          charts.push(new Chart("metabolismChart", {
-            type: "bar",
-            data: {
-              labels: weeklyLabels.length > 0 ? weeklyLabels : labels,
-              datasets: [
-                {
-                  label: 'Sesiones Semana',
-                  data: weeklySessions.length > 0 ? weeklySessions : tmbArr,
-                  backgroundColor: colors.blue,
-                  borderRadius: 6
-                }
-              ]
-            },
-            options: {
-              ...opts,
-              scales: {
-                ...opts.scales,
-                y: { ...opts.scales.y, beginAtZero: true, ticks: { ...opts.scales.y.ticks, stepSize: 1 } }
-              }
-            }
-          }));
-        }
-
-        window.updateChartLabels = function () {
-          try {
-            if (!charts) return;
-            if (charts[0]?.data?.datasets[0]) charts[0].data.datasets[0].label = t('chart_weight');
-            if (charts[1]?.data?.datasets[0]) charts[1].data.datasets[0].label = t('chart_fat');
-            if (charts[2]?.data?.datasets[0]) charts[2].data.datasets[0].label = 'Volumen Avg. (kg)';
-            if (charts[3]?.data?.datasets[0]) charts[3].data.datasets[0].label = 'Sesiones Semana';
-            charts.forEach(c => c.update());
-          } catch (e) { }
-        };
-      } finally {
-        hideLoader();
-      }
-    }
-
-    function clearDashboard() {
-      document.getElementById("stat-weight").innerText = "?";
-      document.getElementById("stat-fat").innerText = "?";
-      document.getElementById("stat-tmb").innerText = "--";
-      document.getElementById("stat-diet").innerText = "--";
-      charts.forEach(c => c.destroy());
-      charts = [];
-    }
-
-    btn.addEventListener("click", () => {
-      const typed = userIdInput.value.trim();
-      let targetId = typed;
-      try {
-        const raw = localStorage.getItem('ai_fitness_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          const loggedId = String(u.user_id || u._id || '').trim();
-          const uname = (u.username || '').trim();
-          const email = (u.email || '').trim().toLowerCase();
-          if (!typed || typed === uname || typed.toLowerCase() === email) {
-            targetId = loggedId || typed;
-          }
-        }
-      } catch (e) { }
-      if (!targetId) { message.textContent = "⚠️ Ingresa un ID de usuario."; return; }
-      loadProgress(targetId);
-      loadActivePlanIndicator(targetId);
-      if (window.loadCreatedRoutines) {
-        window.loadCreatedRoutines({ returnTo: '/dashboard', userId: targetId });
-      }
-      if (window.loadSessions) {
-        window.loadSessions(targetId);
-      }
-      if (window.loadRoutines) {
-        window.loadRoutines(targetId);
-      }
-      loadHeatmap(targetId);
-    });
-
-    const refreshBtn = document.getElementById("btnRefreshDashboard");
-    if (refreshBtn) {
-      refreshBtn.addEventListener("click", () => {
-        const typed = userIdInput.value.trim();
-        let targetId = typed;
-        try {
-          const raw = localStorage.getItem('ai_fitness_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            const loggedId = String(u.user_id || u._id || '').trim();
-            const uname = (u.username || '').trim();
-            const email = (u.email || '').trim().toLowerCase();
-            if (!typed || typed === uname || typed.toLowerCase() === email) {
-              targetId = loggedId || typed;
-            }
-          }
-        } catch (e) { }
-        if (!targetId) { message.textContent = "Ingresa un ID de usuario."; return; }
-        loadProgress(targetId);
-        loadActivePlanIndicator(targetId);
-        if (window.loadCreatedRoutines) {
-          window.loadCreatedRoutines({ returnTo: '/dashboard', userId: targetId });
-        }
-        if (window.loadSessions) {
-          window.loadSessions(targetId);
-        }
-        if (window.loadRoutines) {
-          window.loadRoutines(targetId);
-        }
-        loadHeatmap(targetId);
-      });
-    }
-
-
-    async function loadHeatmap(userId) {
-      try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const hRes = await fetch(`/workout/api/stats/heatmap?user_id=${userId}&timezone=${encodeURIComponent(tz)}`);
-        const hMap = await hRes.json();
-        const grid = document.getElementById("heatmapGrid");
-        grid.innerHTML = "";
-        grid.style.gridTemplateColumns = `repeat(10, 1fr)`;
-        const today = new Date();
-        for (let i = 59; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(today.getDate() - i);
-          const key = d.toLocaleDateString('en-CA');
-          const count = hMap[key] || 0;
-          const cell = document.createElement("div");
-          cell.className = "heatmap-cell";
-          if (count > 0) cell.className += (count >= 2) ? " level-4" : " level-2";
-          cell.title = `${key}: ${count} workouts`;
-          grid.appendChild(cell);
-        }
-      } catch (e) { console.error("Heatmap error", e); }
-    }
-
-    const aiBtn = document.getElementById("aiSuggestBtn");
-    aiBtn.addEventListener("click", () => {
-      const typed = userIdInput.value.trim();
-      let targetId = typed;
-      try {
-        const raw = localStorage.getItem('ai_fitness_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          targetId = String(u.user_id || u._id || '').trim();
-        }
-      } catch (e) { }
-      if (targetId) loadAiAdjustments(targetId);
-      else message.textContent = "Ingresa un ID de usuario.";
-    });
-
-    const aiHistoryBtn = document.getElementById('aiHistoryBtn');
-    aiHistoryBtn.addEventListener('click', () => {
-      const typed = userIdInput.value.trim();
-      let targetId = typed;
-      try {
-        const raw = localStorage.getItem('ai_fitness_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          targetId = String(u.user_id || u._id || '').trim();
-        }
-      } catch (e) { }
-      if (targetId) loadAiHistory(targetId);
-      else message.textContent = "Ingresa un ID de usuario.";
-    });
-
-    async function loadAiAdjustments(userId) {
-      const section = document.getElementById('ai-section');
-      const loadEl = document.getElementById('ai-loading');
-      const errEl = document.getElementById('ai-error');
-      const content = document.getElementById('ai-content');
-      const btnSave = document.getElementById('btnSaveAgentPlan');
-      if (section) section.style.display = 'block';
-      if (loadEl) loadEl.style.display = 'block';
-      if (errEl) errEl.style.display = 'none';
-      if (content) content.style.display = 'none';
-      try {
-        showLoader("Calculando ajustes AI...");
-        const resp = await fetch(`/ai/reason/${encodeURIComponent(userId)}?limit=12`);
-        if (!resp.ok) throw new Error("Error en respuesta");
-        const data = await resp.json();
-        const out = data.output || {};
-        const adj = out.ajustes || {};
-        const food = adj.plan_alimentacion || {};
-        const macros = food.macros || {};
-        const train = adj.plan_entrenamiento || {};
-
-        document.getElementById('ai-kcal').textContent = `Objetivo kcal: ${food.kcal_obj ?? '-'} (delta: ${food.kcal_delta ?? 0})`;
-        document.getElementById('ai-macros').textContent = `Macros (p/c/g): ${macros.p ?? '-'} / ${macros.c ?? '-'} / ${macros.g ?? '-'}`;
-        document.getElementById('ai-train').textContent = `Volumen: ${train.volumen_delta_ratio ?? 0}, Cardio: ${train.cardio ?? '-'}`;
-        document.getElementById('ai-reason').textContent = out.razonamiento_resumido || '';
-        document.getElementById('ai-next').textContent = (out.proxima_revision_dias != null) ? `Próxima revisión: ${out.proxima_revision_dias} días` : '';
-
-        if (content) content.style.display = 'block';
-        if (btnSave) { btnSave.style.display = 'inline-block'; btnSave.dataset.userId = userId; }
-      } catch (e) {
-        if (errEl) { errEl.textContent = `Error: ${e.message}`; errEl.style.display = 'block'; }
-      } finally {
-        if (loadEl) loadEl.style.display = 'none';
-        hideLoader();
-      }
-    }
-
-    (function () {
-      const btn = document.getElementById('btnSaveAgentPlan');
-      const msg = document.getElementById('ai-save-msg');
-      if (!btn) return;
-      btn.addEventListener('click', async () => {
-        const targetId = btn.dataset.userId;
-        if (!targetId) return;
-        if (msg) msg.textContent = 'Guardando...';
-        showLoader("Guardando plan...");
-        try {
-          const resp = await fetch(`/ai/adjustments/${encodeURIComponent(targetId)}/apply_latest`, { method: 'POST' });
-          if (resp.ok) {
-            if (msg) msg.textContent = 'Plan activado';
-            btn.style.display = 'none';
-            loadActivePlanIndicator(targetId);
-          }
-        } catch (e) { } finally { hideLoader(); }
-      });
-    })();
-
-    async function loadAiHistory(userId) {
-      const section = document.getElementById('ai-section');
-      const listEl = document.getElementById('ai-history-list');
-      if (section) section.style.display = 'block';
-      if (listEl) listEl.innerHTML = '';
-      showLoader("Cargando historial AI...");
-      try {
-        const resp = await fetch(`/ai/adjustments/${encodeURIComponent(userId)}?limit=10`);
-        const rows = await resp.json();
-        if (!Array.isArray(rows)) return;
-        const frag = document.createDocumentFragment();
-        rows.forEach((r, idx) => {
-          const li = document.createElement('li');
-          li.className = 'list-group-item list-group-item-theme d-flex justify-content-between align-items-start';
-          const title = document.createElement('div');
-          const ts = (r.created_at || '').replace('T', ' ').replace('Z', '');
-          title.innerHTML = `<div><strong>#${idx + 1}</strong> · ${ts || 'sin-fecha'}</div>`;
-          const aj = (r.output && r.output.ajustes) || {};
-          const food = aj.plan_alimentacion || {}; const train = aj.plan_entrenamiento || {};
-          const small = document.createElement('small');
-          small.textContent = `kcal: ${food.kcal_obj ?? '-'}, vol: ${train.volumen_delta_ratio ?? 0}, cardio: ${train.cardio ?? '-'}`;
-          title.appendChild(small);
-          li.appendChild(title);
-          frag.appendChild(li);
-        });
-        if (listEl) listEl.appendChild(frag);
-      } catch (e) { } finally { hideLoader(); }
-    }
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      await ensureRoutineDependencies();
-      let loadId = null;
-      let displayLabel = null;
-      try {
-        const raw = localStorage.getItem('ai_fitness_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          loadId = String(u.user_id || u._id || '').trim();
-          displayLabel = (u.username || '').trim();
-        }
-      } catch (e) { }
-      const lastUser = localStorage.getItem("ai_fitness_uid");
-      if (!loadId && lastUser) { loadId = lastUser; displayLabel = lastUser; }
-      if (displayLabel) userIdInput.value = displayLabel;
-
-      if (loadId) {
-        showLoader("Sincronizando dashboard...");
-        try {
-          await Promise.all([
-            loadProgress(loadId),
-            loadActivePlanIndicator(loadId),
-            window.loadRoutines ? window.loadRoutines(loadId) : Promise.resolve(),
-            window.loadCreatedRoutines ? window.loadCreatedRoutines({ returnTo: '/dashboard', userId: loadId }) : Promise.resolve(),
-            window.loadSessions ? window.loadSessions(loadId) : Promise.resolve(),
-            loadHeatmap(loadId)
-          ]);
-        } catch (e) { } finally { hideLoader(); }
-      } else {
-        if (window.loadCreatedRoutines) window.loadCreatedRoutines({ returnTo: '/dashboard', userId: loadId });
-      }
-    });
-
-    async function loadActivePlanIndicator(userId) {
-      const el = document.getElementById('active-plan-indicator');
-      try {
-        if (!userId) { if (el) el.style.display = 'none'; return; }
-        const resp = await fetch(`/plans/${encodeURIComponent(userId)}/active`);
-        if (resp.ok) {
-          const data = await resp.json();
-          const ts = data.activated_at || data.created_at || '';
-          let label = ts.split('T')[0];
-          if (el) {
-            el.innerHTML = `Plan activo desde ${label} · <a href="/plan" class="link-info">ver en Mi Plan</a>`;
-            el.style.display = 'block';
-          }
-        }
-      } catch (e) { }
-    }
-  </script>
 </body>
 
 </html>

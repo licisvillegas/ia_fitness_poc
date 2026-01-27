@@ -1,0 +1,7 @@
+{% set source = source or request.args.get('source', 'user') %}
+
+{% if source == 'admin' %}
+  {% include 'body_assessment.html' %}
+{% else %}
+  {% include 'body_assessment_user.html' %}
+{% endif %}

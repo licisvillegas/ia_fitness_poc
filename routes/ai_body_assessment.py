@@ -70,6 +70,12 @@ def body_assessment_user():
     return render_template("body_assessment_user.html")
 
 
+@ai_body_assessment_bp.get("/ai/body_assessment/unified")
+def body_assessment_unified():
+    source = request.args.get("source", "user")
+    return render_template("body_assessment_unified.html", source=source)
+
+
 @ai_body_assessment_bp.post("/ai/body_assessment")
 def ai_body_assessment():
     try:

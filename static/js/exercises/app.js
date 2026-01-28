@@ -174,6 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
             populateSubstitutes(allExercises, currentExerciseId, getSelectedSubstitutes());
         });
     }
+
+    // Init UX handling
+    setupFilterUX();
 });
 
 let taxonomyData = [];
@@ -204,8 +207,19 @@ function updateGroupOptions(sectionId) {
 
     groupSel.innerHTML = '<option value="">Grupo...</option>';
     muscleSel.innerHTML = '<option value="">Músculo...</option>';
-    groupSel.disabled = !sectionId;
-    muscleSel.disabled = true;
+
+    // Remove disabled attribute to allow interaction
+    groupSel.disabled = false;
+    muscleSel.disabled = false;
+
+    // Visual indication of disabled state via class/opacity
+    if (!sectionId) {
+        groupSel.classList.add("opacity-50");
+    } else {
+        groupSel.classList.remove("opacity-50");
+    }
+
+    muscleSel.classList.add("opacity-50"); // Always reset muscle specific state when group resets
 
     if (!sectionId) return;
 
@@ -223,7 +237,15 @@ function updateGroupOptions(sectionId) {
 function updateMuscleOptions(sectionId, groupId) {
     const muscleSel = document.getElementById("filterMuscle");
     muscleSel.innerHTML = '<option value="">Músculo...</option>';
-    muscleSel.disabled = !groupId;
+
+    muscleSel.disabled = false;
+
+    if (!groupId) {
+        muscleSel.classList.add("opacity-50");
+        return;
+    }
+
+    muscleSel.classList.remove("opacity-50");
 
     if (!sectionId || !groupId) return;
 
@@ -240,6 +262,116 @@ function updateMuscleOptions(sectionId, groupId) {
         }
     }
 }
+
+// UX Helpers for interdependent filters
+function flashElement(el) {
+    if (!el) return;
+    // Restart animation if it was already applied
+    el.classList.remove("filter-flash");
+    void el.offsetWidth;
+    el.classList.add("filter-flash");
+    el.focus();
+    setTimeout(() => {
+        el.classList.remove("filter-flash");
+    }, 1500);
+}
+
+function setupFilterUX() {
+    const sectionSel = document.getElementById("filterSection");
+    const groupSel = document.getElementById("filterGroup");
+    const muscleSel = document.getElementById("filterMuscle");
+
+    // INITIALIZATION: Manually trigger update to remove 'disabled' attributes from HTML 
+    // and apply the 'opacity-50' class so interactions can be captured.
+    updateGroupOptions("");
+
+    let lastGuardAt = 0;
+    const shouldGuard = () => {
+        const now = Date.now();
+        if (now - lastGuardAt < 250) return false;
+        lastGuardAt = now;
+        return true;
+    };
+
+    const checkSection = (e) => {
+        if (!sectionSel.value) {
+            e.preventDefault();
+            e.stopPropagation(); // Stop default dropdown
+            groupSel.value = "";
+            if (shouldGuard()) {
+                localShowAlertModal("Primero selecciona una Secci??n", "Selecciona primero la Secci??n (ej. Tren Superior) para ver los Grupos disponibles.", "info");
+                flashElement(sectionSel);
+            }
+            return true;
+        }
+        return false;
+    };
+
+    const checkGroup = (e) => {
+        // Validates chain: Section -> Group
+        if (!sectionSel.value) {
+            e.preventDefault();
+            e.stopPropagation();
+            muscleSel.value = "";
+            if (shouldGuard()) {
+                localShowAlertModal("Primero selecciona una Secci??n", "Debes iniciar seleccionando una Secci??n y luego un Grupo.", "info");
+                flashElement(sectionSel);
+            }
+            return true;
+        }
+        if (!groupSel.value) {
+            e.preventDefault();
+            e.stopPropagation();
+            muscleSel.value = "";
+            if (shouldGuard()) {
+                localShowAlertModal("Primero selecciona un Grupo", "Selecciona un Grupo (ej. Pecho) para ver los M??sculos espec??ficos.", "info");
+                flashElement(groupSel);
+            }
+            return true;
+        }
+        return false;
+    };
+
+    // UI Event Interceptors
+    // We need to listen to mousedown (desktop) and click (mobile/fallback)
+    // to prevent the native dropdown from opening if conditions aren't met.
+
+    const handleGroupInteraction = (e) => {
+        if (!sectionSel.value) {
+            checkSection(e);
+        }
+    };
+
+    const handleMuscleInteraction = (e) => {
+        if (!sectionSel.value || !groupSel.value) {
+            checkGroup(e);
+        }
+    };
+
+    // Desktop: mousedown usually fires before focus/open
+    groupSel.addEventListener("mousedown", handleGroupInteraction);
+    groupSel.addEventListener("pointerdown", handleGroupInteraction);
+    // Mobile/Touch: click usually needed as mousedown might not match behavior
+    // Using onclick property to be aggressive if addEventListener is late (though unlikely)
+    groupSel.addEventListener("click", handleGroupInteraction);
+    groupSel.addEventListener("keydown", (e) => {
+        if (["Enter", " ", "ArrowDown", "ArrowUp"].includes(e.key)) {
+            handleGroupInteraction(e);
+        }
+    });
+
+    muscleSel.addEventListener("mousedown", handleMuscleInteraction);
+    muscleSel.addEventListener("pointerdown", handleMuscleInteraction);
+    muscleSel.addEventListener("click", handleMuscleInteraction);
+    muscleSel.addEventListener("keydown", (e) => {
+        if (["Enter", " ", "ArrowDown", "ArrowUp"].includes(e.key)) {
+            handleMuscleInteraction(e);
+        }
+    });
+}
+
+
+
 
 function buildQueryParams(page) {
     const term = document.getElementById("mainSearch").value.trim();
@@ -486,10 +618,18 @@ function renderList(items) {
 function resetFilters() {
     document.getElementById("mainSearch").value = "";
     document.getElementById("filterSection").value = "";
+
+    // Trigger update to reset visuals
     updateGroupOptions("");
+
     document.getElementById("filterEquipment").value = "";
     document.getElementById("filterType").value = "";
     document.querySelectorAll('.muscle-icon').forEach(el => el.classList.remove('active'));
+
+    // Remove highligts if any
+    document.getElementById("filterSection").classList.remove("border-danger", "shadow");
+    document.getElementById("filterGroup").classList.remove("border-danger", "shadow");
+
     loadExercisesPage(1);
 }
 

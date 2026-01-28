@@ -15,7 +15,7 @@ print("--- [DEBUG] INICIANDO APP.PY ---", file=sys.stdout, flush=True)
 from config import Config
 import extensions
 from extensions import logger, init_db, create_indexes, db
-from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock
+from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock, check_onboarding_status
 
 # Blueprints
 from routes.auth import auth_bp
@@ -46,6 +46,7 @@ def create_app():
 
     # Registrar middleware
     print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)
+    app.before_request(check_onboarding_status)
     app.before_request(check_user_profile)
     app.before_request(check_workout_lock)
     app.context_processor(inject_user_role)

@@ -1,0 +1,687 @@
+{% extends "layout.html" %}
+
+{% block title %}Configuración Inicial{% endblock %}
+
+{% block sidebar %}
+<!-- Sidebar hidden for wizard -->
+{% endblock %}
+
+{% block content %}
+<div class="container d-flex flex-column" style="min-height: calc(100vh - 100px);">
+
+    <!-- Progress Bar -->
+    <div class="mb-4 mt-2">
+        <div class="progress" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+            <div class="progress-bar bg-cyber-primary" role="progressbar" style="width: 0%" id="progressBar"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2 text-muted text-xs">
+            <span id="stepIndicator">Paso 1 de 4</span>
+            <span id="stepTitle">Objetivos</span>
+        </div>
+    </div>
+
+    <!-- Wizard Container -->
+    <div id="wizardContainer" class="flex-grow-1 d-flex flex-column">
+        <!-- Steps will be injected here -->
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="fixed-bottom bg-panel border-top border-secondary p-3 d-flex justify-content-between gap-3"
+        style="z-index: 1040; max-width: 100%; box-shadow: 0 -4px 20px rgba(0,0,0,0.5);">
+
+        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" id="prevBtn" onclick="prevStep()"
+            style="display: none;">
+            <i class="fas fa-arrow-left me-2"></i>Atrás
+        </button>
+
+        <button type="button" class="btn btn-cyber-primary flex-grow-1 px-4 rounded-pill fw-bold" id="nextBtn"
+            onclick="nextStep()">
+            Siguiente <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+
+    <!-- Padding for fixed bottom -->
+    <div style="height: 100px;"></div>
+
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="completionModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-panel text-white border-cyber">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <div class="spinner-border text-primary" role="status" id="loadingSpinner"></div>
+                    <i class="fas fa-check-circle fa-4x text-success" id="successIcon" style="display: none;"></i>
+                </div>
+                <h3 class="mb-3 text-white">¡Perfil Creado!</h3>
+                <p class="text-gray-300 mb-4">Tu perfil ha sido configurado correctamente.</p>
+                <a href="/landing" class="btn btn-primary w-100 rounded-pill py-3 fw-bold">Continuar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom Styles for Wizard */
+    .bg-panel {
+        background-color: #111827;
+    }
+
+    /* Tailwind Gray 900 */
+    .border-cyber {
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .text-cyber-blue {
+        color: #38bdf8;
+    }
+
+    .bg-cyber-primary {
+        background: linear-gradient(90deg, #0ea5e9, #2563eb);
+    }
+
+    .btn-cyber-primary {
+        background: linear-gradient(90deg, #0ea5e9, #2563eb);
+        border: none;
+        color: white;
+        transition: transform 0.2s;
+    }
+
+    .btn-cyber-primary:active {
+        transform: scale(0.98);
+    }
+
+    /* Selection Cards */
+    .selection-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid #374151;
+        background: #1f2937;
+    }
+
+    .selection-card:hover {
+        border-color: #6b7280;
+        background: #374151;
+    }
+
+    .selection-card.selected {
+        border-color: #38bdf8;
+        background: rgba(14, 165, 233, 0.1);
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+    }
+
+    .selection-card .check-icon {
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s;
+    }
+
+    .selection-card.selected .check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Tags Input */
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid #374151;
+        border-radius: 0.5rem;
+        background: #1f2937;
+    }
+
+    .tag {
+        background: #374151;
+        color: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .tag i {
+        cursor: pointer;
+        color: #9ca3af;
+    }
+
+    .tag i:hover {
+        color: #f87171;
+    }
+
+    .tags-input {
+        background: transparent;
+        border: none;
+        color: white;
+        flex-grow: 1;
+        min-width: 120px;
+        outline: none;
+    }
+</style>
+
+<script>
+    // --- Data Initialization ---
+    const flowData = {{ onboarding_flow | tojson }};
+    const steps = flowData.steps;
+    let currentStepIndex = 0;
+    const formData = {}; // Stores all answers
+
+    // --- DOM Elements ---
+    const container = document.getElementById('wizardContainer');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+    const stepIndicator = document.getElementById('stepIndicator');
+    const stepTitle = document.getElementById('stepTitle');
+
+    // --- Core Functions ---
+
+    function initWizard() {
+        renderStep(currentStepIndex);
+        updateProgress();
+    }
+
+    function renderStep(index) {
+        container.innerHTML = '';
+        const step = steps[index];
+
+        // Step Header
+        const header = document.createElement('div');
+        header.className = 'mb-4 animation-fade-in';
+        header.innerHTML = `
+            <h2 class="fw-bold text-white mb-2">${step.title}</h2>
+            <p class="text-gray-400">${step.description}</p>
+        `;
+        container.appendChild(header);
+
+        // Fields Container
+        const form = document.createElement('div');
+        form.className = 'd-flex flex-column gap-4 animation-slide-up';
+
+        step.fields.forEach(field => {
+            const fieldEl = createFieldElement(field);
+            if (field.dependency) {
+                fieldEl.dataset.dependencyKey = field.dependency.key;
+                fieldEl.dataset.dependencyNotValue = field.dependency.not_value;
+                // Initially hide if dependency not met (checked later)
+                fieldEl.style.display = 'none';
+            }
+            form.appendChild(fieldEl);
+        });
+
+        container.appendChild(form);
+
+        // Re-evaluate dependencies after rendering
+        checkDependencies();
+
+        // Restore values if navigating back
+        restoreValues(step);
+    }
+
+    function createFieldElement(field) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'field-wrapper';
+        wrapper.id = `field_${field.key}`;
+
+        // Label & tooltip
+        let labelHtml = `<label class="form-label text-gray-200 fw-semibold d-flex align-items-center gap-2">
+            ${field.label} ${field.required ? '<span class="text-danger">*</span>' : ''}
+        </label>`;
+
+        if (field.info_tooltip) {
+            labelHtml = `<label class="form-label text-gray-200 fw-semibold d-flex align-items-center gap-2">
+                ${field.label} ${field.required ? '<span class="text-danger">*</span>' : ''}
+                <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" title="${field.info_tooltip}"></i>
+            </label>`;
+        }
+
+        wrapper.innerHTML = labelHtml;
+
+        // Input based on type
+        let inputHtml = '';
+
+        if (field.type === 'single_select') {
+            inputHtml = `<div class="d-grid gap-2">
+                ${field.options.map(opt => `
+                    <div class="selection-card p-3 rounded-3 d-flex align-items-center justify-content-between" 
+                         onclick="selectOption('${field.key}', '${opt.value}', this)">
+                        <span class="fw-medium text-white">${opt.label}</span>
+                        <i class="fas fa-check-circle text-cyber-blue check-icon"></i>
+                        <input type="radio" name="${field.key}" value="${opt.value}" class="d-none" ${field.required ? 'required' : ''}>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+        else if (field.type === 'multi_select') {
+            inputHtml = `<div class="d-grid gap-2">
+                ${field.options.map(opt => `
+                    <div class="selection-card p-3 rounded-3 d-flex align-items-center justify-content-between" 
+                         onclick="toggleOption('${field.key}', '${opt.value}', this)">
+                        <span class="fw-medium text-white">${opt.label}</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="${field.key}" value="${opt.value}" style="pointer-events: none;">
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+        else if (field.type === 'number') {
+            inputHtml = `<input type="number" class="form-control bg-dark text-white border-secondary p-3" 
+                name="${field.key}" 
+                min="${field.min || ''}" 
+                max="${field.max || ''}"
+                placeholder="Ingresa un número"
+                onchange="updateFormData('${field.key}', this.value)"
+                ${field.required ? 'required' : ''}>`;
+        }
+        else if (field.type === 'text_area') {
+            inputHtml = `<textarea class="form-control bg-dark text-white border-secondary p-3" 
+                name="${field.key}" rows="3"
+                onchange="updateFormData('${field.key}', this.value)"
+                ${field.required ? 'required' : ''}></textarea>`;
+        }
+        else if (field.type === 'tags_input') {
+            inputHtml = `
+                <div class="tags-container" id="tags_${field.key}" onclick="focusTagInput('${field.key}')">
+                    <input type="text" class="tags-input" id="input_${field.key}" 
+                        placeholder="${field.placeholder || 'Escribe y presiona Enter'}"
+                        onkeydown="handleTagInput(event, '${field.key}')">
+                </div>
+                <input type="hidden" name="${field.key}" id="hidden_${field.key}">
+            `;
+        }
+
+        const inputWrapper = document.createElement('div');
+        inputWrapper.innerHTML = inputHtml;
+        wrapper.appendChild(inputWrapper);
+
+        return wrapper;
+    }
+
+    // --- Interaction Handlers ---
+
+    window.selectOption = function (key, value, cardElement) {
+        // Deselect siblings
+        const parent = cardElement.parentElement;
+        parent.querySelectorAll('.selection-card').forEach(el => el.classList.remove('selected'));
+        parent.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+
+        // Select clicked
+        cardElement.classList.add('selected');
+        const input = cardElement.querySelector('input');
+        input.checked = true;
+
+        formData[key] = value;
+        checkDependencies();
+    };
+
+    window.toggleOption = function (key, value, cardElement) {
+        const checkbox = cardElement.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+        cardElement.classList.toggle('selected', checkbox.checked);
+
+        // Update array in formData
+        if (!formData[key]) formData[key] = [];
+        const arr = formData[key];
+
+        if (checkbox.checked) {
+            if (!arr.includes(value)) arr.push(value);
+            // Handle exclusive options (like 'none') if necessary, logic not fully specced but good practice
+            if (value === 'none') {
+                // If None selected, unselect others
+                const parent = cardElement.parentElement;
+                parent.querySelectorAll('.selection-card').forEach(c => {
+                    if (c !== cardElement) {
+                        c.classList.remove('selected');
+                        c.querySelector('input').checked = false;
+                    }
+                });
+                formData[key] = ['none'];
+            } else {
+                // If other selected, unselect None
+                const parent = cardElement.parentElement;
+                const noneCard = Array.from(parent.querySelectorAll('.selection-card')).find(c => c.querySelector('input').value === 'none');
+                if (noneCard && noneCard.classList.contains('selected')) {
+                    noneCard.classList.remove('selected');
+                    noneCard.querySelector('input').checked = false;
+                    formData[key] = formData[key].filter(v => v !== 'none');
+                }
+            }
+        } else {
+            const idx = arr.indexOf(value);
+            if (idx > -1) arr.splice(idx, 1);
+        }
+
+        checkDependencies();
+    };
+
+    window.updateFormData = function (key, value) {
+        // Parse numbers if needed based on input type
+        const input = document.querySelector(`[name="${key}"]`);
+        if (input && input.type === 'number') {
+            formData[key] = value === '' ? null : Number(value);
+        } else {
+            formData[key] = value;
+        }
+    };
+
+    // --- Tag Input Logic ---
+    window.handleTagInput = function (event, key) {
+        if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            const input = event.target;
+            const val = input.value.trim();
+
+            if (val) {
+                addTag(key, val);
+                input.value = '';
+            }
+        }
+    }
+
+    function addTag(key, text) {
+        if (!formData[key]) formData[key] = [];
+        if (formData[key].includes(text)) return;
+        formData[key].push(text);
+
+        renderTags(key);
+        updateHiddenTags(key);
+    }
+
+    window.removeTag = function (key, text) {
+        if (!formData[key]) return;
+        formData[key] = formData[key].filter(t => t !== text);
+        renderTags(key);
+        updateHiddenTags(key);
+    }
+
+    function renderTags(key) {
+        const container = document.getElementById(`tags_${key}`);
+        // Remove existing tags only (keep input)
+        container.querySelectorAll('.tag').forEach(el => el.remove());
+
+        const tags = formData[key] || [];
+        tags.forEach(tag => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'tag animation-pop-in';
+            tagEl.innerHTML = `${tag} <i class="fas fa-times" onclick="removeTag('${key}', '${tag}')"></i>`;
+            container.insertBefore(tagEl, container.lastElementChild);
+        });
+    }
+
+    function updateHiddenTags(key) {
+        const hiddenInfo = document.getElementById(`hidden_${key}`);
+        if (hiddenInfo) hiddenInfo.value = JSON.stringify(formData[key] || []);
+    }
+
+    // --- Navigation & Validation ---
+
+    function scrollToTop() {
+        // Universal scroll attempt
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // Specific container scrolling
+        const container = document.getElementById('wizardContainer');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Main Content fix
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) mainContent.scrollTop = 0;
+    }
+
+    window.nextStep = function () {
+        if (validateCurrentStep()) {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                renderStep(currentStepIndex);
+                updateProgress();
+                scrollToTop();
+            } else {
+                submitForm();
+            }
+        }
+    };
+
+    window.prevStep = function () {
+        if (currentStepIndex > 0) {
+            currentStepIndex--;
+            renderStep(currentStepIndex);
+            updateProgress();
+            scrollToTop();
+        }
+    };
+
+    function updateProgress() {
+        const percent = ((currentStepIndex) / (steps.length)) * 100; // Adjusted logic for progress
+        // Or better: step 1 is partial, last step full? 
+        // Let's do (stepIndex + 1) / total
+        const displayPercent = ((currentStepIndex + 1) / steps.length) * 100;
+
+        progressBar.style.width = `${displayPercent}%`;
+        stepIndicator.innerText = `Paso ${currentStepIndex + 1} de ${steps.length}`;
+        stepTitle.innerText = steps[currentStepIndex].title;
+
+        // Button states
+        prevBtn.style.display = currentStepIndex === 0 ? 'none' : 'block';
+        nextBtn.innerHTML = currentStepIndex === steps.length - 1 ?
+            'Finalizar <i class="fas fa-check ms-2"></i>' :
+            'Siguiente <i class="fas fa-arrow-right ms-2"></i>';
+    }
+
+    function validateCurrentStep() {
+        const currentFields = steps[currentStepIndex].fields;
+        let isValid = true;
+        let firstError = null;
+
+        currentFields.forEach(field => {
+            // Check visibility (dependency)
+            const wrapper = document.getElementById(`field_${field.key}`);
+            if (wrapper.style.display === 'none') return; // Skip hidden fields
+
+            if (field.required) {
+                const val = formData[field.key];
+                const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+
+                if (isEmpty) {
+                    isValid = false;
+                    wrapper.classList.add('animation-shake');
+                    wrapper.style.border = '1px solid #ef4444';
+                    wrapper.style.borderRadius = '8px';
+                    wrapper.style.padding = '10px';
+
+                    setTimeout(() => {
+                        wrapper.classList.remove('animation-shake');
+                        wrapper.style.border = 'none';
+                        wrapper.style.padding = '0';
+                    }, 2000);
+
+                    if (!firstError) firstError = wrapper;
+                }
+            }
+        });
+
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Optional: Show toast
+        }
+
+        return isValid;
+    }
+
+    function checkDependencies() {
+        const fields = document.querySelectorAll('[data-dependency-key]');
+        fields.forEach(fieldEl => {
+            const depKey = fieldEl.dataset.dependencyKey;
+            const notValue = fieldEl.dataset.dependencyNotValue;
+
+            const currentValue = formData[depKey];
+            let isVisible = true;
+
+            // Logic: dependency is satisfied if currentValue != notValue
+            // Handling array values (multi_select)
+            if (Array.isArray(currentValue)) {
+                // For current usage "not_value": "none", if "none" is selected, hide.
+                if (currentValue.includes(notValue)) isVisible = false;
+            } else {
+                if (currentValue === notValue) isVisible = false;
+            }
+            // Also if not defined yet
+            if (currentValue === undefined) isVisible = true; // Default show? or Default hide? 
+            // In the example: "injuries" default None. If None -> Hide Details. 
+            // If user hasn't selected anything yet, default is undefined. 
+            // Pydantic default is [NONE].
+
+            // Let's strictly follow the rule: show only if condition met.
+            // If condition is: key != "none".
+            // If value is undefined (not answered), treat as "none" (safe bet).
+            if (!currentValue || currentValue === 'none' || (Array.isArray(currentValue) && currentValue.includes('none'))) {
+                isVisible = false;
+            } else {
+                isVisible = true;
+            }
+
+            fieldEl.style.display = isVisible ? 'block' : 'none';
+            if (isVisible) {
+                fieldEl.classList.add('animation-fade-in');
+            }
+        });
+    }
+
+    function restoreValues(step) {
+        step.fields.forEach(field => {
+            const val = formData[field.key];
+            if (val === undefined || val === null) return;
+
+            if (field.type === 'single_select') {
+                const input = document.querySelector(`input[name="${field.key}"][value="${val}"]`);
+                if (input) {
+                    input.checked = true;
+                    input.closest('.selection-card').classList.add('selected');
+                }
+            } else if (field.type === 'multi_select') {
+                val.forEach(v => {
+                    const input = document.querySelector(`input[name="${field.key}"][value="${v}"]`);
+                    if (input) {
+                        input.checked = true;
+                        input.closest('.selection-card').classList.add('selected');
+                    }
+                });
+            } else if (field.type === 'number' || field.type === 'text_area') {
+                const input = document.querySelector(`[name="${field.key}"]`);
+                if (input) input.value = val;
+            } else if (field.type === 'tags_input') {
+                renderTags(field.key);
+            }
+        });
+    }
+
+    async function submitForm() {
+        const modal = new bootstrap.Modal(document.getElementById('completionModal'));
+        modal.show();
+
+        try {
+            const res = await fetch('/onboarding/api/wizard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('successIcon').style.display = 'inline-block';
+                // Auto-redirect after 2 seconds
+                setTimeout(() => window.location.href = '/landing', 2000);
+            } else {
+                alert('Error: ' + JSON.stringify(result.error || result.details));
+                modal.hide();
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert('Error de conexión');
+            modal.hide();
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', initWizard);
+
+</script>
+
+<style>
+    /* Animations */
+    .animation-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .animation-slide-up {
+        animation: slideUp 0.5s ease-out;
+    }
+
+    .animation-pop-in {
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes popIn {
+        from {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
+    }
+
+    .animation-shake {
+        animation: shake 0.3s ease-in-out;
+    }
+</style>
+{% endblock %}

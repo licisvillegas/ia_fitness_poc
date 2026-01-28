@@ -37,6 +37,7 @@ def check_user_profile():
        request.path.startswith("/logout") or \
        request.path.startswith("/register") or \
        request.path.startswith("/admin") or \
+       request.path.startswith("/onboarding") or \
        request.path == "/":
         return
     
@@ -48,17 +49,57 @@ def check_user_profile():
     if request.path == "/profile":
         return
     
-    # Check if user has profile
+    # Check if user has profile OR has completed onboarding
     if extensions.db is not None:
         try:
+            # Check onboarding flag first (New Flow)
+            user_doc = extensions.db.users.find_one({"user_id": user_id}, {"onboarding_completed": 1})
+            if user_doc and user_doc.get("onboarding_completed"):
+                return
+
+            # Check legacy profile (Old Flow)
             profile = extensions.db.user_profiles.find_one({"user_id": user_id})
             if not profile:
-                # User logged in but no profile -> Force redirect
+                # User logged in but no profile/onboarding -> Force redirect
                 return redirect("/profile")
         except Exception as e:
             logger.error(f"Error checking profile middleware: {e}")
             pass
 
+def check_onboarding_status():
+    """
+    Middleware to ensure users successfully completed the onboarding wizard.
+    If 'onboarding_completed' is not True in their user document, force redirect to /onboarding/wizard.
+    """
+    if request.endpoint and "static" in request.endpoint:
+        return
+
+    # Exclusions
+    if request.path.startswith("/auth") or \
+       request.path.startswith("/api/") or \
+       request.path.startswith("/login") or \
+       request.path.startswith("/logout") or \
+       request.path.startswith("/register") or \
+       request.path.startswith("/admin") or \
+       request.path.startswith("/onboarding") or \
+       request.path == "/": # Landing or login page
+        return
+
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return
+    
+    if extensions.db is not None:
+        try:
+            # Check user doc for onboarding_completed flag
+            user = extensions.db.users.find_one({"user_id": user_id}, {"onboarding_completed": 1})
+            if user:
+                completed = user.get("onboarding_completed", False)
+                if not completed:
+                    return redirect("/onboarding/wizard")
+        except Exception as e:
+            logger.error(f"Error checking onboarding status: {e}")
+            pass
 
 def inject_user_role():
     """
@@ -131,7 +172,8 @@ def check_workout_lock():
     # Exclude basic paths
     if request.path.startswith("/auth") or \
        request.path.startswith("/admin") or \
-       request.path.startswith("/static"):
+       request.path.startswith("/static") or \
+       request.path.startswith("/onboarding"): # Exclude onboarding from workout lock too!
         return
         
     # Exclude ALL APIs (Global + Workout)

@@ -25,7 +25,7 @@
             { key: 'biceps', img: 'bic.png', label: 'B\u00edceps' },
             { key: 'triceps', img: 'tri.png', label: 'Tr\u00edceps' },
             { key: 'quadriceps', img: 'cua.png', label: 'Pierna' },
-            { key: 'abs', img: 'abs.png', label: 'Abdomen' },
+            { key: 'core', img: 'abs.png', label: 'Abdomen' },
             { key: 'glutes', img: 'glu.png', label: 'Gl\u00fateos' }
         ]
     };

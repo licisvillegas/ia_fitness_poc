@@ -203,7 +203,7 @@ function updateGroupOptions(sectionId) {
     const muscleSel = document.getElementById("filterMuscle");
 
     groupSel.innerHTML = '<option value="">Grupo...</option>';
-    muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
+    muscleSel.innerHTML = '<option value="">Músculo...</option>';
     groupSel.disabled = !sectionId;
     muscleSel.disabled = true;
 
@@ -222,7 +222,7 @@ function updateGroupOptions(sectionId) {
 
 function updateMuscleOptions(sectionId, groupId) {
     const muscleSel = document.getElementById("filterMuscle");
-    muscleSel.innerHTML = '<option value="">MÃºsculo...</option>';
+    muscleSel.innerHTML = '<option value="">Músculo...</option>';
     muscleSel.disabled = !groupId;
 
     if (!sectionId || !groupId) return;

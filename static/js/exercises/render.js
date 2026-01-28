@@ -28,7 +28,7 @@
         const totalPages = Math.max(1, Math.ceil(state.totalItems / pageSize));
         const pageInfo = document.getElementById('pageInfo');
         if (pageInfo) {
-            pageInfo.textContent = `PÃ¡gina ${state.currentPage} de ${totalPages} (${state.totalItems})`;
+            pageInfo.textContent = `Página ${state.currentPage} de ${totalPages} (${state.totalItems})`;
         }
         const prevBtn = document.getElementById('prevPageBtn');
         const nextBtn = document.getElementById('nextPageBtn');

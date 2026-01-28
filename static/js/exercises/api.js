@@ -52,7 +52,7 @@
             state.taxonomyData = await res.json();
 
             const sectionSel = document.getElementById('filterSection');
-            sectionSel.innerHTML = '<option value="">SecciÃ³n...</option>';
+            sectionSel.innerHTML = '<option value="">Sección...</option>';
 
             state.taxonomyData.forEach(sect => {
                 const opt = document.createElement('option');

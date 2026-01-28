@@ -46,8 +46,8 @@ def create_app():
 
     # Registrar middleware
     print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)
-    app.before_request(check_onboarding_status)
-    app.before_request(check_user_profile)
+    app.before_request(check_user_profile)    # Priority 1: Profile Completeness
+    app.before_request(check_onboarding_status) # Priority 2: Onboarding Flow
     app.before_request(check_workout_lock)
     app.context_processor(inject_user_role)
 

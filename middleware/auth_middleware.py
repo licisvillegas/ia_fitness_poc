@@ -40,18 +40,44 @@ def check_user_profile():
     if request.path == "/profile":
         return
     
-    # Check if user has profile (STRICT CHECK)
+    # Exclusions
+    if request.path.startswith("/auth") or \
+       request.path.startswith("/api") or \
+       request.path.startswith("/logout") or \
+       request.path.startswith("/register") or \
+       request.path.startswith("/admin") or \
+       request.path.startswith("/onboarding") or \
+       request.path == "/": # Landing or login page
+        return
+    
+    # Allow access to profile page to fill data
+    if request.path == "/profile":
+        return
+    
     user_id = request.cookies.get("user_session")
     if not user_id: 
         return
 
     if extensions.db is not None:
         try:
-            # Strict: Must have document in user_profiles
+            # Strict Check: Must have profile AND required fields
             profile = extensions.db.user_profiles.find_one({"user_id": user_id})
-            if not profile:
-                # User logged in but no profile -> Force redirect
+            
+            # Check if profile exists and has required fields
+            is_complete = False
+            if profile:
+                has_sex = bool(profile.get("sex"))
+                has_phone = bool(profile.get("phone"))
+                has_birth = bool(profile.get("birth_date"))
+                
+                if has_sex and has_phone and has_birth:
+                    is_complete = True
+            
+            if not is_complete:
+                # Force redirect to profile to complete data
+                logger.info(f"REDIRECT PROFILE: User {user_id} incomplete profile. Redirecting to /profile")
                 return redirect("/profile")
+                
         except Exception as e:
             logger.error(f"Error checking profile middleware: {e}")
             pass

@@ -24,16 +24,12 @@ def _parse_dt(value):
 
 def check_user_profile():
     """
-    Middleware to ensure logged-in users have a profile.
-    If not, redirects them to /profile to complete it.
-    Excludes static files, auth routes, and admin routes.
+    Verifica si el usuario tiene un perfil creado en user_profiles.
+    Si no, redirige a /profile.
     """
-    if request.endpoint and "static" in request.endpoint:
-        return
-    
-    # Exclude auth and API routes from redirection loop
-    if request.path.startswith("/api/") or \
-       request.path.startswith("/login") or \
+    if request.path.startswith("/static") or \
+       request.path.startswith("/auth") or \
+       request.path.startswith("/api") or \
        request.path.startswith("/logout") or \
        request.path.startswith("/register") or \
        request.path.startswith("/admin") or \
@@ -41,26 +37,20 @@ def check_user_profile():
        request.path == "/":
         return
     
-    user_id = request.cookies.get("user_session")
-    if not user_id:
-        return
-    
-    # If already on profile page, allow access
     if request.path == "/profile":
         return
     
-    # Check if user has profile OR has completed onboarding
+    # Check if user has profile (STRICT CHECK)
+    user_id = request.cookies.get("user_session")
+    if not user_id: 
+        return
+
     if extensions.db is not None:
         try:
-            # Check onboarding flag first (New Flow)
-            user_doc = extensions.db.users.find_one({"user_id": user_id}, {"onboarding_completed": 1})
-            if user_doc and user_doc.get("onboarding_completed"):
-                return
-
-            # Check legacy profile (Old Flow)
+            # Strict: Must have document in user_profiles
             profile = extensions.db.user_profiles.find_one({"user_id": user_id})
             if not profile:
-                # User logged in but no profile/onboarding -> Force redirect
+                # User logged in but no profile -> Force redirect
                 return redirect("/profile")
         except Exception as e:
             logger.error(f"Error checking profile middleware: {e}")

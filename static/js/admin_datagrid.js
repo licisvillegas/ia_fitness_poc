@@ -21,6 +21,7 @@ class AdminDataGrid {
         this.currentPage = 1;
         this.pageSize = config.pageSize || 20;
         this.currentSearch = "";
+        this.filters = {};
         this.searchTimer = null;
         this.abortController = null;
     }
@@ -28,6 +29,15 @@ class AdminDataGrid {
     init() {
         this.loadPage(1);
         this.bindEvents();
+    }
+
+    setFilter(key, value) {
+        if (value === "" || value === null) {
+            delete this.filters[key];
+        } else {
+            this.filters[key] = value;
+        }
+        this.loadPage(1);
     }
 
     bindEvents() {
@@ -55,6 +65,11 @@ class AdminDataGrid {
             url.searchParams.set('page', page);
             url.searchParams.set('limit', this.pageSize);
             if (this.currentSearch) url.searchParams.set('search', this.currentSearch);
+
+            // Append extra filters
+            Object.keys(this.filters).forEach(key => {
+                url.searchParams.set(key, this.filters[key]);
+            });
 
             const res = await fetch(url, { signal: this.abortController.signal });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);

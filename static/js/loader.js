@@ -75,4 +75,32 @@
     document.addEventListener('DOMContentLoaded', function () {
         window.hideLoader();
     });
+
+    /**
+     * Helper to load images with skeleton effect
+     * @param {HTMLImageElement} img - Image element
+     * @param {string} src - New Source URL
+     * @param {HTMLElement} [container] - Container for skeleton class (defaults to parent)
+     */
+    window.loadImageWithSkeleton = function (img, src, container = null) {
+        if (!img) return;
+        const parent = container || img.parentElement;
+
+        // Reset
+        img.classList.remove('loaded');
+        img.classList.add('img-skeleton'); // Ensure class exists
+        if (parent) parent.classList.add('skeleton-pulse');
+
+        img.onload = function () {
+            img.classList.add('loaded');
+            if (parent) parent.classList.remove('skeleton-pulse');
+        };
+
+        img.onerror = function () {
+            // Handle error (optional: remove skeleton so it doesn't pulse forever)
+            if (parent) parent.classList.remove('skeleton-pulse');
+        };
+
+        img.src = src;
+    };
 })();

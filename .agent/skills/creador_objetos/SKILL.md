@@ -29,6 +29,11 @@ Este skill guía al agente en la creación de nuevos componentes, módulos y obj
     *   **Comentarios**: Explicar la funcionalidad de componentes complejos.
     *   **Codificación**: Guardar archivos obligatoriamente en **UTF-8**.
 
+5.  **UX y Carga de Imágenes**:
+    *   Para agregar *skeleton loading* a cualquier imagen, utilizar la utilidad global en `loader.js`:
+        `window.loadImageWithSkeleton(imagenElement, nuevaUrl, contenedorOpcional);`
+    *   Esta función maneja automáticamente las clases `skeleton-pulse`, `img-skeleton` y `loaded`.
+
 ## Checklist de Validación Post-Creación
 
 Antes de dar por terminada la creación de un objeto, verifica:
@@ -37,6 +42,7 @@ Antes de dar por terminada la creación de un objeto, verifica:
 - [ ] ¿Se han utilizado las variables de `theme.css`?
 - [ ] ¿Toda la documentación y comentarios están en español?
 - [ ] ¿Se ha registrado la nueva ruta o componente en los archivos principales (ej: `app.py`)?
+- [ ] ¿Se utiliza `window.loadImageWithSkeleton` para la carga de imágenes dinámicas?
 
 ## Ejemplos de Estructura Coherente
 

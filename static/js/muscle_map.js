@@ -259,9 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (muscleImages[name] && muscleImage && muscleImageCard) {
-            muscleImage.classList.remove('loaded');
-            muscleImageCard.classList.add('skeleton-pulse');
-            muscleImage.src = `/static/images/muscles/male/${muscleImages[name]}`;
+            window.loadImageWithSkeleton(muscleImage, `/static/images/muscles/male/${muscleImages[name]}`, muscleImageCard);
             muscleImageCard.classList.remove('d-none');
         } else {
             muscleImageCard?.classList.add('d-none');
@@ -349,7 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const mapName = muscleName?.textContent || 'músculo';
-            modalImage.src = muscleImage.src;
+
+            window.loadImageWithSkeleton(modalImage, muscleImage.src);
             modalTitle.textContent = mapName;
             modalTip.textContent = muscleTips[mapName] || '';
             const descriptionKey = glossaryMap[mapName];

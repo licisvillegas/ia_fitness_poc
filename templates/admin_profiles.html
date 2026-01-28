@@ -57,6 +57,14 @@
                             <div class="d-flex gap-2">
                                 <div class="position-relative flex-grow-1">
                                     <div class="input-group">
+                                        <select class="form-select border-secondary text-secondary" id="filterStatus"
+                                            style="max-width: 150px;">
+                                            <option value="">Estado: Todos</option>
+                                            <option value="active">Activo</option>
+                                            <option value="pending">Pendiente</option>
+                                            <option value="suspended">Suspendido</option>
+                                            <option value="inactive">Inactivo</option>
+                                        </select>
                                         <input type="text" class="form-control" id="userSearchTerm"
                                             placeholder="Buscar: nombre, email o ID...">
                                         <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
@@ -294,10 +302,17 @@
 
             window.profileGrid.init();
 
+            // Hook Filter
+            document.getElementById('filterStatus').addEventListener('change', (e) => {
+                window.profileGrid.setFilter('status', e.target.value);
+            });
+
             // Hook Refresh/Clear
             document.getElementById('btnRefresh').addEventListener('click', () => window.profileGrid.loadPage(1));
             document.getElementById('btnClearUserSearch').addEventListener('click', () => {
                 document.getElementById('userSearchTerm').value = "";
+                document.getElementById('filterStatus').value = "";
+                window.profileGrid.setFilter('status', "");
                 window.profileGrid.loadPage(1);
             });
 

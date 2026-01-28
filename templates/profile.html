@@ -129,6 +129,22 @@
       object-fit: cover;
       display: none;
     }
+
+    /* Skeleton integration */
+    .profile-avatar.skeleton-pulse {
+      background: linear-gradient(-90deg, var(--bg-card) 0%, var(--bg-card-hover) 50%, var(--bg-card) 100%);
+      background-size: 400% 400%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .profile-avatar img.img-skeleton {
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .profile-avatar img.img-skeleton.loaded {
+      opacity: 1;
+    }
   </style>
 </head>
 
@@ -306,14 +322,18 @@
     const btnUploadProfileImage = document.getElementById('btnUploadProfileImage');
 
     const setProfileImage = (url) => {
+      const profileInitial = document.getElementById('profile-initial');
+
       if (url) {
-        profileImg.src = url;
-        profileImg.style.display = 'block';
         profileIcon.style.display = 'none';
+        profileImg.style.display = 'block';
+        // Use shared utility
+        window.loadImageWithSkeleton(profileImg, url, profileInitial);
       } else {
         profileImg.removeAttribute('src');
         profileImg.style.display = 'none';
         profileIcon.style.display = 'block';
+        profileInitial.classList.remove('skeleton-pulse');
       }
     };
 

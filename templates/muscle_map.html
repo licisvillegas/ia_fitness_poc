@@ -13,7 +13,8 @@
 <div class="row align-items-center mb-4">
     <div class="col-lg-8">
         <h2 class="fw-bold text-cyber-green mb-1"><i class="fas fa-project-diagram me-2"></i>Mapa Muscular</h2>
-        <p class="text-secondary mb-2 d-none d-md-block">Selecciona un músculo para ver información rápida y enfocarte en el grupo.</p>
+        <p class="text-secondary mb-2 d-none d-md-block">Selecciona un músculo para ver información rápida y enfocarte
+            en el grupo.</p>
         <div class="d-flex flex-wrap gap-1 mb-2">
             <div class="info-pill"><i class="fas fa-mouse-pointer me-1"></i>Click</div>
             <div class="info-pill active-pill"><i class="fas fa-highlighter me-1"></i>Activo</div>
@@ -32,23 +33,24 @@
                     Mapa muscular
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" id="gender-toggle" class="btn btn-sm btn-outline-secondary" aria-label="Cambiar genero">
+                    <button type="button" id="gender-toggle" class="btn btn-sm btn-outline-secondary"
+                        aria-label="Cambiar genero">
                         <i class="fas fa-mars me-1"></i><span class="d-none d-sm-inline">Masculino</span>
                     </button>
                     <ul class="nav nav-tabs nav-tabs-clean" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="front-tab" data-bs-toggle="tab"
-                            data-bs-target="#front-panel" type="button" role="tab" aria-controls="front-panel"
-                            aria-selected="true">
-                            Vista frontal
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="back-tab" data-bs-toggle="tab" data-bs-target="#back-panel"
-                            type="button" role="tab" aria-controls="back-panel" aria-selected="false">
-                            Vista posterior
-                        </button>
-                    </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="front-tab" data-bs-toggle="tab"
+                                data-bs-target="#front-panel" type="button" role="tab" aria-controls="front-panel"
+                                aria-selected="true">
+                                Vista frontal
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="back-tab" data-bs-toggle="tab" data-bs-target="#back-panel"
+                                type="button" role="tab" aria-controls="back-panel" aria-selected="false">
+                                Vista posterior
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -57,7 +59,7 @@
                     <div class="col-md-7 border-end border-secondary border-opacity-25 relative-position"
                         style="position: relative;">
                         <!-- Controles flotantes -->
-                                                <div class="map-controls">
+                        <div class="map-controls">
                             <button class="btn btn-glass btn-icon mb-2" id="toggleViewBtn" title="Rotar vista"
                                 aria-label="Rotar vista">
                                 <i class="fas fa-sync-alt"></i>
@@ -173,27 +175,27 @@
                                                     d="M355 320 L345 265 Q360 255 370 275 L365 320 Z" />
 
                                                 <path id="glutes-left" class="muscle" data-name="Gluteos"
-                                                      d="M195 315 L240 315 L240 385 Q195 375 195 315 Z" />
+                                                    d="M195 315 L240 315 L240 385 Q195 375 195 315 Z" />
                                                 <path id="glutes-right" class="muscle" data-name="Gluteos"
-                                                      d="M305 315 L260 315 L260 385 Q305 375 305 315 Z" />
+                                                    d="M305 315 L260 315 L260 385 Q305 375 305 315 Z" />
                                                 <path id="abductors-back-left" class="muscle" data-name="Abductores"
                                                     d="M185 335 L195 335 L190 385 L170 375 Z" />
                                                 <path id="abductors-back-right" class="muscle" data-name="Abductores"
                                                     d="M315 335 L305 335 L310 385 L330 375 Z" />
 
                                                 <path id="hamstrings-left" class="muscle" data-name="Isquiotibiales"
-                                                      d="M180 400 L215 400 L210 485 L185 485 Z" />
+                                                    d="M180 400 L215 400 L210 485 L185 485 Z" />
                                                 <path id="hamstrings-right" class="muscle" data-name="Isquiotibiales"
-                                                      d="M320 400 L285 400 L290 485 L315 485 Z" />
+                                                    d="M320 400 L285 400 L290 485 L315 485 Z" />
                                                 <path id="adductors-back-left" class="muscle" data-name="Aductores"
                                                     d="M225 395 Q215 420 225 460 Q245 440 240 395 Z" />
                                                 <path id="adductors-back-right" class="muscle" data-name="Aductores"
                                                     d="M275 395 Q285 420 275 460 Q255 440 260 395 Z" />
 
                                                 <path id="calves-back-left" class="muscle" data-name="Gemelos"
-                                                      d="M175 508 Q165 538 175 578 Q195 558 190 508 Z" />
+                                                    d="M175 508 Q165 538 175 578 Q195 558 190 508 Z" />
                                                 <path id="calves-back-right" class="muscle" data-name="Gemelos"
-                                                      d="M325 508 Q335 538 325 578 Q305 558 310 508 Z" />
+                                                    d="M325 508 Q335 538 325 578 Q305 558 310 508 Z" />
                                             </g>
                                         </g>
                                     </svg>
@@ -233,7 +235,7 @@
             </div>
 
             <!-- Modal para la imagen del músculo -->
-<!-- Modal para imagen en pantalla completa -->
+            <!-- Modal para imagen en pantalla completa -->
             <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-fullscreen">
                     <div class="modal-content bg-dark">
@@ -265,7 +267,7 @@
 
                             <div class="flex-grow-1 d-flex align-items-center justify-content-center p-3 relative-position"
                                 style="min-height: 0; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%);">
-                                <img src="" id="modalImage" class="img-fluid"
+                                <img src="" id="modalImage" class="img-fluid img-skeleton"
                                     style="max-height: 100%; max-width: 100%; object-fit: contain;"
                                     alt="Imagen del músculo">
                             </div>
@@ -273,8 +275,6 @@
                     </div>
                 </div>
             </div>
-            
-<script src="/static/js/muscle_map.js"></script>
-{% endblock %}
 
-
+            <script src="/static/js/muscle_map.js"></script>
+            {% endblock %}

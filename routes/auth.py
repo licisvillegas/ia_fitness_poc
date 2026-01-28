@@ -9,6 +9,7 @@ import extensions
 from extensions import logger
 from utils.auth_helpers import ensure_user_status, get_admin_token, generate_admin_csrf, USER_STATUS_DEFAULT
 from utils.cache import cache_delete
+from utils.audit import log_audit_event
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -50,11 +51,13 @@ def auth_register():
             "created_at": datetime.utcnow(),
         }
         res = extensions.db.users.insert_one(doc)
+        user_id = str(res.inserted_id)
+        
         try:
-            extensions.db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": str(res.inserted_id)}})
+            extensions.db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": user_id}})
         except Exception:
             pass
-        user_id = str(res.inserted_id)
+            
         try:
             extensions.db.user_status.update_one(
                 {"user_id": user_id},
@@ -63,8 +66,13 @@ def auth_register():
             )
         except Exception:
             pass
+            
         user = {"user_id": user_id, "name": name, "username": username, "email": email, "status": "pending"}
         logger.info(f"Usuario registrado: {email} ({username})")
+        
+        # AUDIT
+        log_audit_event("USER_REGISTER", user_id=user_id, details={"email": email, "username": username})
+        
         return jsonify({"message": "Registro exitoso", "user": user}), 201
 
     except mongo_errors.DuplicateKeyError as e:
@@ -98,12 +106,18 @@ def auth_login_api():
         identifier_lower = identifier.lower()
         lookup_field = "email" if "@" in identifier else "username_lower"
         u = extensions.db.users.find_one({lookup_field: identifier_lower})
+        
         if not u or not check_password_hash(u.get("password_hash", ""), password):
+            # AUDIT FAILED LOGIN
+            log_audit_event("LOGIN_FAILED", details={"identifier": identifier}, level="warn")
             return jsonify({"error": "Credenciales inválidas."}), 401
 
         user_id = str(u.get("user_id") or u["_id"])
         status = ensure_user_status(user_id, default_status=USER_STATUS_DEFAULT)
         if status != "active":
+            # AUDIT BLOCKED LOGIN
+            log_audit_event("LOGIN_BLOCKED", user_id=user_id, details={"status": status}, level="warn")
+            
             if status == "pending":
                 return jsonify({"error": "Cuenta pendiente de activacion por admin.", "status": status}), 403
             if status == "suspended":
@@ -120,6 +134,9 @@ def auth_login_api():
             "status": status,
         }
         logger.info(f"Usuario accedió: {u.get('email')} ({u.get('username')})")
+        
+        # AUDIT SUCCESS LOGIN
+        log_audit_event("USER_LOGIN", user_id=user_id, details={"method": "credentials"})
         
         resp = jsonify({"message": "Inicio de sesión exitoso", "user": user})
         
@@ -142,6 +159,7 @@ def auth_login_api():
     except Exception as e:
         logger.error(f"Error en login: {e}", exc_info=True)
         return jsonify({"error": "Error interno en inicio de sesión"}), 500
+
 @auth_bp.post("/admin/login")
 def admin_login():
     """Valida el token de administrador enviado por POST y establece cookie.
@@ -199,6 +217,7 @@ def admin_validate():
         return jsonify({"ok": True}), 200
     except Exception:
         return jsonify({"error": "Error validando acceso admin"}), 500
+
 @auth_bp.post("/verify_admin_token")
 def verify_admin_token_endpoint():
     """Valida token para funciones avanzadas de admin (frontend)."""
@@ -236,10 +255,15 @@ def verify_admin_token_endpoint():
     except Exception as e:
         logger.error(f"Error verificando token admin: {e}")
         return jsonify({"ok": False, "error": "Error interno"}), 500
+
 @auth_bp.post("/logout")
 def auth_logout():
     """Cierra sesión eliminando todas las cookies de autenticación."""
     try:
+        user_id = request.cookies.get("user_session")
+        if user_id:
+            log_audit_event("USER_LOGOUT", user_id=user_id)
+            
         resp = jsonify({"message": "Sesión cerrada correctamente"})
         
         # Eliminar todas las cookies posibles

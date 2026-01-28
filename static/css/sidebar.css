@@ -298,3 +298,8 @@ body.sb-right.sb-collapsed .sidebar-fixed .collapsing {
 }
 
 /* Mobile Toggler (Optional, if we want a hamburger menu on mobile instead of stacked) */
+
+/* Helper for iOS/Sidebar overflow fix */
+.sidebar-fixed.overflow-visible {
+    overflow: visible !important;
+}

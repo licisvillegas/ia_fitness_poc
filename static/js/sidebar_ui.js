@@ -116,4 +116,35 @@ function initSidebar(config) {
             }
         });
     });
+    // --- 5. User Menu Floating Fix (iOS/Overflow) ---
+    const userCollapse = document.getElementById("user-collapse");
+    if (userCollapse && sidebarFixed) {
+        userCollapse.addEventListener('show.bs.collapse', function () {
+            // Only if sidebar is visually collapsed (desktop mode)
+            if (document.body.classList.contains("sb-collapsed")) {
+                sidebarFixed.classList.add("overflow-visible");
+            }
+        });
+
+        userCollapse.addEventListener('hide.bs.collapse', function () {
+            sidebarFixed.classList.remove("overflow-visible");
+        });
+
+        // Improve click outside behavior for the "floating" menu
+        document.addEventListener('click', function (event) {
+            if (document.body.classList.contains("sb-collapsed") &&
+                userCollapse.classList.contains('show') &&
+                !userCollapse.contains(event.target) &&
+                !event.target.closest('.dropdown-toggle-user')) {
+
+                // If we clicked outside the menu AND outside the toggle, close it.
+                // NOTE: We need to use Bootstrap's API to close it properly if possible,
+                // or just remove the class if simple toggle isn't enough.
+                const bsCollapse = bootstrap.Collapse.getInstance(userCollapse);
+                if (bsCollapse) {
+                    bsCollapse.hide();
+                }
+            }
+        });
+    }
 }

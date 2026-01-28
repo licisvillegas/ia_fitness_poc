@@ -27,3 +27,4 @@ app.txt
 routes.txt
 debug_routes.py
 unclassified_exercises.md
+/routes/__pycache__

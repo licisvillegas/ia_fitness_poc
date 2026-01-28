@@ -184,7 +184,7 @@ async function loadBodyParts() {
         taxonomyData = await res.json();
 
         const sectionSel = document.getElementById("filterSection");
-        sectionSel.innerHTML = '<option value="">SecciÃ³n...</option>';
+        sectionSel.innerHTML = '<option value="">Sección...</option>';
 
         taxonomyData.forEach(sect => {
             const opt = document.createElement("option");
@@ -558,10 +558,10 @@ async function openExerciseDetails(id) {
     if (metaEl) {
         const altNames = Array.isArray(ex.alternative_names) ? ex.alternative_names : [];
         const items = [
-            { label: "PatrÃ³n", value: ex.pattern },
+            { label: "Patrón", value: ex.pattern },
             { label: "Plano", value: ex.plane },
             { label: "Unilateral", value: ex.unilateral ? "Si" : "No" },
-            { label: "MÃºsculo primario", value: ex.primary_muscle },
+            { label: "Músculo primario", value: ex.primary_muscle },
             { label: "Nivel", value: ex.level },
             { label: "Nombres alternativos", value: altNames.join(", ") }
         ].filter(item => item.value);

@@ -65,90 +65,96 @@ def _send_push_notification_sync(user_id, title, body, url):
             logger.info(f"Scheduled Push: No subscriptions for {user_id}")
             return
 
-        # Prepare VAPID Key in a secure temporary file
-        # We switch to TraditionalOpenSSL (SEC1) format to avoid ASN.1 errors with py-vapid
-        vapid_file_path = None
+        # Prepare VAPID Headers Manually to bypass py-vapid incompatibility
+        import jwt
+        # Load Private Key explicitly
         try:
             key_str = Config.VAPID_PRIVATE_KEY
             if not key_str:
                 logger.error("VAPID_PRIVATE_KEY not configured")
                 return
 
-            pem_bytes = None
+            private_key = None
             if "-----BEGIN" in key_str:
-                 # Already PEM string, convert to bytes
+                 # Load from PEM
                  pem_bytes = key_str.encode('utf-8') if isinstance(key_str, str) else key_str
+                 private_key = serialization.load_pem_private_key(pem_bytes, password=None)
             else:
-                 # Convert base64url to PEM bytes
-                 try:
-                     key_str_padded = key_str + '=' * (-len(key_str) % 4)
-                     private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
-                     curve = ec.SECP256R1()
-                     private_key = ec.derive_private_key(private_value, curve)
-                     
-                     # Use TraditionalOpenSSL to minimize ASN.1 parsing issues
-                     pem_bytes = private_key.private_bytes(
-                         encoding=serialization.Encoding.PEM,
-                         format=serialization.PrivateFormat.TraditionalOpenSSL,
-                         encryption_algorithm=serialization.NoEncryption()
-                     )
-                 except Exception as conv_err:
-                     print(f"--- [DEBUG] VAPID Conversion Error: {conv_err} ---", flush=True)
-                     return
+                 # Convert base64url
+                 # Add padding if needed
+                 key_str_padded = key_str + '=' * (-len(key_str) % 4)
+                 private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
+                 curve = ec.SECP256R1()
+                 private_key = ec.derive_private_key(private_value, curve)
+        except Exception as e:
+            logger.error(f"Manual VAPID Key Load Error: {e}")
+            return
 
-            # Write to temp file
-            # delete=False because we need to close it before passing path to pywebpush on Windows
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pem') as tf:
-                tf.write(pem_bytes)
-                vapid_file_path = tf.name
-
-            sent = 0
-            rem = 0
-            
-            for sub in subs:
-                sub_info = sub.get("subscription") or {
-                    "endpoint": sub.get("endpoint"),
-                    "keys": sub.get("keys") or {},
-                }
-                try:
-                    webpush(
-                        subscription_info=sub_info,
-                        data=payload,
-                        vapid_private_key=vapid_file_path,
-                        vapid_claims={"sub": Config.VAPID_SUBJECT},
-                    )
-                    sent += 1
-                except WebPushException as exc:
-                    status_code = getattr(getattr(exc, "response", None), "status_code", None)
-                    if status_code in (404, 410):
-                        try:
-                            # Prune invalid subscriptions
-                            db.push_subscriptions.delete_one(
-                                {"user_id": user_id, "endpoint": sub.get("endpoint")}
-                            )
-                            rem += 1
-                        except Exception:
-                            pass
-                    logger.warning(f"Scheduled Push Error: {exc}")
-                except Exception as exc:
-                    logger.warning(f"Scheduled Push Generic Error: {exc}")
-                    
-            print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
-            logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
-
-        except Exception as conv_err:
-             print(f"--- [DEBUG] VAPID Key Error: {conv_err} ---", flush=True)
-             logger.error(f"VAPID Key Error: {conv_err}")
-             return
-
-        finally:
-            # Clean up temp file
-            if vapid_file_path and os.path.exists(vapid_file_path):
-                try:
-                    os.unlink(vapid_file_path)
-                except Exception:
-                    pass
+        sent = 0
+        rem = 0
         
+        for sub in subs:
+            sub_info = sub.get("subscription") or {
+                "endpoint": sub.get("endpoint"),
+                "keys": sub.get("keys") or {},
+            }
+            try:
+                # Generate VAPID Token per origin
+                endpoint = sub_info.get("endpoint")
+                if not endpoint: 
+                    continue
+                
+                # Extract origin for 'aud' claim
+                from urllib.parse import urlparse
+                parsed = urlparse(endpoint)
+                audience = f"{parsed.scheme}://{parsed.netloc}"
+                
+                claims = {
+                    "aud": audience,
+                    "exp": int(time.time()) + 43200, # 12 hours
+                    "sub": Config.VAPID_SUBJECT
+                }
+                
+                token = jwt.encode(claims, private_key, algorithm="ES256")
+                
+                # Construct headers
+                # We use the standard Authtorization: vapid t=... approach which is widely supported
+                # properly by pywebpush if we pass it as 'vapid_claims' it tries to regen.
+                # If we pass 'headers', webpush merges them.
+                
+                # Actually, pywebpush expects 'Authorization' or 'Vapid' headers.
+                # Chrome prefers "Authorization: WebPush <jwt>"
+                vapid_headers = {
+                    "Authorization": f"WebPush {token}",
+                    "Crypto-Key": f"p256ecdsa={Config.VAPID_PUBLIC_KEY}"
+                }
+
+                webpush(
+                    subscription_info=sub_info,
+                    data=payload,
+                    vapid_private_key=None, # Bypass internal generation
+                    vapid_claims=None,
+                    headers=vapid_headers
+                )
+                sent += 1
+            except WebPushException as exc:
+                status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                if status_code in (404, 410):
+                    try:
+                        # Prune invalid subscriptions
+                        db.push_subscriptions.delete_one(
+                            {"user_id": user_id, "endpoint": sub.get("endpoint")}
+                        )
+                        rem += 1
+                    except Exception:
+                        pass
+                logger.warning(f"Scheduled Push Error: {exc}")
+            except Exception as exc:
+                logger.warning(f"Scheduled Push Generic Error: {exc}")
+                
+        print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
+        logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
+
     except Exception as e:
         print(f"--- [DEBUG] Push Critical Error: {e} ---", flush=True)
         logger.error(f"Scheduled Push Critical Error: {e}")

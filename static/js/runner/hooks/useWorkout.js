@@ -911,9 +911,10 @@
 
             if (currentStep && currentStep.type === 'work') {
                 const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
-                if (!isStepLogged(currentStep.id, currentLog)) {
-                    console.log("DEBUG: Auto-logging current step:", currentStep.id);
-                    const fallbackTime = currentStep.isTimeBased ? currentStep.target.time : 0;
+                const shouldAutoLog = Boolean(currentStep.isTimeBased);
+                if (shouldAutoLog && !isStepLogged(currentStep.id, currentLog)) {
+                    console.log("DEBUG: Auto-logging current time-based step:", currentStep.id);
+                    const fallbackTime = currentStep.target?.time || 0;
                     logSet({
                         time_seconds: fallbackTime,
                         weight: 0,

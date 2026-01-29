@@ -108,11 +108,22 @@ def _send_push_notification_sync(user_id, title, body, url):
                     "keys": sub.get("keys") or {},
                 }
                 try:
+                    # Explicitly set VAPID claims to avoid library defaults issues
+                    import time
+                    endpoint = sub_info.get("endpoint")
+                    from urllib.parse import urlparse
+                    parsed = urlparse(endpoint)
+                    audience = f"{parsed.scheme}://{parsed.netloc}"
+
                     webpush(
                         subscription_info=sub_info,
                         data=payload,
                         vapid_private_key=vapid_file_path,
-                        vapid_claims={"sub": Config.VAPID_SUBJECT},
+                        vapid_claims={
+                            "sub": Config.VAPID_SUBJECT,
+                            "aud": audience,
+                            "exp": int(time.time()) + 12 * 60 * 60  # 12 hours
+                        },
                     )
                     sent += 1
                 except WebPushException as exc:

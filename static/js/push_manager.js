@@ -39,7 +39,20 @@
     const ensurePushSubscription = async () => {
         if (state.syncing) return false;
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-        if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+        if (!('Notification' in window)) return false;
+
+        if (Notification.permission === 'default') {
+            try {
+                // Return result directly to check if granted
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') return false;
+            } catch (e) {
+                console.warn('Permission request error', e);
+                return false;
+            }
+        } else if (Notification.permission !== 'granted') {
+            return false;
+        }
 
         state.syncing = true;
         try {
@@ -54,6 +67,7 @@
                     applicationServerKey: appKey
                 });
             }
+            // Always try to sync, just in case backend lost it
             return await syncSubscription(sub);
         } catch (e) {
             console.warn('Push subscription error', e);

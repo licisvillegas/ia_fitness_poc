@@ -108,36 +108,33 @@ def _send_push_notification_sync(user_id, title, body, url):
                     "keys": sub.get("keys") or {},
                 }
                 try:
-                    # Explicitly set VAPID claims to avoid library defaults issues
-                    import time
-                    endpoint = sub_info.get("endpoint")
-                    from urllib.parse import urlparse
-                    parsed = urlparse(endpoint)
-                    audience = f"{parsed.scheme}://{parsed.netloc}"
+                    # DEBUG: Check what subject is actually being used
+                    if sent == 0: # Log once per batch
+                        print(f"--- [DEBUG] VAPID Subject: {Config.VAPID_SUBJECT} ---", flush=True)
 
                     webpush(
                         subscription_info=sub_info,
                         data=payload,
                         vapid_private_key=vapid_file_path,
-                        vapid_claims={
-                            "sub": Config.VAPID_SUBJECT,
-                            "aud": audience,
-                            "exp": int(time.time()) + 12 * 60 * 60  # 12 hours
-                        },
+                        vapid_claims={"sub": Config.VAPID_SUBJECT},
                     )
                     sent += 1
                 except WebPushException as exc:
                     status_code = getattr(getattr(exc, "response", None), "status_code", None)
-                    if status_code in (404, 410):
+                    # 403 Forbidden = BadJwtToken or MismatchedSender => Subscription is likely invalid/stale
+                    # 404/410 = GONE
+                    if status_code in (403, 404, 410):
                         try:
-                            # Prune invalid subscriptions
+                            logger.warning(f"Pruning invalid subscription (Status {status_code}) for user {user_id}")
                             db.push_subscriptions.delete_one(
                                 {"user_id": user_id, "endpoint": sub.get("endpoint")}
                             )
                             rem += 1
                         except Exception:
                             pass
-                    logger.warning(f"Scheduled Push Error: {exc}")
+                    logger.warning(f"Scheduled Push Error: {exc} (Status: {status_code})")
+                    if exc.response and exc.response.text:
+                         logger.warning(f"Push Error Body: {exc.response.text}")
                 except Exception as exc:
                     logger.warning(f"Scheduled Push Generic Error: {exc}")
                     

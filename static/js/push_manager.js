@@ -94,15 +94,58 @@
             let sub = await reg.pushManager.getSubscription();
             debugLog(`Existing subscription: ${sub ? 'Yes' : 'No'}`);
 
-            if (!sub) {
-                debugLog('Loading VAPID key...');
-                const key = await loadVapidKey();
-                if (!key) {
-                    debugLog('Failed to load VAPID key');
-                    return false;
+            debugLog('Loading VAPID key...');
+            const newKey = await loadVapidKey();
+            if (!newKey) {
+                debugLog('Failed to load VAPID key');
+                return false;
+            }
+
+            // Check if existing subscription is valid for the current key
+            if (sub) {
+                // Determine if we need to replace the subscription
+                let needsReplacement = false;
+
+                // Compare keys if available in options (some browsers support this)
+                // If not standard property, we might blindly assume it's good OR force refresh if we suspect issues
+                // For robustness in this debug phase: if keys changed, we MUST resubscribe.
+                // Converting ArrayBuffers to compare
+                const existingKey = sub.options.applicationServerKey;
+                if (existingKey) {
+                    const newKeyArray = urlBase64ToUint8Array(newKey);
+                    // Simple comparison
+                    const existingArray = new Uint8Array(existingKey);
+                    let match = true;
+                    if (existingArray.length !== newKeyArray.length) {
+                        match = false;
+                    } else {
+                        for (let i = 0; i < existingArray.length; i++) {
+                            if (existingArray[i] !== newKeyArray[i]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!match) {
+                        debugLog('VAPID Key mismatch detected. Rotation required.');
+                        needsReplacement = true;
+                    }
+                } else {
+                    // Chrome sometimes hides options.applicationServerKey
+                    // If we are debugging specific issues, we might want to force rotate here, 
+                    // but for now let's hope it adheres to spec.
                 }
+
+                if (needsReplacement) {
+                    debugLog('Unsubscribing old subscription...');
+                    await sub.unsubscribe();
+                    sub = null;
+                }
+            }
+
+            if (!sub) {
                 debugLog('Subscribing to PushManager...');
-                const appKey = urlBase64ToUint8Array(key);
+                const appKey = urlBase64ToUint8Array(newKey);
                 sub = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: appKey

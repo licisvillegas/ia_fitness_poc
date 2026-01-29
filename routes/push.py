@@ -65,31 +65,42 @@ def _send_push_notification_sync(user_id, title, body, url):
             logger.info(f"Scheduled Push: No subscriptions for {user_id}")
             return
 
-        # Prepare VAPID Key Object
-        # Passing the key object directly bypasses pywebpush/py-vapid internal loading
-        # which seems to conflict with newer cryptography versions (curve instance error).
-        vapid_key_obj = None
+        # Prepare VAPID Key in a secure temporary file
+        # We switch to TraditionalOpenSSL (SEC1) format to avoid ASN.1 errors with py-vapid
+        vapid_file_path = None
         try:
             key_str = Config.VAPID_PRIVATE_KEY
             if not key_str:
                 logger.error("VAPID_PRIVATE_KEY not configured")
                 return
 
+            pem_bytes = None
             if "-----BEGIN" in key_str:
-                 # Load from PEM
+                 # Already PEM string, convert to bytes
                  pem_bytes = key_str.encode('utf-8') if isinstance(key_str, str) else key_str
-                 vapid_key_obj = serialization.load_pem_private_key(pem_bytes, password=None)
             else:
-                 # Convert base64url to Private Key Object
-                 # Add padding if needed
-                 key_str_padded = key_str + '=' * (-len(key_str) % 4)
-                 private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
-                 curve = ec.SECP256R1()
-                 vapid_key_obj = ec.derive_private_key(private_value, curve)
+                 # Convert base64url to PEM bytes
+                 try:
+                     key_str_padded = key_str + '=' * (-len(key_str) % 4)
+                     private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
+                     curve = ec.SECP256R1()
+                     private_key = ec.derive_private_key(private_value, curve)
+                     
+                     # Use TraditionalOpenSSL to minimize ASN.1 parsing issues
+                     pem_bytes = private_key.private_bytes(
+                         encoding=serialization.Encoding.PEM,
+                         format=serialization.PrivateFormat.TraditionalOpenSSL,
+                         encryption_algorithm=serialization.NoEncryption()
+                     )
+                 except Exception as conv_err:
+                     print(f"--- [DEBUG] VAPID Conversion Error: {conv_err} ---", flush=True)
+                     return
 
-            if not vapid_key_obj:
-                logger.error("Failed to generate VAPID key object")
-                return
+            # Write to temp file
+            # delete=False because we need to close it before passing path to pywebpush on Windows
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pem') as tf:
+                tf.write(pem_bytes)
+                vapid_file_path = tf.name
 
             sent = 0
             rem = 0
@@ -103,7 +114,7 @@ def _send_push_notification_sync(user_id, title, body, url):
                     webpush(
                         subscription_info=sub_info,
                         data=payload,
-                        vapid_private_key=vapid_key_obj,
+                        vapid_private_key=vapid_file_path,
                         vapid_claims={"sub": Config.VAPID_SUBJECT},
                     )
                     sent += 1
@@ -125,6 +136,14 @@ def _send_push_notification_sync(user_id, title, body, url):
             print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
             logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
 
+        finally:
+            # Clean up temp file
+            if vapid_file_path and os.path.exists(vapid_file_path):
+                try:
+                    os.unlink(vapid_file_path)
+                except Exception:
+                    pass
+            
         except Exception as conv_err:
              print(f"--- [DEBUG] VAPID Key Error: {conv_err} ---", flush=True)
              logger.error(f"VAPID Key Error: {conv_err}")

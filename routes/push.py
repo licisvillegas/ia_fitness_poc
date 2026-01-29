@@ -41,27 +41,23 @@ def _send_push_notification_sync(user_id, title, body, url):
     For this POC, we assume extensions.db is thread-safe enough or we re-acquire context if needed.
     """
     try:
-        from app import app # Import here to avoid circular import if possible, or assume extensions is initialized
+        # Import app to get context
+        from app import app
         
-        # We need an app context to access mongo if it was teardown (though mongo client is usually global)
-        # But 'extensions.db' is a global proxy. 
-        # Better safe to check if we can access it.
-        
-        db = extensions.db
-        if db is None:
-            logger.warning(f"Scheduled Push Failed: DB not ready for user {user_id}")
-            return
+        with app.app_context():
+            db = extensions.db
+            if db is None:
+                logger.warning(f"Scheduled Push Failed: DB not ready for user {user_id}")
+                return
+                
+            payload = json.dumps({"title": title, "body": body, "url": url})
             
-        payload = json.dumps({"title": title, "body": body, "url": url})
-        
-        # Fetch subscriptions
-        # Note: In a real threaded environment, ensure MongoDB client is fork-safe if using uWSGI, 
-        # but here we use threading so checking connection is usually fine.
-        subs = list(db.push_subscriptions.find({"user_id": user_id}))
-        
-        if not subs:
-            logger.info(f"Scheduled Push: No subscriptions for {user_id}")
-            return
+            # Fetch subscriptions
+            subs = list(db.push_subscriptions.find({"user_id": user_id}))
+            
+            if not subs:
+                logger.info(f"Scheduled Push: No subscriptions for {user_id}")
+                return
 
         sent = 0
         rem = 0

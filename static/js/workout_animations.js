@@ -403,7 +403,7 @@
                 const style = document.createElement('style');
                 style.id = 'glitch-css';
                 style.innerHTML = `
-                    .glitch { font-size: 5rem; font-weight: bold; text-transform: uppercase; position: relative; color: white; letter-spacing: 0.1em; opacity: 0; transition: opacity 0.5s; font-family: monospace}
+                    .glitch { font-size: 3.5rem; font-weight: bold; text-transform: uppercase; position: relative; color: white; letter-spacing: 0.1em; opacity: 0; transition: opacity 0.5s; font-family: monospace}
                     .glitch.active { opacity: 1; }
                     .glitch.active::before, .glitch.active::after {
                         content: attr(data-text);
@@ -497,14 +497,55 @@
         heart.innerHTML = '<i class="fas fa-heart"></i>';
         document.body.appendChild(heart);
 
+        // Animar el icono del corazón (5 latidos)
         anime({
             targets: heart,
-            fontSize: ['0px', '250px'],
-            opacity: [1, 0],
-            duration: 1500,
-            easing: 'easeOutExpo',
-            complete: () => heart.remove()
+            fontSize: [
+                { value: '250px', duration: 300, easing: 'easeOutQuad' },
+                { value: '200px', duration: 150, easing: 'easeInQuad' }
+            ],
+            opacity: { value: [1, 0.4], duration: 450, easing: 'linear' },
+            loop: 5,
+            complete: () => {
+                // Desvanecer al final
+                anime({
+                    targets: heart,
+                    opacity: 0,
+                    scale: 3,
+                    duration: 500,
+                    easing: 'easeOutExpo',
+                    complete: () => heart.remove()
+                });
+            }
         });
+
+        // Animar borde de la tarjeta activa (si existe)
+        const activeCard = document.querySelector('.active-card');
+        if (activeCard) {
+            // Guardar estilo original
+            const originalBorder = activeCard.style.borderColor;
+            const originalShadow = activeCard.style.boxShadow;
+
+            activeCard.style.border = '2px solid transparent'; // Preparar para animación
+
+            anime({
+                targets: activeCard,
+                borderColor: ['rgba(220, 53, 69, 0)', '#dc3545', 'rgba(220, 53, 69, 0)'], // Rojo Bootstrap
+                boxShadow: [
+                    '0 0 0 rgba(220, 53, 69, 0)',
+                    '0 0 20px rgba(220, 53, 69, 0.6)',
+                    '0 0 0 rgba(220, 53, 69, 0)'
+                ],
+                duration: 900, // Duración de un latido completo (300+150 * 2 fases ~ 900)
+                easing: 'easeInOutSine',
+                loop: 5,
+                complete: () => {
+                    // Restaurar estilos originales
+                    activeCard.style.borderColor = originalBorder;
+                    activeCard.style.boxShadow = originalShadow;
+                }
+            });
+        }
     };
 
     /**
@@ -526,7 +567,7 @@
             fontSize: ['0px', '200px'],
             translateY: [0, -100],
             opacity: [1, 0],
-            duration: 1200,
+            duration: 3000,
             easing: 'easeOutExpo',
             complete: () => icon.remove()
         });
@@ -821,6 +862,193 @@
             if (circle.parentNode) circle.remove();
             if (text.parentNode) text.remove();
         };
+    };
+
+    /**
+     * 24. Efecto Tristeza / Deserción (Sadness / Give Up)
+     * ----------------------------------------------------
+     * Muestra una nube de lluvia y simula gotas cayendo (lluvia).
+     * Representa sentimientos de tristeza, haber abandonado o dificultad extrema.
+     */
+    window.WorkoutAnimations.sadEffect = function () {
+        // Icono Nube
+        let icon = document.createElement('div');
+        icon.className = 'position-fixed top-50 start-50 translate-middle';
+        icon.style.fontSize = '150px';
+        icon.style.zIndex = '3000';
+        icon.innerHTML = '🌧️';
+        icon.style.opacity = 0;
+        icon.style.filter = 'drop-shadow(0 10px 10px rgba(0,0,0,0.5)) grayscale(0.5)';
+        document.body.appendChild(icon);
+
+        anime({
+            targets: icon,
+            opacity: [0, 1, 1, 0],
+            translateY: [0, 20],
+            scale: [0.8, 1],
+            duration: 4000,
+            easing: 'easeInOutQuad',
+            complete: () => icon.remove()
+        });
+
+        // Lluvia (Rain) de confeti azul/gris
+        var duration = 3 * 1000;
+        var end = Date.now() + duration;
+
+        (function frame() {
+            confetti({
+                particleCount: 3,
+                angle: 270, // Hacia abajo
+                spread: 15,
+                origin: { x: Math.random(), y: -0.1 }, // Desde arriba
+                colors: ['#4287f5', '#a6c1ee', '#1a4e8a', '#5c6fa3'], // Tonos azules y grisaceos
+                gravity: 2.5, // Cae rápido
+                drift: 0,
+                ticks: 300,
+                scalar: 0.6,
+                shapes: ['circle']
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+    };
+
+    /**
+     * 25. Timer Resistencia (Endurance Timer)
+     * ----------------------------------------------------
+     * Muestra un anillo de progreso sincronizado con un tiempo definido.
+     * Útil para ejercicios isométricos o de resistencia por tiempo.
+     */
+    window.WorkoutAnimations.enduranceTimerEffect = function (durationSeconds = 10, onComplete) {
+        // Contenedor
+        let container = document.createElement('div');
+        container.className = 'position-fixed top-50 start-50 translate-middle d-flex align-items-center justify-content-center';
+        container.style.zIndex = '3000';
+        container.style.width = '200px';
+        container.style.height = '200px';
+        document.body.appendChild(container);
+
+        // SVG Ring
+        container.innerHTML = `
+            <svg width="200" height="200" viewBox="0 0 200 200" style="transform: rotate(-90deg);">
+                <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="15" />
+                <circle class="progress-ring" cx="100" cy="100" r="90" fill="none" stroke="#ffc107" stroke-width="15" 
+                        stroke-dasharray="565.48" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
+            <div class="timer-text position-absolute text-white fw-bold display-4" style="text-shadow: 0 0 10px black;">
+                ${durationSeconds}
+            </div>
+        `;
+
+        const ring = container.querySelector('.progress-ring');
+        const text = container.querySelector('.timer-text');
+        const circumference = 2 * Math.PI * 90; // approx 565.48
+
+        // Animar el strokeDashoffset de 0 a circumference (vaciando)
+        let anim = anime({
+            targets: ring,
+            strokeDashoffset: [0, circumference],
+            easing: 'linear',
+            duration: durationSeconds * 1000,
+            update: function (anim) {
+                // Actualizar texto
+                const progress = anim.progress / 100;
+                const remaining = Math.ceil(durationSeconds * (1 - progress));
+                // Evitar mostrar -0 o saltos raros
+                if (text && text.parentNode) text.innerText = remaining > 0 ? remaining : 0;
+            },
+            complete: () => {
+                if (text && text.parentNode) text.innerText = "OK";
+                // Pequeño punch al finalizar
+                anime({
+                    targets: container,
+                    scale: [1, 1.2, 0],
+                    opacity: 0,
+                    duration: 800,
+                    easing: 'easeOutExpo',
+                    complete: () => {
+                        if (container.parentNode) container.remove();
+                        if (onComplete) onComplete();
+                    }
+                });
+            }
+        });
+
+        // Retornar función de limpieza
+        return () => {
+            if (anim) anim.pause();
+            anime.remove(ring);
+            anime.remove(container);
+            if (container.parentNode) container.remove();
+        };
+    };
+
+    /**
+     * 26. Efecto Pausa (Pause Effect)
+     * ----------------------------------------------------
+     * Muestra un overlay de pausa con un icono pulsante.
+     * Retorna una funcion para quitar la pausa.
+     */
+    window.WorkoutAnimations.pauseEffect = function () {
+        // Contenedor Overlay
+        let overlay = document.createElement('div');
+        overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        overlay.style.backdropFilter = 'blur(5px)';
+        overlay.style.zIndex = '4000';
+        overlay.style.opacity = '0';
+        document.body.appendChild(overlay);
+
+        // Contenido
+        let content = document.createElement('div');
+        content.className = 'text-center text-white';
+        content.innerHTML = `
+            <div class="pause-icon display-1 mb-3"><i class="fas fa-pause-circle"></i></div>
+            <h2 class="display-4 fw-bold">PAUSA</h2>
+            <p class="h5 opacity-75">Tómate tu tiempo</p>
+        `;
+        overlay.appendChild(content);
+
+        // Animar entrada
+        anime({
+            targets: overlay,
+            opacity: [0, 1],
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+
+        // Loop pulsante del icono
+        let pulseAnim = anime({
+            targets: content.querySelector('.pause-icon'),
+            scale: [1, 1.1],
+            opacity: [0.8, 1],
+            duration: 1000,
+            direction: 'alternate',
+            loop: true,
+            easing: 'easeInOutSine'
+        });
+
+        // Función de limpieza (Resume)
+        const resume = () => {
+            pulseAnim.pause();
+            anime({
+                targets: overlay,
+                opacity: 0,
+                scale: 1.1,
+                duration: 300,
+                easing: 'easeInQuad',
+                complete: () => {
+                    if (overlay.parentNode) overlay.remove();
+                }
+            });
+        };
+
+        // Permitir cerrar con click (opcional, para UX rápida)
+        overlay.addEventListener('click', resume);
+
+        return resume;
     };
 
 })();

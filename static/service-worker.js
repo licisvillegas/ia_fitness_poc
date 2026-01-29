@@ -66,6 +66,10 @@ self.addEventListener('push', (event) => {
         body: data.body || '',
         icon: '/static/images/icon/synapse_fit_192.png',
         badge: '/static/images/icon/synapse_fit_192.png',
+        vibrate: [200, 100, 200, 100, 200, 100, 200],
+        tag: 'workout-timer',
+        renotify: true,
+        requireInteraction: true,
         data: {
             url: data.url || '/'
         }

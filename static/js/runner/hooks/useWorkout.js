@@ -58,6 +58,7 @@
         const onCancelRef = useRef(null); // Add ref for onCancel
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
+        const enduranceCleanupRef = useRef(null); // Store cleanup for endurance animation
         const prevStatusRef = useRef(status);
         const lastHistoryRoutineIdRef = useRef(null);
         const currentStepElapsedRef = useRef(0);
@@ -177,10 +178,6 @@
             if (elapsed === 300 && !flags.min5) {
                 sendNotification("Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
                 flags.min5 = true;
-            }
-            if (elapsed === 600 && !flags.min10) {
-                sendNotification("Cierre de rutina", "¿Prefieres finalizar la rutina?");
-                flags.min10 = true;
             }
         };
 
@@ -547,11 +544,13 @@
 
                         if (remaining === halfTime && !flags.half) {
                             sendNotification("Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);
+                            if (window.WorkoutAnimations?.pulseEffect) window.WorkoutAnimations.pulseEffect();
                             flags.half = true;
                         }
 
                         if (remaining === 120 && !flags.min2left) {
                             sendNotification("Casi terminas", "Lo estas logrando. Te faltan 2 minutos.");
+                            if (window.WorkoutAnimations?.pulseEffect) window.WorkoutAnimations.pulseEffect();
                             flags.min2left = true;
                         }
                     }
@@ -563,6 +562,24 @@
 
         // Step Timer Logic (Countdown)
         useEffect(() => {
+            // Trigger visual endurance timer overlay at last 10s of REST
+            if (status === 'REST') {
+                if (stepTimer > 10) {
+                    // Reset flag if we have more than 10s
+                    notificationFlagsRef.current.endurance10 = false;
+                    // Ensure animation is not running if we somehow went back up (handled by addTime logic too but safe here)
+                    if (enduranceCleanupRef.current) {
+                        enduranceCleanupRef.current();
+                        enduranceCleanupRef.current = null;
+                    }
+                } else if (stepTimer === 10 && !notificationFlagsRef.current.endurance10) {
+                    if (window.WorkoutAnimations?.enduranceTimerEffect) {
+                        enduranceCleanupRef.current = window.WorkoutAnimations.enduranceTimerEffect(10);
+                    }
+                    notificationFlagsRef.current.endurance10 = true;
+                }
+            }
+
             if (isPaused) {
                 clearInterval(stepIntervalRef.current);
                 return;
@@ -995,6 +1012,11 @@
         };
 
         const skipRest = () => {
+            // Cancel animation if running
+            if (enduranceCleanupRef.current) {
+                enduranceCleanupRef.current();
+                enduranceCleanupRef.current = null;
+            }
             setIsTimerRunning(false);
             setIsPaused(false);
             showMessage("Descanso omitido", "info");
@@ -1002,6 +1024,11 @@
         };
 
         const addRestTime = (seconds) => {
+            // Cancel animation if running (since time changed)
+            if (enduranceCleanupRef.current) {
+                enduranceCleanupRef.current();
+                enduranceCleanupRef.current = null;
+            }
             setStepTimer(t => {
                 const nextValue = t + seconds;
                 return Math.max(0, nextValue);

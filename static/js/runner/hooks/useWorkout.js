@@ -564,10 +564,20 @@
         // Step Timer Logic (Countdown)
         useEffect(() => {
             if (status === 'REST') {
-                // Initial Push Scheduling (only if not already scheduled or time changes substantially)
-                // Note: We handle scheduling in a separate effect or when setting the timer to avoid spamming
-                // But here we rely on dedicated functions for adds/skips.
-                // However, if we just landed on REST, we need to schedule.
+                if (stepTimer === 10 && !notificationFlagsRef.current.endurance10) {
+                    // Trigger visual endurance timer overlay at last 10s of REST
+                    if (window.WorkoutAnimations?.enduranceTimerEffect) {
+                        enduranceCleanupRef.current = window.WorkoutAnimations.enduranceTimerEffect(10);
+                    }
+                    notificationFlagsRef.current.endurance10 = true;
+                } else if (stepTimer > 10) {
+                    notificationFlagsRef.current.endurance10 = false;
+                    // Cleanup if needed (handled by logic below mostly)
+                    if (enduranceCleanupRef.current) {
+                        enduranceCleanupRef.current();
+                        enduranceCleanupRef.current = null;
+                    }
+                }
             }
 
             // Cleanup animation if NOT rest (Guard)
@@ -618,13 +628,16 @@
             // Handle Side Effects for Status Transitions
             if (status === 'REST') {
                 // ENTERING REST: Schedule Push
-                if (stepTimer > 0 && window.Runner.utils.schedulePush) {
+                // Use REF to get latest value in case closure is stale (though stepTimer should be fresh in this effect)
+                const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
+
+                if (duration > 0 && window.Runner.utils.schedulePush) {
                     // Cancel any existing just in case
                     if (scheduledPushTaskRef.current) {
                         window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
                     }
                     // Schedule new
-                    window.Runner.utils.schedulePush(stepTimer + 1, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                    window.Runner.utils.schedulePush(duration + 1, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
                         .then(id => { scheduledPushTaskRef.current = id; });
                 }
             } else {

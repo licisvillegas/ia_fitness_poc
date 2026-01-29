@@ -38,11 +38,23 @@
             if (window.ensurePushSubscription) {
                 // Delay slightly to ensure browser is idle
                 setTimeout(() => {
+                    fetch('/api/push/client-log', {
+                        method: 'POST',
+                        body: JSON.stringify({ message: 'App.js calling ensurePushSubscription' }),
+                        headers: { 'Content-Type': 'application/json' }
+                    }).catch(() => { });
+
                     window.ensurePushSubscription().then(success => {
                         if (success) console.log('Push subscription ensured');
                         else console.warn('Push subscription failed or not supported');
                     });
                 }, 2000);
+            } else {
+                fetch('/api/push/client-log', {
+                    method: 'POST',
+                    body: JSON.stringify({ message: 'App.js: window.ensurePushSubscription missing' }),
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(() => { });
             }
         }, []);
 

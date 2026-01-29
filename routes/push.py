@@ -273,3 +273,13 @@ def cancel_scheduled_push():
         # It might have already executed or doesn't exist
         return jsonify({"error": "Task not found or already executed"}), 404
 
+
+@push_bp.post("/client-log")
+def client_log():
+    data = request.get_json(silent=True) or {}
+    message = data.get("message", "No message")
+    level = data.get("level", "INFO")
+    user_id = _get_user_id() or "Anonymous"
+    
+    print(f"--- [CLIENT LOG] [{user_id}] {level}: {message} ---", flush=True)
+    return jsonify({"success": True}), 200

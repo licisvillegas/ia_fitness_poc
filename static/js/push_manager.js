@@ -36,40 +36,86 @@
         return res.ok;
     };
 
-    const ensurePushSubscription = async () => {
-        if (state.syncing) return false;
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-        if (!('Notification' in window)) return false;
 
-        if (Notification.permission === 'default') {
+    const debugLog = (msg) => {
+        console.log('[PushManager]', msg);
+        fetch('/api/push/client-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        }).catch(() => { });
+    };
+
+    const ensurePushSubscription = async () => {
+        debugLog('ensurePushSubscription called');
+        if (state.syncing) {
+            debugLog('Already syncing, skipping');
+            return false;
+        }
+
+        if (!('serviceWorker' in navigator)) {
+            debugLog('No ServiceWorker support');
+            return false;
+        }
+        if (!('PushManager' in window)) {
+            debugLog('No PushManager support');
+            return false;
+        }
+        if (!('Notification' in window)) {
+            debugLog('No Notification support');
+            return false;
+        }
+
+        const perm = Notification.permission;
+        debugLog(`Notification permission: ${perm}`);
+
+        if (perm === 'default') {
             try {
-                // Return result directly to check if granted
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') return false;
+                debugLog('Requesting permission...');
+                const result = await Notification.requestPermission();
+                debugLog(`Permission request result: ${result}`);
+                if (result !== 'granted') return false;
             } catch (e) {
+                debugLog(`Permission request error: ${e.message}`);
                 console.warn('Permission request error', e);
                 return false;
             }
-        } else if (Notification.permission !== 'granted') {
+        } else if (perm !== 'granted') {
+            debugLog('Permission denied or ignored');
             return false;
         }
 
         state.syncing = true;
         try {
+            debugLog('Waiting for SW ready...');
             const reg = await navigator.serviceWorker.ready;
+            debugLog(`SW Ready. Scope: ${reg.scope}`);
+
             let sub = await reg.pushManager.getSubscription();
+            debugLog(`Existing subscription: ${sub ? 'Yes' : 'No'}`);
+
             if (!sub) {
+                debugLog('Loading VAPID key...');
                 const key = await loadVapidKey();
-                if (!key) return false;
+                if (!key) {
+                    debugLog('Failed to load VAPID key');
+                    return false;
+                }
+                debugLog('Subscribing to PushManager...');
                 const appKey = urlBase64ToUint8Array(key);
                 sub = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: appKey
                 });
+                debugLog('Subscribed successfully');
             }
-            // Always try to sync, just in case backend lost it
-            return await syncSubscription(sub);
+
+            debugLog('Syncing with backend...');
+            const syncRes = await syncSubscription(sub);
+            debugLog(`Sync result: ${syncRes}`);
+            return syncRes;
         } catch (e) {
+            debugLog(`Push subscription error: ${e.message}`);
             console.warn('Push subscription error', e);
             return false;
         } finally {

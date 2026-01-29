@@ -59,11 +59,12 @@
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
         const enduranceCleanupRef = useRef(null); // Store cleanup for endurance animation
+        const scheduledPushTaskRef = useRef(null); // Store scheduled push task ID
         const prevStatusRef = useRef(status);
         const lastHistoryRoutineIdRef = useRef(null);
         const currentStepElapsedRef = useRef(0);
         const notificationFlagsRef = useRef({});
-        const activePushTaskRef = useRef(null);
+
 
         // Notification Logic
         useEffect(() => {
@@ -562,22 +563,17 @@
 
         // Step Timer Logic (Countdown)
         useEffect(() => {
-            // Trigger visual endurance timer overlay at last 10s of REST
             if (status === 'REST') {
-                if (stepTimer > 10) {
-                    // Reset flag if we have more than 10s
-                    notificationFlagsRef.current.endurance10 = false;
-                    // Ensure animation is not running if we somehow went back up (handled by addTime logic too but safe here)
-                    if (enduranceCleanupRef.current) {
-                        enduranceCleanupRef.current();
-                        enduranceCleanupRef.current = null;
-                    }
-                } else if (stepTimer === 10 && !notificationFlagsRef.current.endurance10) {
-                    if (window.WorkoutAnimations?.enduranceTimerEffect) {
-                        enduranceCleanupRef.current = window.WorkoutAnimations.enduranceTimerEffect(10);
-                    }
-                    notificationFlagsRef.current.endurance10 = true;
-                }
+                // Initial Push Scheduling (only if not already scheduled or time changes substantially)
+                // Note: We handle scheduling in a separate effect or when setting the timer to avoid spamming
+                // But here we rely on dedicated functions for adds/skips.
+                // However, if we just landed on REST, we need to schedule.
+            }
+
+            // Cleanup animation if NOT rest (Guard)
+            if (status !== 'REST' && enduranceCleanupRef.current) {
+                enduranceCleanupRef.current();
+                enduranceCleanupRef.current = null;
             }
 
             if (isPaused) {
@@ -605,34 +601,7 @@
             return () => clearInterval(stepIntervalRef.current);
         }, [isTimerRunning, stepTimer, isPaused]);
 
-        // Background Push Scheduling for Timer
-        useEffect(() => {
-            if (isTimerRunning && !isPaused && stepTimer > 0) {
-                // Schedule push when timer starts or resumes
-                // Add 2s buffer so if app is active, client cancels before server fires.
-                schedulePush(stepTimer + 2, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
-                    .then(id => {
-                        if (id) activePushTaskRef.current = id;
-                    });
-            }
-
-            return () => {
-                // Cancel push when timer stops, pauses, or component unmounts
-                // Note: If isTimerRunning changes false (finished), we cancel. 
-                // If isPaused changes true, we cancel.
-                // If stepTimer causes re-render? No, stepTimer is NOT in dependency array of THIS effect.
-                // So this effect only runs on toggle of running/paused state. 
-                // Wait, if stepTimer is NOT in deps, it uses the captured initial value of stepTimer 
-                // when isTimerRunning became true. That is CORRECT for the initial schedule.
-                // But if we pause (cleanup runs) and resume (setup runs), we see the NEW stepTimer value 
-                // because a re-render occurred updates the closure scope variable `stepTimer`.
-                if (activePushTaskRef.current) {
-                    cancelPush(activePushTaskRef.current);
-                    activePushTaskRef.current = null;
-                }
-            };
-        }, [isTimerRunning, isPaused]);
-
+        // Background Push Scheduling handled by status transition effect
         const playAlarm = () => {
             try {
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -643,7 +612,37 @@
         const currentStep = useMemo(() => queue[cursor], [queue, cursor]);
         const nextStep = useMemo(() => queue[cursor + 1], [queue, cursor]);
 
-        useEffect(() => { statusRef.current = status; }, [status]);
+        useEffect(() => {
+            statusRef.current = status;
+
+            // Handle Side Effects for Status Transitions
+            if (status === 'REST') {
+                // ENTERING REST: Schedule Push
+                if (stepTimer > 0 && window.Runner.utils.schedulePush) {
+                    // Cancel any existing just in case
+                    if (scheduledPushTaskRef.current) {
+                        window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                    }
+                    // Schedule new
+                    window.Runner.utils.schedulePush(stepTimer + 1, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                        .then(id => { scheduledPushTaskRef.current = id; });
+                }
+            } else {
+                // LEAVING REST (or not in REST): Cleanup
+                // 1. Cleanup Endurance Animation if running
+                if (enduranceCleanupRef.current) {
+                    enduranceCleanupRef.current();
+                    enduranceCleanupRef.current = null;
+                }
+                // 2. Cancel Scheduled Push
+                if (scheduledPushTaskRef.current) {
+                    if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
+                        window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                    }
+                    scheduledPushTaskRef.current = null;
+                }
+            }
+        }, [status]); // DEPENDS ONLY ON STATUS (and captures latest stepTimer from closure)
         useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
         useEffect(() => { isTimerRunningRef.current = isTimerRunning; }, [isTimerRunning]);
         useEffect(() => { stepTimerRef.current = stepTimer; }, [stepTimer]);
@@ -1017,6 +1016,14 @@
                 enduranceCleanupRef.current();
                 enduranceCleanupRef.current = null;
             }
+            // Cancel scheduled push
+            if (scheduledPushTaskRef.current) {
+                if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
+                    window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                }
+                scheduledPushTaskRef.current = null;
+            }
+
             setIsTimerRunning(false);
             setIsPaused(false);
             showMessage("Descanso omitido", "info");
@@ -1029,9 +1036,22 @@
                 enduranceCleanupRef.current();
                 enduranceCleanupRef.current = null;
             }
+            // Cancel previous push
+            if (scheduledPushTaskRef.current) {
+                if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
+                    window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                }
+                scheduledPushTaskRef.current = null;
+            }
+
             setStepTimer(t => {
-                const nextValue = t + seconds;
-                return Math.max(0, nextValue);
+                const nextValue = Math.max(0, t + seconds);
+                // Reschedule Push
+                if (window.Runner && window.Runner.utils && window.Runner.utils.schedulePush) {
+                    window.Runner.utils.schedulePush(nextValue, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                        .then(id => { scheduledPushTaskRef.current = id; });
+                }
+                return nextValue;
             });
         };
 

@@ -1051,4 +1051,234 @@
         return resume;
     };
 
+    /**
+     * 27. Efecto Meta (Goal Effect)
+     * ----------------------------------------------------
+     * Muestra banderas a cuadros cruzándose y texto de victoria.
+     * Ideal para terminar la rutina completa.
+     */
+    window.WorkoutAnimations.goalEffect = function () {
+        // Contenedor
+        let container = document.createElement('div');
+        container.className = 'goal-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center pointer-events-none';
+        container.style.zIndex = '3500';
+        document.body.appendChild(container);
+
+        // Texto
+        let text = document.createElement('h1');
+        text.className = 'display-1 fw-bold text-white mb-4';
+        text.style.textShadow = '0 0 20px #FFD700';
+        text.innerText = "¡META ALCANZADA!";
+        text.style.transform = 'scale(0)';
+        container.appendChild(text);
+
+        // Banderas (usando FontAwesome iconos como base SVG o simplemente iconos escalados)
+        let flagsContainer = document.createElement('div');
+        flagsContainer.className = 'd-flex justify-content-center gap-5';
+        flagsContainer.innerHTML = `
+            <div class="flag-left display-1 text-white"><i class="fas fa-flag-checkered"></i></div>
+            <div class="flag-right display-1 text-white"><i class="fas fa-flag-checkered"></i></div>
+        `;
+        container.appendChild(flagsContainer);
+
+        // Animación Texto
+        anime({
+            targets: text,
+            scale: [0, 1.2, 1],
+            opacity: [0, 1],
+            duration: 1200,
+            easing: 'easeOutElastic(1, .6)'
+        });
+
+        // Animación Banderas (Entrada y ondeado simulado)
+        let tl = anime.timeline({
+            easing: 'easeOutExpo'
+        });
+
+        tl.add({
+            targets: '.flag-left',
+            translateX: ['-100vw', 0],
+            rotate: [-45, 0],
+            duration: 1000,
+            delay: 200
+        }).add({
+            targets: '.flag-right',
+            translateX: ['100vw', 0],
+            rotate: [45, 0],
+            duration: 1000,
+            delay: 200 // Wait a bit relative to start or absolute
+        }, '-=1000');
+
+        // Confetti extra
+        window.WorkoutAnimations.realisticEffect();
+
+        // Limpieza automática
+        setTimeout(() => {
+            anime({
+                targets: container,
+                opacity: 0,
+                duration: 500,
+                easing: 'easeInQuad',
+                complete: () => container.remove()
+            });
+        }, 4000);
+    };
+
+    /**
+     * 28. Efecto Nutrición (Nutrition Effect)
+     * ----------------------------------------------------
+     * Muestra una animación de preparación de alimentos.
+     * Iconos de cocina y texto "PREPARANDO ALIMENTACIÓN".
+     */
+    window.WorkoutAnimations.nutritionEffect = function () {
+        // Contenedor
+        let container = document.createElement('div');
+        container.className = 'nutrition-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center';
+        container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'; // Fondo claro para diferenciar
+        container.style.zIndex = '3500';
+        container.style.opacity = '0';
+        document.body.appendChild(container);
+
+        // Icono Principal
+        let iconContainer = document.createElement('div');
+        iconContainer.className = 'display-1 text-success mb-4';
+        iconContainer.innerHTML = '<i class="fas fa-utensils"></i>';
+        container.appendChild(iconContainer);
+
+        // Texto
+        let text = document.createElement('h2');
+        text.className = 'display-5 fw-bold text-dark text-center';
+        text.innerText = "PREPARANDO ALIMENTACIÓN...";
+        container.appendChild(text);
+
+        // Elementos flotantes (ingredientes)
+        const ingredients = ['fa-carrot', 'fa-apple-alt', 'fa-leaf', 'fa-lemon'];
+        for (let i = 0; i < 8; i++) {
+            let el = document.createElement('div');
+            el.className = `position-absolute text-success opacity-50`;
+            el.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.top = Math.random() * 100 + 'vh';
+            el.innerHTML = `<i class="fas ${ingredients[Math.floor(Math.random() * ingredients.length)]}"></i>`;
+            container.appendChild(el);
+
+            anime({
+                targets: el,
+                translateY: [0, -100],
+                opacity: [0.5, 0],
+                duration: 2000 + Math.random() * 1000,
+                loop: true,
+                easing: 'linear',
+                delay: Math.random() * 1000
+            });
+        }
+
+        // Animar entrada
+        anime({
+            targets: container,
+            opacity: [0, 1],
+            duration: 500,
+            easing: 'easeOutQuad'
+        });
+
+        // Loop icono principal (círculo)
+        anime({
+            targets: iconContainer,
+            rotate: '1turn',
+            duration: 3000,
+            loop: true,
+            easing: 'linear'
+        });
+
+        // Limpieza automática (simulando carga)
+        setTimeout(() => {
+            anime({
+                targets: container,
+                opacity: 0,
+                duration: 500,
+                easing: 'easeInQuad',
+                complete: () => container.remove()
+            });
+        }, 3500);
+    };
+
+    /**
+     * 29. Efecto Preparando Rutina (Routine Preparation Effect)
+     * ----------------------------------------------------
+     * Muestra una animación de carga de rutina.
+     * Iconos de fitness y texto "PREPARANDO RUTINA".
+     */
+    window.WorkoutAnimations.routinePreparationEffect = function () {
+        // Contenedor
+        let container = document.createElement('div');
+        container.className = 'routine-prep-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center';
+        container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'; // Fondo claro
+        container.style.zIndex = '3500';
+        container.style.opacity = '0';
+        document.body.appendChild(container);
+
+        // Icono Principal
+        let iconContainer = document.createElement('div');
+        iconContainer.className = 'display-1 text-primary mb-4';
+        iconContainer.innerHTML = '<i class="fas fa-dumbbell"></i>';
+        container.appendChild(iconContainer);
+
+        // Texto
+        let text = document.createElement('h2');
+        text.className = 'display-5 fw-bold text-dark text-center';
+        text.innerText = "PREPARANDO RUTINA...";
+        container.appendChild(text);
+
+        // Elementos flotantes (fitness)
+        const items = ['fa-running', 'fa-heartbeat', 'fa-bolt', 'fa-stopwatch', 'fa-dumbbell'];
+        for (let i = 0; i < 8; i++) {
+            let el = document.createElement('div');
+            el.className = `position-absolute text-primary opacity-50`;
+            el.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.top = Math.random() * 100 + 'vh';
+            el.innerHTML = `<i class="fas ${items[Math.floor(Math.random() * items.length)]}"></i>`;
+            container.appendChild(el);
+
+            anime({
+                targets: el,
+                translateY: [0, -100],
+                opacity: [0.5, 0],
+                duration: 2000 + Math.random() * 1000,
+                loop: true,
+                easing: 'linear',
+                delay: Math.random() * 1000
+            });
+        }
+
+        // Animar entrada
+        anime({
+            targets: container,
+            opacity: [0, 1],
+            duration: 500,
+            easing: 'easeOutQuad'
+        });
+
+        // Loop icono principal (pulse + rotate)
+        anime({
+            targets: iconContainer,
+            scale: [1, 1.2],
+            duration: 1000,
+            direction: 'alternate',
+            loop: true,
+            easing: 'easeInOutSine'
+        });
+
+        // Limpieza automática
+        setTimeout(() => {
+            anime({
+                targets: container,
+                opacity: 0,
+                duration: 500,
+                easing: 'easeInQuad',
+                complete: () => container.remove()
+            });
+        }, 3500);
+    };
+
 })();

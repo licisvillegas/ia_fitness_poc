@@ -69,7 +69,7 @@ def _send_push_notification_sync(user_id, title, body, url):
                 webpush(
                     subscription_info=sub_info,
                     data=payload,
-                    vapid_private_key=Config.VAPID_PRIVATE_KEY,
+                    vapid_private_key=_get_vapid_private_key(),
                     vapid_claims={"sub": Config.VAPID_SUBJECT},
                 )
                 sent += 1
@@ -93,6 +93,52 @@ def _send_push_notification_sync(user_id, title, body, url):
     except Exception as e:
         print(f"--- [DEBUG] Push Critical Error: {e} ---", flush=True)
         logger.error(f"Scheduled Push Critical Error: {e}")
+
+
+def _get_vapid_private_key():
+    """
+    Helper to ensure the VAPID private key is in a format (PEM bytes) 
+    that pywebpush/py_vapid + new cryptography libraries accept reliably.
+    """
+    key_str = Config.VAPID_PRIVATE_KEY
+    if not key_str:
+        return None
+        
+    # If it looks like PEM, return as is (bytes preferred)
+    if "-----BEGIN" in key_str:
+        if isinstance(key_str, str):
+            return key_str.encode('utf-8')
+        return key_str
+
+    # Assume base64url string (e.g. from env)
+    try:
+        import base64
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        
+        # Add padding if needed
+        key_str_padded = key_str + '=' * (-len(key_str) % 4)
+        private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
+        
+        curve = ec.SECP256R1()
+        private_key = ec.derive_private_key(private_value, curve)
+        
+        pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+        return pem
+    except Exception as e:
+        print(f"--- [DEBUG] Error converting VAPID key: {e} ---", flush=True)
+        # Fallback to original string if conversion fails
+        return key_str
+
+    
+# In _send_push_notification_sync
+# We need to monkeypatch or call it carefully
+# Actually, I will just rewrite the loop part in the function above via replace
+
 
 
 @push_bp.get("/vapid-public-key")

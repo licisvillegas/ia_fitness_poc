@@ -711,8 +711,18 @@
             } catch (e) { }
         }, [routineState, cursor, status, stepTimer, isTimerRunning]);
 
+        const processingCompletionRef = useRef(false);
+
+        // Reset processing flag when cursor changes
+        useEffect(() => {
+            processingCompletionRef.current = false;
+        }, [cursor]);
+
         // Auto-advance logic when timer hits 0
         const completeStepTimer = () => {
+            if (processingCompletionRef.current) return;
+            processingCompletionRef.current = true;
+
             if (currentStep.type === 'rest') {
                 next(); // Auto-skip rest when done
             } else {

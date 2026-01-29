@@ -128,7 +128,9 @@ def _get_vapid_private_key():
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption()
         )
-        return pem
+        # Ensure we return a string, as some versions of pywebpush/requests integration 
+        # might try to .encode() it if they assume it's a string, or fail if bytes.
+        return pem.decode('utf-8')
     except Exception as e:
         print(f"--- [DEBUG] Error converting VAPID key: {e} ---", flush=True)
         # Fallback to original string if conversion fails

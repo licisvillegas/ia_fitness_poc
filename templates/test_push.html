@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Push Notifications</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body class="bg-dark text-white p-4">
+    <div class="container">
+        <h1>Diagnóstico de Notificaciones</h1>
+        <div id="status" class="alert alert-secondary">Comprobando permisos...</div>
+
+        <div class="d-grid gap-3">
+            <button class="btn btn-primary" onclick="requestPerm()">1. Solicitar Permisos</button>
+            <button class="btn btn-warning" onclick="subscribe()">2. Suscribirse a Push</button>
+
+            <hr>
+
+            <button class="btn btn-success" onclick="sendTestPush()">3. Enviar Push INMEDIATA</button>
+            <button class="btn btn-info" onclick="sendDelayedPush()">4. Enviar Push RETRASADA (10s)</button>
+        </div>
+
+        <div id="logs" class="mt-4 font-monospace small bg-black p-3 border rounded"
+            style="height: 300px; overflow-y: scroll;"></div>
+    </div>
+
+    <script>
+        // Log helper
+        function log(msg) {
+            const el = document.getElementById('logs');
+            const line = document.createElement('div');
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            line.style.borderBottom = "1px solid #333";
+            el.appendChild(line);
+            el.scrollTop = el.scrollHeight;
+            console.log(msg);
+        }
+
+        async function requestPerm() {
+            log("Solicitando permiso de notificaciones...");
+            const res = await Notification.requestPermission();
+            log("Resultado: " + res);
+            document.getElementById('status').textContent = "Permiso: " + res;
+        }
+
+        async function getVapidKey() {
+            try {
+                const res = await fetch('/api/push/vapid-public-key');
+                const data = await res.json();
+                return data.publicKey;
+            } catch (e) {
+                log("Error obteniendo VAPID key: " + e);
+                return null;
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        async function subscribe() {
+            log("Registrando Service Worker...");
+            if (!('serviceWorker' in navigator)) {
+                log("Service Worker no soportado");
+                return;
+            }
+
+            try {
+                const reg = await navigator.serviceWorker.register('/service-worker.js');
+                log("SW Registrado. Scope: " + reg.scope);
+
+                await navigator.serviceWorker.ready;
+                log("SW Ready.");
+
+                const vapidKey = await getVapidKey();
+                if (!vapidKey) return;
+                log("VAPID Key obtenida.");
+
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                });
+
+                log("Objeto Subscription creado.");
+
+                // Send to server
+                const res = await fetch('/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sub)
+                });
+
+                if (res.ok) log("Suscripción enviada al servidor OK.");
+                else log("Error enviando suscripción: " + res.status);
+
+            } catch (e) {
+                log("Error en suscripción: " + e.message);
+            }
+        }
+
+        async function sendTestPush() {
+            log("Solicitando Push Inmediata...");
+            try {
+                const res = await fetch('/api/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: "Prueba Manual",
+                        body: "Si ves esto, las notificaciones funcionan."
+                    })
+                });
+                const txt = await res.text();
+                log("Respuesta servidor: " + txt);
+            } catch (e) {
+                log("Error fetch: " + e);
+            }
+        }
+
+        async function sendDelayedPush() {
+            log("Solicitando Push Retrasada (10s)... Bloquea tu pantalla AHORA.");
+            try {
+                const res = await fetch('/api/push/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        delay: 10,
+                        title: "Prueba Retrasada",
+                        body: "¡Funciona en segundo plano!"
+                    })
+                });
+                const json = await res.json();
+                log("Programado. Task ID: " + json.task_id);
+            } catch (e) {
+                log("Error fetch: " + e);
+            }
+        }
+    </script>
+</body>
+
+</html>

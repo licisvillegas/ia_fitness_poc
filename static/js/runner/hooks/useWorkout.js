@@ -1185,6 +1185,8 @@
                             });
                             clearTimeout(timeoutId);
                             if (!res.ok) throw new Error("Server returned " + res.status);
+                            localStorage.removeItem("workout_running_state");
+                            localStorage.removeItem("offline_pending_session");
                             window.location.href = getReturnUrl();
                         } catch (fetchErr) {
                             clearTimeout(timeoutId);
@@ -1257,6 +1259,8 @@
 
                                     // FORCE CANCEL
                                     try {
+                                        localStorage.removeItem("workout_running_state");
+                                        localStorage.removeItem("offline_pending_session");
                                         await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
                                     } catch (e) { console.error("Cancel err", e); }
                                     window.location.href = getReturnUrl();
@@ -1267,6 +1271,8 @@
                                 if (confirm("¿Seguro que deseas perder los datos de esta sesión?")) {
                                     // FORCE CANCEL to unlock server
                                     try {
+                                        localStorage.removeItem("workout_running_state");
+                                        localStorage.removeItem("offline_pending_session");
                                         window.showLoader("Cancelando...");
                                         await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
                                     } catch (e) { console.error("Cancel err", e); }
@@ -1284,6 +1290,8 @@
         const cancelWorkout = () => {
             const doCancel = async () => {
                 try {
+                    localStorage.removeItem("workout_running_state");
+                    localStorage.removeItem("offline_pending_session");
                     await fetch("/workout/api/session/cancel", {
                         method: "POST",
                         credentials: "include"

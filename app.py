@@ -143,6 +143,10 @@ def seed_user_statuses():
 def animations_test():
     return render_template('animations_showcase.html')
 
+@app.route('/test/push')
+def test_push():
+    return render_template('test_push.html')
+
 @app.route('/service-worker.js')
 def service_worker():
     from flask import send_from_directory

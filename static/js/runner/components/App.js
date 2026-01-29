@@ -33,6 +33,19 @@
             return () => window.removeEventListener('resize', handleOrientationChange);
         }, []); // Remove status dependency
 
+        // Register Push Notifications on Mount
+        React.useEffect(() => {
+            if (window.ensurePushSubscription) {
+                // Delay slightly to ensure browser is idle
+                setTimeout(() => {
+                    window.ensurePushSubscription().then(success => {
+                        if (success) console.log('Push subscription ensured');
+                        else console.warn('Push subscription failed or not supported');
+                    });
+                }, 2000);
+            }
+        }, []);
+
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
 
         return (

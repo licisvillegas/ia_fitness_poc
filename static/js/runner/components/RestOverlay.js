@@ -59,6 +59,18 @@
             if (stepTimer <= 0) setShowRestNote(false);
         }, [stepTimer]);
 
+        // Breathing Effect Overlay
+        useEffect(() => {
+            let stopAnimation = null;
+            if (window.WorkoutAnimations && typeof window.WorkoutAnimations.breathingEffect === 'function') {
+                // Run for a long duration (1 hour) so it doesn't stop early if user extends rest
+                stopAnimation = window.WorkoutAnimations.breathingEffect(3600);
+            }
+            return () => {
+                if (stopAnimation) stopAnimation();
+            };
+        }, []);
+
         const containerPadding = isLandscapeCompact ? "12px" : "1.5rem";
         const headerSpacing = isLandscapeCompact ? "mb-3" : "mb-5";
         const nextSpacing = isLandscapeCompact ? "mb-3" : "mb-5";
@@ -118,7 +130,7 @@
                     )}
                 </div>
 
-                <div className={`text-center ${nextSpacing} animate-pulse`}>
+                <div className={`text-center ${nextSpacing} animate-pulse mt-5`}>
                     <p className="text-muted small mb-2 text-uppercase">A continuación</p>
                     <h3 className="h2 fw-bold mb-2">{nextExName}</h3>
                 </div>

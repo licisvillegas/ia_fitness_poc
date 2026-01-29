@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animación Fitness</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            /* Fondo oscuro estilo app fitness moderna */
+            font-family: sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .check-icon {
+            width: 100px;
+            height: 100px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .path {
+            fill: none;
+            stroke: #00ff88;
+            /* Verde neón deportivo */
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        h2 {
+            color: white;
+            opacity: 0;
+            /* Empieza invisible */
+            margin-top: 20px;
+            transform: translateY(20px);
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <svg class="check-icon" viewBox="0 0 100 100">
+            <circle class="path circle" cx="50" cy="50" r="40" />
+            <path class="path check" d="M30 50 L45 65 L70 35" />
+        </svg>
+
+        <h2 class="text">¡Rutina Finalizada!</h2>
+
+        <button onclick="playAnimation()">Reiniciar Animación</button>
+    </div>
+
+    <script>
+        // Lógica de la animación
+        function playAnimation() {
+            // Reiniciamos estados visuales para poder repetir
+            anime.set('.path', { strokeDashoffset: anime.setDashoffset });
+            anime.set('.text', { opacity: 0, translateY: 20 });
+
+            // Creamos una línea de tiempo (Timeline) para secuenciar efectos
+            var timeline = anime.timeline({
+                easing: 'easeInOutQuad',
+                duration: 500
+            });
+
+            timeline
+                // 1. Dibujar el círculo
+                .add({
+                    targets: '.circle',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    duration: 1000,
+                    easing: 'easeInOutSine'
+                })
+                // 2. Dibujar el Check (ligeramente superpuesto al final del círculo)
+                .add({
+                    targets: '.check',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    duration: 500,
+                    easing: 'easeOutBounce' // Efecto rebote para energía
+                }, '-=200') // Empieza 200ms antes de que termine el anterior
+                // 3. Escalar el icono completo (latido)
+                .add({
+                    targets: '.check-icon',
+                    scale: [0.8, 1.1, 1],
+                    duration: 600,
+                    easing: 'spring(1, 80, 10, 0)'
+                }, '-=400')
+                // 4. Aparecer el texto
+                .add({
+                    targets: '.text',
+                    opacity: [0, 1],
+                    translateY: [20, 0],
+                    duration: 800
+                }, '-=400');
+        }
+
+        // Ejecutar al cargar
+        playAnimation();
+    </script>
+</body>
+
+</html>

@@ -115,6 +115,12 @@
         const handleSubmit = () => {
             if (isCompleting) return;
             setIsCompleting(true);
+
+            // Trigger Flex Animation
+            if (window.WorkoutAnimations && typeof window.WorkoutAnimations.flexEffect === 'function') {
+                window.WorkoutAnimations.flexEffect();
+            }
+
             logSet({ weight, reps, rpe });
             next();
         };

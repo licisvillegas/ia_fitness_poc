@@ -2,7 +2,7 @@
 # AI FITNESS - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
-from flask import Flask
+from flask import Flask, render_template
 import os
 import traceback
 import sys
@@ -137,6 +137,12 @@ def seed_user_statuses():
 # ======================================================
 # EJECUCIÓN LOCAL
 # ======================================================
+
+
+@app.route('/animations-test')
+def animations_test():
+    return render_template('animations_showcase.html')
+
 if __name__ == "__main__":
     # Solo ejecutar inicializacion DB en el proceso hijo del reloader
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":

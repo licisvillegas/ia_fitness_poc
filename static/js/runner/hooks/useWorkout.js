@@ -1178,8 +1178,13 @@
                 return;
             }
             showConfirm("Cancelar Rutina", "¿Estás seguro de que quieres salir? Se perderá el progreso actual.", () => {
-                showMessage("Rutina cancelada", "error");
-                doCancel();
+                if (window.WorkoutAnimations && typeof window.WorkoutAnimations.glitchEffect === 'function') {
+                    window.WorkoutAnimations.glitchEffect("RUTINA CANCELADA");
+                    setTimeout(doCancel, 3000);
+                } else {
+                    showMessage("Rutina cancelada", "error");
+                    doCancel();
+                }
             }, "danger");
         };
 
@@ -1286,10 +1291,10 @@
 
             console.log("Starting countdown...");
             ensureNotificationPermission();
-            setCountdownValue(3);
-            setShowCountdown(true);
 
-            // Fetch session start immediately to lock it
+            // NOTE: We no longer use internal state for countdown (setShowCountdown) 
+            // because we use the external overlay animation.
+
             // Fetch session start immediately to lock it
             fetch("/workout/api/session/start", {
                 method: "POST",
@@ -1298,30 +1303,28 @@
                 body: JSON.stringify({ routine_id: (routineState?.id || routine?.id) })
             }).catch(e => console.error("Start session error", e));
 
-            const interval = setInterval(() => {
-                setCountdownValue(prev => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        setShowCountdown(false);
+            const triggerStart = () => {
+                console.log("Countdown finished, starting workout...");
+                // Actual start logic
+                const step = queueRef.current[cursor]; // Use ref to avoid stale queue
+                setIsPaused(false);
+                if (step && step.type === 'rest') {
+                    setStatus('REST');
+                    setStepTimer(step.duration);
+                    setIsTimerRunning(true);
+                } else if (step) {
+                    setStatus('WORK');
+                    setStepTimer(step.isTimeBased ? step.target.time : 0);
+                    setIsTimerRunning(step.isTimeBased);
+                }
+            };
 
-                        console.log("Countdown finished, starting workout...");
-                        // Actual start logic
-                        const step = queueRef.current[cursor]; // Use ref to avoid stale queue
-                        setIsPaused(false);
-                        if (step && step.type === 'rest') {
-                            setStatus('REST');
-                            setStepTimer(step.duration);
-                            setIsTimerRunning(true);
-                        } else if (step) {
-                            setStatus('WORK');
-                            setStepTimer(step.isTimeBased ? step.target.time : 0);
-                            setIsTimerRunning(step.isTimeBased);
-                        }
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
+            if (window.WorkoutAnimations && typeof window.WorkoutAnimations.countdownEffect === 'function') {
+                window.WorkoutAnimations.countdownEffect(triggerStart);
+            } else {
+                console.warn("WorkoutAnimations.countdownEffect not found, starting immediately");
+                triggerStart();
+            }
         };
 
         const showConfirm = (title, message, onConfirm, type = "danger", onCancel = null) => {

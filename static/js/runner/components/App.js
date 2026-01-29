@@ -37,76 +37,74 @@
 
         return (
             <React.Fragment>
-                <div className={`countdown-overlay ${showCountdown ? 'show' : ''}`}>
-                    <img src="/static/images/icon/stw.png" alt="Get Ready" className="countdown-image" />
-                    <div className="countdown-text">
-                        00:0{countdownValue}
-                    </div>
-                </div>
+
+
 
                 <div className={`completion-overlay ${showCompletionIcon ? 'show' : ''}`}>
                     <img src="/static/images/icon/fw.png" alt="Finished" className="completion-icon" />
                 </div>
 
-                {status === 'IDLE' ? (
-                    <PreStart
-                        focusMode={focusMode}
-                        onToggleFocus={() => setFocusMode(prev => !prev)}
-                        showPending={showPending}
-                        onTogglePending={() => setShowPending(prev => !prev)}
-                    />
-                ) : status === 'FINISHED' ? (
-                    <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success">
-                        <h1>¡Entrenamiento Completado!</h1>
-                        <p>Guardando...</p>
-                    </div>
-                ) : (
-                    <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
-                        <Header
+                {
+                    status === 'IDLE' ? (
+                        <PreStart
                             focusMode={focusMode}
                             onToggleFocus={() => setFocusMode(prev => !prev)}
                             showPending={showPending}
                             onTogglePending={() => setShowPending(prev => !prev)}
                         />
-
-                        <div className="visual-stage">
-                            {!focusMode && <MessageBar />}
-                            {!focusMode && <NextUpBar />}
-                            <NavigationWrapper>
-                                {currentStep ? (
-                                    <ActiveExercise focusMode={focusMode} />
-                                ) : (
-                                    <div className="d-flex flex-column h-100 justify-content-center align-items-center animate-entry">
-                                        <h3 className="text-white mb-3">¡Ejercicios completados!</h3>
-                                        <button
-                                            className="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow"
-                                            onClick={finishWorkout}
-                                        >
-                                            <i className="fas fa-flag-checkered me-2"></i>
-                                            FINALIZAR RUTINA
-                                        </button>
-                                    </div>
-                                )}
-                            </NavigationWrapper>
+                    ) : status === 'FINISHED' ? (
+                        <div className="d-flex flex-column h-100 justify-content-center align-items-center text-success">
+                            <h1>¡Entrenamiento Completado!</h1>
+                            <p>Guardando...</p>
                         </div>
-
-                        {(status === 'WORK' || status === 'REST') && (
-                            <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
-                        )}
-
-                        {status === 'REST' && (
-                            <RestOverlay
-                                nextStep={nextStep}
+                    ) : (
+                        <div className={`player-container ${focusMode ? "focus-mode" : ""}`}>
+                            <Header
+                                focusMode={focusMode}
+                                onToggleFocus={() => setFocusMode(prev => !prev)}
                                 showPending={showPending}
                                 onTogglePending={() => setShowPending(prev => !prev)}
                             />
-                        )}
-                    </div>
-                )}
+
+                            <div className="visual-stage">
+                                {!focusMode && <MessageBar />}
+                                {!focusMode && <NextUpBar />}
+                                <NavigationWrapper>
+                                    {currentStep ? (
+                                        <ActiveExercise focusMode={focusMode} />
+                                    ) : (
+                                        <div className="d-flex flex-column h-100 justify-content-center align-items-center animate-entry">
+                                            <h3 className="text-white mb-3">¡Ejercicios completados!</h3>
+                                            <button
+                                                className="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow"
+                                                onClick={finishWorkout}
+                                            >
+                                                <i className="fas fa-flag-checkered me-2"></i>
+                                                FINALIZAR RUTINA
+                                            </button>
+                                        </div>
+                                    )}
+                                </NavigationWrapper>
+                            </div>
+
+                            {(status === 'WORK' || status === 'REST') && (
+                                <PendingPanel isOpen={showPending} onClose={() => setShowPending(false)} />
+                            )}
+
+                            {status === 'REST' && (
+                                <RestOverlay
+                                    nextStep={nextStep}
+                                    showPending={showPending}
+                                    onTogglePending={() => setShowPending(prev => !prev)}
+                                />
+                            )}
+                        </div>
+                    )
+                }
                 <SubstitutesModal />
                 <ConfirmModal />
                 <RMCalculatorModal />
-            </React.Fragment>
+            </React.Fragment >
         );
     };
 })();

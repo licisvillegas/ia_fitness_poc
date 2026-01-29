@@ -263,12 +263,41 @@
                     const q = buildQueue(routineState);
                     console.log("Queue Built Successfully:", q);
                     setQueue(q);
-                    setStatus('IDLE');
 
-                    // Hydrate from restored state
-                    // Assumes RESTORED_STATE is a global variable from the Jinja template
-                    if (window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
-                        console.log("RESTORING STATE:", window.RESTORED_STATE);
+                    // Priority: 1. LocalStorage (Recent active run), 2. Server Restored State, 3. Default (Start)
+                    let restored = false;
+
+                    // 1. Try LocalStorage
+                    try {
+                        const savedJson = localStorage.getItem("workout_running_state");
+                        if (savedJson) {
+                            const saved = JSON.parse(savedJson);
+                            const currentId = routineState.id || routineState._id;
+                            // Valid if matches routine and is recent (< 2 hours)
+                            if (String(saved.routineId) === String(currentId) && (Date.now() - saved.savedAt) < 7200000) {
+                                console.log("Restoring from LocalStorage:", saved);
+                                setCursor(saved.cursor);
+                                setStatus(saved.status);
+
+                                if (saved.isTimerRunning && saved.status !== 'IDLE') {
+                                    const elapsedSinceSave = Math.floor((Date.now() - saved.savedAt) / 1000);
+                                    const newTimer = Math.max(0, saved.stepTimer - elapsedSinceSave);
+                                    setStepTimer(newTimer);
+                                    setIsTimerRunning(newTimer > 0);
+                                } else {
+                                    setStepTimer(saved.stepTimer);
+                                    setIsTimerRunning(saved.isTimerRunning);
+                                }
+                                restored = true;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Error reading local state", e);
+                    }
+
+                    // 2. Try Server State (if not restored locally)
+                    if (!restored && window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
+                        console.log("Restoring from Server State:", window.RESTORED_STATE);
                         if (window.RESTORED_STATE.cursor > 0 && window.RESTORED_STATE.cursor < q.length) {
                             setCursor(window.RESTORED_STATE.cursor);
 
@@ -290,7 +319,11 @@
                             setSessionLog(window.RESTORED_STATE.session_log);
                             sessionLogRef.current = window.RESTORED_STATE.session_log;
                         }
+                    } else if (!restored) {
+                        // Default start
+                        setStatus('IDLE');
                     }
+
                     console.log("Queue Built:", q);
                     queueRef.current = q; // Update ref
                 } catch (e) {
@@ -661,6 +694,22 @@
         useEffect(() => { stepTimerRef.current = stepTimer; }, [stepTimer]);
         useEffect(() => { globalTimeRef.current = globalTime; }, [globalTime]);
         useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+
+        // Persist State to LocalStorage
+        useEffect(() => {
+            if (!routineState || status === 'LOADING') return;
+            const state = {
+                routineId: routineState.id || routineState._id,
+                cursor,
+                status,
+                stepTimer,
+                isTimerRunning,
+                savedAt: Date.now()
+            };
+            try {
+                localStorage.setItem("workout_running_state", JSON.stringify(state));
+            } catch (e) { }
+        }, [routineState, cursor, status, stepTimer, isTimerRunning]);
 
         // Auto-advance logic when timer hits 0
         const completeStepTimer = () => {
@@ -1240,6 +1289,9 @@
             showConfirm("Cancelar Rutina", "¿Estás seguro de que quieres salir? Se perderá el progreso actual.", () => {
                 if (window.WorkoutAnimations && typeof window.WorkoutAnimations.glitchEffect === 'function') {
                     window.WorkoutAnimations.glitchEffect("RUTINA CANCELADA");
+                    if (typeof window.WorkoutAnimations.zenEffect === 'function') {
+                        window.WorkoutAnimations.zenEffect();
+                    }
                     setTimeout(doCancel, 3000);
                 } else {
                     showMessage("Rutina cancelada", "error");

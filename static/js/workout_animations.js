@@ -1281,4 +1281,66 @@
         }, 3500);
     };
 
+    /**
+     * 30. Efecto Zen (Zen Effect)
+     * ----------------------------------------------------
+     * Muestra un overlay oscuro y relajante con burbujas flotando suavemente hacia arriba.
+     * Ideal para momentos de calma o cancelación suave.
+     */
+    window.WorkoutAnimations.zenEffect = function () {
+        // Calm blue overlay
+        let overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.background = 'radial-gradient(circle, #2d3436 0%, #000000 100%)';
+        overlay.style.zIndex = '1999';
+        overlay.style.opacity = 0;
+        document.body.appendChild(overlay);
+
+        anime({
+            targets: overlay,
+            opacity: 0.9,
+            duration: 2000,
+            direction: 'alternate',
+            delay: 0,
+            endDelay: 3000,
+            easing: 'easeInOutQuad',
+            complete: () => overlay.remove()
+        });
+
+        // Slow rising bubbles
+        var duration = 6 * 1000;
+        var animationEnd = Date.now() + duration;
+
+        (function frame() {
+            var timeLeft = animationEnd - Date.now();
+
+            confetti({
+                particleCount: 1,
+                startVelocity: 0,
+                ticks: 200,
+                origin: {
+                    x: Math.random(),
+                    // start from bottom
+                    y: 1.1
+                },
+                colors: ['#a8e6cf', '#dcedc1', '#ffd3b6'],
+                shapes: ['circle'],
+                gravity: -0.2, // float up
+                scalar: 2,
+                drift: 0,
+                opacity: 0.5
+            });
+
+            if (timeLeft > 0) {
+                // Less frequent
+                if (Math.random() > 0.8) requestAnimationFrame(frame);
+                else setTimeout(() => { if (Date.now() < animationEnd) frame(); }, 50);
+            }
+        }());
+    };
+
 })();

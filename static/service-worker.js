@@ -90,7 +90,11 @@ self.addEventListener('notificationclick', (event) => {
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
                 // Compare absolute URLs
-                if (client.url === targetUrl && 'focus' in client) {
+                // Compare pathnames to ignore query params mismatch
+                const clientPath = new URL(client.url).pathname;
+                const targetPath = new URL(targetUrl).pathname;
+
+                if (clientPath === targetPath && 'focus' in client) {
                     return client.focus();
                 }
             }

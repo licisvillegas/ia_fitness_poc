@@ -1,5 +1,5 @@
 """
-Configuración centralizada de la aplicación AI Fitness
+Configuración centralizada de la aplicación Synapse Fit
 """
 import os
 from dotenv import load_dotenv

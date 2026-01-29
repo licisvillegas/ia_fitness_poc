@@ -36,28 +36,26 @@ def _get_subscription_payload(raw_data):
 
 def _send_push_notification_sync(user_id, title, body, url):
     """
-    Synchronous helper to send push notification, designed to run in a background thread.
-    Use application context if interacting with DB/Flask extensions, creating a new app context if needed.
-    For this POC, we assume extensions.db is thread-safe enough or we re-acquire context if needed.
+    Synchronous helper to send push notification.
+    Expects to be called WITHIN an active application context.
     """
+    print(f"--- [DEBUG] Executing Scheduled Push for {user_id} ---", flush=True)
     try:
-        # Import app to get context
-        from app import app
+        db = extensions.db
+        if db is None:
+            print(f"--- [DEBUG] DB not ready for user {user_id} ---", flush=True)
+            logger.warning(f"Scheduled Push Failed: DB not ready for user {user_id}")
+            return
+            
+        payload = json.dumps({"title": title, "body": body, "url": url})
         
-        with app.app_context():
-            db = extensions.db
-            if db is None:
-                logger.warning(f"Scheduled Push Failed: DB not ready for user {user_id}")
-                return
-                
-            payload = json.dumps({"title": title, "body": body, "url": url})
-            
-            # Fetch subscriptions
-            subs = list(db.push_subscriptions.find({"user_id": user_id}))
-            
-            if not subs:
-                logger.info(f"Scheduled Push: No subscriptions for {user_id}")
-                return
+        # Fetch subscriptions
+        subs = list(db.push_subscriptions.find({"user_id": user_id}))
+        
+        if not subs:
+            print(f"--- [DEBUG] No subscriptions found for {user_id} ---", flush=True)
+            logger.info(f"Scheduled Push: No subscriptions for {user_id}")
+            return
 
         sent = 0
         rem = 0
@@ -89,12 +87,12 @@ def _send_push_notification_sync(user_id, title, body, url):
             except Exception as exc:
                 logger.warning(f"Scheduled Push Generic Error: {exc}")
                 
+        print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
         logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
         
     except Exception as e:
+        print(f"--- [DEBUG] Push Critical Error: {e} ---", flush=True)
         logger.error(f"Scheduled Push Critical Error: {e}")
-
-
 
 
 @push_bp.get("/vapid-public-key")
@@ -142,6 +140,7 @@ def subscribe():
         upsert=True,
     )
 
+    print(f"--- [DEBUG] Subscribed user {user_id} ---", flush=True)
     return jsonify({"success": True}), 200
 
 
@@ -190,47 +189,21 @@ def send_push():
     body = (data.get("body") or "").strip()
     url = (data.get("url") or "/").strip()
 
-    payload = json.dumps({"title": title, "body": body, "url": url})
+    print(f"--- [DEBUG] Instant Push Requested for {user_id}: {title} ---", flush=True)
 
-    subs = list(db.push_subscriptions.find({"user_id": user_id}))
-    if not subs:
-        return jsonify({"error": "No subscriptions"}), 404
+    # Re-use _send_push_notification_sync since we are in context
+    # But wait, _send_push_notification_sync assumes we are IN context.
+    # However, its implementation was changed above to EXPECT context.
+    # So we can just call it directly since THIS route is in context.
+    _send_push_notification_sync(user_id, title, body, url)
 
-    sent = 0
-    removed = 0
-
-    for sub in subs:
-        sub_info = sub.get("subscription") or {
-            "endpoint": sub.get("endpoint"),
-            "keys": sub.get("keys") or {},
-        }
-        try:
-            webpush(
-                subscription_info=sub_info,
-                data=payload,
-                vapid_private_key=Config.VAPID_PRIVATE_KEY,
-                vapid_claims={"sub": Config.VAPID_SUBJECT},
-            )
-            sent += 1
-        except WebPushException as exc:
-            status_code = getattr(getattr(exc, "response", None), "status_code", None)
-            if status_code in (404, 410):
-                try:
-                    db.push_subscriptions.delete_one(
-                        {"user_id": user_id, "endpoint": sub.get("endpoint")}
-                    )
-                    removed += 1
-                except Exception:
-                    pass
-            logger.warning(f"Web Push failed: {exc}")
-        except Exception as exc:
-            logger.warning(f"Web Push error: {exc}")
-
-    return jsonify({"success": True, "sent": sent, "removed": removed}), 200
+    return jsonify({"success": True}), 200
 
 
 @push_bp.post("/schedule")
 def schedule_push():
+    from flask import current_app # Import here to ensure availability
+    
     user_id = _get_user_id()
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
@@ -256,13 +229,20 @@ def schedule_push():
     # Create task ID
     task_id = str(uuid.uuid4())
     
+    # Capture the real app object to pass to the thread
+    # This prevents import errors or context issues in the thread
+    app_obj = current_app._get_current_object()
+
     def task_wrapper():
         # Remove self from tasks
         SCHEDULED_TASKS.pop(task_id, None)
-        _send_push_notification_sync(user_id, title, body, url)
+        # Push App Context
+        with app_obj.app_context():
+            _send_push_notification_sync(user_id, title, body, url)
 
     # Schedule timer
     # Note: threading.Timer runs in a separate thread.
+    print(f"--- [DEBUG] Scheduling Push ID {task_id} in {delay}s for {user_id} ---", flush=True)
     timer = threading.Timer(delay, task_wrapper)
     SCHEDULED_TASKS[task_id] = timer
     timer.start()

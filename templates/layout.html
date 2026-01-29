@@ -442,11 +442,24 @@
                 navigator.serviceWorker.register('/static/service-worker.js')
                     .then(reg => {
                         console.log('PWA Service Worker registrado:', reg.scope);
+                        fetch('/api/push/client-log', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: 'SW Registered successfully: ' + reg.scope })
+                        }).catch(() => { });
+
                         if (window.ensurePushSubscription && Notification.permission === 'granted') {
                             window.ensurePushSubscription();
                         }
                     })
-                    .catch(err => console.log('Error registrando PWA Service Worker:', err));
+                    .catch(err => {
+                        console.log('Error registrando PWA Service Worker:', err);
+                        fetch('/api/push/client-log', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: 'SW Registration FAILED: ' + err.toString() })
+                        }).catch(() => { });
+                    });
             });
         }
     </script>

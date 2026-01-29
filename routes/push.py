@@ -138,11 +138,11 @@ def _send_push_notification_sync(user_id, title, body, url, context=None, meta=N
                         }
                         if Config.PUSH_PRUNE_INVALID:
                             try:
-                                logger.warning(f"Pruning invalid subscription (Status {status_code}) for user {user_id}")
-                                db.push_subscriptions.delete_one(
-                                    {"user_id": user_id, "endpoint": sub.get("endpoint")}
+                                logger.warning(
+                                    f"Pruning ALL subscriptions for user {user_id} due to status {status_code}"
                                 )
-                                rem += 1
+                                result = db.push_subscriptions.delete_many({"user_id": user_id})
+                                rem += int(getattr(result, "deleted_count", 0) or 0)
                             except Exception:
                                 pass
                     logger.warning(f"Scheduled Push Error: {exc} (Status: {status_code})")

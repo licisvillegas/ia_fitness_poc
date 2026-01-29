@@ -143,6 +143,11 @@ def seed_user_statuses():
 def animations_test():
     return render_template('animations_showcase.html')
 
+@app.route('/service-worker.js')
+def service_worker():
+    from flask import send_from_directory
+    return send_from_directory(app.static_folder, 'service-worker.js')
+
 if __name__ == "__main__":
     # Solo ejecutar inicializacion DB en el proceso hijo del reloader
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":

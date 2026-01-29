@@ -40,6 +40,14 @@ def _send_push_notification_sync(user_id, title, body, url):
     Expects to be called WITHIN an active application context.
     """
     print(f"--- [DEBUG] Executing Scheduled Push for {user_id} ---", flush=True)
+    
+    # Imports needed locally for this function's logic
+    import tempfile
+    import os
+    import base64
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
     try:
         db = extensions.db
         if db is None:
@@ -57,84 +65,90 @@ def _send_push_notification_sync(user_id, title, body, url):
             logger.info(f"Scheduled Push: No subscriptions for {user_id}")
             return
 
-        sent = 0
-        rem = 0
-        
-        for sub in subs:
-            sub_info = sub.get("subscription") or {
-                "endpoint": sub.get("endpoint"),
-                "keys": sub.get("keys") or {},
-            }
-            try:
-                webpush(
-                    subscription_info=sub_info,
-                    data=payload,
-                    vapid_private_key=_get_vapid_private_key(),
-                    vapid_claims={"sub": Config.VAPID_SUBJECT},
-                )
-                sent += 1
-            except WebPushException as exc:
-                status_code = getattr(getattr(exc, "response", None), "status_code", None)
-                if status_code in (404, 410):
-                    try:
-                        db.push_subscriptions.delete_one(
-                            {"user_id": user_id, "endpoint": sub.get("endpoint")}
-                        )
-                        rem += 1
-                    except Exception:
-                        pass
-                logger.warning(f"Scheduled Push Error: {exc}")
-            except Exception as exc:
-                logger.warning(f"Scheduled Push Generic Error: {exc}")
-                
-        print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
-        logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
+        # Prepare VAPID Key in a secure temporary file
+        # We do this complex dance because pywebpush/cryptography interactions with 
+        # string/bytes keys can be brittle (ASN.1 errors, encoding errors).
+        # File paths are the most reliable input for pywebpush.
+        vapid_file_path = None
+        try:
+            key_str = Config.VAPID_PRIVATE_KEY
+            if not key_str:
+                logger.error("VAPID_PRIVATE_KEY not configured")
+                return
+
+            pem_bytes = None
+            if "-----BEGIN" in key_str:
+                 # Already PEM string, convert to bytes
+                 pem_bytes = key_str.encode('utf-8') if isinstance(key_str, str) else key_str
+            else:
+                 # Convert base64url to PEM bytes
+                 try:
+                     key_str_padded = key_str + '=' * (-len(key_str) % 4)
+                     private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
+                     curve = ec.SECP256R1()
+                     private_key = ec.derive_private_key(private_value, curve)
+                     pem_bytes = private_key.private_bytes(
+                         encoding=serialization.Encoding.PEM,
+                         format=serialization.PrivateFormat.PKCS8,
+                         encryption_algorithm=serialization.NoEncryption()
+                     )
+                 except Exception as conv_err:
+                     print(f"--- [DEBUG] VAPID Conversion Error: {conv_err} ---", flush=True)
+                     return
+
+            # Write to temp file
+            # delete=False because we need to close it before passing path to pywebpush on Windows
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pem') as tf:
+                tf.write(pem_bytes)
+                vapid_file_path = tf.name
+
+            sent = 0
+            rem = 0
+            
+            for sub in subs:
+                sub_info = sub.get("subscription") or {
+                    "endpoint": sub.get("endpoint"),
+                    "keys": sub.get("keys") or {},
+                }
+                try:
+                    webpush(
+                        subscription_info=sub_info,
+                        data=payload,
+                        vapid_private_key=vapid_file_path,
+                        vapid_claims={"sub": Config.VAPID_SUBJECT},
+                    )
+                    sent += 1
+                except WebPushException as exc:
+                    status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                    if status_code in (404, 410):
+                        try:
+                            # Prune invalid subscriptions
+                            db.push_subscriptions.delete_one(
+                                {"user_id": user_id, "endpoint": sub.get("endpoint")}
+                            )
+                            rem += 1
+                        except Exception:
+                            pass
+                    logger.warning(f"Scheduled Push Error: {exc}")
+                except Exception as exc:
+                    logger.warning(f"Scheduled Push Generic Error: {exc}")
+                    
+            print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
+            logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
+
+        finally:
+            # Clean up temp file
+            if vapid_file_path and os.path.exists(vapid_file_path):
+                try:
+                    os.unlink(vapid_file_path)
+                except Exception:
+                    pass
         
     except Exception as e:
         print(f"--- [DEBUG] Push Critical Error: {e} ---", flush=True)
         logger.error(f"Scheduled Push Critical Error: {e}")
 
-
-def _get_vapid_private_key():
-    """
-    Helper to ensure the VAPID private key is in a format (PEM bytes) 
-    that pywebpush/py_vapid + new cryptography libraries accept reliably.
-    """
-    key_str = Config.VAPID_PRIVATE_KEY
-    if not key_str:
-        return None
-        
-    # If it looks like PEM, return as is (bytes preferred)
-    if "-----BEGIN" in key_str:
-        if isinstance(key_str, str):
-            return key_str.encode('utf-8')
-        return key_str
-
-    # Assume base64url string (e.g. from env)
-    try:
-        import base64
-        from cryptography.hazmat.primitives import serialization
-        from cryptography.hazmat.primitives.asymmetric import ec
-        
-        # Add padding if needed
-        key_str_padded = key_str + '=' * (-len(key_str) % 4)
-        private_value = int.from_bytes(base64.urlsafe_b64decode(key_str_padded), 'big')
-        
-        curve = ec.SECP256R1()
-        private_key = ec.derive_private_key(private_value, curve)
-        
-        pem = private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
-        )
-        # Ensure we return a string, as some versions of pywebpush/requests integration 
-        # might try to .encode() it if they assume it's a string, or fail if bytes.
-        return pem.decode('utf-8')
-    except Exception as e:
-        print(f"--- [DEBUG] Error converting VAPID key: {e} ---", flush=True)
-        # Fallback to original string if conversion fails
-        return key_str
+# Removed helper _get_vapid_private_key as it is now integrated safely above
 
     
 # In _send_push_notification_sync

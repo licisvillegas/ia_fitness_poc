@@ -670,7 +670,16 @@
                         window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
                     }
                     // Schedule new
-                    window.Runner.utils.schedulePush(duration + 1, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                    window.Runner.utils.schedulePush(
+                        duration + 1,
+                        "Tiempo Completado",
+                        "Tu descanso ha terminado. ¡A trabajar!",
+                        "rest_timer",
+                        {
+                            visibility: document.visibilityState,
+                            displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                        }
+                    )
                         .then(id => { scheduledPushTaskRef.current = id; });
                 }
             } else {
@@ -1121,7 +1130,16 @@
                 const nextValue = Math.max(0, t + seconds);
                 // Reschedule Push
                 if (window.Runner && window.Runner.utils && window.Runner.utils.schedulePush) {
-                    window.Runner.utils.schedulePush(nextValue, "Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!")
+                    window.Runner.utils.schedulePush(
+                        nextValue,
+                        "Tiempo Completado",
+                        "Tu descanso ha terminado. ¡A trabajar!",
+                        "rest_timer",
+                        {
+                            visibility: document.visibilityState,
+                            displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                        }
+                    )
                         .then(id => { scheduledPushTaskRef.current = id; });
                 }
                 return nextValue;

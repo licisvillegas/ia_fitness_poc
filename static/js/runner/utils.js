@@ -26,7 +26,7 @@
         return params.get('return_to') || '/';
     };
 
-    utils.schedulePush = async (delaySeconds, title, body) => {
+    utils.schedulePush = async (delaySeconds, title, body, context, clientState = {}) => {
         if (!delaySeconds || delaySeconds <= 0) return null;
         try {
             const res = await fetch("/api/push/schedule", {
@@ -36,7 +36,10 @@
                     delay: delaySeconds,
                     title: title || "Alerta",
                     body: body || "Timer finalizado",
-                    url: window.location.pathname || "/"
+                    url: window.location.pathname || "/",
+                    context: context || null,
+                    visibility: clientState.visibility || document.visibilityState || null,
+                    display_mode: clientState.displayMode || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser')
                 })
             });
             if (res.ok) {

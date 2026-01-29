@@ -63,7 +63,10 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil((async () => {
-        await logClient('SW push event received');
+        const meta = data.meta || {};
+        await logClient(
+            `SW push event received (context=${data.context || 'none'}, visibility=${meta.visibility || 'n/a'}, display_mode=${meta.display_mode || 'n/a'})`
+        );
 
         let data = {};
         try {
@@ -87,12 +90,28 @@ self.addEventListener('push', (event) => {
         };
 
         await self.registration.showNotification(title, options);
-        await logClient('SW showNotification completed');
+        await logClient(
+            `SW showNotification completed (context=${data.context || 'none'}, visibility=${meta.visibility || 'n/a'}, display_mode=${meta.display_mode || 'n/a'})`
+        );
     })());
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    fetch('/api/push/client-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: 'SW notificationclick',
+            level: 'INFO',
+            source: 'service-worker',
+            data: {
+                tag: event.notification?.tag || null,
+                url: event.notification?.data?.url || null,
+                timestamp: Date.now()
+            }
+        })
+    }).catch(() => { });
     // Normalize target URL to absolute for comparison
     const targetUrl = new URL(
         (event.notification.data && event.notification.data.url) || '/',

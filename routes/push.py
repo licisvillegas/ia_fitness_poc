@@ -16,6 +16,7 @@ except Exception:  # pragma: no cover - optional dependency at runtime
 
 # In-memory store for scheduled tasks (POC only - not persistent across restarts/workers)
 SCHEDULED_TASKS = {}
+RESUBSCRIBE_REQUIRED = {}
 
 push_bp = Blueprint("push", __name__, url_prefix="/api/push")
 
@@ -34,7 +35,7 @@ def _get_subscription_payload(raw_data):
     return raw_data.get("subscription") or raw_data
 
 
-def _send_push_notification_sync(user_id, title, body, url):
+def _send_push_notification_sync(user_id, title, body, url, context=None, meta=None):
     """
     Synchronous helper to send push notification.
     Expects to be called WITHIN an active application context.
@@ -55,7 +56,13 @@ def _send_push_notification_sync(user_id, title, body, url):
             logger.warning(f"Scheduled Push Failed: DB not ready for user {user_id}")
             return
             
-        payload = json.dumps({"title": title, "body": body, "url": url})
+        payload = json.dumps({
+            "title": title,
+            "body": body,
+            "url": url,
+            "context": context,
+            "meta": meta or {}
+        })
         
         # Fetch subscriptions
         subs = list(db.push_subscriptions.find({"user_id": user_id}))
@@ -124,14 +131,20 @@ def _send_push_notification_sync(user_id, title, body, url):
                     # 403 Forbidden = BadJwtToken or MismatchedSender => Subscription is likely invalid/stale
                     # 404/410 = GONE
                     if status_code in (403, 404, 410):
-                        try:
-                            logger.warning(f"Pruning invalid subscription (Status {status_code}) for user {user_id}")
-                            db.push_subscriptions.delete_one(
-                                {"user_id": user_id, "endpoint": sub.get("endpoint")}
-                            )
-                            rem += 1
-                        except Exception:
-                            pass
+                        RESUBSCRIBE_REQUIRED[user_id] = {
+                            "status": status_code,
+                            "endpoint": sub.get("endpoint"),
+                            "at": datetime.utcnow().isoformat()
+                        }
+                        if Config.PUSH_PRUNE_INVALID:
+                            try:
+                                logger.warning(f"Pruning invalid subscription (Status {status_code}) for user {user_id}")
+                                db.push_subscriptions.delete_one(
+                                    {"user_id": user_id, "endpoint": sub.get("endpoint")}
+                                )
+                                rem += 1
+                            except Exception:
+                                pass
                     logger.warning(f"Scheduled Push Error: {exc} (Status: {status_code})")
                     if exc.response and exc.response.text:
                          logger.warning(f"Push Error Body: {exc.response.text}")
@@ -259,6 +272,7 @@ def send_push():
     title = (data.get("title") or "AI Fitness").strip()
     body = (data.get("body") or "").strip()
     url = (data.get("url") or "/").strip()
+    context = (data.get("context") or "").strip() or None
 
     print(f"--- [DEBUG] Instant Push Requested for {user_id}: {title} ---", flush=True)
 
@@ -266,7 +280,7 @@ def send_push():
     # But wait, _send_push_notification_sync assumes we are IN context.
     # However, its implementation was changed above to EXPECT context.
     # So we can just call it directly since THIS route is in context.
-    _send_push_notification_sync(user_id, title, body, url)
+    _send_push_notification_sync(user_id, title, body, url, context=context)
 
     return jsonify({"success": True}), 200
 
@@ -287,6 +301,13 @@ def schedule_push():
     title = data.get("title", "Timer Finished")
     body = data.get("body", "Time is up!")
     url = data.get("url", "/")
+    context = (data.get("context") or "").strip() or None
+    client_visibility = (data.get("visibility") or "").strip() or None
+    display_mode = (data.get("display_mode") or "").strip() or None
+    meta = {
+        "visibility": client_visibility,
+        "display_mode": display_mode
+    }
     
     # Validation
     try:
@@ -309,11 +330,15 @@ def schedule_push():
         SCHEDULED_TASKS.pop(task_id, None)
         # Push App Context
         with app_obj.app_context():
-            _send_push_notification_sync(user_id, title, body, url)
+            _send_push_notification_sync(user_id, title, body, url, context=context, meta=meta)
 
     # Schedule timer
     # Note: threading.Timer runs in a separate thread.
-    print(f"--- [DEBUG] Scheduling Push ID {task_id} in {delay}s for {user_id} ---", flush=True)
+    print(
+        f"--- [DEBUG] Scheduling Push ID {task_id} in {delay}s for {user_id} "
+        f"(context={context}, visibility={client_visibility}, display_mode={display_mode}) ---",
+        flush=True
+    )
     timer = threading.Timer(delay, task_wrapper)
     SCHEDULED_TASKS[task_id] = timer
     timer.start()
@@ -353,4 +378,22 @@ def client_log():
     user_id = _get_user_id() or "Anonymous"
     
     print(f"--- [CLIENT LOG] [{user_id}] {level}: {message} ---", flush=True)
+    return jsonify({"success": True}), 200
+
+
+@push_bp.get("/status")
+def push_status():
+    user_id = _get_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    status = RESUBSCRIBE_REQUIRED.get(user_id)
+    return jsonify({"needs_resubscribe": bool(status), "detail": status}), 200
+
+
+@push_bp.post("/status/clear")
+def clear_push_status():
+    user_id = _get_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    RESUBSCRIBE_REQUIRED.pop(user_id, None)
     return jsonify({"success": True}), 200

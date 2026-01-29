@@ -156,6 +156,34 @@
             debugLog('Syncing with backend...');
             const syncRes = await syncSubscription(sub);
             debugLog(`Sync result: ${syncRes}`);
+
+            // Check if server flagged a resubscribe requirement (e.g., 403 BadJwtToken)
+            try {
+                const statusRes = await fetch('/api/push/status', { credentials: 'include' });
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    if (statusData && statusData.needs_resubscribe) {
+                        debugLog('Server requires resubscribe. Forcing unsubscribe/subscribe.');
+                        if (sub) {
+                            await sub.unsubscribe();
+                        }
+                        const appKey = urlBase64ToUint8Array(newKey);
+                        const newSub = await reg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: appKey
+                        });
+                        await syncSubscription(newSub);
+                        await fetch('/api/push/status/clear', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        debugLog('Resubscribe completed and server flag cleared');
+                    }
+                }
+            } catch (e) {
+                debugLog(`Resubscribe status check failed: ${e.message}`);
+            }
+
             return syncRes;
         } catch (e) {
             debugLog(`Push subscription error: ${e.message}`);

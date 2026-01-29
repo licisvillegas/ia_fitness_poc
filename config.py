@@ -41,6 +41,7 @@ class Config:
     VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
     VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
     VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:no-reply@localhost")
+    PUSH_PRUNE_INVALID = os.getenv("PUSH_PRUNE_INVALID", "1") not in ("0", "false", "False")
     
     @staticmethod
     def init_app(app):

@@ -136,6 +136,11 @@ def _send_push_notification_sync(user_id, title, body, url):
             print(f"--- [DEBUG] Push Result: Sent {sent}, Removed {rem} ---", flush=True)
             logger.info(f"Scheduled Push Executed: Sent {sent}, Removed {rem} for user {user_id}")
 
+        except Exception as conv_err:
+             print(f"--- [DEBUG] VAPID Key Error: {conv_err} ---", flush=True)
+             logger.error(f"VAPID Key Error: {conv_err}")
+             return
+
         finally:
             # Clean up temp file
             if vapid_file_path and os.path.exists(vapid_file_path):
@@ -143,11 +148,6 @@ def _send_push_notification_sync(user_id, title, body, url):
                     os.unlink(vapid_file_path)
                 except Exception:
                     pass
-            
-        except Exception as conv_err:
-             print(f"--- [DEBUG] VAPID Key Error: {conv_err} ---", flush=True)
-             logger.error(f"VAPID Key Error: {conv_err}")
-             return
         
     except Exception as e:
         print(f"--- [DEBUG] Push Critical Error: {e} ---", flush=True)

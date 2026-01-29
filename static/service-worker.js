@@ -54,28 +54,41 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-    let data = {};
-    try {
-        data = event.data ? event.data.json() : {};
-    } catch (e) {
-        data = { title: 'AI Fitness', body: event.data ? event.data.text() : '' };
-    }
-
-    const title = data.title || 'AI Fitness';
-    const options = {
-        body: data.body || '',
-        icon: '/static/images/icon/synapse_fit_192.png',
-        badge: '/static/images/icon/synapse_fit_192.png',
-        vibrate: [200, 100, 200, 100, 200, 100, 200],
-        tag: 'workout-timer',
-        renotify: true,
-        requireInteraction: true,
-        data: {
-            url: data.url || '/'
-        }
+    const logClient = (message, level = 'INFO') => {
+        return fetch('/api/push/client-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, level, source: 'service-worker' })
+        }).catch(() => { });
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil((async () => {
+        await logClient('SW push event received');
+
+        let data = {};
+        try {
+            data = event.data ? event.data.json() : {};
+        } catch (e) {
+            data = { title: 'AI Fitness', body: event.data ? event.data.text() : '' };
+        }
+
+        const title = data.title || 'AI Fitness';
+        const options = {
+            body: data.body || '',
+            icon: '/static/images/icon/synapse_fit_192.png',
+            badge: '/static/images/icon/synapse_fit_192.png',
+            vibrate: [200, 100, 200, 100, 200, 100, 200],
+            tag: 'workout-timer',
+            renotify: true,
+            requireInteraction: true,
+            data: {
+                url: data.url || '/'
+            }
+        };
+
+        await self.registration.showNotification(title, options);
+        await logClient('SW showNotification completed');
+    })());
 });
 
 self.addEventListener('notificationclick', (event) => {

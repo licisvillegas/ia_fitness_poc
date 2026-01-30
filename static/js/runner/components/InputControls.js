@@ -310,7 +310,6 @@
                                 }}
                                 placeholder="0"
                                 inputMode="numeric"
-                                pattern="[0-9\\-]*"
                                 onClick={(e) => e.target.select()}
                             />
                             <button

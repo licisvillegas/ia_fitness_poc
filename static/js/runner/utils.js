@@ -55,10 +55,7 @@
     utils.cancelPush = async (taskId) => {
         if (!taskId) return;
         try {
-            navigator.sendBeacon("/api/push/cancel-schedule", JSON.stringify({ task_id: taskId }));
-            // Or use fetch if beacon not suitable (sendBeacon sends blob/string, complicated with json implies headers)
-            // actually sendBeacon sends POST but setting content-type is tricky. 
-            // Fallback to fetch with keepalive: true
+            // Use fetch with keepalive: true for reliable cancellation
             await fetch("/api/push/cancel-schedule", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

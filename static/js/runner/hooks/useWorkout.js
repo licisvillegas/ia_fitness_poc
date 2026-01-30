@@ -712,7 +712,7 @@
                                 .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                         }
                     }
-                } else if (meta.rawRepsTarget !== 0) {
+                } else if (meta && meta.rawRepsTarget !== 0) {
                     // REP BASED: Schedule Idle Warnings (3m, 5m)
                     if (window.Runner.utils.schedulePush) {
                         window.Runner.utils.schedulePush(180, "Motivacion", `Vamos, sigue con ${meta.exName || "tu ejercicio"}.`, "workout_idle_3m", { visibility: document.visibilityState })
@@ -978,10 +978,14 @@
             }
 
             if (cursor >= queue.length - 1) {
+                console.log("DEBUG: End of queue reached. Calling checkPendingAndFinish.");
                 setCursor(queue.length); // Advance to end
                 if (status === 'REST') {
                     setStatus('WORK');
-                    setTimeout(checkPendingAndFinish, 100);
+                    setTimeout(() => {
+                        console.log("DEBUG: Timeout executed, calling checkPendingAndFinish");
+                        checkPendingAndFinish();
+                    }, 100);
                 } else {
                     checkPendingAndFinish();
                 }
@@ -1191,9 +1195,14 @@
         };
 
         const finishWorkout = async () => {
-            if (status === 'FINISHED') return; // Prevent double trigger
+            console.log("DEBUG: finishWorkout called. Status:", status);
+            if (status === 'FINISHED') {
+                console.log("DEBUG: Status is already FINISHED, aborting.");
+                return;
+            }
 
             // 1. Show Icon
+            console.log("DEBUG: Setting ShowCompletionIcon to TRUE");
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
 
@@ -1598,9 +1607,11 @@
         };
 
         const checkPendingAndFinish = () => {
+            console.log("DEBUG: checkPendingAndFinish called");
             // Find pending steps
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
             const pendingCount = queueRef.current.filter(step => step.type === 'work' && !isStepLogged(step.id, currentLog)).length;
+            console.log("DEBUG: Pending count:", pendingCount);
 
             if (pendingCount > 0) {
                 showMessage("Ejercicios pendientes", "info");
@@ -1625,6 +1636,7 @@
                     }
                 );
             } else {
+                console.log("DEBUG: No pending steps, calling finishWorkout direct.");
                 finishWorkout();
             }
         };

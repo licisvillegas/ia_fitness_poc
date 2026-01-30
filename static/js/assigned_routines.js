@@ -168,12 +168,12 @@ window.loadRoutines = async function loadRoutines(userId, options) {
                 <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">
                   ${validity ? `Vence: ${validity}` : "Vence: -"}
                 </small>
-                <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
-                    <i class="fas fa-eye"></i>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-info px-3" onclick="openRoutineModal('${id}')" title="Ver detalle">
+                    <i class="fas fa-eye me-1"></i> Ver
                   </button>
-                  <a href="/workout/run/${id}?return_to=${encodeURIComponent(returnTo)}" class="btn btn-outline-primary" title="Iniciar">
-                    <i class="fas fa-play"></i>
+                  <a href="/workout/run/${id}?return_to=${encodeURIComponent(returnTo)}" class="btn btn-sm btn-outline-primary px-3" title="Iniciar">
+                    <i class="fas fa-play me-1"></i> Iniciar
                   </a>
                 </div>
               </div>
@@ -560,12 +560,12 @@ window.loadCreatedRoutines = async function loadCreatedRoutines(options) {
               <p class="card-text text-secondary small text-truncate mb-3">${r.description || "Sin descripción"}</p>
               <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2 mt-2">
                 <small class="text-muted text-uppercase fw-bold" style="font-size:0.65rem;">Mi rutina</small>
-                <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-info" onclick="openRoutineModal('${id}')" title="Ver detalle">
-                    <i class="fas fa-eye"></i>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-info px-3" onclick="openRoutineModal('${id}')" title="Ver detalle">
+                    <i class="fas fa-eye me-1"></i> Ver
                   </button>
-                  <a href="/workout/run/${id}?return_to=${encodeURIComponent(returnTo)}" class="btn btn-outline-primary" title="Iniciar">
-                    <i class="fas fa-play"></i>
+                  <a href="/workout/run/${id}?return_to=${encodeURIComponent(returnTo)}" class="btn btn-sm btn-outline-primary px-3" title="Iniciar">
+                    <i class="fas fa-play me-1"></i> Iniciar
                   </a>
                 </div>
               </div>

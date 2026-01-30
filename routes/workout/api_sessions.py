@@ -241,6 +241,16 @@ def api_save_session():
                 {"$unset": {"active_routine_id": ""}}
             )
             db.active_workout_sessions.delete_one({"user_id": user_id})
+            
+            # Cancel any pending push notifications (like idle reminders)
+            try:
+                from routes.push import cancel_user_pushes
+                cancel_user_pushes(user_id)
+            except ImportError:
+                 pass
+            except Exception as e:
+                 logger.warning(f"Error cancelling pushes on save: {e}")
+                 
         except Exception as e:
             logger.error(f"Failed to unlock user after save: {e}")
 
@@ -267,6 +277,13 @@ def api_cancel_session():
             {"$unset": {"active_routine_id": ""}}
         )
         db.active_workout_sessions.delete_one({"user_id": user_id})
+        
+        # Cancel any pending push notifications
+        try:
+            from routes.push import cancel_user_pushes
+            cancel_user_pushes(user_id)
+        except Exception as e:
+            logger.warning(f"Error cancelling pushes on cancel: {e}")
         
         return jsonify({"success": True, "message": "Workout cancelled"}), 200
     except Exception as e:

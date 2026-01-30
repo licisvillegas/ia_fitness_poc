@@ -14,8 +14,9 @@ except Exception:  # pragma: no cover - optional dependency at runtime
     webpush = None
     WebPushException = Exception
 
-# In-memory store for scheduled tasks (POC only - not persistent across restarts/workers)
 SCHEDULED_TASKS = {}
+# Index to track tasks by user_id for bulk cancellation
+USER_TASKS = {} 
 RESUBSCRIBE_REQUIRED = {}
 
 push_bp = Blueprint("push", __name__, url_prefix="/api/push")
@@ -334,6 +335,12 @@ def schedule_push():
     def task_wrapper():
         # Remove self from tasks
         SCHEDULED_TASKS.pop(task_id, None)
+        # Remove from USER_TASKS
+        if user_id in USER_TASKS:
+            USER_TASKS[user_id].discard(task_id)
+            if not USER_TASKS[user_id]:
+                USER_TASKS.pop(user_id, None)
+
         # Push App Context
         with app_obj.app_context():
             _send_push_notification_sync(user_id, title, body, url, context=context, meta=meta)
@@ -347,6 +354,11 @@ def schedule_push():
     )
     timer = threading.Timer(delay, task_wrapper)
     SCHEDULED_TASKS[task_id] = timer
+    
+    if user_id not in USER_TASKS:
+        USER_TASKS[user_id] = set()
+    USER_TASKS[user_id].add(task_id)
+
     timer.start()
     
     logger.info(f"Scheduled push {task_id} for user {user_id} in {delay}s")
@@ -367,6 +379,13 @@ def cancel_scheduled_push():
         return jsonify({"error": "Missing task_id"}), 400
         
     timer = SCHEDULED_TASKS.pop(task_id, None)
+    
+    # Clean up USER_TASKS index
+    # We don't know the user_id efficiently from task_id alone without searching or storing it in SCHEDULED_TASKS dict
+    # But since we have user_id from the request (cookie), we can try to clean it up.
+    if user_id in USER_TASKS:
+        USER_TASKS[user_id].discard(task_id)
+
     if timer:
         timer.cancel()
         logger.info(f"Cancelled push task {task_id} for user {user_id}")
@@ -374,6 +393,32 @@ def cancel_scheduled_push():
     else:
         # It might have already executed or doesn't exist
         return jsonify({"error": "Task not found or already executed"}), 404
+
+
+def cancel_user_pushes(user_id):
+    """
+    Cancels all scheduled push notifications for a specific user.
+    Useful when cleaning up session state.
+    """
+    if not user_id: return 0
+    
+    tasks = USER_TASKS.get(user_id, set()).copy()
+    count = 0
+    
+    for task_id in tasks:
+        timer = SCHEDULED_TASKS.pop(task_id, None)
+        if timer:
+            timer.cancel()
+            count += 1
+    
+    # Clear the index
+    USER_TASKS.pop(user_id, None)
+    
+    if count > 0:
+        print(f"--- [DEBUG] Cancelled {count} pending pushes for user {user_id} ---", flush=True)
+        logger.info(f"Cancelled {count} pending pushes for user {user_id}")
+        
+    return count
 
 
 @push_bp.post("/client-log")

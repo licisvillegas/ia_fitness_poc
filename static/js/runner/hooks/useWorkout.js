@@ -1196,7 +1196,6 @@
             // 1. Show Icon
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
-            sendNotification("Rutina finalizada", "Listo para guardar tu entrenamiento.");
 
             // Celebration Trigger
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
@@ -1578,7 +1577,6 @@
             }
 
             showMessage("Realiza los ejercicios pendientes", "info");
-            sendNotification("Ejercicios pendientes", "Realiza los ejercicios pendientes.");
 
             showConfirm(
                 "Ejercicios Pendientes",
@@ -1605,7 +1603,7 @@
             const pendingCount = queueRef.current.filter(step => step.type === 'work' && !isStepLogged(step.id, currentLog)).length;
 
             if (pendingCount > 0) {
-                sendNotification("Ejercicios pendientes", "Tienes ejercicios pendientes por realizar.");
+                showMessage("Ejercicios pendientes", "info");
                 showConfirm(
                     "Ejercicios Pendientes",
                     `Tienes ${pendingCount} ejercicios pendientes. ¿Deseas realizarlos antes de finalizar?`,

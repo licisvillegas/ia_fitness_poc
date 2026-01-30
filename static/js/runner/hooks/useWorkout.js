@@ -109,7 +109,7 @@
                     console.error("Notification error", e);
                 }
             }
-            if (document.visibilityState !== 'visible' && navigator.onLine && typeof window.ensurePushSubscription === "function") {
+            if (false && document.visibilityState !== 'visible' && navigator.onLine && typeof window.ensurePushSubscription === "function") {
                 window.ensurePushSubscription()
                     .then((ok) => {
                         if (!ok) return;
@@ -626,15 +626,7 @@
             if (isTimerRunning && stepTimer > 0) {
                 stepIntervalRef.current = setInterval(() => {
                     setStepTimer(prev => {
-                        if (prev <= 1) {
-                            // TIMER DONE
-                            playAlarm();
-                            triggerHaptic([200, 100, 200, 100, 500]); // Strong vibration pattern
-                            sendNotification("Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!");
-                            setIsTimerRunning(false);
-                            completeStepTimer(); // Auto-advance logic
-                            return 0;
-                        }
+                        if (prev <= 1) return 0;
                         return prev - 1;
                     });
                 }, 1000);
@@ -643,6 +635,19 @@
             }
             return () => clearInterval(stepIntervalRef.current);
         }, [isTimerRunning, stepTimer, isPaused]);
+
+        // Handing Timer Completion via Effect (Prevents Race Conditions/Double Triggers)
+        useEffect(() => {
+            if (stepTimer === 0 && isTimerRunning) {
+                setIsTimerRunning(false);
+                if (status === 'WORK' || status === 'REST') {
+                    playAlarm();
+                    triggerHaptic([200, 100, 200, 100, 500]);
+                    sendNotification("Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!");
+                    completeStepTimer();
+                }
+            }
+        }, [stepTimer, isTimerRunning, status]);
 
         // Background Push Scheduling handled by status transition effect
         const playAlarm = () => {

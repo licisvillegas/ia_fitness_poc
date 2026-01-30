@@ -63,36 +63,46 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil((async () => {
-        const meta = data.meta || {};
-        await logClient(
-            `SW push event received (context=${data.context || 'none'}, visibility=${meta.visibility || 'n/a'}, display_mode=${meta.display_mode || 'n/a'})`
-        );
-
-        let data = {};
+        let payload = {};
         try {
-            data = event.data ? event.data.json() : {};
+            payload = event.data ? event.data.json() : {};
         } catch (e) {
-            data = { title: 'AI Fitness', body: event.data ? event.data.text() : '' };
+            payload = { title: 'AI Fitness', body: event.data ? event.data.text() : '' };
         }
 
-        const title = data.title || 'AI Fitness';
+        const title = payload.title || 'AI Fitness';
+        // Explicitly set silent/renotify options for better vibration/sound handling
         const options = {
-            body: data.body || '',
+            body: payload.body || '',
             icon: '/static/images/icon/synapse_fit_192.png',
             badge: '/static/images/icon/synapse_fit_192.png',
             vibrate: [200, 100, 200, 100, 200, 100, 200],
             tag: 'workout-timer',
-            renotify: true,
+            renotify: true, // Crucial for sound on repeated timers
             requireInteraction: true,
             data: {
-                url: data.url || '/'
+                url: payload.url || '/',
+                context: payload.context,
+                meta: payload.meta
             }
         };
 
-        await self.registration.showNotification(title, options);
-        await logClient(
-            `SW showNotification completed (context=${data.context || 'none'}, visibility=${meta.visibility || 'n/a'}, display_mode=${meta.display_mode || 'n/a'})`
-        );
+        // 1. Show Notification IMMEDIATELLY (Critical for iOS/Background)
+        try {
+            await self.registration.showNotification(title, options);
+        } catch (e) {
+            console.error('ShowNotification failed:', e);
+        }
+
+        // 2. Log afterwards (Non-blocking priority)
+        try {
+            const meta = payload.meta || {};
+            await logClient(
+                `SW notification shown (context=${payload.context || 'none'}, visibility=${meta.visibility || 'n/a'})`
+            );
+        } catch (e) {
+            // Ignore logging errors
+        }
     })());
 });
 

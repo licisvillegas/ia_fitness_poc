@@ -119,11 +119,15 @@ def _send_push_notification_sync(user_id, title, body, url, context=None, meta=N
                     if sent == 0: # Log once per batch
                         print(f"--- [DEBUG] VAPID Subject: {Config.VAPID_SUBJECT} ---", flush=True)
 
+                    real_subject = Config.VAPID_SUBJECT
+                    if not real_subject or "localhost" in real_subject:
+                        real_subject = "mailto:admin@ia-fitness-poc.onrender.com"
+
                     webpush(
                         subscription_info=sub_info,
                         data=payload,
                         vapid_private_key=vapid_file_path,
-                        vapid_claims={"sub": Config.VAPID_SUBJECT},
+                        vapid_claims={"sub": real_subject},
                     )
                     sent += 1
                 except WebPushException as exc:

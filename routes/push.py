@@ -128,6 +128,8 @@ def _send_push_notification_sync(user_id, title, body, url, context=None, meta=N
                         data=payload,
                         vapid_private_key=vapid_file_path,
                         vapid_claims={"sub": real_subject},
+                        ttl=60,
+                        headers={"Urgency": "high"},
                     )
                     sent += 1
                 except WebPushException as exc:

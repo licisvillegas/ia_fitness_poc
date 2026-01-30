@@ -1,4 +1,5 @@
 <link href="/static/css/theme.css" rel="stylesheet">
+<link href="/static/css/notifications.css" rel="stylesheet">
 {% import 'components/macros.html' as macros %}
 <div class="d-flex flex-column flex-shrink-0 p-3 bg-panel sidebar-fixed sidebar-panel">
     <div class="d-flex align-items-center justify-content-between mb-3 text-theme sidebar-header">
@@ -19,10 +20,12 @@
     <a href="#" class="d-flex align-items-center text-theme text-decoration-none dropdown-toggle-user"
         data-bs-toggle="collapse" data-bs-target="#user-collapse" aria-expanded="false" title="Usuario">
         <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 user-icon-container {{ 'skeleton-pulse' if user_data and user_data.profile_image_url else '' }}"
-            style="width: 32px; height: 32px; min-width: 32px; overflow: hidden;">
+            style="width: 32px; height: 32px; min-width: 32px; overflow: hidden; position: relative;">
+            <span id="profile-notification-badge" class="profile-notification-badge d-none"></span>
             <img id="sidebar-avatar-img" alt="Usuario"
                 src="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}"
-                class="{{ 'd-block img-skeleton' if user_data and user_data.profile_image_url else 'd-none' }}" onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
+                class="{{ 'd-block img-skeleton' if user_data and user_data.profile_image_url else 'd-none' }}"
+                onload="this.parentElement.classList.remove('skeleton-pulse'); this.classList.add('loaded')"
                 style="width: 100%; height: 100%; object-fit: cover;"
                 data-profile-url="{{ user_data.profile_image_url if user_data and user_data.profile_image_url else '' }}">
             <i id="sidebar-avatar-icon"
@@ -42,6 +45,25 @@
                     <i class="fas fa-id-card me-2"></i> Perfil
                 </a>
             </li>
+            <li id="notifications-menu-item" class="position-relative">
+                <a href="#" class="d-flex align-items-center text-secondary text-decoration-none py-1 hover-white">
+                    <div class="notifications-container d-flex align-items-center w-100">
+                        <i class="fas fa-bell me-2"></i> Notificaciones
+                        <span id="notifications-badge" class="notification-badge d-none">0</span>
+                    </div>
+                </a>
+                <!-- Dropdown -->
+                <div id="notifications-dropdown" class="notifications-dropdown">
+                    <div class="notifications-header">
+                        <h6>Notificaciones</h6>
+                        <span id="notifications-mark-all" class="btn-mark-all">Marcar leídas</span>
+                    </div>
+                    <div id="notifications-list" class="notifications-list">
+                        <!-- Loaded via JS -->
+                        <div class="notifications-empty">Cargando...</div>
+                    </div>
+                </div>
+            </li>
             <!-- Revertir suplantacion (visible si hay suplantacion) -->
             {% if is_impersonating %}
             <li id="revert-impersonation-li">
@@ -57,14 +79,13 @@
             <li>
                 <a href="#" id="sidebar-lock-btn"
                     class="d-flex align-items-center text-danger text-decoration-none py-1 hover-white"
-                    title="Bloquear sesi?n de admin"
-                    {% if not has_admin_token %}style="display:none"{% endif %}>
+                    title="Bloquear sesi?n de admin" {% if not has_admin_token %}style="display:none" {% endif %}>
                     <i class="fas fa-lock me-2"></i> Bloquear Admin
                 </a>
                 <a href="#" id="sidebar-token-btn"
                     class="d-flex align-items-center text-warning text-decoration-none py-1 hover-white"
-                    data-bs-toggle="modal" data-bs-target="#adminTokenModal"
-                    {% if has_admin_token %}style="display:none"{% endif %}>
+                    data-bs-toggle="modal" data-bs-target="#adminTokenModal" {% if has_admin_token
+                    %}style="display:none" {% endif %}>
                     <i class="fas fa-key me-2"></i> Token Admin
                 </a>
             </li>
@@ -113,7 +134,8 @@
 
         {{ macros.nav_link('/ai/body_assessment/user', 'Evaluación Corporal', 'fas fa-camera') }}
         <li>
-            {% set history_user_id = (user_data.user_id if user_data and user_data.user_id else request.cookies.get('user_session', '')) %}
+            {% set history_user_id = (user_data.user_id if user_data and user_data.user_id else
+            request.cookies.get('user_session', '')) %}
             <a href="/ai/body_assessment/history/view/{{ history_user_id }}"
                 class="nav-link {% if 'history/view' in request.path %}active{% endif %}" title="Historial">
                 <i class="fas fa-history me-2 nav-icon"></i>
@@ -536,7 +558,7 @@
             const hiddenEl = document.getElementById("modalAdminUserId");
             let pendingContextUser = null;
 
-                        function setPendingUser(user, prefix) {
+            function setPendingUser(user, prefix) {
                 const isAdmin = user && user.role === "admin";
                 pendingContextUser = isAdmin ? null : (user || null);
                 if (hiddenEl) hiddenEl.value = pendingContextUser && pendingContextUser.user_id ? pendingContextUser.user_id : "";
@@ -559,7 +581,7 @@
                 }
             }
 
-function confirmSelection() {
+            function confirmSelection() {
                 if (!pendingContextUser) {
                     if (modalMsgEl) modalMsgEl.textContent = "Selecciona un usuario primero.";
                     return;
@@ -756,6 +778,7 @@ function confirmSelection() {
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <script src="/static/js/sidebar_ui.js"></script>
+<script src="/static/js/notifications_ui.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // 1. Initialize Sidebar UI (Toggle, Mobile, Position)

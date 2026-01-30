@@ -30,7 +30,9 @@ from routes.ai_diagnostics import ai_diagnostics_bp
 from routes.ai_plans import ai_plans_bp
 from routes.workout import workout_bp
 from routes.push import push_bp
+
 from routes.onboarding import onboarding_bp
+from routes.notifications import notifications_bp
 
 # ======================================================
 # CONFIGURACIÓN INICIAL
@@ -71,7 +73,9 @@ def create_app():
     app.register_blueprint(ai_plans_bp)
     app.register_blueprint(workout_bp) # Rutas /api/workout/* (asumo definidos en workout.py)
     app.register_blueprint(push_bp)
+
     app.register_blueprint(onboarding_bp) # Rutas /onboarding/*
+    app.register_blueprint(notifications_bp)
 
     print("--- [DEBUG] Blueprints registrados exitosamente ---", file=sys.stdout, flush=True)
 

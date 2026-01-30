@@ -59,7 +59,7 @@
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
         const enduranceCleanupRef = useRef(null); // Store cleanup for endurance animation
-        const scheduledPushTaskRef = useRef(null); // Store scheduled push task ID
+        const scheduledPushTaskIdsRef = useRef([]); // Store scheduled push task IDs (Array)
         const prevStatusRef = useRef(status);
         const lastHistoryRoutineIdRef = useRef(null);
         const currentStepElapsedRef = useRef(0);
@@ -172,12 +172,11 @@
         };
 
         const checkRepMotivation = (elapsed, flags, exName) => {
+            // Local notification logic migrated to Server Push on Step Start
             if (elapsed === 180 && !flags.min3) {
-                sendNotification("Motivacion", `Vamos, sigue con ${exName}.`);
                 flags.min3 = true;
             }
             if (elapsed === 300 && !flags.min5) {
-                sendNotification("Retoma la rutina", `Sigue con ${exName} cuando puedas.`);
                 flags.min5 = true;
             }
         };
@@ -577,13 +576,11 @@
                         const halfTime = Math.floor(totalTime / 2);
 
                         if (remaining === halfTime && !flags.half) {
-                            sendNotification("Motivacion", `Vas a la mitad de ${exName}. Sigue asi.`);
                             if (window.WorkoutAnimations?.pulseEffect) window.WorkoutAnimations.pulseEffect();
                             flags.half = true;
                         }
 
                         if (remaining === 120 && !flags.min2left) {
-                            sendNotification("Casi terminas", "Lo estas logrando. Te faltan 2 minutos.");
                             if (window.WorkoutAnimations?.pulseEffect) window.WorkoutAnimations.pulseEffect();
                             flags.min2left = true;
                         }
@@ -665,13 +662,13 @@
             // Handle Side Effects for Status Transitions
             if (status === 'REST') {
                 // ENTERING REST: Schedule Push
-                // Use REF to get latest value in case closure is stale (though stepTimer should be fresh in this effect)
                 const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
 
                 if (duration > 0 && window.Runner.utils.schedulePush) {
-                    // Cancel any existing just in case
-                    if (scheduledPushTaskRef.current) {
-                        window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                    // Cancel any existing
+                    if (scheduledPushTaskIdsRef.current.length > 0) {
+                        scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                        scheduledPushTaskIdsRef.current = [];
                     }
                     // Schedule new
                     window.Runner.utils.schedulePush(
@@ -684,24 +681,63 @@
                             displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
                         }
                     )
-                        .then(id => { scheduledPushTaskRef.current = id; });
+                        .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                 }
-            } else {
-                // LEAVING REST (or not in REST): Cleanup
-                // 1. Cleanup Endurance Animation if running
+            }
+
+            if (status === 'WORK') {
+                // ENTERING WORK: Schedule Motivation Pushes (if time-based)
+                if (scheduledPushTaskIdsRef.current.length > 0) {
+                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                    scheduledPushTaskIdsRef.current = [];
+                }
+
+                const meta = getStepExerciseMeta(currentStep);
+                if (meta && (meta.isCardioOrTime || (meta.rawRepsTarget === 0 && meta.rawTimeTarget > 0))) {
+                    const totalTime = meta.rawTimeTarget || Number(currentStep.target?.time || 60);
+
+                    if (window.Runner.utils.schedulePush) {
+                        // Schedule HALFWAY
+                        if (totalTime >= 20) {
+                            const halfTime = Math.floor(totalTime / 2);
+                            const delayHalf = totalTime - halfTime;
+                            window.Runner.utils.schedulePush(delayHalf, "Motivacion", `Vas a la mitad de ${meta.exName || "tu ejercicio"}. Sigue asi.`, "workout_half", { visibility: document.visibilityState })
+                                .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                        }
+
+                        // Schedule 2 MIN Warning
+                        if (totalTime > 140) {
+                            const delay2Min = totalTime - 120;
+                            window.Runner.utils.schedulePush(delay2Min, "Casi terminas", "Lo estas logrando. Te faltan 2 minutos.", "workout_2min", { visibility: document.visibilityState })
+                                .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                        }
+                    }
+                } else if (meta.rawRepsTarget !== 0) {
+                    // REP BASED: Schedule Idle Warnings (3m, 5m)
+                    if (window.Runner.utils.schedulePush) {
+                        window.Runner.utils.schedulePush(180, "Motivacion", `Vamos, sigue con ${meta.exName || "tu ejercicio"}.`, "workout_idle_3m", { visibility: document.visibilityState })
+                            .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+
+                        window.Runner.utils.schedulePush(300, "Retoma la rutina", `Sigue con ${meta.exName || "tu ejercicio"} cuando puedas.`, "workout_idle_5m", { visibility: document.visibilityState })
+                            .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                    }
+                }
+            }
+            if (status !== 'REST' && status !== 'WORK') {
+                if (scheduledPushTaskIdsRef.current.length > 0) {
+                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                    scheduledPushTaskIdsRef.current = [];
+                }
+            }
+
+            // Cleanup Endurance Animation if LEAVING REST
+            if (status !== 'REST') {
                 if (enduranceCleanupRef.current) {
                     enduranceCleanupRef.current();
                     enduranceCleanupRef.current = null;
                 }
-                // 2. Cancel Scheduled Push
-                if (scheduledPushTaskRef.current) {
-                    if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
-                        window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
-                    }
-                    scheduledPushTaskRef.current = null;
-                }
             }
-        }, [status]); // DEPENDS ONLY ON STATUS (and captures latest stepTimer from closure)
+        }, [status, currentStep?.id]); // Depends on Status AND Step ID (for consecutive work steps)
         useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
         useEffect(() => { isTimerRunningRef.current = isTimerRunning; }, [isTimerRunning]);
         useEffect(() => { stepTimerRef.current = stepTimer; }, [stepTimer]);
@@ -1103,11 +1139,12 @@
                 enduranceCleanupRef.current = null;
             }
             // Cancel scheduled push
-            if (scheduledPushTaskRef.current) {
+            // Cancel scheduled pushes
+            if (scheduledPushTaskIdsRef.current.length > 0) {
                 if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
-                    window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
                 }
-                scheduledPushTaskRef.current = null;
+                scheduledPushTaskIdsRef.current = [];
             }
 
             setIsTimerRunning(false);
@@ -1123,11 +1160,12 @@
                 enduranceCleanupRef.current = null;
             }
             // Cancel previous push
-            if (scheduledPushTaskRef.current) {
+            // Cancel previous pushes
+            if (scheduledPushTaskIdsRef.current.length > 0) {
                 if (window.Runner && window.Runner.utils && window.Runner.utils.cancelPush) {
-                    window.Runner.utils.cancelPush(scheduledPushTaskRef.current);
+                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
                 }
-                scheduledPushTaskRef.current = null;
+                scheduledPushTaskIdsRef.current = [];
             }
 
             setStepTimer(t => {
@@ -1144,7 +1182,9 @@
                             displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
                         }
                     )
-                        .then(id => { scheduledPushTaskRef.current = id; });
+                        .then(id => {
+                            if (id) scheduledPushTaskIdsRef.current.push(id);
+                        });
                 }
                 return nextValue;
             });

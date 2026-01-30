@@ -643,7 +643,6 @@
                 if (status === 'WORK' || status === 'REST') {
                     playAlarm();
                     triggerHaptic([200, 100, 200, 100, 500]);
-                    sendNotification("Tiempo Completado", "Tu descanso ha terminado. ¡A trabajar!");
                     completeStepTimer();
                 }
             }

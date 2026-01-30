@@ -1245,12 +1245,12 @@ async function saveExercise() {
         bootstrap.Modal.getInstance(document.getElementById("exerciseModal")).hide();
         loadExercisesPage(currentPage); // Reload page
     } catch (e) {
-        localShowAlertModal("Error", "OcurriÃ³ un error al guardar", "danger");
+        localShowAlertModal("Error", "Ocurrió un error al guardar", "danger");
     }
 }
 
 async function deleteExercise(id) {
-    const confirmed = await localShowConfirmModal("Eliminar ejercicio", "Â¿EstÃ¡s seguro de que deseas eliminar este ejercicio?", "danger");
+    const confirmed = await localShowConfirmModal("Eliminar ejercicio", "¿Estás seguro de que deseas eliminar este ejercicio?", "danger");
     if (!confirmed) return;
 
     try {

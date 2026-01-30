@@ -15,6 +15,33 @@
         return Math.random() * (max - min) + min;
     }
 
+    function runTimedInterval(options) {
+        var durationMs = options && options.durationMs ? options.durationMs : 0;
+        var intervalMs = options && options.intervalMs ? options.intervalMs : 1000;
+        var onTick = options && typeof options.onTick === 'function' ? options.onTick : function () { };
+        var onEnd = options && typeof options.onEnd === 'function' ? options.onEnd : function () { };
+
+        if (!durationMs || durationMs <= 0) {
+            onEnd();
+            return function () { };
+        }
+
+        var endAt = Date.now() + durationMs;
+        var intervalId = setInterval(function () {
+            var timeLeft = endAt - Date.now();
+            if (timeLeft <= 0) {
+                clearInterval(intervalId);
+                onEnd();
+                return;
+            }
+            onTick(timeLeft);
+        }, intervalMs);
+
+        return function cancelInterval() {
+            clearInterval(intervalId);
+        };
+    }
+
     /**
      * 1. Confeti Básico (Basic Confetti)
      * ----------------------------------------------------
@@ -22,6 +49,11 @@
      * Ideal para completar ejercicios o sets pequeños.
      */
     window.WorkoutAnimations.basicConfetti = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showBasicConfetti === 'function') {
+            window.Runner.overlays.showBasicConfetti();
+            return;
+        }
+
         confetti({
             particleCount: 100,
             spread: 70,
@@ -37,23 +69,25 @@
      * Perfecto para celebrar el final de una rutina completa.
      */
     window.WorkoutAnimations.fireworks = function () {
-        var duration = 3 * 1000;
-        var animationEnd = Date.now() + duration;
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showFireworks === 'function') {
+            window.Runner.overlays.showFireworks();
+            return;
+        }
+
+        var durationMs = 3 * 1000;
         var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-        var interval = setInterval(function () {
-            var timeLeft = animationEnd - Date.now();
+        runTimedInterval({
+            durationMs: durationMs,
+            intervalMs: 250,
+            onTick: function (timeLeft) {
+                var particleCount = 50 * (timeLeft / durationMs);
 
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
+                // Dado que las partículas caen, empiezan un poco más arriba que la posición aleatoria
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
             }
-
-            var particleCount = 50 * (timeLeft / duration);
-
-            // Dado que las partículas caen, empiezan un poco más arriba que la posición aleatoria
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-        }, 250);
+        });
     };
 
     /**
@@ -64,6 +98,11 @@
      * Útil para celebraciones de equipo o logros competitivos.
      */
     window.WorkoutAnimations.schoolPride = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showSchoolPride === 'function') {
+            window.Runner.overlays.showSchoolPride();
+            return;
+        }
+
         var end = Date.now() + (3 * 1000);
         var colors = ['#bb0000', '#ffffff'];
 
@@ -97,6 +136,11 @@
      * Agrega un toque temático divertido.
      */
     window.WorkoutAnimations.emojiRain = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showEmojiRain === 'function') {
+            window.Runner.overlays.showEmojiRain();
+            return;
+        }
+
         try {
             if (typeof confetti.shapeFromText !== 'function') {
                 console.warn("confetti.shapeFromText no está definido");
@@ -128,6 +172,11 @@
      * Si no se encuentran los elementos, la animación no se ejecuta.
      */
     window.WorkoutAnimations.svgSuccess = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showSvgSuccess === 'function') {
+            window.Runner.overlays.showSvgSuccess();
+            return;
+        }
+
         // Requiere estructura DOM específica usualmente encontrada en animations_showcase
         const container = document.getElementById('checkArea');
         if (!container) return;
@@ -182,6 +231,11 @@
      * Puede usarse para enfriamientos ("Cool down").
      */
     window.WorkoutAnimations.snowEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showSnow === 'function') {
+            window.Runner.overlays.showSnow();
+            return;
+        }
+
         var duration = 5 * 1000;
         var animationEnd = Date.now() + duration;
         var skew = 1;
@@ -219,6 +273,11 @@
      * Ideal para logros de "puntuación perfecta" o récords personales (PR).
      */
     window.WorkoutAnimations.starsEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showStars === 'function') {
+            window.Runner.overlays.showStars();
+            return;
+        }
+
         var defaults = {
             spread: 360,
             ticks: 50,
@@ -257,6 +316,11 @@
      * Crea dinámicamente el DOM necesario si no existe.
      */
     window.WorkoutAnimations.textReveal = function (text = "RUTINA COMPLETADA") {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showTextReveal === 'function') {
+            window.Runner.overlays.showTextReveal(text);
+            return;
+        }
+
         let el = document.querySelector('.ml11');
         if (!el) {
             const wrapper = document.createElement('div');
@@ -323,26 +387,31 @@
      * cayendo como una fuente de agua o confeti. Dura 3 segundos.
      */
     window.WorkoutAnimations.fountainEffect = function () {
-        var duration = 3 * 1000;
-        var animationEnd = Date.now() + duration;
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showFountain === 'function') {
+            window.Runner.overlays.showFountain();
+            return;
+        }
 
-        var interval = setInterval(function () {
-            var timeLeft = animationEnd - Date.now();
-            if (timeLeft <= 0) return clearInterval(interval);
+        var durationMs = 3 * 1000;
 
-            var particleCount = 20;
+        runTimedInterval({
+            durationMs: durationMs,
+            intervalMs: 100,
+            onTick: function () {
+                var particleCount = 20;
 
-            confetti({
-                particleCount: particleCount,
-                startVelocity: 45,
-                spread: 80,
-                origin: { y: 0.9 },
-                gravity: 1.2,
-                drift: 0,
-                scalar: 1,
-                colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
-            });
-        }, 100);
+                confetti({
+                    particleCount: particleCount,
+                    startVelocity: 45,
+                    spread: 80,
+                    origin: { y: 0.9 },
+                    gravity: 1.2,
+                    drift: 0,
+                    scalar: 1,
+                    colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+                });
+            }
+        });
     };
 
     /**
@@ -352,6 +421,11 @@
      * Ideal para el momento cumbre del entrenamiento.
      */
     window.WorkoutAnimations.megaBurst = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showMegaBurst === 'function') {
+            window.Runner.overlays.showMegaBurst();
+            return;
+        }
+
         try {
             var shapes = ['circle', 'square'];
             if (typeof confetti.shapeFromPath === 'function') {
@@ -454,6 +528,11 @@
      * propiedades de caída y dispersión.
      */
     window.WorkoutAnimations.realisticEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showRealistic === 'function') {
+            window.Runner.overlays.showRealistic();
+            return;
+        }
+
         var count = 200;
         var defaults = { origin: { y: 0.7 } };
         function fire(particleRatio, opts) {
@@ -474,6 +553,11 @@
      * Lanza confeti con los colores del arcoíris desde ambos lados.
      */
     window.WorkoutAnimations.prideEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showPride === 'function') {
+            window.Runner.overlays.showPride();
+            return;
+        }
+
         var end = Date.now() + (3 * 1000);
         var colors = ['#ff0000', '#ffa500', '#ffff00', '#008000', '#0000ff', '#4b0082', '#ee82ee'];
         (function frame() {
@@ -490,6 +574,11 @@
      * Representa esfuerzo cardiovascular o pasión.
      */
     window.WorkoutAnimations.pulseEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showPulse === 'function') {
+            window.Runner.overlays.showPulse();
+            return;
+        }
+
         let heart = document.createElement('div');
         heart.className = 'position-fixed top-50 start-50 translate-middle text-danger';
         heart.style.fontSize = '0px';
@@ -555,6 +644,11 @@
      * Clásico símbolo de fuerza y ganancia muscular.
      */
     window.WorkoutAnimations.flexEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showFlex === 'function') {
+            window.Runner.overlays.showFlex();
+            return;
+        }
+
         let icon = document.createElement('div');
         icon.className = 'position-fixed top-50 start-50 translate-middle text-warning';
         icon.style.fontSize = '0px';
@@ -580,6 +674,11 @@
      * de un icono de rayo parpadeante. ¡Energía pura!
      */
     window.WorkoutAnimations.thunderEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showThunder === 'function') {
+            window.Runner.overlays.showThunder();
+            return;
+        }
+
         let flash = document.createElement('div');
         flash.style.position = 'fixed';
         flash.style.top = 0;
@@ -626,6 +725,11 @@
      * acompañada de confeti dorado. La recompensa final.
      */
     window.WorkoutAnimations.victoryEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showVictory === 'function') {
+            window.Runner.overlays.showVictory();
+            return;
+        }
+
         let medal = document.createElement('div');
         medal.className = 'position-fixed start-50 translate-middle-x';
         medal.style.top = '-100px';
@@ -670,6 +774,11 @@
      * Ejecuta un callback `onComplete` al finalizar.
      */
     window.WorkoutAnimations.countdownEffect = function (onComplete) {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showCountdown === 'function') {
+            window.Runner.overlays.showCountdown(onComplete);
+            return;
+        }
+
         let container = document.createElement('div');
         container.className = 'position-fixed top-50 start-50 translate-middle text-center';
         container.style.zIndex = '3000';
@@ -726,6 +835,11 @@
      * Lanza polvo/partículas grises desde abajo con fuerza.
      */
     window.WorkoutAnimations.impactEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showImpact === 'function') {
+            window.Runner.overlays.showImpact();
+            return;
+        }
+
         confetti({
             particleCount: 80,
             spread: 120,
@@ -757,6 +871,11 @@
      * Ideal para rachas de "on fire" o entrenamientos intensos.
      */
     window.WorkoutAnimations.fireEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showFire === 'function') {
+            window.Runner.overlays.showFire();
+            return;
+        }
+
         var duration = 3 * 1000;
         var animationEnd = Date.now() + duration;
 
@@ -800,6 +919,10 @@
      * Retorna una función de limpieza para detener la animación manualmente.
      */
     window.WorkoutAnimations.breathingEffect = function (durationSeconds = 10, onComplete) {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showBreathing === 'function') {
+            return window.Runner.overlays.showBreathing(durationSeconds, onComplete);
+        }
+
         // Crear círculo
         let circle = document.createElement('div');
         circle.style.width = '150px';
@@ -871,6 +994,11 @@
      * Representa sentimientos de tristeza, haber abandonado o dificultad extrema.
      */
     window.WorkoutAnimations.sadEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showSad === 'function') {
+            window.Runner.overlays.showSad();
+            return;
+        }
+
         // Icono Nube
         let icon = document.createElement('div');
         icon.className = 'position-fixed top-50 start-50 translate-middle';
@@ -922,6 +1050,10 @@
      * Útil para ejercicios isométricos o de resistencia por tiempo.
      */
     window.WorkoutAnimations.enduranceTimerEffect = function (durationSeconds = 10, onComplete) {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showEnduranceTimer === 'function') {
+            return window.Runner.overlays.showEnduranceTimer(durationSeconds, onComplete);
+        }
+
         // Contenedor
         let container = document.createElement('div');
         container.className = 'position-fixed top-50 start-50 translate-middle d-flex align-items-center justify-content-center';
@@ -992,6 +1124,10 @@
      * Retorna una funcion para quitar la pausa.
      */
     window.WorkoutAnimations.pauseEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showPause === 'function') {
+            return window.Runner.overlays.showPause();
+        }
+
         // Contenedor Overlay
         let overlay = document.createElement('div');
         overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
@@ -1058,6 +1194,11 @@
      * Ideal para terminar la rutina completa.
      */
     window.WorkoutAnimations.goalEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showGoal === 'function') {
+            window.Runner.overlays.showGoal();
+            return;
+        }
+
         // Contenedor
         let container = document.createElement('div');
         container.className = 'goal-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center pointer-events-none';
@@ -1131,6 +1272,11 @@
      * Iconos de cocina y texto "PREPARANDO ALIMENTACIÓN".
      */
     window.WorkoutAnimations.nutritionEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showNutrition === 'function') {
+            window.Runner.overlays.showNutrition();
+            return;
+        }
+
         // Contenedor
         let container = document.createElement('div');
         container.className = 'nutrition-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center';
@@ -1209,6 +1355,11 @@
      * Iconos de fitness y texto "PREPARANDO RUTINA".
      */
     window.WorkoutAnimations.routinePreparationEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showRoutinePreparation === 'function') {
+            window.Runner.overlays.showRoutinePreparation();
+            return;
+        }
+
         // Contenedor
         let container = document.createElement('div');
         container.className = 'routine-prep-effect position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center';
@@ -1288,6 +1439,11 @@
      * Ideal para momentos de calma o cancelación suave.
      */
     window.WorkoutAnimations.zenEffect = function () {
+        if (window.Runner && window.Runner.overlays && typeof window.Runner.overlays.showZen === 'function') {
+            window.Runner.overlays.showZen();
+            return;
+        }
+
         // Calm blue overlay
         let overlay = document.createElement('div');
         overlay.style.position = 'fixed';

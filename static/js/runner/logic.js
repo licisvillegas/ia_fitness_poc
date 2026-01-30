@@ -22,23 +22,9 @@
     };
 
     logic.openVideoModal = (url) => {
-        const modalEl = document.getElementById("videoModal");
-        const iframe = document.getElementById("videoFrame");
         const embedUrl = logic.toEmbedUrl(url);
         if (!embedUrl) return;
-        iframe.src = embedUrl;
-        const modal = new bootstrap.Modal(modalEl);
-        modalEl.style.zIndex = "4000";
-        modalEl.addEventListener("shown.bs.modal", () => {
-            const backdrops = document.querySelectorAll(".modal-backdrop");
-            const backdrop = backdrops[backdrops.length - 1];
-            if (backdrop) backdrop.style.zIndex = "3900";
-        }, { once: true });
-        modal.show();
-        modalEl.addEventListener("hidden.bs.modal", () => {
-            iframe.src = "";
-            modalEl.style.zIndex = "";
-        }, { once: true });
+        window.dispatchEvent(new CustomEvent("runner:openVideoModal", { detail: { url: embedUrl } }));
     };
 
     logic.resolveSubstitutes = (substitutes, exerciseLookup) => {

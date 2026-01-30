@@ -3,7 +3,7 @@
     const { useWorkout } = window.Runner.hooks;
 
     window.Runner.components.App = () => {
-        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal } = window.Runner.components;
+        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal, VideoModal, GlitchOverlay, PauseOverlay, TextRevealOverlay, CountdownOverlay, BreathingOverlay, EnduranceTimerOverlay, PulseOverlay, FlexOverlay, ThunderOverlay, VictoryOverlay, ImpactOverlay, FireOverlay, GoalOverlay, ZenOverlay, NutritionOverlay, RoutinePreparationOverlay, SadOverlay, SnowOverlay, StarsOverlay, EmojiRainOverlay, RealisticOverlay, BasicConfettiOverlay, PrideOverlay, SchoolPrideOverlay, FireworksOverlay, MegaBurstOverlay, FountainOverlay, SvgSuccessOverlay } = window.Runner.components;
         const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending, finishWorkout } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
         // showPending state moved to context
@@ -32,31 +32,6 @@
 
             return () => window.removeEventListener('resize', handleOrientationChange);
         }, []); // Remove status dependency
-
-        // Register Push Notifications on Mount
-        React.useEffect(() => {
-            if (window.ensurePushSubscription) {
-                // Delay slightly to ensure browser is idle
-                setTimeout(() => {
-                    fetch('/api/push/client-log', {
-                        method: 'POST',
-                        body: JSON.stringify({ message: 'App.js calling ensurePushSubscription' }),
-                        headers: { 'Content-Type': 'application/json' }
-                    }).catch(() => { });
-
-                    window.ensurePushSubscription().then(success => {
-                        if (success) console.log('Push subscription ensured');
-                        else console.warn('Push subscription failed or not supported');
-                    });
-                }, 2000);
-            } else {
-                fetch('/api/push/client-log', {
-                    method: 'POST',
-                    body: JSON.stringify({ message: 'App.js: window.ensurePushSubscription missing' }),
-                    headers: { 'Content-Type': 'application/json' }
-                }).catch(() => { });
-            }
-        }, []);
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
 
@@ -129,6 +104,35 @@
                 <SubstitutesModal />
                 <ConfirmModal />
                 <RMCalculatorModal />
+                <VideoModal />
+                <GlitchOverlay />
+                <PauseOverlay />
+                <TextRevealOverlay />
+                <CountdownOverlay />
+                <BreathingOverlay />
+                <EnduranceTimerOverlay />
+                <PulseOverlay />
+                <FlexOverlay />
+                <ThunderOverlay />
+                <VictoryOverlay />
+                <ImpactOverlay />
+                <FireOverlay />
+                <GoalOverlay />
+                <ZenOverlay />
+                <NutritionOverlay />
+                <RoutinePreparationOverlay />
+                <SadOverlay />
+                <SnowOverlay />
+                <StarsOverlay />
+                <EmojiRainOverlay />
+                <RealisticOverlay />
+                <BasicConfettiOverlay />
+                <PrideOverlay />
+                <SchoolPrideOverlay />
+                <FireworksOverlay />
+                <MegaBurstOverlay />
+                <FountainOverlay />
+                <SvgSuccessOverlay />
             </React.Fragment >
         );
     };

@@ -1,4 +1,4 @@
-"""Paquete de agentes inteligentes para IA Fitness.
+"""Paquete de agentes inteligentes para Synapse Fit.
 
 Incluye:
 - :class:`~ai_agents.reasoning_agent.ReasoningAgent` para ajustes de

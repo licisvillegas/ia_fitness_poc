@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Synapse Fit | Admin · Onboarding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+            padding-top: 0 !important;
+        }
+
+        /* Layout matches admin_body_assessments */
+        .history-list-col {
+            border-right: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+        }
+
+        .history-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-item:hover,
+        .history-item.active {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        .card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+            padding-left: 0.5rem;
+        }
+
+        /* Metrics/Data Card */
+        .data-card {
+            background-color: var(--bg-input);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            height: 100%;
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .data-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Search Results Overlay */
+        #userSearchResults {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+        }
+
+        .list-group-item.list-group-item-action:hover {
+            background-color: var(--bg-card-hover);
+            color: var(--text-main);
+        }
+
+        /* Tags/Badges */
+        .badge-tag {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: normal;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+
+            body,
+            .main-content {
+                height: auto;
+                overflow: visible;
+            }
+
+            .history-list-col {
+                height: auto;
+                max-height: 400px;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container-fluid px-0 h-100">
+            <div class="d-flex flex-column h-100">
+                <!-- Encabezado -->
+                <div
+                    class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center bg-dark">
+                    <h1 class="h5 mb-0 text-primary fw-bold"><i class="fas fa-clipboard-list me-2"></i>Onboarding
+                        Submissions</h1>
+                    <span class="badge bg-secondary">Vista Administrador</span>
+                </div>
+
+                <!-- Area principal -->
+                <div class="row g-0 flex-grow-1 overflow-hidden">
+
+                    <!-- COLUMNA IZQUIERDA: BUSQUEDA + LISTA -->
+                    <div class="col-md-3 history-list-col d-flex flex-column">
+                        <!-- Busqueda -->
+                        <div class="p-3 border-bottom border-secondary bg-dark position-relative">
+                            <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control bg-dark text-white border-secondary"
+                                    id="userSearchTerm" placeholder="Nombre, Email o ID...">
+                                <button class="btn btn-outline-primary" type="button" id="btnLookupUser">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch"
+                                    title="Limpiar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <!-- Resultados -->
+                            <div id="userSearchResults"
+                                class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+                                style="display: none; z-index: 1050; top: 100%;"></div>
+
+                            <input type="hidden" id="adminUserId">
+                            <div id="searchMsg" class="text-info small mt-2 fst-italic"></div>
+                        </div>
+
+                        <!-- Lista Historial -->
+                        <div id="history-list" class="flex-grow-1 overflow-auto p-0">
+                            <div class="p-4 text-center text-muted small">
+                                <i class="fas fa-user-clock fa-2x mb-2 opacity-50"></i><br>
+                                Busca y selecciona un usuario para cargar sus respuestas de onboarding.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: DETALLE -->
+                    <div class="col-md-9 h-100 overflow-auto position-relative">
+
+                        <!-- Estado vacio -->
+                        <div id="empty-state"
+                            class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary p-5">
+                            <i class="fas fa-file-contract fa-4x mb-3 opacity-25"></i>
+                            <p class="mb-0 fw-light fs-5">Detalle de Onboarding</p>
+                            <small>Selecciona un registro de la lista.</small>
+                        </div>
+
+                        <!-- Contenedor Detalle -->
+                        <div class="p-4" id="detail-container" style="display:none;">
+
+                            <!-- Header Detalle -->
+                            <div
+                                class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
+                                <div>
+                                    <h2 class="h4 mb-1 text-white" id="det-goal">-</h2>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-dark border border-secondary text-secondary"
+                                            id="det-date">-</span>
+                                        <span class="badge bg-info text-dark" id="det-id-badge">ID: -</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-4">
+                                <!-- Col 1: Objetivos & Experiencia -->
+                                <div class="col-lg-6">
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Objetivos y Experiencia</h5>
+                                        <div class="data-card">
+                                            <div class="mb-3">
+                                                <div class="data-label">Objetivo Principal</div>
+                                                <div class="data-value text-primary" id="det-fitness-goal">-</div>
+                                            </div>
+                                            <div class="mb-0">
+                                                <div class="data-label">Nivel de Experiencia</div>
+                                                <div class="data-value" id="det-experience">-</div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <!-- Col 2: Logistica -->
+                                <div class="col-lg-6">
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Logística</h5>
+                                        <div class="data-card">
+                                            <div class="row g-3">
+                                                <div class="col-6">
+                                                    <div class="data-label">Ubicación</div>
+                                                    <div class="data-value" id="det-location">-</div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="data-label">Días Disponibles</div>
+                                                    <div class="data-value" id="det-days">-</div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="data-label">Duración Sesión</div>
+                                                    <div class="data-value" id="det-duration">-</div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="data-label">Horario Pref.</div>
+                                                    <div class="data-value" id="det-time">-</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <!-- Col 3: Salud -->
+                                <div class="col-lg-6">
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Salud y Estilo de Vida</h5>
+                                        <div class="data-card">
+                                            <div class="mb-3">
+                                                <div class="data-label">Nivel de Actividad Diaria</div>
+                                                <div class="data-value" id="det-activity">-</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="data-label">Lesiones</div>
+                                                <div class="data-value text-warning" id="det-injuries">-</div>
+                                                <small class="d-block mt-1 text-muted fst-italic"
+                                                    id="det-injuries-details"></small>
+                                            </div>
+                                            <div class="mb-0">
+                                                <div class="data-label">Hábitos</div>
+                                                <div class="data-value" id="det-habits">-</div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <!-- Col 4: Nutricion -->
+                                <div class="col-lg-6">
+                                    <section class="mb-4">
+                                        <h5 class="section-title h6 mb-3">Nutrición</h5>
+                                        <div class="data-card">
+                                            <div class="mb-3">
+                                                <div class="data-label">Comidas al día</div>
+                                                <div class="data-value" id="det-meals">-</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="data-label">Alergias / Intolerancias</div>
+                                                <div class="d-flex flex-wrap" id="det-allergies"></div>
+                                            </div>
+                                            <div class="mb-0">
+                                                <div class="data-label">Alimentos NO gustados</div>
+                                                <div class="d-flex flex-wrap" id="det-disliked"></div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/user_search.js"></script>
+    <script>
+        // --- DICTIONARY ---
+        const DICT = {
+            goal: {
+                "fat_loss": "Definición (Bajar grasa)",
+                "muscle_gain": "Volumen (Ganar músculo)",
+                "maintenance": "Mantenimiento / Recomposición",
+                "strength": "Fuerza / Rendimiento"
+            },
+            experience: {
+                "beginner": "Principiante (0-6 meses)",
+                "intermediate": "Intermedio (6m - 2 años)",
+                "advanced": "Avanzado (+2 años)"
+            },
+            location: {
+                "gym": "Gimnasio Comercial",
+                "home_basic": "Casa (Básico)",
+                "home_bodyweight": "Casa (Sin equipo)",
+                "park": "Parque / Calistenia"
+            },
+            duration: {
+                "30_min": "30 min",
+                "45_min": "45 min",
+                "60_min": "60 min",
+                "90_min": "90+ min"
+            },
+            time: {
+                "morning": "Mañana",
+                "afternoon": "Tarde",
+                "night": "Noche"
+            },
+            activity: {
+                "sedentary": "Sedentario",
+                "lightly_active": "Ligeramente Activo",
+                "moderately_active": "Moderadamente Activo",
+                "very_active": "Muy Activo"
+            },
+            injury: {
+                "none": "Ninguna",
+                "knee": "Rodilla",
+                "lower_back": "Espalda Baja",
+                "shoulder": "Hombro",
+                "wrist": "Muñeca",
+                "other": "Otra"
+            },
+            habit: {
+                "smoker": "Fumador",
+                "alcohol_social": "Alcohol (Social)",
+                "alcohol_frequent": "Alcohol (Frecuente)",
+                "none": "Ninguno"
+            },
+            allergy: {
+                "lactose": "Lactosa",
+                "gluten": "Gluten",
+                "nuts": "Frutos Secos",
+                "shellfish": "Mariscos",
+                "vegan": "Vegano",
+                "vegetarian": "Vegetariano"
+            }
+        };
+
+        function translate(category, value) {
+            if (!value) return "--";
+            if (Array.isArray(value)) {
+                if (value.length === 0) return "--";
+                return value.map(v => translate(category, v)).join(", ");
+            }
+            if (DICT[category] && DICT[category][value]) return DICT[category][value];
+            return value;
+        }
+
+        // --- 1. ADMIN USER SEARCH ---
+        const searchMsg = document.getElementById('searchMsg');
+
+        function renderAdminUserResult(u) {
+            return (
+                "<div><strong>" + (u.name || u.username || "Usuario") + "</strong></div>" +
+                "<small class=\"text-secondary\">" + (u.email || "") + "</small>" +
+                "<div class=\"text-xs text-info opacity-50\">ID: " + u.user_id + "</div>"
+            );
+        }
+
+        function selectUser(u) {
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username);
+            loadHistory(u.user_id);
+        }
+
+        initUserSearch({
+            inputId: "userSearchTerm",
+            resultsId: "userSearchResults",
+            hiddenId: "adminUserId",
+            buttonId: "btnLookupUser",
+            clearButtonId: "btnClearUserSearch",
+            storageKey: "admin_working_user",
+            storageUidKey: "admin_working_user_id",
+            itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+            renderItem: renderAdminUserResult,
+            onSelect: selectUser,
+            onClear: () => { if (searchMsg) searchMsg.textContent = ""; }
+        });
+
+        // Restore user
+        try {
+            const stored = localStorage.getItem("admin_working_user");
+            if (stored) {
+                const user = JSON.parse(stored);
+                if (user && user.user_id) {
+                    const inputEl = document.getElementById("userSearchTerm");
+                    if (inputEl) inputEl.value = user.name || user.username || "";
+                    if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (user.name || user.username);
+                    loadHistory(user.user_id);
+                }
+            }
+        } catch (e) { }
+
+        // Listen for sidebar events
+        window.addEventListener("admin-user-selected", (evt) => {
+            const u = evt.detail || {};
+            if (!u.user_id) return;
+            const inputEl = document.getElementById("userSearchTerm");
+            if (inputEl) inputEl.value = u.name || u.username || "";
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username);
+            loadHistory(u.user_id);
+        });
+
+        // --- 2. HISTORY LOGIC ---
+        let historyData = [];
+
+        async function loadHistory(userId) {
+            const listEl = document.getElementById('history-list');
+            try {
+                listEl.innerHTML = '<div class="p-3 text-center text-secondary"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+                document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+                document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+
+                const resp = await fetch(`/api/admin/onboarding/history/${userId}`);
+                if (!resp.ok) throw new Error("Error fetching history");
+
+                historyData = await resp.json();
+                renderList();
+
+            } catch (e) {
+                listEl.innerHTML = `<div class="p-3 text-danger text-center"><small>${e.message}</small></div>`;
+            }
+        }
+
+        function renderList() {
+            const listEl = document.getElementById('history-list');
+            if (historyData.length === 0) {
+                listEl.innerHTML = '<div class="p-3 text-secondary text-center small">No hay respuestas de onboarding registradas.</div>';
+                return;
+            }
+
+            let html = '<div class="list-group list-group-flush">';
+            historyData.forEach((item, idx) => {
+                const goalRaw = item.data.fitness_goal || "general";
+                const goal = DICT.goal[goalRaw] || goalRaw;
+
+                html += `
+                    <div class="list-group-item list-group-item-action bg-transparent text-white history-item p-3 border-bottom border-secondary" onclick="selectItem(${idx})">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-primary">${item.date}</small>
+                        </div>
+                        <div class="small text-secondary text-uppercase" style="font-size: 0.7rem;">${goal}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listEl.innerHTML = html;
+
+            if (historyData.length > 0) selectItem(0);
+        }
+
+        function selectItem(idx) {
+            document.querySelectorAll('.history-item').forEach((el, i) => {
+                if (i === idx) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+            showDetail(historyData[idx]);
+        }
+
+        function showDetail(item) {
+            document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
+            document.getElementById('detail-container').style.setProperty('display', 'block', 'important');
+
+            const d = item.data || {};
+
+            // Header
+            document.getElementById('det-date').innerText = item.date;
+            document.getElementById('det-id-badge').innerText = `ID: ${item.id.substring(item.id.length - 6)}`;
+            document.getElementById('det-goal').innerText = (translate('goal', d.fitness_goal) || "N/A").toUpperCase();
+
+            // Col 1
+            document.getElementById('det-fitness-goal').innerText = translate('goal', d.fitness_goal);
+            document.getElementById('det-experience').innerText = translate('experience', d.experience_level);
+
+            // Col 2
+            document.getElementById('det-location').innerText = translate('location', d.training_location);
+            document.getElementById('det-days').innerText = d.days_available + " días/sem";
+            document.getElementById('det-duration').innerText = translate('duration', d.session_duration);
+            document.getElementById('det-time').innerText = translate('time', d.preferred_time);
+
+            // Col 3
+            document.getElementById('det-activity').innerText = translate('activity', d.activity_level);
+
+            // Injuries
+            const inj = d.injuries || [];
+            if (inj.length === 0 || (inj.length === 1 && inj[0] === 'none')) {
+                document.getElementById('det-injuries').innerText = "Ninguna";
+                document.getElementById('det-injuries').classList.remove('text-warning');
+                document.getElementById('det-injuries').classList.add('text-success');
+            } else {
+                document.getElementById('det-injuries').innerText = translate('injury', inj);
+                document.getElementById('det-injuries').classList.add('text-warning');
+                document.getElementById('det-injuries').classList.remove('text-success');
+            }
+            document.getElementById('det-injuries-details').innerText = d.injuries_details || "";
+
+            document.getElementById('det-habits').innerText = translate('habit', d.habits);
+
+            // Col 4
+            document.getElementById('det-meals').innerText = d.meals_per_day;
+
+            // Allergies
+            const algDiv = document.getElementById('det-allergies');
+            algDiv.innerHTML = '';
+            const allergies = d.allergies_intolerances || [];
+            if (allergies.length > 0) {
+                allergies.forEach(a => {
+                    algDiv.innerHTML += `<span class="badge badge-tag">${translate('allergy', a)}</span>`;
+                });
+            } else {
+                algDiv.innerHTML = '<span class="text-muted small">Ninguna</span>';
+            }
+
+            // Disliked
+            const disDiv = document.getElementById('det-disliked');
+            disDiv.innerHTML = '';
+            const dislike = d.disliked_foods || [];
+            if (dislike.length > 0) {
+                dislike.forEach(f => {
+                    disDiv.innerHTML += `<span class="badge badge-tag text-danger border-danger">${f}</span>`;
+                });
+            } else {
+                disDiv.innerHTML = '<span class="text-muted small">Ninguno</span>';
+            }
+
+        }
+    </script>
+</body>
+
+</html>

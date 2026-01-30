@@ -275,7 +275,7 @@ def send_push():
         return jsonify({"error": "DB not ready"}), 503
 
     data = request.get_json(silent=True) or {}
-    title = (data.get("title") or "AI Fitness").strip()
+    title = (data.get("title") or "Synapse Fit").strip()
     body = (data.get("body") or "").strip()
     url = (data.get("url") or "/").strip()
     context = (data.get("context") or "").strip() or None

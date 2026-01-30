@@ -1,6 +1,6 @@
 # Analisis y oportunidades de mejora
 
-Este documento resume puntos de mejora, nuevas funcionalidades, recomendaciones, desventajas y funciones de bajo impacto para el proyecto IA Fitness POC.
+Este documento resume puntos de mejora, nuevas funcionalidades, recomendaciones, desventajas y funciones de bajo impacto para el proyecto Synapse Fit.
 El foco es priorizar calidad, seguridad, mantenibilidad y valor real para usuarios.
 
 ## Puntos de mejora (arquitectura y codigo)

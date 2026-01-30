@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 
-{% block title %}AI Fitness - Rutina Guiada{% endblock %}
+{% block title %}Synapse Fit - Rutina Guiada{% endblock %}
 
 {% block sidebar %}
 {% if request.args.get('source') == 'admin' %}
@@ -23,13 +23,15 @@
                     <button class="btn btn-sm btn-outline-info d-lg-none" id="guidedProgressInfoBtn" type="button">
                         <i class="fas fa-info-circle"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" id="guidedCancelBtn" type="button" title="Reiniciar rutina (limpia todo)" aria-label="Reiniciar rutina">
+                    <button class="btn btn-sm btn-outline-secondary" id="guidedCancelBtn" type="button"
+                        title="Reiniciar rutina (limpia todo)" aria-label="Reiniciar rutina">
                         <i class="fas fa-undo"></i>
                     </button>
                 </div>
             </div>
             <div class="card-body">
-                <div id="guidedMessage" class="alert alert-dark border-secondary text-secondary small mb-3" style="display:none;"></div>
+                <div id="guidedMessage" class="alert alert-dark border-secondary text-secondary small mb-3"
+                    style="display:none;"></div>
 
                 <div class="guided-steps d-flex flex-wrap gap-2 mb-4">
                     <div class="step-chip active" data-step="1">1. Detalles</div>
@@ -44,9 +46,14 @@
                             <div class="mb-3">
                                 <label class="text-secondary small">Mis rutinas</label>
                                 <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <input type="text" id="guidedRoutineSearch" class="form-control bg-dark text-white border-secondary" placeholder="Buscar rutina..." style="max-width: 320px;">
-                                    <button class="btn btn-outline-secondary" type="button" id="guidedRoutineReset">Restablecer</button>
-                                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#guidedRoutineCollapse" aria-expanded="false" aria-controls="guidedRoutineCollapse">
+                                    <input type="text" id="guidedRoutineSearch"
+                                        class="form-control bg-dark text-white border-secondary"
+                                        placeholder="Buscar rutina..." style="max-width: 320px;">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        id="guidedRoutineReset">Restablecer</button>
+                                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#guidedRoutineCollapse" aria-expanded="false"
+                                        aria-controls="guidedRoutineCollapse">
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
                                 </div>
@@ -56,11 +63,15 @@
                             </div>
                             <div class="mb-3">
                                 <label class="text-secondary small">Nombre</label>
-                                <input type="text" id="guidedName" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Fuerza tren superior">
+                                <input type="text" id="guidedName"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    placeholder="Ej. Fuerza tren superior">
                             </div>
                             <div class="mb-3">
                                 <label class="text-secondary small">Descripcion</label>
-                                <input type="text" id="guidedDesc" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Pecho, espalda, biceps" readonly>
+                                <input type="text" id="guidedDesc"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    placeholder="Ej. Pecho, espalda, biceps" readonly>
                             </div>
                             <div class="mb-3">
                                 <label class="text-secondary small">Dia sugerido</label>
@@ -83,12 +94,13 @@
                                 <label class="text-secondary small">Estado</label>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="guidedActive" checked>
-                                    <label class="form-check-label text-secondary" for="guidedActive">Mostrar en Rutinas creadas</label>
+                                    <label class="form-check-label text-secondary" for="guidedActive">Mostrar en Rutinas
+                                        creadas</label>
                                 </div>
                             </div>
                         </section>
 
-                        
+
 
                         <section id="guidedStep2" class="guided-step-section" style="display:none;">
                             <h6 class="text-cyber-green mb-3">Ajusta series, reps y descanso</h6>
@@ -96,7 +108,8 @@
                                 <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddGroupBtn">
                                     <i class="fas fa-layer-group me-1"></i> Agregar grupo
                                 </button>
-                                <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddExerciseBtnStep3">
+                                <button class="btn btn-sm btn-outline-info" type="button"
+                                    id="guidedAddExerciseBtnStep3">
                                     <i class="fas fa-plus me-1"></i> Agregar ejercicio
                                 </button>
                                 <button class="btn btn-sm btn-outline-warning" type="button" id="guidedAddRestBtn">
@@ -116,23 +129,29 @@
                         <div class="bg-dark-elem p-3 rounded border border-secondary h-100 guided-progress-card">
                             <h6 class="text-cyber-blue mb-3">Progreso</h6>
                             <div class="progress mb-3" style="height: 8px;">
-                                <div id="guidedProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 25%;"></div>
+                                <div id="guidedProgressBar" class="progress-bar bg-info" role="progressbar"
+                                    style="width: 25%;"></div>
                             </div>
                             <div class="text-secondary small mb-2">Resumen rapido</div>
                             <div class="d-flex flex-column gap-2">
-                                <div class="summary-row"><span>Ejercicios:</span> <strong id="guidedSummaryCount">0</strong></div>
-                                <div class="summary-row"><span>Grupo principal:</span> <strong id="guidedSummaryGroup">-</strong></div>
-                                <div class="summary-row"><span>Estado:</span> <strong id="guidedSummaryActive">Activa</strong></div>
+                                <div class="summary-row"><span>Ejercicios:</span> <strong
+                                        id="guidedSummaryCount">0</strong></div>
+                                <div class="summary-row"><span>Grupo principal:</span> <strong
+                                        id="guidedSummaryGroup">-</strong></div>
+                                <div class="summary-row"><span>Estado:</span> <strong
+                                        id="guidedSummaryActive">Activa</strong></div>
                             </div>
                             <hr class="border-secondary my-3">
                             <div class="text-secondary small mb-2">Ayuda</div>
-                            <div id="guidedHelp" class="text-secondary small">Completa los datos principales antes de elegir ejercicios.</div>
+                            <div id="guidedHelp" class="text-secondary small">Completa los datos principales antes de
+                                elegir ejercicios.</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-4">
-                    <button class="btn btn-outline-secondary" id="guidedPrevBtn" type="button" disabled>Anterior</button>
+                    <button class="btn btn-outline-secondary" id="guidedPrevBtn" type="button"
+                        disabled>Anterior</button>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-info" id="guidedNextBtn" type="button">Siguiente</button>
                         <button class="btn btn-success" id="guidedSaveBtn" type="button" style="display:none;">
@@ -150,12 +169,20 @@
         color: #00ff9d;
         text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
     }
+
     .text-cyber-orange {
         color: #f59e0b;
         text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
     }
-    .text-cyber-blue { color: #00d2ff; }
-    .bg-dark-elem { background-color: var(--bg-card); }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .bg-dark-elem {
+        background-color: var(--bg-card);
+    }
+
     .step-chip {
         padding: 6px 12px;
         border-radius: 999px;
@@ -166,22 +193,26 @@
         color: var(--text-secondary);
         background: rgba(0, 0, 0, 0.2);
     }
+
     .step-chip.active {
         color: #081018;
         background: #00d2ff;
         border-color: #00d2ff;
         font-weight: 700;
     }
+
     .summary-row {
         display: flex;
         justify-content: space-between;
         color: var(--text-secondary);
     }
+
     .list-group-item {
         background: transparent;
         color: var(--text-main);
         border-color: var(--border-color);
     }
+
     .guided-ex-item {
         display: flex;
         justify-content: space-between;
@@ -189,15 +220,18 @@
         padding: 10px 12px;
         border-bottom: 1px solid var(--border-color);
     }
+
     .guided-ex-item:last-child {
         border-bottom: none;
     }
+
     .guided-config-card {
         border: 1px solid var(--border-color);
         border-radius: 12px;
         padding: 12px;
         background: rgba(0, 0, 0, 0.25);
     }
+
     .guided-compact-select {
         padding: 0.2rem 0.4rem;
         font-size: 0.8rem;
@@ -205,58 +239,69 @@
         min-height: 32px;
         line-height: 1.1;
     }
+
     .guided-block {
         border: 1px dashed rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 12px;
     }
+
     .guided-block-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
     }
+
     .guided-inline-actions {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
     }
+
     .routine-preview-card {
         background: var(--bg-card);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 18px;
         padding: 16px;
     }
+
     .routine-preview-scroll {
         max-height: 360px;
         overflow-y: auto;
         padding-right: 6px;
     }
+
     .routine-preview-group {
         background: var(--bg-card);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
         padding: 10px 12px;
     }
+
     .routine-preview-item {
         background: var(--bg-card);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 10px;
         padding: 10px 12px;
     }
+
     .rm-exercise-modal .modal-content {
         background: var(--bg-panel);
         border: 1px solid var(--border-color);
     }
+
     .rm-exercise-modal .modal-header {
         border-bottom: 1px solid var(--border-color);
     }
+
     .rm-exercise-frame {
         width: 100%;
         height: 70vh;
         border: none;
         background: var(--bg-body);
     }
+
     @media (max-width: 991.98px) {
         .guided-progress-card {
             display: none;
@@ -268,25 +313,31 @@
             padding: 0.25rem 0.45rem;
             font-size: 0.75rem;
         }
+
         .guided-config-card .row .col-4,
         .guided-config-card .row .col-6 {
             flex: 0 0 50%;
             max-width: 50%;
         }
+
         .guided-config-card .col-4 .d-flex.align-items-center {
             flex-wrap: wrap;
         }
+
         .guided-config-card .input-group {
             flex: 1 1 120px;
             min-width: 120px;
         }
+
         .guided-config-card .form-select,
         .guided-config-card .form-control {
             min-width: 0;
         }
+
         .guided-config-card .btn {
             white-space: nowrap;
         }
+
         .guided-compact-select {
             padding: 0.15rem 0.35rem;
             font-size: 0.75rem;
@@ -294,21 +345,25 @@
             min-height: 30px;
             min-width: 0;
         }
+
         .guided-config-card .input-group .input-group-text {
             padding: 0.25rem 0.4rem;
             font-size: 0.75rem;
         }
+
         .guided-config-card .input-group input {
             padding: 0.25rem 0.4rem;
             font-size: 0.85rem;
             min-width: 64px;
         }
+
         .guided-config-card .col-4 .btn.btn-sm {
             padding: 0.25rem 0.4rem;
         }
     }
 
     @media (max-width: 991.98px) and (orientation: portrait) {
+
         .guided-config-card .row .guided-field-series,
         .guided-config-card .row .guided-field-reps,
         .guided-config-card .row .guided-field-rest,
@@ -316,21 +371,39 @@
             flex: 0 0 50%;
             max-width: 50%;
         }
+
         .guided-config-card .row .guided-field-comment {
             flex: 0 0 100%;
             max-width: 100%;
         }
-        .guided-config-card .row .guided-field-series { order: 1; }
-        .guided-config-card .row .guided-field-reps { order: 2; }
-        .guided-config-card .row .guided-field-rest { order: 3; }
-        .guided-config-card .row .guided-field-group { order: 4; }
-        .guided-config-card .row .guided-field-comment { order: 5; }
+
+        .guided-config-card .row .guided-field-series {
+            order: 1;
+        }
+
+        .guided-config-card .row .guided-field-reps {
+            order: 2;
+        }
+
+        .guided-config-card .row .guided-field-rest {
+            order: 3;
+        }
+
+        .guided-config-card .row .guided-field-group {
+            order: 4;
+        }
+
+        .guided-config-card .row .guided-field-comment {
+            order: 5;
+        }
+
         .guided-config-card .guided-field-rest .d-flex.align-items-center {
             flex-wrap: nowrap;
         }
     }
 
     @media (max-width: 991.98px) {
+
         #guidedRestModal input,
         #guidedRestModal select,
         #guidedRestModal textarea,
@@ -396,10 +469,12 @@
                     <option value="circuito">Circuito</option>
                 </select>
                 <label class="text-secondary small mt-3">Nombre</label>
-                <input type="text" id="guidedGroupName" class="form-control bg-dark text-white border-secondary" placeholder="Ej. Biserie 1">
+                <input type="text" id="guidedGroupName" class="form-control bg-dark text-white border-secondary"
+                    placeholder="Ej. Biserie 1">
                 <div class="text-danger small mt-1" id="guidedGroupNameError" style="display:none;"></div>
                 <label class="text-secondary small mt-3">Nota</label>
-                <textarea id="guidedGroupNote" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Opcional"></textarea>
+                <textarea id="guidedGroupNote" class="form-control bg-dark text-white border-secondary" rows="2"
+                    placeholder="Opcional"></textarea>
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -424,14 +499,18 @@
                     <select id="guidedRestSeconds" class="form-select bg-dark text-white border-secondary"></select>
                     <div id="guidedRestSecondsManualWrap" class="input-group" style="display: none;">
                         <span class="input-group-text bg-dark text-white border-secondary">seg</span>
-                        <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*" id="guidedRestSecondsManual" class="form-control bg-dark text-white border-secondary" value="60" onfocus="this.select()">
+                        <input type="number" min="1" max="1800" inputmode="numeric" pattern="[0-9]*"
+                            id="guidedRestSecondsManual" class="form-control bg-dark text-white border-secondary"
+                            value="60" onfocus="this.select()">
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary" id="guidedRestSecondsToggle" type="button" title="Editar descanso">
+                    <button class="btn btn-sm btn-outline-secondary" id="guidedRestSecondsToggle" type="button"
+                        title="Editar descanso">
                         <i class="fas fa-pen"></i>
                     </button>
                 </div>
                 <label class="text-secondary small mt-3">Nota</label>
-                <textarea id="guidedRestNote" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Opcional"></textarea>
+                <textarea id="guidedRestNote" class="form-control bg-dark text-white border-secondary" rows="2"
+                    placeholder="Opcional"></textarea>
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -449,7 +528,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <textarea id="guidedCommentText" class="form-control bg-dark text-white border-secondary" rows="5"></textarea>
+                <textarea id="guidedCommentText" class="form-control bg-dark text-white border-secondary"
+                    rows="5"></textarea>
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -470,7 +550,8 @@
                 <div class="text-secondary" id="guidedMoveConfirmBody"></div>
             </div>
             <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" id="guidedMoveConfirmCancel" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" id="guidedMoveConfirmCancel"
+                    data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-outline-info" id="guidedMoveConfirmOk">Confirmar</button>
             </div>
         </div>
@@ -486,17 +567,22 @@
             </div>
             <div class="modal-body">
                 <div class="progress mb-3" style="height: 8px;">
-                    <div id="guidedProgressBarMobile" class="progress-bar bg-info" role="progressbar" style="width: 25%;"></div>
+                    <div id="guidedProgressBarMobile" class="progress-bar bg-info" role="progressbar"
+                        style="width: 25%;"></div>
                 </div>
                 <div class="text-secondary small mb-2">Resumen rapido</div>
                 <div class="d-flex flex-column gap-2">
-                    <div class="summary-row"><span>Ejercicios:</span> <strong id="guidedSummaryCountMobile">0</strong></div>
-                    <div class="summary-row"><span>Grupo principal:</span> <strong id="guidedSummaryGroupMobile">-</strong></div>
-                    <div class="summary-row"><span>Estado:</span> <strong id="guidedSummaryActiveMobile">Activa</strong></div>
+                    <div class="summary-row"><span>Ejercicios:</span> <strong id="guidedSummaryCountMobile">0</strong>
+                    </div>
+                    <div class="summary-row"><span>Grupo principal:</span> <strong
+                            id="guidedSummaryGroupMobile">-</strong></div>
+                    <div class="summary-row"><span>Estado:</span> <strong id="guidedSummaryActiveMobile">Activa</strong>
+                    </div>
                 </div>
                 <hr class="border-secondary my-3">
                 <div class="text-secondary small mb-2">Ayuda</div>
-                <div id="guidedHelpMobile" class="text-secondary small">Completa los datos principales antes de elegir ejercicios.</div>
+                <div id="guidedHelpMobile" class="text-secondary small">Completa los datos principales antes de elegir
+                    ejercicios.</div>
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -537,7 +623,8 @@
                 <div class="text-secondary" id="guidedAlertBody"></div>
             </div>
             <div class="modal-footer border-secondary" id="guidedAlertFooter">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="guidedAlertCancel">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    id="guidedAlertCancel">Cancelar</button>
                 <button type="button" class="btn btn-outline-info" id="guidedAlertConfirm">Confirmar</button>
             </div>
         </div>

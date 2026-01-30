@@ -67,10 +67,10 @@ self.addEventListener('push', (event) => {
         try {
             payload = event.data ? event.data.json() : {};
         } catch (e) {
-            payload = { title: 'AI Fitness', body: event.data ? event.data.text() : '' };
+            payload = { title: 'Synapse Fit', body: event.data ? event.data.text() : '' };
         }
 
-        const title = payload.title || 'AI Fitness';
+        const title = payload.title || 'Synapse Fit';
         // Explicitly set silent/renotify options for better vibration/sound handling
         const options = {
             body: payload.body || '',

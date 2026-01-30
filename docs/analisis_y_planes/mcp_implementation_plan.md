@@ -1,6 +1,6 @@
 # Propuesta de Implementación MCP (Model Context Protocol)
 
-Este plan describe cómo integrar un servidor MCP en el proyecto "IA Fitness POC" para exponer sus funcionalidades (Base de datos y Agentes) a asistentes de IA externos (como Claude Desktop, IDEs, etc.).
+Este plan describe cómo integrar un servidor MCP en el proyecto "Synapse Fit" para exponer sus funcionalidades (Base de datos y Agentes) a asistentes de IA externos (como Claude Desktop, IDEs, etc.).
 
 ## 🎯 Objetivo
 Crear un servidor MCP local (`mcp_server.py`) que actúe como puente entre la lógica del backend existente y clientes MCP.
@@ -44,7 +44,7 @@ app.config.from_object(Config)
 extensions.init_db(app)
 
 # 2. Definir Servidor MCP
-mcp = FastMCP("IA Fitness POC")
+mcp = FastMCP("Synapse Fit")
 
 @mcp.tool()
 def get_user_profile(user_id: str):

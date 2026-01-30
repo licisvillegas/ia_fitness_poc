@@ -1,5 +1,5 @@
 """
-Agente Generador de Rutinas de Entrenamiento para IA Fitness.
+Agente Generador de Rutinas de Entrenamiento para Synapse Fit.
 
 Qué hace:
 - Genera rutinas de entrenamiento completas en formato JSON estricto.

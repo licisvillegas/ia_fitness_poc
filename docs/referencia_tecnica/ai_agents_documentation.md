@@ -1,4 +1,4 @@
-# Documentación de Agentes de IA - IA Fitness POC
+# Documentación de Agentes de IA - Synapse Fit
 
 Este documento describe los agentes de inteligencia artificial implementados en el proyecto, sus responsabilidades y cómo se configuran.
 

@@ -1,4 +1,4 @@
-"""Agente de evaluación corporal para IA Fitness.
+"""Agente de evaluación corporal para Synapse Fit.
 
 Este agente recibe mediciones antropométricas y observaciones sobre fotos
 recientes del usuario para generar un informe estructurado con:

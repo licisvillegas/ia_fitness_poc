@@ -1,5 +1,5 @@
 """
-Agente de razonamiento para IA Fitness.
+Agente de razonamiento para Synapse Fit.
 
 Qué hace:
 - Genera ajustes de nutrición y entrenamiento a partir de un contexto JSON

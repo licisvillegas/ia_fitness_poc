@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   AI Fitness | Acceder
+   Synapse Fit | Acceder
   </title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
@@ -33,7 +33,7 @@
   <nav class="navbar navbar-expand-lg navbar-dark">
    <div class="container">
     <a class="navbar-brand" href="/">
-     AI Fitness
+     Synapse Fit
     </a>
     <div class="d-flex align-items-center">
      <div aria-label="Language selector" class="btn-group ms-3" role="group">
@@ -87,7 +87,7 @@
   </section>
   <footer>
    <p>
-    &copy; 2025 AI Fitness | Desarrollado por Ismael Villegas
+    &copy; 2025 Synapse Fit | Desarrollado por Ismael Villegas
    </p>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">

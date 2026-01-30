@@ -1,5 +1,5 @@
 ﻿# ======================================================
-# AI FITNESS - BACKEND FLASK FINAL (Refactorizado)
+# Synapse Fit - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
 from flask import Flask, render_template

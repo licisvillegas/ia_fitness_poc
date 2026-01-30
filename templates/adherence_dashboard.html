@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 
-{% block title %}AI Fitness - Adherencia{% endblock %}
+{% block title %}Synapse Fit - Adherencia{% endblock %}
 
 {% block sidebar %}
 {% include 'components/sidebar.html' %}
@@ -28,10 +28,21 @@
 </div>
 
 <style>
-    .text-cyber-green { color: #00ff9d; }
-    .text-cyber-blue { color: #00d2ff; }
-    .text-cyber-orange { color: #ff9d00; }
-    .bg-dark-elem { background-color: var(--bg-card); }
+    .text-cyber-green {
+        color: #00ff9d;
+    }
+
+    .text-cyber-blue {
+        color: #00d2ff;
+    }
+
+    .text-cyber-orange {
+        color: #ff9d00;
+    }
+
+    .bg-dark-elem {
+        background-color: var(--bg-card);
+    }
 
     .adherence-heatmap-grid {
         display: grid;
@@ -48,10 +59,22 @@
         background-color: #2c3035;
     }
 
-    .heatmap-cell.level-0 { background-color: #2c3035; }
-    .heatmap-cell.level-1 { background-color: #0e4429; }
-    .heatmap-cell.level-2 { background-color: #006d32; }
-    .heatmap-cell.level-3 { background-color: #26a641; box-shadow: 0 0 5px #26a641; }
+    .heatmap-cell.level-0 {
+        background-color: #2c3035;
+    }
+
+    .heatmap-cell.level-1 {
+        background-color: #0e4429;
+    }
+
+    .heatmap-cell.level-2 {
+        background-color: #006d32;
+    }
+
+    .heatmap-cell.level-3 {
+        background-color: #26a641;
+        box-shadow: 0 0 5px #26a641;
+    }
 </style>
 
 <script>

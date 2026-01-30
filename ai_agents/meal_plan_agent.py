@@ -1,5 +1,5 @@
 """
-Agente de planificación de comidas (nutrition plan) para IA Fitness - V3.
+Agente de planificación de comidas (nutrition plan) para Synapse Fit - V3.
 
 Mejoras v3:
 - Desglose granular: Cada alimento tiene sus propias Kcal y Macros (P/C/F) explícitos.

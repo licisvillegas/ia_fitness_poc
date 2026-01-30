@@ -1,4 +1,4 @@
-# Análisis de Funcionalidades - IA Fitness POC
+# Análisis de Funcionalidades - Synapse Fit
 
 ## 📊 Resumen Ejecutivo
 La aplicación es una plataforma **híbrida de gestión y coaching (entrenador personal digital)**. No es solo un "tracker" de ejercicios; tiene una capa lógica robusta (backend en Python/Flask + MongoDB) y una capa de inteligencia artificial (OpenAI) que actúa como un nutricionista y entrenador experto.

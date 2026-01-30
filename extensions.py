@@ -12,7 +12,7 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 logger = logging.getLogger("ai_fitness")
-logger.info("✔ Aplicación AI Fitness iniciada correctamente")
+logger.info("✔ Aplicación Synapse Fit iniciada correctamente")
 
 # Check OpenAI Key Status
 openai_key = os.getenv("OPENAI_API_KEY")

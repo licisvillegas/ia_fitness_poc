@@ -1508,3 +1508,44 @@ def get_user_full_profile(user_id):
 # ======================================================
 
 
+
+# ======================================================
+# API ENDPOINTS - ADMIN ONBOARDING
+# ======================================================
+
+@admin_bp.route("/admin/onboarding_submissions")
+def admin_onboarding_page():
+    return render_template("admin_onboarding_submissions.html")
+
+@admin_bp.get("/api/admin/onboarding/history/<user_id>")
+def get_onboarding_history(user_id):
+    """Obtiene el historial de onboarding submissions de un usuario."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    try:
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        
+        # Buscar en onboarding_submissions
+        cursor = extensions.db.onboarding_submissions.find({"user_id": user_id}).sort("submission_date", -1)
+        
+        results = []
+        for sub in cursor:
+            # sub["data"] es el contenido del wizard
+            # sub["submission_date"] es la fecha
+            data = sub.get("data", {})
+            date_val = sub.get("submission_date")
+            if isinstance(date_val, datetime):
+                date_str = date_val.strftime("%Y-%m-%d %H:%M")
+            else:
+                date_str = str(date_val)
+                
+            results.append({
+                "id": str(sub.get("_id")),
+                "date": date_str,
+                "data": data
+            })
+            
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error getting onboarding history: {e}")
+        return jsonify({"error": "Error interno"}), 500

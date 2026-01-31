@@ -10,8 +10,8 @@
         other: { label: "Otro", icon: "fas fa-toolbox" }
     };
 
-    // Body part map placeholder, if needed. 
-    // In the original file it was initialized empty.
+    // Marcador de posición para mapa de partes del cuerpo, si es necesario.
+    // En el archivo original se inicializaba vacío.
     window.Runner.constants.BODY_PART_MAP = {};
 
     window.Runner.constants.translateBodyPart = (bp) => {

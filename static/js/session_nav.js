@@ -1,14 +1,14 @@
-(function(){
-  function setBrandLink(){
+(function () {
+  function setBrandLink() {
     try {
       var brand = document.querySelector('.navbar .navbar-brand');
       if (!brand) return;
       var isLogged = !!localStorage.getItem('ai_fitness_user');
       var target = isLogged ? '/user-profile' : '/';
-      // Set href for accessibility and add click handler to ensure correct nav
+      // Establecer href para accesibilidad y agregar manejador de clic para asegurar navegación correcta
       brand.setAttribute('href', target);
-      brand.addEventListener('click', function(e){
-        // In case the href was pre-rendered differently
+      brand.addEventListener('click', function (e) {
+        // En caso de que el href fuera pre-renderizado de manera diferente
         if (brand.getAttribute('href') !== target) {
           e.preventDefault();
           window.location.href = target;

@@ -59,11 +59,11 @@
             if (stepTimer <= 0) setShowRestNote(false);
         }, [stepTimer]);
 
-        // Breathing Effect Overlay
+        // Superposición de Efecto de Respiración
         useEffect(() => {
             let stopAnimation = null;
             if (window.WorkoutAnimations && typeof window.WorkoutAnimations.breathingEffect === 'function') {
-                // Run for a long duration (1 hour) so it doesn't stop early if user extends rest
+                // Ejecutar por una larga duración (1 hora) para que no se detenga antes si el usuario extiende el descanso
                 stopAnimation = window.WorkoutAnimations.breathingEffect(3600);
             }
             return () => {

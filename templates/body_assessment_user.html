@@ -341,19 +341,30 @@
                                             <label class="form-label" for="goal">Objetivo</label>
                                             <select class="form-select" id="goal" name="goal">
                                                 <option value="">Selecciona…</option>
-                                                <option value="definicion">Definición</option>
-                                                <option value="volumen">Volumen</option>
-                                                <option value="mantenimiento">Mantenimiento</option>
+                                                <option value="fat_loss" {% if defaults.goal=='fat_loss' %}selected{%
+                                                    endif %}>Definición (Bajar grasa)</option>
+                                                <option value="muscle_gain" {% if defaults.goal=='muscle_gain'
+                                                    %}selected{% endif %}>Volumen (Ganar músculo)</option>
+                                                <option value="maintenance" {% if defaults.goal=='maintenance'
+                                                    %}selected{% endif %}>Mantenimiento</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label" for="activity_level">Nivel de Actividad</label>
                                             <select class="form-select" id="activity_level" name="activity_level">
-                                                <option value="sedentary">Sedentario (Poco o nada)</option>
-                                                <option value="light">Ligero (1-3 días/sem)</option>
-                                                <option value="moderate">Moderado (3-5 días/sem)</option>
-                                                <option value="strong">Fuerte (6-7 días/sem)</option>
-                                                <option value="very_strong">Muy Fuerte (Doble sesión)</option>
+                                                <option value="sedentary" {% if defaults.activity_level=='sedentary'
+                                                    %}selected{% endif %}>Sedentario (Poco o nada)</option>
+                                                <option value="lightly_active" {% if
+                                                    defaults.activity_level=='lightly_active' %}selected{% endif %}>
+                                                    Ligero (1-3 días/sem)</option>
+                                                <option value="moderately_active" {% if
+                                                    defaults.activity_level=='moderately_active' %}selected{% endif %}>
+                                                    Moderado (3-5 días/sem)</option>
+                                                <option value="very_active" {% if defaults.activity_level=='very_active'
+                                                    %}selected{% endif %}>Fuerte (6-7 días/sem)</option>
+                                                <option value="extra_active" {% if
+                                                    defaults.activity_level=='extra_active' %}selected{% endif %}>Muy
+                                                    Fuerte (Doble sesión)</option>
                                             </select>
                                         </div>
                                         <div class="col-12">
@@ -1411,7 +1422,7 @@
                 const focus = rec.focus || (inp.goal || 'General');
                 const badge = document.getElementById('res-focus');
                 badge.textContent = focus.toUpperCase();
-                badge.className = 'badge badge-focus ' + (focus === 'definicion' ? 'bg-danger' : (focus === 'volumen' ? 'bg-success' : 'bg-info'));
+                badge.className = 'badge badge-focus ' + (focus === 'fat_loss' ? 'bg-danger' : (focus === 'muscle_gain' ? 'bg-success' : 'bg-info'));
 
                 // Metrics
                 const metricsDiv = document.getElementById('res-metrics');
@@ -1435,10 +1446,10 @@
                 if (energy.tdee) {
                     const labels = {
                         "sedentary": "Sedentario",
-                        "light": "Ligero (1-3 días)",
-                        "moderate": "Moderado (3-5 días)",
-                        "strong": "Fuerte (6-7 días)",
-                        "very_strong": "Muy fuerte"
+                        "lightly_active": "Ligero (1-3 días)",
+                        "moderately_active": "Moderado (3-5 días)",
+                        "very_active": "Fuerte (6-7 días)",
+                        "extra_active": "Muy fuerte"
                     };
                     for (const [key, val] of Object.entries(energy.tdee)) {
                         const label = labels[key] || key;
@@ -1471,10 +1482,10 @@
                         if (energy.tdee) {
                             const labels = {
                                 "sedentary": "Sedentario",
-                                "light": "Ligero (1-3 dias)",
-                                "moderate": "Moderado (3-5 dias)",
-                                "strong": "Fuerte (6-7 dias)",
-                                "very_strong": "Muy fuerte"
+                                "lightly_active": "Ligero (1-3 dias)",
+                                "moderately_active": "Moderado (3-5 dias)",
+                                "very_active": "Fuerte (6-7 dias)",
+                                "extra_active": "Muy fuerte"
                             };
                             Object.entries(energy.tdee).forEach(([key, val]) => {
                                 const opt = document.createElement('option');

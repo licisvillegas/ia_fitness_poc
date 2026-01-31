@@ -60,6 +60,86 @@ def _cloudinary_public_id_from_url(url: str):
     return public_id or None
 
 
+def _get_assessment_defaults(user_id):
+    """Helper to fetch default values for body assessment from DB."""
+    defaults = {}
+    try:
+        if user_id and extensions.db is not None:
+            # 1. Latest Assessment (Highest Priority)
+            latest = extensions.db.body_assessments.find_one(
+                {"user_id": user_id}, 
+                sort=[("created_at", -1)]
+            )
+            
+            # 2. Onboarding Data
+            onboarding = extensions.db.onboarding_submissions.find_one(
+                {"user_id": user_id},
+                sort=[("submission_date", -1)]
+            )
+            
+            # 3. User Profile
+            oid = maybe_object_id(user_id)
+            profile = None
+            if oid:
+                profile = extensions.db.users.find_one({"_id": oid})
+            if not profile:
+                 profile = extensions.db.users.find_one({"user_id": user_id})
+
+            # --- Helper to extract ---
+            def get_onboarding_val(key):
+                if onboarding and "data" in onboarding:
+                    return onboarding["data"].get(key)
+                return None
+
+            # --- Construct Defaults ---
+            # AGE
+            if latest and (latest.get("input") or {}).get("age"):
+                defaults["age"] = latest["input"]["age"]
+            elif profile and profile.get("birth_date"):
+                 try:
+                    today = datetime.now()
+                    born = profile["birth_date"]
+                    age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+                    defaults["age"] = age
+                 except:
+                     pass
+            
+            # HEIGHT
+            if latest and (latest.get("input") or {}).get("height_cm"):
+                 defaults["height_cm"] = latest["input"].get("height_cm")
+            elif latest and (latest.get("input") or {}).get("measurements"):
+                 defaults["height_cm"] = latest["input"]["measurements"].get("height_cm")
+            
+            # WEIGHT
+            if latest and (latest.get("input") or {}).get("weight_kg"):
+                 defaults["weight_kg"] = latest["input"].get("weight_kg")
+            elif latest and (latest.get("input") or {}).get("measurements"):
+                 defaults["weight_kg"] = latest["input"]["measurements"].get("weight_kg")
+
+            # SEX
+            if latest and (latest.get("input") or {}).get("sex"):
+                defaults["sex"] = latest["input"]["sex"]
+            elif profile and profile.get("sex"):
+                defaults["sex"] = profile["sex"]
+            
+            # ACTIVITY LEVEL
+            if latest and (latest.get("input") or {}).get("activity_level"):
+                defaults["activity_level"] = latest["input"]["activity_level"]
+            elif get_onboarding_val("activity_level"):
+                defaults["activity_level"] = get_onboarding_val("activity_level")
+
+            # GOAL
+            if latest and (latest.get("input") or {}).get("goal"):
+                defaults["goal"] = latest["input"]["goal"]
+            elif get_onboarding_val("fitness_goal"):
+                defaults["goal"] = get_onboarding_val("fitness_goal")
+
+    except Exception as e:
+        logger.warning(f"Error fetching defaults for body assessment: {e}")
+    
+    return defaults
+
+
 @ai_body_assessment_bp.get("/ai/body_assessment/tester")
 def body_assessment_tester():
     return render_template("body_assessment.html")
@@ -67,13 +147,17 @@ def body_assessment_tester():
 
 @ai_body_assessment_bp.get("/ai/body_assessment/user")
 def body_assessment_user():
-    return render_template("body_assessment_user.html")
+    user_id = request.cookies.get("user_session")
+    defaults = _get_assessment_defaults(user_id)
+    return render_template("body_assessment_user.html", defaults=defaults)
 
 
 @ai_body_assessment_bp.get("/ai/body_assessment/unified")
 def body_assessment_unified():
     source = request.args.get("source", "user")
-    return render_template("body_assessment_unified.html", source=source)
+    user_id = request.cookies.get("user_session")
+    defaults = _get_assessment_defaults(user_id)
+    return render_template("body_assessment_unified.html", source=source, defaults=defaults)
 
 
 @ai_body_assessment_bp.post("/ai/body_assessment")

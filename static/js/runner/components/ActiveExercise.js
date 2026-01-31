@@ -65,7 +65,7 @@
             return (
                 <div className={cardClassName}>
 
-                    {/* Defer Button - Discrete top right */}
+                    {/* Botón de posponer - Discreto arriba a la derecha */}
                     <button
                         className="btn btn-sm text-secondary position-absolute top-0 end-0 m-2"
                         onClick={deferExercise}
@@ -94,17 +94,17 @@
                             ) : (
                                 <InputControls key={currentStep.id} step={currentStep} hideRPE focusMode={focusMode} />
                             )}
+                        </div>
+                        {exerciseNoteModal}
                     </div>
-                    {exerciseNoteModal}
                 </div>
-            </div>
-        );
+            );
         }
 
         return (
             <div className={cardClassName}>
 
-                {/* Defer Button - Discrete top right (Same as Focus Mode) */}
+                {/* Botón de posponer - Discreto arriba a la derecha (Igual que en Modo Foco) */}
                 <button
                     className="btn btn-sm text-secondary position-absolute top-0 end-0 m-2"
                     onClick={deferExercise}

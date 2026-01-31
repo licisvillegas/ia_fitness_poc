@@ -6,32 +6,32 @@
         const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal, VideoModal, GlitchOverlay, PauseOverlay, TextRevealOverlay, CountdownOverlay, BreathingOverlay, EnduranceTimerOverlay, PulseOverlay, FlexOverlay, ThunderOverlay, VictoryOverlay, ImpactOverlay, FireOverlay, GoalOverlay, ZenOverlay, NutritionOverlay, RoutinePreparationOverlay, SadOverlay, SnowOverlay, StarsOverlay, EmojiRainOverlay, RealisticOverlay, BasicConfettiOverlay, PrideOverlay, SchoolPrideOverlay, FireworksOverlay, MegaBurstOverlay, FountainOverlay, SvgSuccessOverlay } = window.Runner.components;
         const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending, finishWorkout } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
-        // showPending state moved to context
+        // El estado showPending se movió al contexto
 
         const nextStep = useMemo(() => {
             if (!queue || cursor >= queue.length - 1) return null;
             return queue[cursor + 1];
         }, [queue, cursor]);
 
-        // Auto-Focus on Landscape
+        // Enfoque automático en horizontal
         React.useEffect(() => {
             const handleOrientationChange = () => {
                 const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-                // Only enforce if different to prevent overriding user manual toggles needlessly
+                // Solo aplicar si es diferente para evitar anular los cambios manuales del usuario innecesariamente
                 // setFocusMode(isLandscape); 
-                // However, simple binding is robust for rotation. 
-                // The key fix is removing [status] dependency so it doesn't fire on workout steps.
+                // Sin embargo, la vinculación simple es robusta para la rotación. 
+                // La solución clave es eliminar la dependencia [status] para que no se dispare en los pasos del entrenamiento.
                 setFocusMode(isLandscape);
             };
 
-            // Initial check
+            // Comprobación inicial
             handleOrientationChange();
 
-            // Listeners
+            // Oyentes
             window.addEventListener('resize', handleOrientationChange);
 
             return () => window.removeEventListener('resize', handleOrientationChange);
-        }, []); // Remove status dependency
+        }, []); // Eliminar dependencia de estado
 
         if (status === 'LOADING') return <div className="text-center text-white py-5">Cargando Motor...</div>;
 

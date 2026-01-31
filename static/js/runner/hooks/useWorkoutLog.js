@@ -13,13 +13,13 @@
         } = options;
 
         const logSpecificStep = (step, data, isMeasured = false) => {
-            triggerHaptic(50); // Haptic feedback on log
+            triggerHaptic(50); // Retroalimentación háptica al registrar
             if (!step || !step.exercise) return;
             const exerciseId = step.exercise.exercise_id || step.exercise._id || step.exercise.id;
             const exerciseName = step.exercise.exercise_name || step.exercise.name;
             const exerciseType = step.exercise.exercise_type || step.exercise.type;
 
-            // Normalize weight to KG for database
+            // Normalizar peso a KG para la base de datos
             let finalWeight = parseFloat(data.weight) || 0;
             const dataUnit = data.unit || unit;
             if (dataUnit === 'lb') {
@@ -32,7 +32,7 @@
 
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
 
-            // Avoid duplicates for same stepId
+            // Evitar duplicados para el mismo stepId
             if (currentLog.some(l => l.stepId === step.id)) return;
 
             const newLog = [...currentLog, {
@@ -65,7 +65,7 @@
             const idx = currentLog.findIndex(l => l.stepId === stepId);
             if (idx === -1) return;
 
-            // Round to nearest 0.5 for internal consistency if passed from quick log
+            // Redondear al 0.5 más cercano para consistencia interna si se pasa desde el registro rápido
             let finalWeight = parseFloat(data.weight) || 0;
             const dataUnit = data.unit || unit;
             if (dataUnit === 'lb') {

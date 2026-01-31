@@ -101,19 +101,19 @@
                 return false;
             }
 
-            // Check if existing subscription is valid for the current key
+            // Comprobar si la suscripción existente es válida para la clave actual
             if (sub) {
-                // Determine if we need to replace the subscription
+                // Determinar si necesitamos reemplazar la suscripción
                 let needsReplacement = false;
 
-                // Compare keys if available in options (some browsers support this)
-                // If not standard property, we might blindly assume it's good OR force refresh if we suspect issues
-                // For robustness in this debug phase: if keys changed, we MUST resubscribe.
-                // Converting ArrayBuffers to compare
+                // Comparar claves si están disponibles en opciones (algunos navegadores lo soportan)
+                // Si no es propiedad estándar, podríamos asumir ciegamente que es buena O forzar actualización si sospechamos problemas
+                // Para robustez en esta fase de depuración: si las claves cambiaron, DEBEMOS resuscribirnos.
+                // Convirtiendo ArrayBuffers para comparar
                 const existingKey = sub.options.applicationServerKey;
                 if (existingKey) {
                     const newKeyArray = urlBase64ToUint8Array(newKey);
-                    // Simple comparison
+                    // Comparación simple
                     const existingArray = new Uint8Array(existingKey);
                     let match = true;
                     if (existingArray.length !== newKeyArray.length) {
@@ -131,9 +131,9 @@
                         needsReplacement = true;
                     }
                 } else {
-                    // Chrome sometimes hides options.applicationServerKey
-                    // If we are debugging specific issues, we might want to force rotate here, 
-                    // but for now let's hope it adheres to spec.
+                    // Chrome a veces oculta options.applicationServerKey
+                    // Si estamos depurando problemas específicos, quizás queramos forzar rotación aquí, 
+                    // pero por ahora esperemos que se adhiera a la especificación.
                 }
 
                 if (needsReplacement) {
@@ -157,7 +157,7 @@
             const syncRes = await syncSubscription(sub);
             debugLog(`Sync result: ${syncRes}`);
 
-            // Check if server flagged a resubscribe requirement (e.g., 403 BadJwtToken)
+            // Comprobar si el servidor marcó un requisito de resuscripción (ej., 403 BadJwtToken)
             try {
                 const statusRes = await fetch('/api/push/status', { credentials: 'include' });
                 if (statusRes.ok) {

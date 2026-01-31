@@ -1,5 +1,5 @@
 /**
- * Reusable Loader Utility
+ * Utilidad de Cargador Reutilizable
  */
 (function () {
     const loader = document.getElementById('appLoader');
@@ -7,7 +7,7 @@
     const barEl = document.getElementById('loaderBar');
 
     /**
-     * Shows the global loader
+     * Muestra el cargador global
      * @param {string} message - Message to display
      * @param {number} [progress] - Optional progress percentage (0-100)
      */
@@ -28,7 +28,7 @@
     };
 
     /**
-     * Hides the global loader
+     * Oculta el cargador global
      */
     window.hideLoader = function () {
         if (!loader) return;
@@ -36,7 +36,7 @@
     };
 
     /**
-     * Updates the progress bar percentage
+     * Actualiza el porcentaje de la barra de progreso
      * @param {number} percentage - 0 to 100
      */
     window.updateLoaderProgress = function (percentage) {
@@ -45,50 +45,50 @@
         barEl.style.width = `${percentage}%`;
     };
 
-    // Global Link Interceptor for Page Transitions
+    // Interceptor Global de Enlaces para Transiciones de Página
     document.addEventListener('click', function (e) {
         const link = e.target.closest('a');
         if (!link) return;
 
-        // Ignore if modifier keys are pressed (new tab)
+        // Ignorar si se presionan teclas modificadoras (nueva pestaña)
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
 
-        // Ignore if target is blank or download
+        // Ignorar si el destino está vacío o es descarga
         if (link.target === '_blank' || link.hasAttribute('download')) return;
 
-        // Ignore anchors on the same page
+        // Ignorar anclajes en la misma página
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
 
-        // Show loader
+        // Mostrar cargador
         window.showLoader("Cargando...", null);
     });
 
-    // Fix for Back-Forward Cache (BF Cache) persisting the loader
+    // Corrección para Caché Atrás-Adelante (BF Cache) que persiste el cargador
     window.addEventListener('pageshow', function (event) {
         if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
             window.hideLoader();
         }
     });
 
-    // Ensure loader is hidden on initial load
+    // Asegurar que el cargador esté oculto en la carga inicial
     document.addEventListener('DOMContentLoaded', function () {
         window.hideLoader();
     });
 
     /**
-     * Helper to load images with skeleton effect
+     * Ayudante para cargar imágenes con efecto esqueleto
      * @param {HTMLImageElement} img - Image element
      * @param {string} src - New Source URL
-     * @param {HTMLElement} [container] - Container for skeleton class (defaults to parent)
+     * @param {HTMLElement} [container] - Contenedor para clase esqueleto (por defecto es el padre)
      */
     window.loadImageWithSkeleton = function (img, src, container = null) {
         if (!img) return;
         const parent = container || img.parentElement;
 
-        // Reset
+        // Restablecer
         img.classList.remove('loaded');
-        img.classList.add('img-skeleton'); // Ensure class exists
+        img.classList.add('img-skeleton'); // Asegurar que la clase exista
         if (parent) parent.classList.add('skeleton-pulse');
 
         img.onload = function () {
@@ -97,7 +97,7 @@
         };
 
         img.onerror = function () {
-            // Handle error (optional: remove skeleton so it doesn't pulse forever)
+            // Manejar error (opcional: eliminar esqueleto para que no pulse por siempre)
             if (parent) parent.classList.remove('skeleton-pulse');
         };
 

@@ -9,7 +9,7 @@
 
     window.Runner.hooks.WorkoutProvider = ({ children, routine }) => {
         const [queue, setQueue] = useState([]);
-        const [cursor, setCursor] = useState(0); // Index in Queue
+        const [cursor, setCursor] = useState(0); // Índice en la cola
         const [status, setStatus] = useState('LOADING'); // LOADING | IDLE | WORK | REST | FINISHED
         console.log("WorkoutProvider Initialized. Initial Status:", status);
         const [sessionLog, setSessionLog] = useState([]);
@@ -29,7 +29,7 @@
             ensureNotificationPermission,
             sendNotification
         } = useWorkoutNotifications({ logSource: "useWorkout" });
-        const [showPending, setShowPending] = useState(false); // New state lifted from App.js
+        const [showPending, setShowPending] = useState(false); // Nuevo estado elevado desde App.js
 
         const [currentInput, setCurrentInput] = useState({
             weight: "",
@@ -39,11 +39,11 @@
         });
         const [routineState, setRoutineState] = useState(routine);
 
-        // Refs for Interval
+        // Referencias para intervalo
         const resumeTimerRef = useRef(false);
         const queueRef = useRef([]);
-        const sessionLogRef = useRef([]); // Fix for stale closure
-        const startTimeRef = useRef(Date.now()); // Track start time of current step
+        const sessionLogRef = useRef([]); // Arreglo para cierre obsoleto (stale closure)
+        const startTimeRef = useRef(Date.now()); // Rastrear hora de inicio del paso actual
         const completeStepTimerRef = useRef(null);
         const finishWorkoutRef = useRef(null);
         const statusRef = useRef(status);
@@ -51,7 +51,7 @@
         const currentStepRef = useRef(null);
         const forceRestAfterLoggedRef = useRef(false);
         const lastAnnouncementRef = useRef({ status: null, stepId: null });
-        const scheduledPushTaskIdsRef = useRef([]); // Store scheduled push task IDs (Array)
+        const scheduledPushTaskIdsRef = useRef([]); // Almacenar IDs de tareas push programadas (Array)
         const prevStatusRef = useRef(status);
         const lastHistoryRoutineIdRef = useRef(null);
 
@@ -81,7 +81,7 @@
         };
 
         const checkRepMotivation = (elapsed, flags, exName) => {
-            // Local notification logic migrated to Server Push on Step Start
+            // Lógica de notificación local migrada a Server Push al inicio del paso
             if (elapsed === 180 && !flags.min3) {
                 flags.min3 = true;
             }
@@ -296,22 +296,22 @@
                     console.log("Queue Built Successfully:", q);
                     setQueue(q);
 
-                    // Priority: 1. LocalStorage (Recent active run), 2. Server Restored State, 3. Default (Start)
+                    // Prioridad: 1. LocalStorage (Ejecución activa reciente), 2. Estado restaurado del servidor, 3. Por defecto (Inicio)
                     let restored = false;
-                    // 1. Try LocalStorage
+                    // 1. Intentar LocalStorage
                     try {
                         restored = restoreFromLocalStorage();
                     } catch (e) {
                         console.warn("Error reading local state", e);
                     }
 
-                    // 2. Try Server State (if not restored locally)
+                    // 2. Intentar Estado del Servidor (si no se restauró localmente)
                     if (!restored && window.RESTORED_STATE && window.RESTORED_STATE.routine_id === routineState.id) {
                         console.log("Restoring from Server State:", window.RESTORED_STATE);
                         if (window.RESTORED_STATE.cursor > 0 && window.RESTORED_STATE.cursor < q.length) {
                             setCursor(window.RESTORED_STATE.cursor);
 
-                            // AUTO-RESUME: Set status to WORK and ensure timer logic runs
+                            // AUTO-RESUMEN: Establecer estado a TRABAJO y asegurar que la lógica del temporizador se ejecute
                             const resumeStep = q[window.RESTORED_STATE.cursor];
                             if (resumeStep) {
                                 if (resumeStep.type === 'rest') {
@@ -330,24 +330,24 @@
                             sessionLogRef.current = window.RESTORED_STATE.session_log;
                         }
                     } else if (!restored) {
-                        // Default start
+                        // Inicio por defecto
                         setStatus('IDLE');
                     }
 
                     console.log("Queue Built:", q);
-                    queueRef.current = q; // Update ref
+                    queueRef.current = q; // Actualizar referencia
                 } catch (e) {
                     console.error("CRITICAL ERROR building queue:", e);
                 }
             }
         }, [routineState]);
 
-        // Reset start time when step changes
+        // Restablecer tiempo de inicio cuando cambia el paso
         useEffect(() => {
             startTimeRef.current = Date.now();
-        }, [cursor]); // Reset on cursor change
+        }, [cursor]); // Restablecer al cambiar el cursor
 
-        // Wake Lock Implementation - Robust & Status Aware
+        // Implementación de Wake Lock - Robusto y Consciente del Estado
         const isActive = status === 'WORK' || status === 'REST';
 
         useEffect(() => {
@@ -355,7 +355,7 @@
 
             const requestLock = async () => {
                 if (!isActive) return;
-                // Only request if visible
+                // Solo solicitar si es visible
                 if (document.visibilityState !== 'visible') return;
 
                 try {
@@ -389,7 +389,7 @@
             };
 
             const handleVisibilityChange = () => {
-                // If we come back to visible and we ARE active, re-request
+                // Si volvemos a ser visibles y ESTAMOS activos, volver a solicitar
                 if (document.visibilityState === 'visible' && isActive) {
                     requestLock();
                 }
@@ -408,22 +408,22 @@
             };
         }, [isActive]);
 
-        // Reset trackers on step change
+        // Restablecer rastreadores al cambiar el paso
         useEffect(() => {
             statusRef.current = status;
 
-            // Handle Side Effects for Status Transitions
+            // Manejar efectos secundarios para transiciones de estado
             if (status === 'REST') {
-                // ENTERING REST: Schedule Push
+                // ENTRANDO EN DESCANSO: Programar Push
                 const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
 
                 if (duration > 0 && window.Runner.utils.schedulePush) {
-                    // Cancel any existing
+                    // Cancelar cualquiera existente
                     if (scheduledPushTaskIdsRef.current.length > 0) {
                         scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
                         scheduledPushTaskIdsRef.current = [];
                     }
-                    // Schedule new
+                    // Programar nuevo
                     window.Runner.utils.schedulePush(
                         duration + 1,
                         "Tiempo Completado",
@@ -439,7 +439,7 @@
             }
 
             if (status === 'WORK') {
-                // ENTERING WORK: Schedule Motivation Pushes (if time-based)
+                // ENTRANDO EN TRABAJO: Programar Push de Motivación (si es basado en tiempo)
                 if (scheduledPushTaskIdsRef.current.length > 0) {
                     scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
                     scheduledPushTaskIdsRef.current = [];
@@ -450,7 +450,7 @@
                     const totalTime = meta.rawTimeTarget || Number(currentStep.target?.time || 60);
 
                     if (window.Runner.utils.schedulePush) {
-                        // Schedule HALFWAY
+                        // Programar MITAD
                         if (totalTime >= 20) {
                             const halfTime = Math.floor(totalTime / 2);
                             const delayHalf = totalTime - halfTime;
@@ -458,7 +458,7 @@
                                 .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                         }
 
-                        // Schedule 2 MIN Warning
+                        // Programar Aviso de 2 MIN
                         if (totalTime > 140) {
                             const delay2Min = totalTime - 120;
                             window.Runner.utils.schedulePush(delay2Min, "Casi terminas", "Lo estas logrando. Te faltan 2 minutos.", "workout_2min", { visibility: document.visibilityState })
@@ -466,7 +466,7 @@
                         }
                     }
                 } else if (meta && meta.rawRepsTarget !== 0) {
-                    // REP BASED: Schedule Idle Warnings (3m, 5m)
+                    // BASADO EN REPS: Programar Avisos de Inactividad (3m, 5m)
                     if (window.Runner.utils.schedulePush) {
                         window.Runner.utils.schedulePush(180, "Motivacion", `Vamos, sigue con ${meta.exName || "tu ejercicio"}.`, "workout_idle_3m", { visibility: document.visibilityState })
                             .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
@@ -483,14 +483,14 @@
                 }
             }
 
-            // Cleanup Endurance Animation if LEAVING REST
+            // Limpiar animación de resistencia si SE SALE DEL DESCANSO
             if (status !== 'REST') {
                 if (enduranceCleanupRef.current) {
                     enduranceCleanupRef.current();
                     enduranceCleanupRef.current = null;
                 }
             }
-        }, [status, currentStep?.id]); // Depends on Status AND Step ID (for consecutive work steps)
+        }, [status, currentStep?.id]); // Depende del Estado Y del ID del Paso (para pasos de trabajo consecutivos)
         useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
         useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
 
@@ -501,7 +501,7 @@
             }));
         };
 
-const { finishWorkout, cancelWorkout, startWorkout } = useWorkoutSteps({
+        const { finishWorkout, cancelWorkout, startWorkout } = useWorkoutSteps({
             status,
             setStatus,
             setShowCompletionIcon,
@@ -570,9 +570,9 @@ const { finishWorkout, cancelWorkout, startWorkout } = useWorkoutSteps({
             prevStatusRef.current = status;
         }, [status, currentStep?.id]);
 
-        // Legacy Notification Logic Removed (replaced by interval polling)
+        // Lógica de notificación heredada eliminada (reemplazada por sondeo de intervalo)
         useEffect(() => {
-            // Optional: keeping this structure if we need other side effects on step start
+            // Opcional: mantener esta estructura si necesitamos otros efectos secundarios al inicio del paso
         }, [status, currentStep?.id]);
 
         const togglePause = () => {

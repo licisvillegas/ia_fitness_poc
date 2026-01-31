@@ -5,7 +5,7 @@
         const isMetric = unit === 'kg';
 
         const metricPlates = [
-            { value: 1.25, label: "1.25", src: "/static/images/disc/2_5.png" }, // Using existing images as proxy
+            { value: 1.25, label: "1.25", src: "/static/images/disc/2_5.png" }, // Usando imágenes existentes como proxy
             { value: 2.5, label: "2.5", src: "/static/images/disc/2_5.png" },
             { value: 5, label: "5", src: "/static/images/disc/5.png" },
             { value: 10, label: "10", src: "/static/images/disc/10.png" },
@@ -30,7 +30,7 @@
         const [includeBar, setIncludeBar] = useState(false);
         const [barWeight, setBarWeight] = useState(isMetric ? 20 : 45);
 
-        // Reset when opening or unit changes
+        // Reiniciar al abrir o si cambia la unidad
         useEffect(() => {
             if (isOpen) {
                 const initialCounts = {};

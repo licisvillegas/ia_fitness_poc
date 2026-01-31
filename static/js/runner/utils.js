@@ -16,7 +16,7 @@
             try {
                 navigator.vibrate(pattern);
             } catch (e) {
-                // Ignore errors
+                // Ignorar errores
             }
         }
     };
@@ -55,7 +55,7 @@
     utils.cancelPush = async (taskId) => {
         if (!taskId) return;
         try {
-            // Use fetch with keepalive: true for reliable cancellation
+            // Usar fetch con keepalive: true para una cancelación confiable
             await fetch("/api/push/cancel-schedule", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

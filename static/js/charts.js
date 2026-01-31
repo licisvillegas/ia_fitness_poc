@@ -34,10 +34,10 @@ function toggleMealDetails(element) {
 
 function addNewMeal() {
     if (window.showAlertModal) {
-        window.showAlertModal("Pronto", "Feature to add a new meal coming soon!", "warning");
+        window.showAlertModal("Próximamente", "¡La funcionalidad para agregar una nueva comida llegará pronto!", "warning");
         return;
     }
-    alert("Feature to add a new meal coming soon!");
+    alert("¡La funcionalidad para agregar una nueva comida llegará pronto!");
     // Implementar funcionalidad para agregar nueva comida
 }
 

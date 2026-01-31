@@ -30,13 +30,13 @@
         };
 
         const next = () => {
-            console.log("DEBUG: Next called. Cursor:", cursor, "QueueLen:", queue.length);
+            console.log("DEBUG: Next llamado. Cursor:", cursor, "QueueLen:", queue.length);
 
             if (currentStep && currentStep.type === 'work') {
                 const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
                 const shouldAutoLog = Boolean(currentStep.isTimeBased);
                 if (shouldAutoLog && !isStepLogged(currentStep.id, currentLog)) {
-                    console.log("DEBUG: Auto-logging current time-based step:", currentStep.id);
+                    console.log("DEBUG: Auto-registrando paso actual basado en tiempo:", currentStep.id);
                     const fallbackTime = currentStep.target?.time || 0;
                     logSet({
                         time_seconds: fallbackTime,
@@ -52,12 +52,12 @@
             }
 
             if (cursor >= queue.length - 1) {
-                console.log("DEBUG: End of queue reached. Calling checkPendingAndFinish.");
+                console.log("DEBUG: Fin de la cola alcanzado. Llamando a checkPendingAndFinish.");
                 setCursor(queue.length); // Advance to end
                 if (status === 'REST') {
                     setStatus('WORK');
                     setTimeout(() => {
-                        console.log("DEBUG: Timeout executed, calling checkPendingAndFinish");
+                        console.log("DEBUG: Timeout ejecutado, llamando a checkPendingAndFinish");
                         checkPendingAndFinish();
                     }, 100);
                 } else {
@@ -69,20 +69,20 @@
             let nextIdx = cursor + 1;
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
 
-            // Smart skip: Skip completed Work steps AND their following Rest steps
+            // Salto inteligente: Omitir pasos completos de TRABAJO Y sus pasos de DESCANSO siguientes
             while (nextIdx < queue.length) {
                 const step = queue[nextIdx];
                 if (step.type === 'work' && isStepLogged(step.id, currentLog)) {
-                    console.log("DEBUG: Skipping completed step:", step.id);
+                    console.log("DEBUG: Saltando paso completado:", step.id);
                     nextIdx++;
-                    // If the immediate next step is REST, skip it too because its work is done
+                    // Si el paso inmediato siguiente es DESCANSO, saltarlo también porque su trabajo ha terminado
                     if (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
                         if (forceRestAfterLoggedRef.current) {
-                            console.log("DEBUG: Keeping rest after logged work");
+                            console.log("DEBUG: Manteniendo descanso después del trabajo registrado");
                             forceRestAfterLoggedRef.current = false;
                             break;
                         }
-                        console.log("DEBUG: Skipping orphan rest");
+                        console.log("DEBUG: Saltando descanso huérfano");
                         nextIdx++;
                     }
                 } else {
@@ -91,7 +91,7 @@
             }
 
             if (nextIdx >= queue.length) {
-                setCursor(queue.length); // Advance to end (trigger empty state)
+                setCursor(queue.length); // Avanzar al final (activar estado vacío)
                 if (status === 'REST') setStatus('WORK');
                 checkPendingAndFinish();
                 return;
@@ -114,9 +114,9 @@
         };
 
         const skipToNextWork = () => {
-            console.log("DEBUG: Skip to next work. Cursor:", cursor, "QueueLen:", queue.length);
+            console.log("DEBUG: Saltar al siguiente trabajo. Cursor:", cursor, "QueueLen:", queue.length);
             if (cursor >= queue.length - 1) {
-                setCursor(queue.length); // Advance to end
+                setCursor(queue.length); // Avanzar al final
                 if (status === 'REST') {
                     setStatus('WORK');
                     setTimeout(checkPendingAndFinish, 100);
@@ -134,10 +134,10 @@
                     continue;
                 }
                 if (step.type === 'work' && isStepLogged(step.id, currentLog)) {
-                    console.log("DEBUG: Skipping completed step:", step.id);
+                    console.log("DEBUG: Saltando paso completado:", step.id);
                     nextIdx += 1;
                     if (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
-                        console.log("DEBUG: Skipping orphan rest");
+                        console.log("DEBUG: Saltando descanso huérfano");
                         nextIdx += 1;
                     }
                     continue;
@@ -145,7 +145,7 @@
                 break;
             }
             if (nextIdx >= queue.length) {
-                setCursor(queue.length); // Advance to end
+                setCursor(queue.length); // Avanzar al final
                 if (status === 'REST') setStatus('WORK');
                 checkPendingAndFinish();
                 return;
@@ -159,13 +159,13 @@
         };
 
         const deferExercise = () => {
-            console.log("DEBUG: Deferring exercise requested. Cursor:", cursor);
+            console.log("DEBUG: Pospuesto de ejercicio solicitado. Cursor:", cursor);
 
             showConfirm(
                 "Dejar Pendiente",
                 "¿Quieres dejar este ejercicio para el final? No se registrará progreso ahora.",
                 () => {
-                    console.log("DEBUG: Executing Defer");
+                    console.log("DEBUG: Ejecutando posponer");
 
                     let nextIdx = cursor + 1;
                     if (nextIdx >= queue.length) {
@@ -181,19 +181,19 @@
 
                     const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
 
-                    // Skip rest steps and already logged work steps (and their following rest)
+                    // Saltar pasos de descanso y trabajos ya registrados (y sus descansos siguientes)
                     while (nextIdx < queue.length) {
                         const step = queue[nextIdx];
                         if (step.type === 'rest') {
-                            console.log("DEBUG: Skipping rest during defer");
+                            console.log("DEBUG: Saltando descanso durante posponer");
                             nextIdx++;
                             continue;
                         }
                         if (step.type === 'work' && isStepLogged(step.id, currentLog)) {
-                            console.log("DEBUG: Skipping completed step:", step.id);
+                            console.log("DEBUG: Saltando paso completado:", step.id);
                             nextIdx++;
                             if (nextIdx < queue.length && queue[nextIdx].type === 'rest') {
-                                console.log("DEBUG: Skipping orphan rest");
+                                console.log("DEBUG: Saltando descanso huérfano");
                                 nextIdx++;
                             }
                         } else {
@@ -234,7 +234,7 @@
             let idx = cursor - 1;
             const currentLog = (sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog;
 
-            // Skip already logged steps when going back
+            // Saltar pasos ya registrados al retroceder
             while (idx >= 0 && (queue[idx].type === 'rest' || (queue[idx].type === 'work' && isStepLogged(queue[idx].id, currentLog)))) {
                 idx -= 1;
             }
@@ -249,13 +249,13 @@
         };
 
         const skipRest = () => {
-            // Cancel animation if running
+            // Cancelar animación si se está ejecutando
             if (enduranceCleanupRef.current) {
                 enduranceCleanupRef.current();
                 enduranceCleanupRef.current = null;
             }
-            // Cancel scheduled push
-            // Cancel scheduled pushes
+            // Cancelar pushes programados
+            // Cancelar pushes programados
             if (scheduledPushTaskIdsRef.current.length > 0) {
                 if (cancelPush) {
                     scheduledPushTaskIdsRef.current.forEach(id => cancelPush(id));
@@ -270,13 +270,13 @@
         };
 
         const addRestTime = (seconds) => {
-            // Cancel animation if running (since time changed)
+            // Cancelar animación si se está ejecutando (ya que el tiempo cambió)
             if (enduranceCleanupRef.current) {
                 enduranceCleanupRef.current();
                 enduranceCleanupRef.current = null;
             }
-            // Cancel previous push
-            // Cancel previous pushes
+            // Cancelar pushes anteriores
+            // Cancelar pushes anteriores
             if (scheduledPushTaskIdsRef.current.length > 0) {
                 if (cancelPush) {
                     scheduledPushTaskIdsRef.current.forEach(id => cancelPush(id));
@@ -286,7 +286,7 @@
 
             setStepTimer(t => {
                 const nextValue = Math.max(0, t + seconds);
-                // Reschedule Push
+                // Reprogramar Push
                 if (schedulePush) {
                     schedulePush(
                         nextValue,

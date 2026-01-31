@@ -71,14 +71,14 @@ self.addEventListener('push', (event) => {
         }
 
         const title = payload.title || 'Synapse Fit';
-        // Explicitly set silent/renotify options for better vibration/sound handling
+        // Establecer explícitamente opciones de silencio/renotificación para un mejor manejo de vibración/sonido
         const options = {
             body: payload.body || '',
             icon: '/static/images/icon/synapse_fit_192.png',
             badge: '/static/images/icon/synapse_fit_192.png',
             vibrate: [200, 100, 200, 100, 200, 100, 200],
             tag: 'workout-timer',
-            renotify: true, // Crucial for sound on repeated timers
+            renotify: true, // Crucial para el sonido en temporizadores repetidos
             requireInteraction: true,
             data: {
                 url: payload.url || '/',
@@ -87,21 +87,21 @@ self.addEventListener('push', (event) => {
             }
         };
 
-        // 1. Show Notification IMMEDIATELLY (Critical for iOS/Background)
+        // 1. Mostrar Notificación INMEDIATAMENTE (Crítico para iOS/Segundo plano)
         try {
             await self.registration.showNotification(title, options);
         } catch (e) {
             console.error('ShowNotification failed:', e);
         }
 
-        // 2. Log afterwards (Non-blocking priority)
+        // 2. Registrar después (Prioridad no bloqueante)
         try {
             const meta = payload.meta || {};
             await logClient(
                 `SW notification shown (context=${payload.context || 'none'}, visibility=${meta.visibility || 'n/a'})`
             );
         } catch (e) {
-            // Ignore logging errors
+            // Ignorar errores de registro
         }
     })());
 });
@@ -122,7 +122,7 @@ self.addEventListener('notificationclick', (event) => {
             }
         })
     }).catch(() => { });
-    // Normalize target URL to absolute for comparison
+    // Normalizar URL objetivo a absoluta para comparación
     const targetUrl = new URL(
         (event.notification.data && event.notification.data.url) || '/',
         self.location.origin
@@ -131,8 +131,8 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
-                // Compare absolute URLs
-                // Compare pathnames to ignore query params mismatch
+                // Comparar URLs absolutas
+                // Comparar rutas (pathnames) para ignorar discrepancias en parámetros de consulta
                 const clientPath = new URL(client.url).pathname;
                 const targetPath = new URL(targetUrl).pathname;
 

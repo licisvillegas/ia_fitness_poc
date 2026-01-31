@@ -146,7 +146,7 @@ Formato de salida (SOLO JSON):
   }},
   "summary": string,
   "recommendations": {{
-    "focus": "definicion" | "volumen" | "mantenimiento",
+    "focus": "fat_loss" | "muscle_gain" | "maintenance",
     "actions": [string]
   }},
   "photo_feedback": [string]
@@ -808,19 +808,19 @@ class BodyAssessmentAgent:
         bmi: float,
         goal: Optional[str],
     ) -> str:
-        if goal in {"definicion", "volumen", "mantenimiento"}:
+        if goal in {"fat_loss", "muscle_gain", "maintenance"}:
             return goal
 
         high_bf = 25.0 if sex != "female" else 32.0
         low_bf = 12.0 if sex != "female" else 20.0
 
         if body_fat >= high_bf:
-            return "definicion"
+            return "fat_loss"
         if body_fat <= low_bf:
             if bmi < 22:
-                return "volumen"
-            return "mantenimiento"
-        return "mantenimiento"
+                return "muscle_gain"
+            return "maintenance"
+        return "maintenance"
 
     def _build_actions(
         self,
@@ -832,17 +832,17 @@ class BodyAssessmentAgent:
     ) -> List[str]:
         actions: List[str] = []
 
-        if focus == "definicion":
+        if focus == "fat_loss":
             actions.append("Aplica déficit calórico moderado (15-20% bajo mantenimiento) manteniendo ≥2 g/kg de proteína.")
             actions.append("Incluye entrenamiento de fuerza 3-4 veces/semana con énfasis en compuestos y core.")
             if waist_to_height and waist_to_height > 0.5:
                 actions.append("Añade 2-3 sesiones de cardio LISS 30' o HIIT corto para apoyar reducción de cintura.")
-        elif focus == "volumen":
+        elif focus == "muscle_gain":
             actions.append("Usa superávit ligero (200-300 kcal) priorizando proteína y carbohidratos post entreno.")
             actions.append("Programa sobrecarga progresiva en torso y tren inferior 4-5 veces/semana.")
             if lean_mass < 55:
                 actions.append("Añade trabajo accesorio de brazos/hombros para resaltar proporciones.")
-        else:  # mantenimiento
+        else:  # maintenance
             actions.append("Mantén ingesta calórica cercana a mantenimiento con reparto equilibrado de macros.")
             actions.append("Conserva rutina de fuerza 3-4 veces/semana y movilidad 1-2 veces/semana.")
             if bmi > 26:
@@ -914,10 +914,10 @@ class BodyAssessmentAgent:
         
         tdee_map = {
             "sedentary": round(tmb * 1.2, 0),       # Poco o ningun ejercicio
-            "light": round(tmb * 1.375, 0),         # Ejercicio ligero 1-3 dias
-            "moderate": round(tmb * 1.55, 0),       # Ejercicio moderado 3-5 dias
-            "strong": round(tmb * 1.725, 0),        # Ejercicio fuerte 6-7 dias
-            "very_strong": round(tmb * 1.9, 0)      # Ejercicio muy fuerte / doble sesión
+            "lightly_active": round(tmb * 1.375, 0),         # Ejercicio ligero 1-3 dias
+            "moderately_active": round(tmb * 1.55, 0),       # Ejercicio moderado 3-5 dias
+            "very_active": round(tmb * 1.725, 0),        # Ejercicio fuerte 6-7 dias
+            "extra_active": round(tmb * 1.9, 0)      # Ejercicio muy fuerte / doble sesión
         }
 
         selected_tdee = None

@@ -375,16 +375,16 @@
     state.sessions = Array.isArray(data) ? data : [];
     state.trainedDates = getUniqueDateList(state.sessions);
 
-    // Auto-select range logic based on active weeks
-    // "depending on the number of weeks of registered trainings"
+    // Lógica de selección automática de rango basada en semanas activas
+    // "dependiendo del número de semanas de entrenamientos registrados"
     if (state.trainedDates.length > 0) {
       const weekCounts = buildWeekCounts(state.trainedDates);
       const activeWeeks = weekCounts.size;
 
-      // Thresholds (Relaxed based on user feedback): 
-      // <= 6 weeks (approx 1.5 months) -> 30 days preference
-      // <= 12 weeks (approx 3 months) -> 60 days preference
-      // > 12 weeks -> 90 days
+      // Umbrales (Relajados basados en retroalimentación del usuario): 
+      // <= 6 semanas (aprox 1.5 meses) -> preferencia de 30 días
+      // <= 12 semanas (aprox 3 meses) -> preferencia de 60 días
+      // > 12 semanas -> 90 días
       console.log("Auto-select debug: Active Weeks =", activeWeeks);
 
       if (activeWeeks <= 6) {
@@ -395,13 +395,13 @@
         state.windowRangeDays = 90;
       }
 
-      // Update Select UI if present
+      // Actualizar UI de selección si está presente
       const windowSelect = document.getElementById("adherenceWindowSelect");
       if (windowSelect) {
         windowSelect.value = String(state.windowRangeDays);
       }
 
-      // Auto-select heatmap range using the same thresholds
+      // Selección automática de rango de mapa de calor usando los mismos umbrales
       setHeatmapRange(state.windowRangeDays);
     }
   };

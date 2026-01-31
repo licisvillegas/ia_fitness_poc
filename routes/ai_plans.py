@@ -22,8 +22,52 @@ def generate_plan():
             return jsonify({"error": message}), 400
 
         user_id = normalize_user_id(user.get("user_id"))
-        weight = float(user["weight_kg"])
-        goal = user["goal"]
+        
+        # --- Smart Data Inheritance ---
+        weight = user.get("weight_kg")
+        goal = user.get("goal")
+
+        if weight is None or goal is None:
+             if extensions.db is not None:
+                # 1. Fetch Weight from latest assessment
+                if weight is None:
+                    latest = extensions.db.body_assessments.find_one(
+                        {"user_id": user_id}, sort=[("created_at", -1)]
+                    )
+                    if latest:
+                        inp = latest.get("input") or {}
+                        meas = inp.get("measurements") or {}
+                        weight = meas.get("weight_kg") or inp.get("weight_kg") or inp.get("weight")
+                
+                # 2. Fetch Goal from Plan/Onboarding
+                if goal is None:
+                    # Try active plan first
+                    active_plan = extensions.db.plans.find_one({"user_id": user_id, "active": True})
+                    if active_plan:
+                        goal = active_plan.get("goal")
+                    
+                    # Try onboarding
+                    if not goal:
+                        onboarding = extensions.db.onboarding_submissions.find_one(
+                             {"user_id": user_id}, sort=[("submission_date", -1)]
+                        )
+                        if onboarding and "data" in onboarding:
+                            goal = onboarding["data"].get("fitness_goal")
+
+        # Fallbacks if still missing
+        if weight is None:
+             # Default weight? Or error? Let's error if we absolutely can't find it
+             # But maybe 70kg as a very weak fallback? Better to error.
+             return jsonify({"error": "Peso requerido (no se encontró historial)"}), 400
+        
+        if goal is None:
+             goal = "gain_muscle" # Default fallback
+        
+        try:
+            weight = float(weight)
+        except:
+             return jsonify({"error": "Peso invalido"}), 400
+
         now = datetime.utcnow()
 
         if goal == "gain_muscle":

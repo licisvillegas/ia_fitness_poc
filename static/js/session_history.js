@@ -130,16 +130,16 @@
                 return sum / weights.length;
             })();
 
-            // Duration: Sum of set durations (Active Time) or fallback to wall clock
+            // Duración: Suma de duraciones de series (Tiempo Activo) o recurso a reloj de pared
             let totalSeconds = 0;
             sets.forEach(s => totalSeconds += Number(s.duration_seconds || 0));
 
-            // If explicit set durations exist, use sum. Otherwise check session.duration_seconds
+            // Si existen duraciones explícitas de series, usar suma. De lo contrario verificar session.duration_seconds
             const displayDuration = totalSeconds > 0
                 ? formatDuration(totalSeconds)
                 : (session.duration_seconds ? formatDuration(session.duration_seconds) : '-');
 
-            // Group sets by exercise
+            // Agrupar series por ejercicio
             const exerciseGroups = {};
             sets.forEach(set => {
                 const exId = set.exercise_id || set.exerciseId || 'unknown';
@@ -438,10 +438,10 @@
         applySessionFilters();
     };
 
-    // Helper to find latest session date
+    // Ayudante para encontrar la última fecha de sesión
     const getLatestSessionDate = () => {
         if (!sessionData || sessionData.length === 0) return new Date();
-        // Assuming sessionData might not be sorted, find max
+        // Asumiendo que sessionData podría no estar ordenado, buscar máximo
         let maxDate = 0;
         sessionData.forEach(s => {
             const d = getSessionDate(s);
@@ -469,20 +469,20 @@
             el.classList.toggle("btn-outline-secondary", !active);
         });
 
-        // Smart Default Selection
-        // Day/Week -> Latest Data Date
-        // Month -> Current System Date (as requested)
-        // Weekday -> Current System Date (or latest? defaulting to current for generic weekday)
+        // Selección Inteligente Predeterminada
+        // Día/Semana -> Fecha de Datos Más Reciente
+        // Mes -> Fecha Actual del Sistema (según solicitado)
+        // Día de la semana -> Fecha Actual del Sistema (¿o última? predeterminado a actual para día genérico)
 
-        let targetDate = getLatestSessionDate(); // Default to latest data for ALL ranges
-        // removing the conditional usage of new Date() allows us to always show relevant data
+        let targetDate = getLatestSessionDate(); // Predeterminado a últimos datos para TODOS los rangos
+        // eliminar el uso condicional de new Date() nos permite mostrar siempre datos relevantes
 
         if (range === "day") {
             const k = getDayKey(targetDate);
             sessionFilterValue = k.split("|")[0];
         } else if (range === "weekday") {
-            // "Día semana" usually implies generic aggregation (e.g. "Mondays"), 
-            // but here we filter by a specific day index. Defaulting to Today's weekday is reasonable.
+            // "Día semana" usualmente implica agregación genérica (ej. "Lunes"), 
+            // pero aquí filtramos por un índice de día específico. Predeterminar al día de hoy es razonable.
             const k = getWeekdayKey(targetDate);
             sessionFilterValue = k.split("|")[0];
         } else if (range === "week") {
@@ -527,7 +527,7 @@
                 collapseAllSessionDetails();
             });
         }
-        // Initial setup, though loadSessions will override
+        // Configuración inicial, aunque loadSessions anulará
         // setSessionFilterRange("day"); 
     };
 
@@ -542,7 +542,7 @@
             const data = await res.json();
             console.log("DEBUG: Loaded sessions:", data);
             sessionData = Array.isArray(data) ? data : [];
-            // Apply default filter: Day (most recent)
+            // Aplicar filtro predeterminado: Día (más reciente)
             window.setSessionFilterRange("day");
         } catch (e) {
             console.error("Error loading sessions:", e);

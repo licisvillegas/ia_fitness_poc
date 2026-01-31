@@ -128,18 +128,18 @@
         ]);
 
         const finishWorkout = async () => {
-            console.log("DEBUG: finishWorkout called. Status:", status);
+            console.log("DEBUG: finishWorkout llamado. Estado:", status);
             if (status === 'FINISHED') {
-                console.log("DEBUG: Status is already FINISHED, aborting.");
+                console.log("DEBUG: El estado ya es FINALIZADO, abortando.");
                 return;
             }
 
-            // 1. Show Icon
-            console.log("DEBUG: Setting ShowCompletionIcon to TRUE");
+            // 1. Mostrar Icono
+            console.log("DEBUG: Estableciendo ShowCompletionIcon a VERDADERO");
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
 
-            // Celebration Trigger
+            // Disparador de Celebración
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
             try {
                 if (window.confetti) {
@@ -161,7 +161,7 @@
                 console.log("Confetti error", e);
             }
 
-            // 2. Wait 2 seconds then show modal
+            // 2. Esperar 2 segundos y luego mostrar modal
             setTimeout(() => {
                 setShowCompletionIcon(false);
                 showConfirm("Finalizar Rutina", "Â¿Deseas guardar el entrenamiento completado?", async () => {
@@ -170,14 +170,14 @@
                         routine_id: (routineState?.id || routine?.id),
                         start_time: new Date(Date.now() - globalTime * 1000).toISOString(),
                         end_time: new Date().toISOString(),
-                        sets: sessionLogRef.current // Use REF to ensure latest data
+                        sets: sessionLogRef.current // Usar REF para asegurar datos más recientes
                     };
                     if (window.showLoader) window.showLoader("Guardando sesiÃ³n...");
-                    // Save logic
+                    // Lógica de guardado
                     try {
 
                         const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                        const timeoutId = setTimeout(() => controller.abort(), 15000); // Tiempo de espera de 15s
 
                         try {
                             const res = await fetch("/workout/api/session/save", {
@@ -200,7 +200,7 @@
                     } catch (e) {
                         console.error("Save error:", e);
 
-                        // Attempt offline save immediately if online save failed
+                        // Intentar guardado offline inmediatamente si falla el guardado online
                         let offlineSaved = false;
                         if (window.offlineManager) {
                             try {
@@ -233,8 +233,8 @@
                             }
                         }
 
-                        // If we are here, BOTH online and offline (auto) failed, or offlineManager missing.
-                        // Show Recovery Modal to user
+                        // Si estamos aquí, AMBOS intentos (online y offline automático) fallaron, o falta offlineManager.
+                        // Mostrar Modal de Recuperación al usuario
                         if (window.hideLoader) window.hideLoader();
 
                         setConfirmModal({
@@ -246,7 +246,7 @@
                             cancelText: "Salir sin Guardar",
                             type: "danger",
                             onConfirm: async () => {
-                                // Retry Offline Force
+                                // Reintentar Forzar Offline
                                 try {
                                     window.showLoader("Forzando guardado local...");
                                     if (window.offlineManager) {
@@ -261,7 +261,7 @@
                                     window.hideLoader();
                                     alert("Error final: " + retryErr.message + ". Se saldrÃ¡ y cancelarÃ¡ la sesiÃ³n.");
 
-                                    // FORCE CANCEL
+                                    // CANCELACIÓN FORZADA
                                     try {
                                         localStorage.removeItem("workout_running_state");
                                         localStorage.removeItem("offline_pending_session");
@@ -271,9 +271,9 @@
                                 }
                             },
                             onCancel: async () => {
-                                // Exit without saving
+                                // Salir sin guardar
                                 if (confirm("Â¿Seguro que deseas perder los datos de esta sesiÃ³n?")) {
-                                    // FORCE CANCEL to unlock server
+                                    // CANCELACIÓN FORZADA para desbloquear servidor
                                     try {
                                         localStorage.removeItem("workout_running_state");
                                         localStorage.removeItem("offline_pending_session");
@@ -334,10 +334,10 @@
             console.log("Starting countdown...");
             ensureNotificationPermission();
 
-            // NOTE: We no longer use internal state for countdown (setShowCountdown) 
-            // because we use the external overlay animation.
+            // NOTA: Ya no usamos estado interno para cuenta regresiva (setShowCountdown) 
+            // porque usamos la animación de superposición externa.
 
-            // Fetch session start immediately to lock it
+            // Obtener inicio de sesión inmediatamente para bloquearla
             fetch("/workout/api/session/start", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

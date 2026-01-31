@@ -1,11 +1,11 @@
 /**
- * Reusable Sidebar Logic for User and Admin panels.
- * Handles:
- * 1. Collapse/Expand state (persisted via localStorage)
- * 2. Position Left/Right (persisted via localStorage)
- * 3. Mobile Sidebar toggle and overlay
+ * Lógica de Barra Lateral Reutilizable para paneles de Usuario y Administrador.
+ * Maneja:
+ * 1. Estado de Colapsar/Expandir (persistido vía localStorage)
+ * 2. Posición Izquierda/Derecha (persistida vía localStorage)
+ * 3. Alternancia y superposición de la barra lateral móvil
  * 
- * Usage:
+ * Uso:
  * initSidebar({
  *   collapsedKey: 'sidebar_collapsed', 
  *   rightKey: 'sidebar_right'
@@ -20,7 +20,7 @@ function initSidebar(config) {
     const toggleIcon = sidebarToggle ? sidebarToggle.querySelector("i") : null;
     const posButtons = document.querySelectorAll(".pos-toggle-btn");
 
-    // --- 1. Load Preferences ---
+    // --- 1. Cargar Preferencias ---
     const savedCollapsed = localStorage.getItem(collapsedKey) === "true";
     const savedRight = localStorage.getItem(rightKey) === "true";
 
@@ -48,7 +48,7 @@ function initSidebar(config) {
         });
     }
 
-    // Apply initial state
+    // Aplicar estado inicial
     if (savedCollapsed) body.classList.add("sb-collapsed");
 
     if (savedRight) {
@@ -59,7 +59,7 @@ function initSidebar(config) {
     }
     updateToggleIcon();
 
-    // --- 2. Toggle Sidebar Event ---
+    // --- 2. Evento de Alternar Barra Lateral ---
     if (sidebarToggle) {
         sidebarToggle.addEventListener("click", () => {
             body.classList.toggle("sb-collapsed");
@@ -69,10 +69,10 @@ function initSidebar(config) {
         });
     }
 
-    // --- 3. Position Toggle Events ---
+    // --- 3. Eventos de Alternar Posición ---
     posButtons.forEach(btn => {
         btn.addEventListener("click", () => {
-            const targetPos = btn.dataset.pos; // 'left' or 'right'
+            const targetPos = btn.dataset.pos; // 'left' (izquierda) o 'right' (derecha)
             if (targetPos === "right") {
                 body.classList.add("sb-right");
                 localStorage.setItem(rightKey, "true");
@@ -86,7 +86,7 @@ function initSidebar(config) {
         });
     });
 
-    // --- 4. Mobile Sidebar Logic ---
+    // --- 4. Lógica de Barra Lateral Móvil ---
     const mobileToggle = document.getElementById("mobile-sidebar-toggle");
     const sidebarFixed = document.querySelector(".sidebar-fixed");
     const sidebarOverlay = document.getElementById("sidebar-overlay");
@@ -107,7 +107,7 @@ function initSidebar(config) {
         sidebarOverlay.addEventListener("click", closeMobileSidebar);
     }
 
-    // Close sidebar when clicking a link on mobile (UX improvement)
+    // Cerrar barra lateral al hacer clic en un enlace en móvil (mejora de UX)
     const navLinks = sidebarFixed ? sidebarFixed.querySelectorAll(".nav-link") : [];
     navLinks.forEach(link => {
         link.addEventListener("click", () => {
@@ -116,11 +116,11 @@ function initSidebar(config) {
             }
         });
     });
-    // --- 5. User Menu Floating Fix (iOS/Overflow) ---
+    // --- 5. Corrección de Menú de Usuario Flotante (iOS/Desbordamiento) ---
     const userCollapse = document.getElementById("user-collapse");
     if (userCollapse && sidebarFixed) {
         userCollapse.addEventListener('show.bs.collapse', function () {
-            // Only if sidebar is visually collapsed (desktop mode)
+            // Solo si la barra lateral está visualmente colapsada (modo escritorio)
             if (document.body.classList.contains("sb-collapsed")) {
                 sidebarFixed.classList.add("overflow-visible");
             }
@@ -130,16 +130,16 @@ function initSidebar(config) {
             sidebarFixed.classList.remove("overflow-visible");
         });
 
-        // Improve click outside behavior for the "floating" menu
+        // Mejorar comportamiento de clic fuera para el menú "flotante"
         document.addEventListener('click', function (event) {
             if (document.body.classList.contains("sb-collapsed") &&
                 userCollapse.classList.contains('show') &&
                 !userCollapse.contains(event.target) &&
                 !event.target.closest('.dropdown-toggle-user')) {
 
-                // If we clicked outside the menu AND outside the toggle, close it.
-                // NOTE: We need to use Bootstrap's API to close it properly if possible,
-                // or just remove the class if simple toggle isn't enough.
+                // Si hicimos clic fuera del menú Y fuera del toggle, cerrarlo.
+                // NOTA: Necesitamos usar la API de Bootstrap para cerrarlo correctamente si es posible,
+                // o simplemente eliminar la clase si la alternancia simple no es suficiente.
                 const bsCollapse = bootstrap.Collapse.getInstance(userCollapse);
                 if (bsCollapse) {
                     bsCollapse.hide();

@@ -3,7 +3,7 @@
     const { useWorkout } = window.Runner.hooks;
 
     window.Runner.components.PreStart = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
-        // Dependencies
+        // Dependencias
         const { Header, MessageBar, RoutineDetails } = window.Runner.components;
         const { routine, startWorkout } = useWorkout();
 

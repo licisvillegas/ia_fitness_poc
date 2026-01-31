@@ -49,7 +49,7 @@
             }
         }, [currentStep?.id, status, isPaused, getStepExerciseMeta, checkRepMotivation]);
 
-        // Global Timer & Notification Checker
+        // Temporizador global y comprobador de notificaciones
         useEffect(() => {
             if ((status !== 'WORK' && status !== 'REST') || isPaused) return;
             const int = setInterval(() => {
@@ -92,7 +92,7 @@
             return () => clearInterval(int);
         }, [status, isPaused, getStepExerciseMeta, checkRepMotivation, currentStepRef]);
 
-        // Step Timer Logic (Countdown)
+        // Lógica del temporizador de paso (Cuenta regresiva)
         useEffect(() => {
             if (status === 'REST') {
                 if (stepTimer === 10 && !notificationFlagsRef.current.endurance10) {
@@ -131,7 +131,7 @@
             return () => clearInterval(stepIntervalRef.current);
         }, [isTimerRunning, stepTimer, isPaused]);
 
-        // Handling Timer Completion via Effect
+        // Manejo de la finalización del temporizador vía efecto
         useEffect(() => {
             if (stepTimer === 0 && isTimerRunning) {
                 setIsTimerRunning(false);

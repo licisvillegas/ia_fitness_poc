@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     };
 
-    // Global toggle function
+    // Función global de cambio
     window.toggleTheme = function () {
         const currentTheme = html.getAttribute('data-theme');
         if (currentTheme === 'light') {
@@ -30,20 +30,20 @@ document.addEventListener("DOMContentLoaded", function () {
         updateIcon();
     };
 
-    // Load saved theme
+    // Cargar tema guardado
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
         html.setAttribute('data-theme', 'light');
     }
-    // No else needed as default is dark (no attribute)
+    // No se necesita else ya que el predeterminado es oscuro (sin atributo)
 
     updateIcon();
 
-    // Bind sidebar toggle if exists
+    // Vincular cambio de barra lateral si existe
     if (themeToggle) {
         themeToggle.addEventListener('click', window.toggleTheme);
     }
-    // Image Protection: Prevent context menu on images
+    // Protección de Imágenes: Prevenir menú contextual en imágenes
     document.addEventListener('contextmenu', function (e) {
         if (e.target.tagName === 'IMG') {
             e.preventDefault();

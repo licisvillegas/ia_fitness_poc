@@ -155,7 +155,7 @@ if (playBtn) {
 if (themeSelect && imgThin && imgMuscle && imgOver) {
   themeSelect.addEventListener('change', (e) => {
     activeMaleTheme = e.target.value;
-    activeFemaleTheme = 'FD1'; // Basic override if simple select
+    activeFemaleTheme = 'FD1'; // Anulación básica para selección simple
     applyGender();
   });
   applyGender();
@@ -176,7 +176,7 @@ if (themeToggle) {
       console.log('Switched female theme to:', activeFemaleTheme);
     }
 
-    // Add visual feedback
+    // Agregar retroalimentación visual
     if (activeMaleTheme === 'MaleFitness' || activeFemaleTheme === 'FemaleFitness') {
       themeToggle.classList.remove('btn-outline-warning');
       themeToggle.classList.add('btn-warning');
@@ -280,13 +280,13 @@ function computeSymmetryScores(measurements) {
   const shoulders = toNumber(data.shoulders);
   const waist = toNumber(data.waist);
 
-  // Aggregates
+  // Agregados
   const armL = bicepsL + forearmL;
   const armR = bicepsR + forearmR;
   const legL = thighL + calfL;
   const legR = thighR + calfR;
 
-  // Rule of three relative to average
+  // Regla de tres relativa al promedio
   const calcScore = (val, counterpart) => {
     if (!val && !counterpart) return 80;
     const avg = (val + counterpart) / 2;
@@ -298,7 +298,7 @@ function computeSymmetryScores(measurements) {
   const scoreLegL = calcScore(legL, legR);
   const scoreLegR = calcScore(legR, legL);
 
-  // Trunk: V-Taper score relative to 1.618 ideal
+  // Tronco: Puntuación V-Taper relativa al ideal 1.618
   const currentVtaper = shoulders / (waist || 1);
   const scoreTrunk = (currentVtaper / 1.618) * 100;
 
@@ -342,7 +342,7 @@ function updateSegmentalUI(scores) {
 
   if (emptyState) emptyState.classList.add('d-none');
 
-  // Calculate points
+  // Calcular puntos
 
   const values = [scores.sup, scores.cross, scores.vtaper, scores.xframe, scores.lateral];
   const points = buildPentagonPoints(values); // Devuelve cadena "x,y x,y ..."
@@ -519,7 +519,7 @@ function updateSegmentalUI(scores) {
   });
 }
 
-let currentChartMode = 'proportion'; // 'proportion' or 'symmetry'
+let currentChartMode = 'proportion'; // 'proportion' o 'symmetry'
 let cachedMeasurements = null;
 
 const toggleChartBtn = document.getElementById('toggle-chart-mode');
@@ -527,12 +527,12 @@ if (toggleChartBtn) {
   toggleChartBtn.addEventListener('click', () => {
     currentChartMode = currentChartMode === 'proportion' ? 'symmetry' : 'proportion';
 
-    // Update Icon
+    // Actualizar Ícono
     toggleChartBtn.innerHTML = currentChartMode === 'proportion'
       ? '<i class="fas fa-random"></i>'
       : '<i class="fas fa-balance-scale"></i>';
 
-    // Re-render
+    // Re-renderizar
     if (cachedMeasurements) {
       const scores = currentChartMode === 'proportion'
         ? computePentagonScores({ measurements: cachedMeasurements })
@@ -556,7 +556,7 @@ async function loadSegmentalData() {
     const data = await resp.json();
     cachedMeasurements = data.measurements || {};
 
-    // Initial render based on default mode
+    // Renderizado inicial basado en modo predeterminado
     const scores = currentChartMode === 'proportion'
       ? computePentagonScores(data)
       : computeSymmetryScores(data);

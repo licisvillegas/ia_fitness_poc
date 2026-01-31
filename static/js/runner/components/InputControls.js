@@ -19,7 +19,7 @@
         const rpe8Ref = useRef(null);
         const completeBtnRef = useRef(null);
 
-        // ... (focusWeightInput and useEffects remain unchanged)
+        // ... (focusWeightInput y useEffects permanecen sin cambios)
 
         const focusWeightInput = (selectAll = true) => {
             if (!weightInputRef.current) return false;
@@ -30,7 +30,7 @@
 
         useEffect(() => {
             const exerciseId = step.exercise?.exercise_id || step.exercise?._id || step.exercise?.id;
-            // ... (rest of useEffect logic)
+            // ... (resto de la lógica de useEffect)
             let nextWeight = step.target.weight || '';
             let nextReps = step.target.reps || '';
             if (exerciseId || step.exercise?.name) {
@@ -116,7 +116,7 @@
             if (isCompleting) return;
             setIsCompleting(true);
 
-            // Trigger Flex Animation
+            // Activar Animación Flex
             if (window.WorkoutAnimations && typeof window.WorkoutAnimations.flexEffect === 'function') {
                 window.WorkoutAnimations.flexEffect();
             }
@@ -169,7 +169,7 @@
 
         return (
             <div className="py-1">
-                {/* Plate Calculator Icon - Focus Mode Only */}
+                {/* Icono de Calculadora de Discos - Solo Modo Foco */}
                 {focusMode && (
                     <div className="position-absolute top-0 start-0 m-2 d-flex align-items-center gap-2" style={{ zIndex: 10 }}>
                         <button

@@ -89,7 +89,7 @@
                         </button>
                     )}
 
-                    {/* Create explicit cancel button that shows up in WORK or REST */}
+                    {/* Crear botón de cancelación explícito que aparece en TRABAJO o DESCANSO */}
                     <button
                         className="btn btn-sm btn-outline-danger rounded-circle"
                         onClick={cancelWorkout}

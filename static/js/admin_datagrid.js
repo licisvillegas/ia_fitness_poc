@@ -1,7 +1,7 @@
 /**
- * AdminDataGrid - Reusable component for AJAX DataTables with Pagination & Search
+ * AdminDataGrid - Componente reutilizable para Tablas de Datos AJAX con Paginación y Búsqueda
  * 
- * Usage:
+ * Uso:
  * const grid = new AdminDataGrid({
  *   tableId: 'usersTableBody',
  *   paginationId: 'paginationContainer',
@@ -66,7 +66,7 @@ class AdminDataGrid {
             url.searchParams.set('limit', this.pageSize);
             if (this.currentSearch) url.searchParams.set('search', this.currentSearch);
 
-            // Append extra filters
+            // Adjuntar filtros extra
             Object.keys(this.filters).forEach(key => {
                 url.searchParams.set(key, this.filters[key]);
             });
@@ -127,7 +127,7 @@ class AdminDataGrid {
                 tr.appendChild(td);
             });
 
-            // Actions Column (if configured)
+            // Columna de Acciones (si está configurada)
             if (this.config.actions) {
                 const td = document.createElement('td');
                 td.className = "text-end";
@@ -164,7 +164,7 @@ class AdminDataGrid {
 
         container.innerHTML = html;
 
-        // Bind events using querySelector within the container
+        // Vincular eventos usando querySelector dentro del contenedor
         const prevBtn = container.querySelector('.pagination-prev');
         const nextBtn = container.querySelector('.pagination-next');
 
@@ -177,9 +177,9 @@ class AdminDataGrid {
     }
 }
 
-// Helper to allow simple onclick wiring
+// Ayudante para permitir vinculación simple onclick
 window.createAdminGrid = (config) => {
-    window.gridInstance = new AdminDataGrid(config); // Limit: supports only 1 grid per page for now
+    window.gridInstance = new AdminDataGrid(config); // Límite: soporta solo 1 cuadrícula por página por ahora
     window.gridInstance.init();
     return window.gridInstance;
 };

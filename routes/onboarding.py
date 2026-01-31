@@ -76,6 +76,7 @@ class ActivityLevel(str, Enum):
     LIGHTLY_ACTIVE = "lightly_active"
     MODERATELY_ACTIVE = "moderately_active"
     VERY_ACTIVE = "very_active"
+    EXTRA_ACTIVE = "extra_active"
 
 class InjuryType(str, Enum):
     NONE = "none"
@@ -427,6 +428,21 @@ def submit_wizard():
             "submission_date": datetime.now(),
             "data": onboarding_data
         })
+
+        # 4. Sync initial preferences (Inheritance)
+        # We use $setOnInsert to ensures this only happens if the preference doc doesn't exist
+        # or if we are creating it for the first time.
+        try:
+            db.user_preferences.update_one(
+                {"user_id": user_id},
+                {"$setOnInsert": {
+                    "target_frequency": submission.days_available
+                }},
+                upsert=True
+            )
+            logger.info(f" synced days_available to user_preferences for {user_id}")
+        except Exception as ex:
+            logger.warning(f"Could not sync user_preferences: {ex}")
 
         return jsonify({"message": "Onboarding completed successfully"}), 200
 

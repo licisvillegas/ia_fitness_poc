@@ -1,6 +1,6 @@
 /**
  * OfflineManager
- * Handles offline storage and synchronization of workout sessions using IndexedDB.
+ * Maneja almacenamiento offline y sincronización de sesiones de entrenamiento usando IndexedDB.
  */
 class OfflineManager {
     constructor() {
@@ -143,7 +143,7 @@ class OfflineManager {
                     await this.deleteSession(record.id);
                     console.log(`Synced session ${record.id}`);
 
-                    // Optional: Show a toast/notification to user
+                    // Opcional: Mostrar un aviso/notificación al usuario
                     if (window.showToast) window.showToast("Sesion sincronizada exitosamente", "success");
                     if (record && record.routine_id) {
                         this.emitSyncEvent({ routine_id: record.routine_id, session_id: record.id });
@@ -151,7 +151,7 @@ class OfflineManager {
 
                 } catch (e) {
                     console.error(`Failed to sync session ${record.id}`, e);
-                    // Keep in DB to retry later
+                    // Mantener en DB para reintentar más tarde
                 }
             }
         } catch (e) {
@@ -188,7 +188,7 @@ class OfflineManager {
     }
 
     async uploadSession(record) {
-        // Remove internal ID and metadata before sending
+        // Eliminar ID interno y metadatos antes de enviar
         const { id, storedAt, ...payload } = record;
 
         const res = await fetch("/workout/api/session/save", {
@@ -205,5 +205,5 @@ class OfflineManager {
     }
 }
 
-// Expose global instance
+// Exponer instancia global
 window.offlineManager = new OfflineManager();

@@ -1,13 +1,13 @@
 /**
  * notifications_ui.js
- * Handles polling and UI rendering for in-app notifications.
+ * Maneja el sondeo y el renderizado de la interfaz de usuario para las notificaciones en la aplicación.
  */
 
 (function () {
-    const NOTIFICATION_POLL_INTERVAL = 60000; // 60 seconds
+    const NOTIFICATION_POLL_INTERVAL = 60000; // 60 segundos
     let unreadCount = 0;
 
-    // Selectors match the injected HTML in sidebar.html
+    // Los selectores coinciden con el HTML inyectado en sidebar.html
     const badgeEl = document.getElementById('notifications-badge');
     const profileBadgeEl = document.getElementById('profile-notification-badge');
     const userIconContainer = document.querySelector('.user-icon-container');
@@ -16,24 +16,24 @@
     const parentContainer = document.getElementById('notifications-menu-item'); // Li container
     const markAllBtn = document.getElementById('notifications-mark-all');
 
-    if (!parentContainer) return; // Exit if sidebar item doesn't exist
+    if (!parentContainer) return; // Salir si el elemento de la barra lateral no existe
 
     /**
-     * Poll for pending notifications
+     * Sondear notificaciones pendientes
      */
     async function checkNotifications() {
         try {
             const res = await fetch('/api/notifications/pending');
-            if (!res.ok) return; // Silent fail
+            if (!res.ok) return; // Fallo silencioso
             const data = await res.json();
 
             unreadCount = data.count || 0;
             updateBadge();
 
-            // If dropdown is open, re-render list? Or just update count?
-            // Usually re-rendering live is nice but might be disruptive.
-            // For now, update badge. If dropdown open, maybe simpler to let user refresh by reopen.
-            // But if we want live updates in list:
+            // Si el desplegable está abierto, ¿volver a renderizar la lista? ¿O simplemente actualizar el contador?
+            // Generalmente renderizar en vivo es agradable pero puede ser disruptivo.
+            // Por ahora, actualizar la insignia. Si el desplegable está abierto, tal vez sea más simple dejar que el usuario actualice al volver a abrir.
+            // Pero si queremos actualizaciones en vivo en la lista:
             if (dropdownEl && dropdownEl.classList.contains('show')) {
                 renderList(data.notifications || []);
             }
@@ -46,15 +46,15 @@
         const userCollapse = document.getElementById('user-collapse');
         const isMenuOpen = userCollapse && userCollapse.classList.contains('show');
 
-        // Logic: 
-        // If unread > 0:
-        //   If Menu Closed -> Show Profile Badge (red dot/number) on photo.
-        //   If Menu Open   -> Show Normal Badge on list item.
+        // Lógica: 
+        // Si no leídos > 0:
+        //   Si Menú Cerrado -> Mostrar Insignia de Perfil (punto rojo/número) en la foto.
+        //   Si Menú Abierto   -> Mostrar Insignia Normal en el elemento de la lista.
 
         if (unreadCount > 0) {
             if (!isMenuOpen) {
-                // Menu Closed: Highlight Profile Photo
-                if (badgeEl) badgeEl.classList.add('d-none'); // Hide normal
+                // Menú Cerrado: Resaltar Foto de Perfil
+                if (badgeEl) badgeEl.classList.add('d-none'); // Ocultar normal
 
                 if (profileBadgeEl) {
                     profileBadgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
@@ -63,7 +63,7 @@
                 if (userIconContainer) userIconContainer.classList.add('has-notifications');
 
             } else {
-                // Menu Open: Highlight List Item
+                // Menú Abierto: Resaltar Elemento de la Lista
                 if (profileBadgeEl) profileBadgeEl.classList.add('d-none');
                 if (userIconContainer) userIconContainer.classList.remove('has-notifications');
 
@@ -73,24 +73,24 @@
                 }
             }
         } else {
-            // No notifications: Hide all
+            // Sin notificaciones: Ocultar todo
             if (badgeEl) badgeEl.classList.add('d-none');
             if (profileBadgeEl) profileBadgeEl.classList.add('d-none');
             if (userIconContainer) userIconContainer.classList.remove('has-notifications');
         }
     }
 
-    // Listen for User Menu Toggle to update badge position instantly
+    // Escuchar el cambio del menú de usuario para actualizar la insignia instantáneamente
     const userCollapse = document.getElementById('user-collapse');
     if (userCollapse) {
         userCollapse.addEventListener('shown.bs.collapse', updateBadge);
         userCollapse.addEventListener('hidden.bs.collapse', updateBadge);
-        // Also listen to start events for responsiveness
+        // También escuchar eventos de inicio para capacidad de respuesta
         userCollapse.addEventListener('show.bs.collapse', () => setTimeout(updateBadge, 10));
         userCollapse.addEventListener('hide.bs.collapse', () => setTimeout(updateBadge, 10));
     }
 
-    // Keep listener on sidebar toggle just in case
+    // Mantener el listener en el toggle de la sidebar por si acaso
     const sidebarToggle = document.getElementById('sidebar-toggle');
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', () => {
@@ -111,13 +111,13 @@
             const item = document.createElement('div');
             const typeClass = n.type ? `type-${n.type}` : 'type-info';
             item.className = `notification-item ${unreadCount > 0 ? 'unread' : ''} ${typeClass}`;
-            // Actually, API /pending returns unread. So all are unread.
+            // De hecho, la API /pending devuelve no leídos. Así que todos son no leídos.
 
             const timeStr = new Date(n.created_at).toLocaleString('es-ES', {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
-            // Icon Selection
+            // Selección de Icono
             let iconClass = 'fa-info-circle';
             if (n.type === 'success') iconClass = 'fa-check-circle';
             else if (n.type === 'warning') iconClass = 'fa-exclamation-triangle';
@@ -144,7 +144,7 @@
     }
 
     async function handleNotificationClick(notification) {
-        // 1. Mark as read
+        // 1. Marcar como leído
         try {
             await fetch('/api/notifications/mark-read', {
                 method: 'POST',
@@ -152,11 +152,11 @@
                 body: JSON.stringify({ notification_id: notification.id })
             });
 
-            // 2. Navigate if link
+            // 2. Navegar si hay enlace
             if (notification.link) {
                 window.location.href = notification.link;
             } else {
-                // If no link, just fetch updated list and remove item visually
+                // Si no hay enlace, solo obtener la lista actualizada y eliminar el elemento visualmente
                 checkNotifications();
             }
         } catch (e) {
@@ -171,13 +171,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ all: true })
             });
-            checkNotifications(); // Refresh (should be 0)
+            checkNotifications(); // Refrescar (debería ser 0)
         } catch (e) {
             console.error('Error marking all read', e);
         }
     }
 
-    // Toggle Logic
+    // Lógica de Alternancia
     const toggleLink = parentContainer.querySelector('a');
     if (toggleLink) {
         toggleLink.addEventListener('click', async (e) => {
@@ -188,7 +188,7 @@
             if (isShown) {
                 dropdownEl.classList.remove('show');
             } else {
-                // Fetch latest before showing
+                // Obtener lo último antes de mostrar
                 const res = await fetch('/api/notifications/pending');
                 if (res.ok) {
                     const data = await res.json();
@@ -197,26 +197,26 @@
                     renderList(data.notifications);
                 }
 
-                // --- Dynamic Positioning Logic ---
+                // --- Lógica de Posicionamiento Dinámico ---
                 const rect = toggleLink.getBoundingClientRect();
-                const dropdownWidth = 300; // Match CSS width in notifications.css
+                const dropdownWidth = 300; // Coincidir con el ancho de CSS en notifications.css
 
-                // Position to the right of the button by default (Expanded Sidebar)
+                // Posicionar a la derecha del botón por defecto (Barra lateral expandida)
                 let left = rect.right + 10;
                 let top = rect.top;
 
-                // Adjust vertical if it overflows bottom
-                // (Optional refinement: if (top + height > window.innerHeight) ...)
+                // Ajustar vertical si se desborda por abajo
+                // (Refinamiento opcional: if (top + height > window.innerHeight) ...)
 
-                // Check horizontal overflow (Mobile or small screens)
+                // Verificar desbordamiento horizontal (Móvil o pantallas pequeñas)
                 if (left + dropdownWidth > window.innerWidth) {
-                    // Try to left align (e.g. for right sidebar or mobile overlap)
-                    // Or center?
-                    // Safe fallback: minimal right margin
+                    // Intentar alinear a la izquierda (ej. para barra lateral derecha o solapamiento móvil)
+                    // ¿O centrar?
+                    // Retorno seguro: margen derecho mínimo
                     left = window.innerWidth - dropdownWidth - 10;
                 }
 
-                // Apply styles
+                // Aplicar estilos
                 dropdownEl.style.top = `${top}px`;
                 dropdownEl.style.left = `${left}px`;
 
@@ -224,17 +224,17 @@
             }
         });
 
-        // Close on Resize/Scroll to prevent floating detachment
+        // Cerrar al redimensionar/desplazar para evitar separación flotante
         window.addEventListener('resize', () => {
             if (dropdownEl.classList.contains('show')) dropdownEl.classList.remove('show');
         });
         window.addEventListener('scroll', () => {
-            // Optional: Close on scroll, or update position? Closing is safer/easier.
+            // Opcional: Cerrar al desplazar, ¿o actualizar posición? Cerrar es más seguro/fácil.
             if (dropdownEl.classList.contains('show')) dropdownEl.classList.remove('show');
-        }, true); // Capture phase to catch scrolling of any container
+        }, true); // Fase de captura para detectar el desplazamiento de cualquier contenedor
     }
 
-    // Mark All Handler
+    // Manejador de Marcar Todo
     if (markAllBtn) {
         markAllBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -242,7 +242,7 @@
         });
     }
 
-    // Close on click outside
+    // Cerrar al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (dropdownEl && dropdownEl.classList.contains('show')) {
             if (!dropdownEl.contains(e.target) && !parentContainer.contains(e.target)) {
@@ -251,9 +251,9 @@
         }
     });
 
-    // Initial Poll
+    // Sondeo Inicial
     checkNotifications();
-    // Start Interval
+    // Iniciar Intervalo
     setInterval(checkNotifications, NOTIFICATION_POLL_INTERVAL);
 
 })();

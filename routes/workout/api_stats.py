@@ -56,7 +56,33 @@ def api_get_adherence_config():
             return jsonify({"error": "DB not ready"}), 503
 
         pref = db.user_preferences.find_one({"user_id": user_id}) or {}
-        target_frequency = pref.get("target_frequency", 3)
+        target_frequency = pref.get("target_frequency")
+
+        # Smart Inheritance: If not set, try to get from Onboarding
+        if target_frequency is None:
+            try:
+                onboarding = db.onboarding_submissions.find_one(
+                    {"user_id": user_id}, 
+                    sort=[("submission_date", -1)]
+                )
+                if onboarding and "data" in onboarding:
+                    days = onboarding["data"].get("days_available")
+                    if days:
+                        target_frequency = int(days)
+                        # Auto-generate preference record
+                        db.user_preferences.update_one(
+                            {"user_id": user_id},
+                            {"$set": {"target_frequency": target_frequency}},
+                            upsert=True
+                        )
+                        logger.info(f"Lazy-synced adherence target for {user_id} from onboarding")
+            except Exception as e:
+                logger.warning(f"Failed to inherit adherence target: {e}")
+
+        # Fallback default
+        if target_frequency is None:
+            target_frequency = 3
+
         return jsonify({"target_frequency": target_frequency}), 200
     except Exception as e:
         logger.error(f"Error loading adherence config: {e}")

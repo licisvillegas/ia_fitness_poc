@@ -56,7 +56,7 @@ async function initializeDashboardCharts(data, latestUserWeight) {
         plugins: { legend: { labels: { color: textColor } } },
         scales: {
             x: { ticks: { color: textColor }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+            y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true }
         }
     };
 
@@ -76,7 +76,21 @@ async function initializeDashboardCharts(data, latestUserWeight) {
                     tension: 0.3
                 }]
             },
-            options: commonOpts
+            options: {
+                ...commonOpts,
+                scales: {
+                    ...commonOpts.scales,
+                    y: {
+                        ...commonOpts.scales.y,
+                        beginAtZero: false,
+                        min: Math.max(0, Math.floor((weights.length > 0 ? Math.min(...weights) : 0) - 10)),
+                        ticks: {
+                            ...commonOpts.scales.y.ticks,
+                            stepSize: 5
+                        }
+                    }
+                }
+            }
         }));
     }
 

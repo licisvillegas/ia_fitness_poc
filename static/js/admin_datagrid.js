@@ -89,53 +89,124 @@ class AdminDataGrid {
 
     showLoading() {
         const tbody = document.getElementById(this.config.tableId);
-        if (!tbody) return;
-        const colSpan = this.config.columns.length + 1;
-        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i> Cargando datos...</td></tr>`;
+        const spinner = `<div class="text-center py-4 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i> Cargando datos...</div>`;
+
+        if (tbody) {
+            const colSpan = this.config.columns.length + 1;
+            tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-secondary"><i class="fas fa-spinner fa-spin me-2"></i> Cargando datos...</td></tr>`;
+        }
+
+        if (this.config.mobileId) {
+            const container = document.getElementById(this.config.mobileId);
+            if (container) container.innerHTML = spinner;
+        }
     }
 
     showError() {
         const tbody = document.getElementById(this.config.tableId);
-        if (!tbody) return;
-        const colSpan = this.config.columns.length + 1;
-        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Error al cargar datos.</td></tr>`;
+        const errorMsg = `<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Error al cargar datos.</div>`;
+
+        if (tbody) {
+            const colSpan = this.config.columns.length + 1;
+            tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Error al cargar datos.</td></tr>`;
+        }
+
+        if (this.config.mobileId) {
+            const container = document.getElementById(this.config.mobileId);
+            if (container) container.innerHTML = errorMsg;
+        }
     }
 
     renderTable(items) {
         const tbody = document.getElementById(this.config.tableId);
-        if (!tbody) return;
-        tbody.innerHTML = "";
+
+        // Render Desktop Table
+        if (tbody) {
+            tbody.innerHTML = "";
+            if (items.length === 0) {
+                const colSpan = this.config.columns.length + 1;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-secondary">No se encontraron resultados.</td></tr>`;
+            } else {
+                items.forEach(row => {
+                    const tr = document.createElement('tr');
+
+                    this.config.columns.forEach(col => {
+                        const td = document.createElement('td');
+                        if (col.className) td.className = col.className;
+
+                        if (col.render) {
+                            td.innerHTML = col.render(row);
+                        } else if (col.key) {
+                            td.textContent = row[col.key] || "-";
+                        }
+                        tr.appendChild(td);
+                    });
+
+                    // Columna de Acciones (si está configurada)
+                    if (this.config.actions) {
+                        const td = document.createElement('td');
+                        td.className = "text-end";
+                        td.innerHTML = this.config.actions(row);
+                        tr.appendChild(td);
+                    }
+
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Render Mobile List (if configured)
+        this.renderMobile(items);
+    }
+
+    renderMobile(items) {
+        if (!this.config.mobileId) return;
+        const container = document.getElementById(this.config.mobileId);
+        if (!container) return;
+
+        container.innerHTML = "";
 
         if (items.length === 0) {
-            const colSpan = this.config.columns.length + 1;
-            tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-secondary">No se encontraron resultados.</td></tr>`;
+            container.innerHTML = `<div class="text-center py-4 text-secondary">No se encontraron resultados.</div>`;
             return;
         }
 
         items.forEach(row => {
-            const tr = document.createElement('tr');
+            const card = document.createElement('div');
+            // Use bg-card explicitly to match theme cards. Added mb-3 for spacing between cards.
+            card.className = "card bg-card border-secondary border-opacity-25 shadow-sm mb-3";
 
+            let html = `<div class="card-body">`;
+
+            // Loop columns
             this.config.columns.forEach(col => {
-                const td = document.createElement('td');
-                if (col.className) td.className = col.className;
-
+                let val = "";
                 if (col.render) {
-                    td.innerHTML = col.render(row);
+                    val = col.render(row);
                 } else if (col.key) {
-                    td.textContent = row[col.key] || "-";
+                    val = row[col.key] || "-";
                 }
-                tr.appendChild(td);
+
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-info opacity-75 fw-bold small text-uppercase" style="font-size: 0.75rem;">${col.label || ''}</span>
+                        <div class="text-end ps-3 text-theme" style="max-width: 60%; word-break: break-word;">${val}</div>
+                    </div>
+                `;
             });
 
-            // Columna de Acciones (si está configurada)
+            // Actions
             if (this.config.actions) {
-                const td = document.createElement('td');
-                td.className = "text-end";
-                td.innerHTML = this.config.actions(row);
-                tr.appendChild(td);
+                html += `
+                    <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top border-secondary border-opacity-25">
+                        ${this.config.actions(row)}
+                    </div>
+                `;
             }
 
-            tbody.appendChild(tr);
+            html += `</div>`;
+            card.innerHTML = html;
+            container.appendChild(card);
         });
     }
 

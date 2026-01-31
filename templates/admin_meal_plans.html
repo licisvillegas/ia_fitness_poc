@@ -280,7 +280,36 @@
         const fOutput = document.getElementById('fOutput');
 
         // --- Standard User Search Logic ---
+        function clearInterface() {
+          currentPlan = null;
+          lastGeneratedInput = null;
+          lastGeneratedBackend = null;
+
+          // Clear list & msg
+          document.getElementById('adminPlanList').innerHTML = '';
+          document.getElementById('adminMsg').textContent = '';
+
+          // Clear Details (Right Pane)
+          document.getElementById('adminPlanMeta').textContent = '';
+          document.getElementById('adminPlanActiveBadge').style.display = 'none';
+          document.getElementById('adminPlanInputSummary').innerHTML = '';
+
+          document.getElementById('fBackend').value = '';
+          document.getElementById('fPlanId').value = '';
+          document.getElementById('fNotes').value = '';
+          document.getElementById('fOutput').value = '';
+
+          // Clear Visuals
+          document.getElementById('previewContainer').innerHTML = '<p class="text-secondary small text-center mt-5">Selecciona un plan para visualizar.</p>';
+          document.getElementById('editorContainer').innerHTML = '';
+
+          // Clear msgs
+          if (document.getElementById('aiMsg')) document.getElementById('aiMsg').textContent = '';
+          document.getElementById('adminSaveMsg').textContent = '';
+        }
+
         function selectUser(u) {
+          clearInterface();
           // Auto-trigger load
           loadPlans();
         }
@@ -292,7 +321,8 @@
           buttonId: "btnLookupUser",
           clearButtonId: "btnClearUserSearch",
           storageKey: "admin_working_user",
-          onSelect: selectUser
+          onSelect: selectUser,
+          onClear: clearInterface
         });
         // ----------------------------------
 

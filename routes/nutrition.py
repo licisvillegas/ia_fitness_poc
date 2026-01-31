@@ -25,44 +25,6 @@ def ai_nutrition_plan(user_id: str):
             if meals_raw is not None and str(meals_raw).strip() != "":
                 meals_val = max(3, min(6, int(meals_raw)))
         except Exception:
-            meals_val = None
-        prefs = request.args.get("prefs") or ((request.get_json() or {}).get("prefs") if request.is_json else None)
-        exclude = request.args.get("exclude") or ((request.get_json() or {}).get("exclude") if request.is_json else None)
-        cuisine = request.args.get("cuisine") or ((request.get_json() or {}).get("cuisine") if request.is_json else None)
-        notes = request.args.get("notes") or ((request.get_json() or {}).get("notes") if request.is_json else None)
-
-        active = extensions.db.plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
-        if not active:
-            return jsonify({"error": "No hay plan activo para el usuario"}), 404
-
-        np = active.get("nutrition_plan") or {}
-        total_kcal = np.get("calories_per_day") or np.get("kcal_obj")
-        if not total_kcal:
-            return jsonify({"error": "El plan activo no contiene calorías objetivo"}), 400
-        macros = np.get("macros") or {}
-
-        # Normaliza macros p/c/g a protein/carbs/fat si vienen del ajuste AI
-        macros_norm = {
-            "protein": macros.get("protein", macros.get("p")),
-            "carbs": macros.get("carbs", macros.get("c")),
-            "fat": macros.get("fat", macros.get("g")),
-        }
-
-        context = {
-            "total_kcal": float(total_kcal),
-            "macros": macros_norm,
-            "meals": meals_val if meals_val is not None else 4,
-            "prefs": prefs,
-            "exclude": exclude,
-            "cuisine": cuisine,
-            "notes": notes,
-            "user_id": user_id,
-            "plan_id": str(active.get("_id")) if active.get("_id") is not None else None,
-        }
-
-        agent = MealPlanAgent()
-        log_agent_execution("start", "MealPlanAgent", agent, context, {"endpoint": "/ai/nutrition/plan/<user_id>", "user_id": user_id})
-        result = agent.run(context)
         log_agent_execution("end", "MealPlanAgent", agent, context, 
             {"endpoint": "/ai/nutrition/plan/<user_id>", "user_id": user_id, "output_keys": list(result.keys()) if isinstance(result, dict) else None})
         

@@ -43,7 +43,8 @@
       background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(37, 99, 235, 0.25));
       background-color: var(--bg-body);
       /* fallback */
-      height: 90vh;
+      height: 52vh;
+      min-height: 340px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -87,9 +88,20 @@
       }
 
       .hero {
-        background-image: url('/static/images/IMG_1571.jpg');
+        height: 34vh;
+        min-height: 210px;
+        padding: 2rem 0;
+        background-image: url('/static/images/IMG_3664.jpeg');
         background-size: cover;
-        background-position: center;
+        background-position: center 25%;
+      }
+
+      .hero h1 {
+        font-size: 1.65rem;
+      }
+
+      .hero p {
+        font-size: 0.96rem;
       }
     }
 
@@ -100,19 +112,23 @@
       }
 
       .hero {
-        background-image: url('/static/images/IMG_1571.jpg');
+        height: 34vh;
+        min-height: 210px;
+        padding: 2rem 0;
+        background-image: url('/static/images/IMG_3664.jpeg');
         background-size: cover;
-        background-position: center;
+        background-position: center 25%;
       }
     }
 
     .hero h1 {
-      font-size: 3rem;
+      font-size: clamp(2rem, 3.2vw, 2.6rem);
       font-weight: 700;
       color: #ffffff !important;
     }
 
     .hero p {
+      font-size: 1.05rem;
       color: #ffffff !important;
     }
 
@@ -450,11 +466,8 @@
     <!-- Seccion hero -->
     <!-- Hero con video y descripcion -->
     <section class="hero">
-      <!-- Video de fondo (usa poster si falta el video) -->
-      <video autoplay="" class="hero-video" loop="" muted="" playsinline="" poster="/static/images/IMG_1571.jpg">
-        <source src="/static/videos/B6C7D05D-8000-462D-89CE-BE94145A4123.MP4" type="video/mp4" />
-        <!-- Si no hay soporte de video, se muestra el poster/fondo -->
-      </video>
+      <!-- Imagen de fondo (reemplaza el video) -->
+      <img class="hero-video" src="/static/images/IMG_3664.jpeg" alt="Imagen destacada" />
       <div aria-hidden="true" class="hero-overlay">
       </div>
       <div class="container">

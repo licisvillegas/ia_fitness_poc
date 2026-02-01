@@ -70,6 +70,35 @@
         .landing-hero {
             background-image: radial-gradient(circle at 1px 1px, var(--border-color) 1px, transparent 0);
             background-size: 30px 30px;
+            min-height: 60vh;
+        }
+
+        .landing-hero h1 {
+            font-size: clamp(2.2rem, 4vw, 3rem);
+        }
+
+        .landing-hero .lead {
+            font-size: 1.05rem;
+        }
+
+        @media (max-width: 767px) {
+            .landing-hero {
+                min-height: 50vh;
+                padding-top: 2.5rem;
+                padding-bottom: 2.5rem;
+            }
+
+            .landing-hero h1 {
+                font-size: 2rem;
+            }
+
+            .landing-hero .lead {
+                font-size: 0.98rem;
+            }
+
+            .logo-adaptive {
+                height: 120px !important;
+            }
         }
     </style>
 </head>
@@ -87,7 +116,7 @@
                     <h1 class="display-3 fw-bold mb-3 text-gradient-primary">Bienvenido a</h1>
                     <div class="text-center mb-3">
                         <img src="/static/images/logo.png" alt="Synapse Fit" class="logo-adaptive"
-                            style="height: 216px; width: auto;">
+                            style="height: 160px; width: auto;">
                     </div>
                     <p class="lead text-secondary mb-4 mx-auto" style="max-width: 600px;">
                         Tu compañero inteligente para alcanzar tu mejor versión. Entrena, come y vive mejor con el poder

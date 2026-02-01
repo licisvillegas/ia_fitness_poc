@@ -42,7 +42,8 @@
         url('/static/images/IMG_1558.JPG');
       background-size: cover;
       background-position: center;
-      height: 75vh;
+      height: 50vh;
+      min-height: 340px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -52,13 +53,31 @@
     }
 
     .hero h1 {
-      font-size: 3rem;
+      font-size: clamp(2rem, 3.2vw, 2.6rem);
       font-weight: 700;
       color: #ffffff !important;
     }
 
     .hero p {
+      font-size: 1.05rem;
       color: #ffffff !important;
+    }
+
+    @media (max-width: 767px) {
+      .hero {
+        height: 34vh;
+        min-height: 210px;
+        padding: 2rem 0;
+        background-position: center 25%;
+      }
+
+      .hero h1 {
+        font-size: 1.65rem;
+      }
+
+      .hero p {
+        font-size: 0.96rem;
+      }
     }
 
     /* Sección Alimentación */

@@ -48,6 +48,11 @@ def create_app():
 
     # Registrar middleware
     print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)
+    
+    # 0. Global Account Lock (Highest Priority Security Check)
+    from middleware.lock_middleware import check_account_lock
+    app.before_request(check_account_lock)
+
     app.before_request(check_user_profile)    # Priority 1: Profile Completeness
     app.before_request(check_onboarding_status) # Priority 2: Onboarding Flow
     app.before_request(check_workout_lock)

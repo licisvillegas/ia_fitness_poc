@@ -400,6 +400,13 @@
                 </div>
               </div>
               <div class="mb-3">
+                <label class="form-label" for="regReferral">
+                  C&oacute;digo de Referido (Opcional)
+                </label>
+                <input class="form-control" id="regReferral" placeholder="C&oacute;digo de tu entrenador" type="text"
+                  autocomplete="off" />
+              </div>
+              <div class="mb-3">
                 <label class="form-label" data-i18n="auth_password_label" for="regPassword">
                   Contrase&ntilde;a
                 </label>
@@ -424,7 +431,7 @@
               </button>
               <p class="mt-3 mb-0 text-muted small">
                 <span data-i18n="auth_terms_intro">
-                  Al registrarte aceptas nuestros
+                  Synapse Fit registrarte aceptas nuestros
                 </span>
                 <a data-i18n="auth_terms" href="#">
                   T&eacute;rminos
@@ -555,7 +562,8 @@
             name: document.getElementById('regName').value.trim(),
             username: document.getElementById('regUsername').value.trim(),
             email: document.getElementById('regEmail').value.trim(),
-            password: passwordField.value
+            password: passwordField.value,
+            referral_code: document.getElementById('regReferral')?.value.trim()
           };
 
           try {

@@ -36,6 +36,12 @@ def _get_subscription_payload(raw_data):
     return raw_data.get("subscription") or raw_data
 
 
+def send_instant_push(user_id, title, body, url, context=None, meta=None):
+    """
+    Public wrapper for synchronous push notification.
+    """
+    return _send_push_notification_sync(user_id, title, body, url, context, meta)
+
 def _send_push_notification_sync(user_id, title, body, url, context=None, meta=None):
     """
     Synchronous helper to send push notification.

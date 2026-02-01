@@ -10,27 +10,59 @@ from extensions import logger, db
 
 load_dotenv()
 
-USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending"}
+from datetime import datetime
+
+USER_STATUS_VALUES = {"active", "inactive", "suspended", "pending", "expired"}
 USER_STATUS_DEFAULT = "active"
 
 def ensure_user_status(user_id: str, default_status: str = "active") -> str:
     """
     Asegura que el usuario tenga un status en user_status.
-    Si no existe, lo crea con el status por defecto.
-    Retorna el status actual del usuario.
+    Verifica la fecha de vigencia (valid_until) y expira si corresponde.
     """
     if not user_id or extensions.db is None:
         return default_status
     
     try:
         status_doc = extensions.db.user_status.find_one({"user_id": user_id})
+        
+        # 1. Crear si no existe
         if not status_doc:
             extensions.db.user_status.insert_one({
                 "user_id": user_id,
-                "status": default_status
+                "status": default_status,
+                "created_at": datetime.utcnow()
             })
             return default_status
-        return status_doc.get("status", default_status)
+            
+        current_status = status_doc.get("status", default_status)
+        
+        # 2. Verificar Vigencia (Solo si está activo)
+        valid_until = status_doc.get("valid_until")
+        if current_status == "active" and valid_until:
+             # Si valid_until es string iso, convertirlo (por seguridad, aunque deberia ser datetime)
+             if isinstance(valid_until, str):
+                 try:
+                     valid_until = datetime.fromisoformat(valid_until.replace("Z", "+00:00"))
+                 except:
+                     pass # Fallback or ignore
+             
+             if isinstance(valid_until, datetime) and datetime.utcnow() > valid_until:
+                 # EXPIRAR USUARIO
+                 extensions.db.user_status.update_one(
+                     {"user_id": user_id},
+                     {
+                         "$set": {
+                             "status": "expired", 
+                             "updated_at": datetime.utcnow(),
+                             "expired_at": datetime.utcnow()
+                         }
+                     }
+                 )
+                 logger.info(f"Usuario {user_id} ha expirado automáticamente (Vencía: {valid_until}).")
+                 return "expired"
+
+        return current_status
     except Exception as e:
         logger.error(f"Error en ensure_user_status: {e}")
         return default_status
@@ -100,3 +132,64 @@ def check_admin_access():
         return False, (jsonify({"error": "No tiene privilegios de administrador (Rol insuficiente)"}), 403)
 
     return True, None
+
+def generate_referral_code(prefix="fit"):
+    """Genera un código de referidos único."""
+    import string
+    import random
+    chars = string.ascii_uppercase + string.digits
+    body = ''.join(random.choices(chars, k=6))
+    return f"{prefix.upper()}-{body}"
+
+def check_role_access(allowed_roles=None):
+    """
+    Valida token de admin Y rol específico en DB.
+    allowed_roles: lista de roles permitidos (ej: ['admin', 'coach'])
+    Retorna: (is_valid, response_tuple_if_error, user_role)
+    """
+    if allowed_roles is None:
+        allowed_roles = ["admin"]
+
+    # Reutiliza lógica base de token pero añade flexibilidad de roles
+    # 1. Check Token ENV var existence
+    admin_token = get_admin_token()
+    if not admin_token:
+        return False, (jsonify({"error": "ADMIN_TOKEN no configurado"}), 503), None
+
+    # 2. Check Provided Token
+    provided = (
+        request.cookies.get("admin_token")
+        or request.headers.get("X-Admin-Token")
+    )
+    if provided != admin_token:
+        return False, (jsonify({"error": "Token de seguridad inválido o ausente"}), 403), None
+
+    # 3. Check User Session
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return False, (jsonify({"error": "Sesión de usuario requerida."}), 403), None
+    
+    if not is_user_active(user_id):
+        return False, (jsonify({"error": "Usuario inactivo."}), 403), None
+
+    if extensions.db is None:
+         return False, (jsonify({"error": "DB not available"}), 503), None
+
+    role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
+    if not role_doc:
+        return False, (jsonify({"error": "No tienes roles asignados"}), 403), None
+    
+    user_role = role_doc.get("role")
+    
+    # "admin" siempre debería tener acceso si se pide "coach"? 
+    # Depende de la lógica. Por ahora estricta:
+    # Si pedimos ['coach'], un 'admin' debería poder entrar? Generalmente SÍ (super user).
+    # Vamos a asumir que 'admin' es supeconjunto de todo.
+    
+    effective_allowed = set(allowed_roles)
+    if "admin" in user_role: # Si el usuario es admin, pasa (asumiendo jerarquia simple)
+        pass 
+    elif user_role not in effective_allowed:
+        return False, (jsonify({"error": f"Acceso denegado. Rol requerido: {allowed_roles}"}), 403), user_role
+
+    return True, None, user_role

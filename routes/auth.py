@@ -50,6 +50,49 @@ def auth_register():
             "password_hash": pwd_hash,
             "created_at": datetime.utcnow(),
         }
+        
+        # Referral / Coach Linking Logic
+        referral_code = (data.get("referral_code") or "").strip().upper()
+        if referral_code:
+            coach = extensions.db.users.find_one({"own_referral_code": referral_code})
+            if coach:
+                doc["coach_id"] = coach.get("user_id") or str(coach["_id"])
+                doc["upline_code"] = referral_code
+                logger.info(f"Usuario {username} vinculado a coach (Code: {referral_code})")
+                
+                # --- NOTIFICATION & PUSH START ---
+                try:
+                    from bson import ObjectId
+                    coach_id = doc["coach_id"]
+                    # 1. Sidebar Notification
+                    notification = {
+                        "user_id": ObjectId(coach_id),
+                        "type": "user_pending",
+                        "title": "Nuevo Alumno Pendiente",
+                        "message": f"El usuario {name} ({username}) se ha registrado con tu código y espera activación.",
+                        "read": False,
+                        "created_at": datetime.utcnow(),
+                        "link": "/admin/users?filterStatus=pending"
+                    }
+                    extensions.db.notifications.insert_one(notification)
+                    
+                    # 2. Web Push (Critical)
+                    from routes.push import send_instant_push
+                    send_instant_push(
+                        user_id=coach_id,
+                        title="Nuevo Alumno Registrado",
+                        body=f"{name} requiere activación.",
+                        url="/admin/users?filterStatus=pending"
+                    )
+                except Exception as ex:
+                    logger.error(f"Error sending coach notification: {ex}")
+                # --- NOTIFICATION & PUSH END ---
+
+            else:
+                # If code is invalid, we proceed (or should we error? Standard is often to ignore or warn)
+                # For now, let's just log it.
+                logger.warning(f"Usuario {username} intentó usar código inválido: {referral_code}")
+
         res = extensions.db.users.insert_one(doc)
         user_id = str(res.inserted_id)
         
@@ -115,16 +158,9 @@ def auth_login_api():
         user_id = str(u.get("user_id") or u["_id"])
         status = ensure_user_status(user_id, default_status=USER_STATUS_DEFAULT)
         if status != "active":
-            # AUDIT BLOCKED LOGIN
-            log_audit_event("LOGIN_BLOCKED", user_id=user_id, details={"status": status}, level="warn")
-            
-            if status == "pending":
-                return jsonify({"error": "Cuenta pendiente de activacion por admin.", "status": status}), 403
-            if status == "suspended":
-                return jsonify({"error": "Cuenta suspendida. Contacta a soporte.", "status": status}), 403
-            if status == "inactive":
-                return jsonify({"error": "Cuenta inactiva. Contacta a soporte.", "status": status}), 403
-            return jsonify({"error": "Cuenta no activa.", "status": status}), 403
+            # AUDIT LOG ONLY - Do not block here, let middleware handle it
+            log_audit_event("LOGIN_INACTIVE_STATUS", user_id=user_id, details={"status": status}, level="info")
+            # Continuamos para permitir que el middleware muestre la pantalla de bloqueo adecuada con info.
 
         user = {
             "user_id": user_id,

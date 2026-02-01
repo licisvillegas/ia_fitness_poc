@@ -213,7 +213,7 @@
   dict['auth_password_confirm_label'] = { es: 'Confirmar contrasena', en: 'Confirm password' };
   dict['auth_password_confirm_ph'] = { es: 'Repite tu contrasena', en: 'Repeat your password' };
   dict['auth_create_account'] = { es: 'Crear cuenta', en: 'Create account' };
-  dict['auth_terms_intro'] = { es: 'Al registrarte aceptas nuestros ', en: 'By signing up you accept our ' };
+  dict['auth_terms_intro'] = { es: 'Synapse Fit registrarte aceptas nuestros ', en: 'By signing up you accept our ' };
   dict['auth_terms'] = { es: 'Terminos', en: 'Terms' };
   dict['auth_and'] = { es: 'y', en: 'and' };
   dict['auth_privacy'] = { es: 'Privacidad', en: 'Privacy' };

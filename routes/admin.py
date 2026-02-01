@@ -8,7 +8,15 @@ from werkzeug.security import generate_password_hash
 
 import extensions
 from extensions import logger
-from utils.auth_helpers import check_admin_access, ensure_user_status, generate_admin_csrf, validate_admin_csrf, USER_STATUS_DEFAULT
+from utils.auth_helpers import (
+    check_admin_access, 
+    check_role_access,
+    ensure_user_status, 
+    generate_admin_csrf, 
+    validate_admin_csrf, 
+    generate_referral_code,
+    USER_STATUS_DEFAULT
+)
 from utils.cache import cache_delete
 from utils.helpers import (
     parse_birth_date,
@@ -167,7 +175,24 @@ def admin_privileges_page():
 
 @admin_bp.route("/admin/users")
 def admin_users_page():
-    return render_template("admin_users.html")
+    # Only admins/coaches can see this page (middleware handles it, but let's be safe/clean)
+    # We want to populate the Coach filter
+    coaches = []
+    if extensions.db is not None:
+        # Fetch users who have role='coach' or 'admin'?? Usually just coach.
+        # Let's get anyone with role 'coach' or 'admin' to be safe as "potential coaches"
+        roles_cursor = extensions.db.user_roles.find(
+            {"role": {"$in": ["coach", "admin"]}}
+        )
+        coach_ids = [r["user_id"] for r in roles_cursor]
+        if coach_ids:
+             users_cursor = extensions.db.users.find(
+                 {"user_id": {"$in": coach_ids}},
+                 {"user_id": 1, "name":1, "username":1}
+             ).sort("name", 1)
+             coaches = list(users_cursor)
+
+    return render_template("admin_users.html", coaches=coaches)
 
 @admin_bp.route("/admin/profiles")
 def admin_profiles_page():
@@ -196,7 +221,7 @@ def admin_routine_builder_page():
 @admin_bp.get("/api/admin/users_paginated")
 def list_users_paginated():
     """Endpoint paginado para usuarios."""
-    ok, err = check_admin_access()
+    ok, err, user_role = check_role_access(["admin", "coach"])
     if not ok: return err
 
     try:
@@ -207,25 +232,89 @@ def list_users_paginated():
         if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
 
         query = {}
+        if user_role == "coach":
+            current_uid = request.cookies.get("user_session")
+            query["coach_id"] = current_uid
+        else:
+            # Admin can filter by specific coach
+            filter_coach = request.args.get("filter_coach_id")
+            if filter_coach:
+                query["coach_id"] = filter_coach
+
+        # FILTER BY STATUS (Separate Collection)
+        filter_status = request.args.get("status")
+        if filter_status:
+            # Get user_ids with this status
+            status_matches = extensions.db.user_status.find({"status": filter_status}, {"user_id": 1})
+            status_user_ids = [s["user_id"] for s in status_matches]
+            # Add to query (AND logic)
+            if "user_id" in query:
+                # If we already have a user_id filter (e.g. from search), we need an intersection
+                # But search 'user_id' is usually a regex or exact match on _id/user_id string.
+                # Complex intersection. For simplicity, let's use $in with existing logic 
+                # or just add to query if it's safe.
+                # The search logic below uses "$or", so we need to be careful.
+                # Let's add it as a top level $and if needed, or just modify query user_id.
+                existing_uid_filter = query.get("user_id")
+                if existing_uid_filter:
+                     # This effectively intersects. But "user_id" in query might be from ... wait, 
+                     # we haven't set "user_id" in query yet except for search below.
+                     # Search logic overwrites or appends?
+                     pass
+            
+            # Use $in for user_id. 
+            # CAUTION: If status_user_ids is empty, we should find nothing.
+            if not status_user_ids:
+                 # No users with this status found -> force empty result
+                 query["user_id"] = "NO_MATCH_IMPOSSIBLE_ID" 
+            else:
+                 # If we have other filters that might affect user_id (none yet other than search), we combine.
+                 query["user_id"] = {"$in": status_user_ids}
+
         if search:
             # Safe regex search
             regex = {"$regex": search, "$options": "i"}
-            query = {
-                "$or": [
-                    {"name": regex},
-                    {"email": regex},
-                    {"username": regex},
-                    {"user_id": search} # exact or regex? usually exact for ID but string match is fine
-                ]
-            }
+            search_or = [
+                {"name": regex},
+                {"email": regex},
+                {"username": regex},
+                {"user_id": search}
+            ]
+            
+            # Combine with existing filters (like status/coach)
+            if "$or" in query:
+                 # Should not happen with current logic, but good practice
+                 query["$and"] = [query.pop("$or"), {"$or": search_or}]
+            elif "user_id" in query:
+                 # If we have a status filter on user_id, we must AND it with the search OR
+                 # But wait, search OR contains user_id match too.
+                 # query = { user_id: {$in: [...]}, $or: [...] } is valid.
+                 query["$or"] = search_or
+            else:
+                 query["$or"] = search_or
 
         total = extensions.db.users.count_documents(query)
         cursor = extensions.db.users.find(query, {
-            "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1
+            "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1, 
+            "coach_id": 1, "own_referral_code": 1
         }).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+        
+        users_list = list(cursor)
+        
+        # Batch fetch coach names
+        coach_ids = {u.get("coach_id") for u in users_list if u.get("coach_id")}
+        coach_map = {}
+        if coach_ids:
+            # Query users where user_id IN coach_ids
+            coaches_cursor = extensions.db.users.find(
+                {"user_id": {"$in": list(coach_ids)}}, 
+                {"user_id": 1, "name": 1}
+            )
+            for c in coaches_cursor:
+                coach_map[c["user_id"]] = c.get("name")
 
         data = []
-        for u in cursor:
+        for u in users_list:
             uid = str(u.get("user_id") or u.get("_id"))
             
             # Helper lookups (optimize later with aggregation if slow)
@@ -234,11 +323,18 @@ def list_users_paginated():
             
             status_doc = extensions.db.user_status.find_one({"user_id": uid})
             status = status_doc.get("status", "active") if status_doc else "active"
+            valid_until = status_doc.get("valid_until") if status_doc else None
             
+            # Format dates
             created = u.get("created_at")
             if isinstance(created, datetime):
                 created = created.strftime("%Y-%m-%d %H:%M")
+            if isinstance(valid_until, datetime):
+                valid_until = valid_until.strftime("%Y-%m-%d")
             
+            c_id = u.get("coach_id")
+            coach_name = coach_map.get(c_id, c_id) if c_id else None
+
             data.append({
                 "user_id": uid,
                 "name": u.get("name"),
@@ -246,7 +342,11 @@ def list_users_paginated():
                 "username": u.get("username"),
                 "created_at": created,
                 "role": role,
-                "status": status
+                "status": status,
+                "coach_id": c_id,
+                "coach_name": coach_name,
+                "own_referral_code": u.get("own_referral_code"),
+                "valid_until": valid_until
             })
 
         return jsonify({
@@ -262,12 +362,18 @@ def list_users_paginated():
 @admin_bp.get("/api/admin/users")
 def list_users():
     """Lista usuarios registrados (Legacy/Full List)."""
-    ok, err = check_admin_access()
+    ok, err, user_role = check_role_access(["admin", "coach"])
     if not ok: return err
 
     try:
         if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        users_cursor = extensions.db.users.find({}, {
+        
+        query = {}
+        if user_role == "coach":
+            current_uid = request.cookies.get("user_session")
+            query["coach_id"] = current_uid
+
+        users_cursor = extensions.db.users.find(query, {
             "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1
         }).sort("created_at", -1)
 
@@ -545,14 +651,25 @@ def create_user():
         if extensions.db.users.find_one({"username": username}):
             return jsonify({"error": "Username ya existe"}), 409
 
+        if extensions.db.users.find_one({"username": username}):
+            return jsonify({"error": "Username ya existe"}), 409
+
         pwd_hash = generate_password_hash(password)
+        
+        # Check if generating referral code for new admin/coach
+        own_code = data.get("own_referral_code")
+        if (role in ["admin", "coach"]) and data.get("generate_code"):
+             own_code = generate_referral_code(prefix=username[:3])
+        
         new_user = {
             "name": name,
             "email": email,
             "username": username,
             "username_lower": username.lower(),
             "password_hash": pwd_hash,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "own_referral_code": own_code,
+            "coach_id": data.get("coach_id") # Allow manual assignment
         }
         res = extensions.db.users.insert_one(new_user)
         user_id = str(res.inserted_id)
@@ -563,8 +680,26 @@ def create_user():
         # Role
         extensions.db.user_roles.insert_one({"user_id": user_id, "role": role})
 
-        # Status
-        extensions.db.user_status.insert_one({"user_id": user_id, "status": status, "updated_at": datetime.utcnow()})
+        # Status & Validity
+        valid_until = None
+        if "validity_days" in data:
+            try:
+                days = int(data["validity_days"])
+                if days > 0:
+                     valid_until = datetime.utcnow() + timedelta(days=days)
+            except: pass
+        elif "validity_date" in data and data["validity_date"]:
+             try:
+                 valid_until = datetime.strptime(data["validity_date"], "%Y-%m-%d")
+             except: pass
+
+        st_doc = {
+            "user_id": user_id, 
+            "status": status, 
+            "updated_at": datetime.utcnow(),
+            "valid_until": valid_until
+        }
+        extensions.db.user_status.insert_one(st_doc)
         
         return jsonify({"message": "Usuario creado", "user_id": user_id}), 201
     except Exception as e:
@@ -593,6 +728,21 @@ def update_user(user_id):
             update_fields["username"] = data["username"]
             update_fields["username_lower"] = data["username"].lower()
         
+        # Referral Code Management
+        if data.get("generate_code"):
+            current_role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
+            r_check = current_role_doc.get("role") if current_role_doc else "user"
+            if r_check in ["admin", "coach"]:
+                prefix = (u.get("username") or "FIT")[:3]
+                update_fields["own_referral_code"] = generate_referral_code(prefix=prefix)
+
+        if "own_referral_code" in data and not data.get("generate_code"):
+             # Manual override if needed
+             update_fields["own_referral_code"] = data["own_referral_code"]
+             
+        if "coach_id" in data:
+            update_fields["coach_id"] = data["coach_id"]
+        
         if update_fields:
             extensions.db.users.update_one({"user_id": user_id}, {"$set": update_fields})
 
@@ -604,13 +754,40 @@ def update_user(user_id):
                 upsert=True
             )
 
-        # Edit Status
-        if "status" in data:
-            st = normalize_user_status(data["status"])
-            if st:
+        # Edit Status & Validity
+        if "status" in data or "validity_days" in data or "validity_date" in data:
+            update_st = {}
+            
+            # Status
+            if "status" in data:
+                 st = normalize_user_status(data["status"])
+                 if st: 
+                     update_st["status"] = st
+                     update_st["updated_at"] = datetime.utcnow()
+
+            # Validity
+            if "validity_days" in data:
+                 try:
+                     days = int(data["validity_days"])
+                     if days > 0:
+                         update_st["valid_until"] = datetime.utcnow() + timedelta(days=days)
+                         # Auto-activate if setting validity? Ideally yes if currently expired/inactive
+                         if "status" not in data: # If status manual override not provided
+                             update_st["status"] = "active"
+                 except: pass
+            elif "validity_date" in data:
+                 if data["validity_date"]: # Specific Date
+                     try:
+                         update_st["valid_until"] = datetime.strptime(data["validity_date"], "%Y-%m-%d")
+                     except: pass
+                 else:
+                     # Clear validity (Indefinite)
+                     update_st["valid_until"] = None
+
+            if update_st:
                 extensions.db.user_status.update_one(
                     {"user_id": user_id},
-                    {"$set": {"status": st, "updated_at": datetime.utcnow()}},
+                    {"$set": update_st},
                     upsert=True
                 )
 

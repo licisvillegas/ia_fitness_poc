@@ -62,6 +62,19 @@
             box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
             color: var(--text-main);
         }
+
+        .btn-outline-cyber {
+            color: #00d2ff;
+            border: 1px solid #00d2ff;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-cyber:hover {
+            background: rgba(0, 210, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -84,25 +97,16 @@
             <div class="card bg-panel border-0 shadow-lg mb-4">
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex flex-column gap-3">
-                        <div class="position-relative w-100">
+                        <div class="d-flex flex-column gap-2 mb-3">
                             <div class="d-flex gap-2">
                                 <div class="position-relative flex-grow-1">
                                     <div class="input-group">
-                                        <select class="form-select border-secondary text-secondary" id="filterStatus"
-                                            style="max-width: 150px;">
-                                            <option value="">Estado: Todos</option>
-                                            <option value="active">Activo</option>
-                                            <option value="pending">Pendiente</option>
-                                            <option value="suspended">Suspendido</option>
-                                            <option value="inactive">Inactivo</option>
-                                        </select>
                                         <input type="text" class="form-control" id="userSearchTerm"
                                             placeholder="Buscar: nombre, email o ID...">
                                         <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
-                                    <!-- Campo oculto por compatibilidad -->
                                     <input id="adminUserId" type="hidden">
                                     <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
                                         style="z-index: 1000; display: none; width: 100%;"></div>
@@ -113,38 +117,59 @@
                                 <button id="btnRefresh" class="btn btn-dark border-secondary"><i
                                         class="fas fa-sync-alt"></i></button>
                             </div>
-                        </div>
-
-                        <div class="table-responsive d-none d-md-block">
-                            <table class="table table-dark table-hover align-middle">
-                                <thead>
-                                    <tr class="text-cyber-blue">
-                                        <th class="ps-4">Usuario</th>
-                                        <th>Email</th>
-                                        <th>Nombre</th>
-                                        <th>Estado</th>
-                                        <th class="text-end pe-4">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="usersTableBody">
-                                    <tr>
-                                        <td colspan="5" class="text-center py-5 text-secondary">
-                                            <div class="spinner-border text-primary mb-3" role="status"></div>
-                                            <div>Cargando usuarios...</div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="mobileUsersList" class="d-md-none d-flex flex-column gap-3 p-3">
-                            <!-- Tarjetas moviles inyectadas aqui -->
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-25"
-                            id="paginationContainer">
-                            <!-- Paginacion inyectada por JS -->
+                            <div class="d-flex gap-2">
+                                <select class="form-select border-secondary text-secondary" id="filterStatus"
+                                    style="max-width: 150px;">
+                                    <option value="">Estado: Todos</option>
+                                    <option value="active">Activo</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="suspended">Suspendido</option>
+                                    <option value="inactive">Inactivo</option>
+                                </select>
+                                {% if coaches %}
+                                <select class="form-select border-secondary text-secondary" id="filterCoach"
+                                    style="max-width: 150px;">
+                                    <option value="">Coach: Todos</option>
+                                    {% for c in coaches %}
+                                    <option value="{{ c.user_id }}">{{ c.name or c.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
+
+                    <div class="table-responsive d-none d-md-block">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead>
+                                <tr class="text-cyber-blue">
+                                    <th class="ps-4">Usuario</th>
+                                    <th>Email</th>
+                                    <th>Nombre</th>
+                                    <th>Coach</th>
+                                    <th>Estado</th>
+                                    <th class="text-end pe-4">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-secondary">
+                                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                                        <div>Cargando usuarios...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="mobileUsersList" class="d-md-none d-flex flex-column gap-3 p-3">
+                        <!-- Tarjetas moviles inyectadas aqui -->
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-25"
+                        id="paginationContainer">
+                        <!-- Paginacion inyectada por JS -->
+                    </div>
                 </div>
+            </div>
         </main>
     </div>
 
@@ -180,7 +205,61 @@
                                 <option value="pending">Pendiente</option>
                                 <option value="suspended">Suspendido</option>
                                 <option value="inactive">Inactivo</option>
+                                <option value="expired">Expirado</option>
                             </select>
+                        </div>
+
+                        <div class="mb-3 border-start border-3 border-primary ps-3" id="validitySection">
+                            <label class="form-label text-primary">Vigencia de Cuenta</label>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <input type="date" class="form-control" id="userValidUntil"
+                                        title="Fecha de vencimiento">
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary w-100"
+                                        id="btnClearValidity">Indefinido</button>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-cyber" onclick="setValidity(30)">+30
+                                    días</button>
+                                <button type="button" class="btn btn-sm btn-outline-cyber" onclick="setValidity(90)">+90
+                                    días</button>
+                                <button type="button" class="btn btn-sm btn-outline-cyber" onclick="setValidity(180)">+6
+                                    Meses</button>
+                                <button type="button" class="btn btn-sm btn-outline-cyber" onclick="setValidity(365)">+1
+                                    Año</button>
+                            </div>
+                            <div class="form-text text-secondary small mt-1">
+                                Si defines una fecha, el usuario pasará a "Expirado" automáticamente al cumplirse.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rol</label>
+                            <select class="form-select" id="userRole">
+                                <option value="user">Usuario</option>
+                                <option value="coach">Entrenador</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código Propio</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="userReferralCode"
+                                        placeholder="Ej: FIT-12345">
+                                    <div class="input-group-text bg-dark border-secondary">
+                                        <input class="form-check-input mt-0" type="checkbox" id="checkGenerateCode"
+                                            title="Generar Automático">
+                                    </div>
+                                </div>
+                                <div class="form-text text-secondary small">Marca la casilla para generar.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Coach ID (Link)</label>
+                                <input type="text" class="form-control" id="userCoachId" placeholder="ID del Coach">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" id="lblPassword">Contraseña</label>
@@ -248,6 +327,11 @@
             const usernameInput = document.getElementById('userUsername');
             const emailInput = document.getElementById('userEmail');
             const statusSelect = document.getElementById('userStatus');
+            const validUntilInput = document.getElementById('userValidUntil');
+            const roleSelect = document.getElementById('userRole');
+            const referralInput = document.getElementById('userReferralCode');
+            const genCodeCheck = document.getElementById('checkGenerateCode');
+            const coachIdInput = document.getElementById('userCoachId');
             const passwordInput = document.getElementById('userPassword');
             const helpPassword = document.getElementById('helpPassword');
             const btnSaveUser = document.getElementById('btnSaveUser');
@@ -295,6 +379,15 @@
                     { key: 'email', label: 'Email' },
                     { key: 'name', label: 'Nombre' },
                     {
+                        key: 'coach_name',
+                        label: 'Coach',
+                        render: (u) => {
+                            if (u.coach_name) return `<span class="badge bg-dark border border-secondary text-info text-truncate" style="max-width: 100px;">${u.coach_name}</span>`;
+                            if (u.coach_id) return `<small class="text-muted font-monospace" title="${u.coach_id}">${u.coach_id.substring(0, 6)}...</small>`;
+                            return '<span class="text-muted opacity-25">-</span>';
+                        }
+                    },
+                    {
                         key: 'status',
                         label: 'Estado',
                         render: (u) => {
@@ -302,10 +395,15 @@
                                 active: { cls: 'bg-success', lbl: 'Activo' },
                                 pending: { cls: 'bg-warning', lbl: 'Pendiente' },
                                 suspended: { cls: 'bg-danger', lbl: 'Suspendido' },
-                                inactive: { cls: 'bg-secondary', lbl: 'Inactivo' }
+                                inactive: { cls: 'bg-secondary', lbl: 'Inactivo' },
+                                expired: { cls: 'bg-dark border border-secondary text-secondary', lbl: 'Expirado' }
                             };
                             const st = map[u.status] || map.active;
-                            return `<span class="badge ${st.cls}">${st.lbl}</span>`;
+                            let badge = `<span class="badge ${st.cls}">${st.lbl}</span>`;
+                            if (u.valid_until && u.status === 'active') {
+                                badge += `<div class="small text-muted mt-1" style="font-size:0.7em">Vence: ${u.valid_until}</div>`;
+                            }
+                            return badge;
                         }
                     }
                 ],
@@ -318,7 +416,7 @@
 
                     return `
                         <button class="btn btn-sm btn-outline-info me-2" 
-                            onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${st}')"
+                            onclick="openEditModal('${safeId}', '${safeName}', '${safeUser}', '${safeEmail}', '${st}', '${u.role}', '${u.own_referral_code || ''}', '${u.coach_id || ''}', '${u.valid_until || ''}')"
                             title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -337,13 +435,22 @@
             document.getElementById('filterStatus').addEventListener('change', (e) => {
                 window.userGrid.setFilter('status', e.target.value);
             });
+            const filterCoach = document.getElementById('filterCoach');
+            if (filterCoach) {
+                filterCoach.addEventListener('change', (e) => {
+                    window.userGrid.setFilter('filter_coach_id', e.target.value);
+                });
+            }
 
             // Hook Refresh Button
             document.getElementById('btnRefresh').addEventListener('click', () => window.userGrid.loadPage(1));
             document.getElementById('btnClearUserSearch').addEventListener('click', () => {
                 document.getElementById('userSearchTerm').value = "";
                 document.getElementById('filterStatus').value = "";
+                if (filterCoach) filterCoach.value = "";
+
                 window.userGrid.setFilter('status', "");
+                window.userGrid.setFilter('filter_coach_id', "");
                 window.userGrid.loadPage(1);
             });
 
@@ -356,19 +463,29 @@
                 usernameInput.value = "";
                 emailInput.value = "";
                 statusSelect.value = "active";
+                validUntilInput.value = "";
+                roleSelect.value = "user";
+                referralInput.value = "";
+                coachIdInput.value = "";
+                genCodeCheck.checked = false;
                 passwordInput.value = "";
                 passwordInput.required = true;
                 helpPassword.textContent = "Mínimo 8 caracteres.";
                 userModal.show();
             };
 
-            window.openEditModal = function (id, name, username, email, status) {
+            window.openEditModal = function (id, name, username, email, status, role, referral, coachId, validUntil) {
                 modalTitle.textContent = "Editar Usuario";
                 userIdInput.value = id;
                 nameInput.value = name;
                 usernameInput.value = username;
                 emailInput.value = email;
                 statusSelect.value = status || "active";
+                validUntilInput.value = validUntil || "";
+                roleSelect.value = role || "user";
+                referralInput.value = referral || "";
+                coachIdInput.value = coachId || "";
+                genCodeCheck.checked = false;
                 passwordInput.value = "";
                 passwordInput.required = false;
                 helpPassword.textContent = "Dejar en blanco para mantener la actual.";
@@ -387,7 +504,11 @@
                     email: emailInput.value,
                     password: passwordInput.value || undefined,
                     status: statusSelect.value,
-                    role: 'user' // Default role
+                    role: roleSelect.value,
+                    own_referral_code: referralInput.value || undefined,
+                    generate_code: genCodeCheck.checked,
+                    coach_id: coachIdInput.value || undefined,
+                    validity_date: validUntilInput.value || "" // Send empty string to clear if needed
                 };
 
                 // Basic validation
@@ -453,6 +574,21 @@
                     btnConfirmDelete.textContent = "Eliminar";
                     deletingUserId = null;
                 }
+            });
+
+            // --- VALIDITY HELPERS ---
+            window.setValidity = function (days) {
+                const date = new Date();
+                date.setDate(date.getDate() + days);
+                // Format YYYY-MM-DD
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                document.getElementById('userValidUntil').value = `${year}-${month}-${day}`;
+            };
+
+            document.getElementById('btnClearValidity').addEventListener('click', () => {
+                document.getElementById('userValidUntil').value = "";
             });
         });
     </script>

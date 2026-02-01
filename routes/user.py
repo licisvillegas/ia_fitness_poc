@@ -141,8 +141,28 @@ def profile_page():
                    "name": u.get("name"),
                    "email": u.get("email"),
                    "username": u.get("username"),
+                   "own_referral_code": u.get("own_referral_code"), # For admins/coaches
+                   "coach_id": u.get("coach_id"),
                    "role": "user"
                 }
+
+                # Lookup Coach Name if exists
+                if u.get("coach_id"):
+                     c_doc = extensions.db.users.find_one({"user_id": u["coach_id"]}, {"name":1, "username":1})
+                     if c_doc:
+                         user_context["coach_name"] = c_doc.get("name") or c_doc.get("username")
+                
+                # Fetch Status & Validity
+                status_doc = extensions.db.user_status.find_one({"user_id": user_id})
+                if status_doc:
+                    user_context["status"] = status_doc.get("status")
+                    vu = status_doc.get("valid_until")
+                    if vu:
+                        if isinstance(vu, datetime):
+                            user_context["valid_until"] = vu.strftime("%Y-%m-%d")
+                        else:
+                            user_context["valid_until"] = str(vu)
+
                 role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
                 if role_doc:
                     user_context["role"] = role_doc.get("role")
@@ -150,8 +170,11 @@ def profile_page():
                 p = extensions.db.user_profiles.find_one({"user_id": user_id})
                 if p:
                     bdate = p.get("birth_date")
-                    if isinstance(bdate, datetime):
-                        bdate = bdate.strftime("%Y-%m-%d")
+                    if bdate and hasattr(bdate, "strftime"):
+                         bdate = bdate.strftime("%Y-%m-%d")
+                    elif bdate:
+                         bdate = str(bdate)
+
                     user_context.update({
                         "sex": p.get("sex"),
                         "birth_date": bdate,
@@ -159,13 +182,76 @@ def profile_page():
                         "profile_image_url": p.get("profile_image_url"),
                         "has_profile": True
                     })
+                    print(f"DEBUG PROFILE CONTEXT: {user_context}", flush=True)
                 else:
                     user_context["has_profile"] = False
+                    print(f"DEBUG PROFILE: No profile found for {user_id}", flush=True)
         except Exception as e:
             logger.error(f"Error loading profile context: {e}")
             pass
 
     return render_template("profile.html", user_data=user_context)
+
+@user_bp.route("/payment")
+def payment_page():
+    return render_template("payment.html")
+
+@user_bp.post("/api/user/payments/simulate")
+def api_simulate_payment():
+    """Simula un pago y activa al usuario con vigencia segun el producto."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autenticado"}), 401
+        if extensions.db is None:
+            return jsonify({"error": "DB no disponible"}), 503
+
+        data = request.get_json() or {}
+        product = (data.get("product") or data.get("plan") or "").strip().lower()
+        map_days = {
+            "30": 30,
+            "90": 90,
+            "180": 180,
+            "365": 365,
+            "anual": 365,
+            "annual": 365
+        }
+        days = map_days.get(product)
+        if not days:
+            return jsonify({"error": "Producto invalido"}), 400
+
+        valid_until = datetime.utcnow() + timedelta(days=days)
+        now = datetime.utcnow()
+
+        extensions.db.user_status.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "status": "active",
+                    "valid_until": valid_until,
+                    "updated_at": now,
+                    "last_payment": {
+                        "product": product,
+                        "days": days,
+                        "paid_at": now
+                    }
+                },
+                "$setOnInsert": {
+                    "created_at": now
+                }
+            },
+            upsert=True
+        )
+
+        return jsonify({
+            "message": "Pago simulado y usuario activado",
+            "valid_until": valid_until.strftime("%Y-%m-%d"),
+            "days": days
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error simulando pago: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
 
 @user_bp.post("/api/user/change_password")
 def api_user_change_password():
@@ -248,6 +334,7 @@ def api_user_profile_save():
              if name is not None:
                 extensions.db.users.update_one({"user_id": user_id}, {"$set": {"name": name}})
         
+        print(f"DEBUG SAVE PROFILE: user={user_id} updates={updates}", flush=True)
         return jsonify({"message": "Perfil actualizado", "user_id": user_id}), 200
 
     except Exception as e:

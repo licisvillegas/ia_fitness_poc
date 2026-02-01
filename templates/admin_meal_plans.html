@@ -425,41 +425,79 @@
 
             // Support full object or direct output object
             const output = data.output || data || {};
-            const meals = output.meals || (Array.isArray(output) ? output : []);
 
+            // --- CHECK FOR MULTI-OPTION ---
+            if (output.options && Array.isArray(output.options) && output.options.length > 0) {
+              // Render Tabs for Preview
+              let activeIdx = 0;
+              const tabsDiv = document.createElement('div');
+              tabsDiv.className = 'd-flex justify-content-center gap-2 mb-3';
+
+              const contentDiv = document.createElement('div');
+
+              function renderPreviewTabs() {
+                tabsDiv.innerHTML = '';
+                output.options.forEach((opt, idx) => {
+                  const btn = document.createElement('button');
+                  btn.className = `btn btn-sm ${idx === activeIdx ? 'btn-primary' : 'btn-outline-secondary'}`;
+                  btn.textContent = opt.name || `Opción ${idx + 1}`;
+                  btn.onclick = () => { activeIdx = idx; renderPreviewTabs(); renderPreviewContent(opt); };
+                  tabsDiv.appendChild(btn);
+                });
+              }
+
+              function renderPreviewContent(opt) {
+                contentDiv.innerHTML = '';
+                renderMealCards(opt.meals || [], contentDiv, opt.total_kcal);
+              }
+
+              container.appendChild(tabsDiv);
+              container.appendChild(contentDiv);
+
+              renderPreviewTabs();
+              renderPreviewContent(output.options[0]);
+              return;
+            }
+
+            // --- SINGLE OPTION LEGACY ---
+            const meals = output.meals || (Array.isArray(output) ? output : []);
             if (!meals || meals.length === 0) {
               container.innerHTML = '<p class="text-warning small text-center mt-4">No se detectó lista de "meals" en el JSON.</p>';
               return;
             }
+            renderMealCards(meals, container, output.total_kcal);
 
-            meals.forEach(m => {
-              const el = document.createElement('div');
-              el.className = 'mb-2 p-2 rounded bg-card border-theme';
+          } catch (e) {
+            container.innerHTML = `<p class="text-danger small">Error visualizando JSON: ${e.message}</p>`;
+          }
+        }
 
-              let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
-              (m.items || []).forEach(it => {
-                itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-warning small mx-1">${it.qty || ''}</span> <span class="text-info">(${it.kcal || '-'} kcal)</span></li>`;
-              });
-              itemsHtml += '</ul>';
+        // Helper to render cards into a container
+        function renderMealCards(meals, targetContainer, totalKcal) {
+          meals.forEach(m => {
+            const el = document.createElement('div');
+            el.className = 'mb-2 p-2 rounded bg-card border-theme';
 
-              el.innerHTML = `
+            let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
+            (m.items || []).forEach(it => {
+              itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-warning small mx-1">${it.qty || ''}</span> <span class="text-info">(${it.kcal || '-'} kcal)</span></li>`;
+            });
+            itemsHtml += '</ul>';
+
+            el.innerHTML = `
                             <strong class="text-primary small">${m.name || 'Comida'}</strong>
                             <span class="badge bg-dark border border-secondary text-white" style="font-size:0.7em">${m.total_kcal || m.kcal || 0} kcal</span>
                         </div>
                         ${itemsHtml}
                     `;
-              container.appendChild(el);
-            });
+            targetContainer.appendChild(el);
+          });
 
-            if (output.total_kcal) {
-              const tot = document.createElement('div');
-              tot.className = 'mt-3 pt-2 border-top border-secondary text-end text-success fw-bold small';
-              tot.innerHTML = `TOTAL: ${output.total_kcal} kcal`;
-              container.appendChild(tot);
-            }
-
-          } catch (e) {
-            container.innerHTML = `<p class="text-danger small">Error visualizando JSON: ${e.message}</p>`;
+          if (totalKcal) {
+            const tot = document.createElement('div');
+            tot.className = 'mt-3 pt-2 border-top border-secondary text-end text-success fw-bold small';
+            tot.innerHTML = `TOTAL: ${totalKcal} kcal`;
+            targetContainer.appendChild(tot);
           }
         }
 
@@ -479,30 +517,60 @@
           addMealToVisual();
         });
 
+        // Global state for editor tab
+        let lastEditorOptIdx = 0;
+
         function renderVisualEditor(jsonRaw) {
           const container = document.getElementById('editorContainer');
           container.innerHTML = '';
 
           let data = {};
-          try {
-            if (jsonRaw.trim()) data = JSON.parse(jsonRaw);
-          } catch (e) {
-            container.innerHTML = `<p class="text-danger small">JSON Inválido, corrige en RAW primero: ${e.message}</p>`;
-            return;
-          }
+          try { if (jsonRaw.trim()) data = JSON.parse(jsonRaw); }
+          catch (e) { container.innerHTML = `<p class="text-danger small">JSON Inválido: ${e.message}</p>`; return; }
 
           const output = data.output || data || {};
-          // Work with a local copy of meals to render inputs
-          const meals = output.meals || (Array.isArray(output) ? output : []);
 
-          // Store reference to raw meals for manipulation
-          container.dataset.meals = JSON.stringify(meals);
+          // --- DETECT MULTI OPTION ---
+          let isMulti = false;
+          let activeMeals = [];
 
-          if (meals.length === 0) {
-            container.innerHTML = '<p class="text-muted small">Sin comidas. Agrega una.</p>';
+          if (output.options && Array.isArray(output.options) && output.options.length > 0) {
+            isMulti = true;
+            // Validate index
+            if (lastEditorOptIdx >= output.options.length) lastEditorOptIdx = 0;
+
+            // Render Editor Tabs
+            const tabsDiv = document.createElement('div');
+            tabsDiv.className = 'd-flex gap-2 mb-3 justify-content-center border-bottom border-secondary pb-2';
+
+            output.options.forEach((opt, idx) => {
+              const btn = document.createElement('button');
+              btn.className = `btn btn-sm ${idx === lastEditorOptIdx ? 'btn-info' : 'btn-outline-secondary'}`;
+              btn.textContent = opt.name || `Opción ${idx + 1}`;
+              btn.onclick = () => {
+                lastEditorOptIdx = idx;
+                renderVisualEditor(document.getElementById('fOutput').value);
+              };
+              tabsDiv.appendChild(btn);
+            });
+            container.appendChild(tabsDiv);
+
+            activeMeals = output.options[lastEditorOptIdx].meals || [];
+            container.dataset.optionIdx = lastEditorOptIdx; // Store for global helpers
+          } else {
+            isMulti = false;
+            activeMeals = output.meals || (Array.isArray(output) ? output : []);
+            container.removeAttribute('data-option-idx');
           }
 
-          meals.forEach((m, mIdx) => {
+          if (!activeMeals || activeMeals.length === 0) {
+            const msg = document.createElement('p');
+            msg.className = "text-muted small";
+            msg.textContent = "Sin comidas. Agrega una.";
+            container.appendChild(msg);
+          }
+
+          activeMeals.forEach((m, mIdx) => {
             const card = document.createElement('div');
             card.className = "card mb-3 border-secondary bg-dark";
 
@@ -552,15 +620,39 @@
             container.appendChild(card);
           });
 
-          // Attach 'change' listeners to all inputs to sync back JSON
+          // Attach listeners
           container.querySelectorAll('input').forEach(inp => {
             inp.addEventListener('change', syncVisualToJSON);
           });
         }
 
+        // --- HELPER TO GET TARGET MEALS ARRAY ---
+        function getMealsContext(dataObj) {
+          const container = document.getElementById('editorContainer');
+          const optIdxStr = container.dataset.optionIdx;
+
+          // Normalize Output
+          let out = dataObj.output || dataObj;
+
+          // Check Multi
+          if (out.options && Array.isArray(out.options) && optIdxStr != null) {
+            const idx = parseInt(optIdxStr);
+            if (out.options[idx]) return out.options[idx].meals;
+          }
+
+          // Legacy / Single
+          if (out.meals) return out.meals;
+          // Fallback if structure is just array
+          if (Array.isArray(out)) return out;
+
+          // Init if missing
+          if (!out.meals) out.meals = [];
+          return out.meals;
+        }
+
         window.removeVisualItem = function (mIdx, itIdx) {
           const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsList(current);
+          const meals = getMealsContext(current);
           if (meals[mIdx] && meals[mIdx].items) {
             meals[mIdx].items.splice(itIdx, 1);
             updateAndRender(current);
@@ -569,14 +661,14 @@
 
         window.removeVisualMeal = function (mIdx) {
           const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsList(current);
+          const meals = getMealsContext(current);
           meals.splice(mIdx, 1);
           updateAndRender(current);
         };
 
         window.addVisualItem = function (mIdx) {
           const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsList(current);
+          const meals = getMealsContext(current);
           if (meals[mIdx]) {
             if (!meals[mIdx].items) meals[mIdx].items = [];
             meals[mIdx].items.push({ food: "", qty: "", kcal: 0, macros: { p: 0, c: 0, f: 0 } });
@@ -586,7 +678,7 @@
 
         window.addMealToVisual = function () {
           const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsList(current);
+          const meals = getMealsContext(current);
           meals.push({ name: "Nueva Comida", total_kcal: 0, items: [] });
           updateAndRender(current);
         };
@@ -596,33 +688,34 @@
           catch (e) { return {}; }
         }
 
-        function getMealsList(data) {
-          // normalization logic matching render
-          if (data.output && data.output.meals) return data.output.meals;
-          if (data.meals) return data.meals;
-          if (Array.isArray(data)) return data;
-          // Ensure structure exists if empty
-          if (!data.output) data.output = { meals: [] };
-          return data.output.meals;
-        }
-
         function updateAndRender(dataObj) {
-          // Recalculate global total_kcal if possible
+          // Recalculate totals for the ACTIVE context (or all, but context is easier)
+          // We'll regenerate totals for the context we just edited.
+          const meals = getMealsContext(dataObj);
+
           let total = 0;
-          const meals = getMealsList(dataObj);
           meals.forEach(m => {
             let mTotal = 0;
-            if (m.items) {
-              m.items.forEach(i => mTotal += Number(i.kcal || 0));
-              // Update meal total if items exist (optional, or manual)
-              // Let's decide: strict calculation or manual?
-              // User might want to override. Let's rely on manual input OR auto-sum if manual is 0?
-              // For now, let's just save.
-            }
+            if (m.items) { m.items.forEach(i => mTotal += Number(i.kcal || 0)); }
+            // If manual total is 0/null, use sum. Else trust manual (or just sum always?) 
+            // Let's force sum for items if present.
+            if (!m.total_kcal && m.items && m.items.length > 0) m.total_kcal = mTotal;
+
             total += Number(m.total_kcal || m.kcal || 0);
           });
-          if (dataObj.output) dataObj.output.total_kcal = total;
-          else if (dataObj.total_kcal !== undefined) dataObj.total_kcal = total;
+
+          // Update Option Total or Main Output Total
+          const container = document.getElementById('editorContainer');
+          const optIdxStr = container.dataset.optionIdx;
+          let out = dataObj.output || dataObj;
+
+          if (out.options && optIdxStr != null) {
+            const idx = parseInt(optIdxStr);
+            if (out.options[idx]) out.options[idx].total_kcal = total;
+          } else {
+            if (dataObj.output) dataObj.output.total_kcal = total;
+            else if (dataObj.total_kcal !== undefined) dataObj.total_kcal = total;
+          }
 
           const str = JSON.stringify(dataObj, null, 2);
           fOutput.value = str;
@@ -634,12 +727,9 @@
           const cards = container.querySelectorAll('.card');
 
           const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsList(current);
+          const meals = getMealsContext(current); // Target correct list
 
           // Rebuild meals array from DOM inputs
-          // We assume order hasn't changed (re-render handles structure changes)
-          // so we just read values by index.
-
           cards.forEach((card, mIdx) => {
             const mName = card.querySelector('.inp-m-name').value;
             const mKcal = card.querySelector('.inp-m-kcal').value;
@@ -647,14 +737,11 @@
             if (meals[mIdx]) {
               meals[mIdx].name = mName;
               meals[mIdx].total_kcal = Number(mKcal);
-              // cleanup old key if present?
               delete meals[mIdx].kcal;
 
               const itemRows = card.querySelectorAll('.item-row');
               if (!meals[mIdx].items) meals[mIdx].items = [];
 
-              // If lengths mismatch re-render should have happened. 
-              // We trust indices here.
               itemRows.forEach((row, itIdx) => {
                 if (meals[mIdx].items[itIdx]) {
                   const f = row.querySelector('.inp-food').value;
@@ -675,8 +762,6 @@
             }
           });
 
-          // We don't call updateAndRender here to avoid losing focus while typing.
-          // Just update Textarea.
           const str = JSON.stringify(current, null, 2);
           fOutput.value = str;
         }

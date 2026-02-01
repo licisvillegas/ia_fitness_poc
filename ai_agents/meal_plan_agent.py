@@ -69,24 +69,43 @@ MOCK_DB_V3 = {
 def build_meal_prompt(context_json: str) -> str:
     return f"""
 SYSTEM: Eres un nutricionista deportivo de precisión.
-Objetivo: Generar un plan de comidas donde CADA INGREDIENTE tenga sus calorías y macros desglosados.
+Objetivo: Generar 3 OPCIONES DIFERENTES de planes de comida completo.
 
 REGLAS DE FORMATO (JSON ESTRICTO):
 1. Devuelve SOLO JSON.
-2. Estructura `items` obligatoria para cada comida:
-   "items": [
-      {{
-         "food": "Nombre del alimento",
-         "qty": "Cantidad (ej. 150g, 2 rebanadas)",
-         "kcal": int (Calorías DE ESTE alimento),
-         "macros": {{ "p": int, "c": int, "f": int }} (Gramos de Prot/Carb/Grasa DE ESTE alimento)
-      }}
-   ]
+2. Estructura requerida:
+{{
+  "options": [
+    {{
+      "name": "Opción 1",
+      "total_kcal": int,
+      "macros_daily": {{ "protein": int, "carbs": int, "fat": int }},
+      "meals": [
+        {{
+            "name": "Desayuno",
+            "total_kcal": int,
+            "items": [
+                {{
+                    "food": "Nombre del alimento",
+                    "qty": "Cantidad (ej. 150g)",
+                    "kcal": int,
+                    "macros": {{ "p": int, "c": int, "f": int }}
+                }}
+            ]
+        }}
+      ]
+    }},
+    {{ "name": "Opción 2", ... }},
+    {{ "name": "Opción 3", ... }}
+  ]
+}}
 
 REGLAS NUTRICIONALES:
-- Prioriza proteína en desayuno, comida y cena.
-- Los snacks deben ser sencillos.
-- Asegura que la suma de kcal de los items coincida con el total de la comida.
+1. CALORÍAS EXACTAS: La suma de 'total_kcal' de todas las comidas de UNA opción debe ser igual al 'total_kcal' del usuario (+/- 50 kcal). ESTO ES CRÍTICO.
+2. Prioriza proteína en desayuno, comida y cena.
+3. Los snacks deben ser sencillos.
+4. Asegura que la suma de kcal de los items coincida con el total de la comida.
+5. Las 3 opciones deben ser variadas entre sí (diferentes fuentes de proteína/carbos).
 
 CONTEXTO DEL USUARIO:
 {context_json}
@@ -131,7 +150,12 @@ class MealPlanAgent:
 
         if self._use_openai:
             try:
-                return self._run_openai(prompt)
+                result = self._run_openai(prompt)
+                # Validar estructura mínima
+                if "options" not in result and "meals" in result:
+                    # Retro-compatibilidad si el modelo devuelve estructura antigua
+                    result = {"options": [{"name": "Opción 1", "meals": result["meals"], "total_kcal": context.get("total_kcal")}]}
+                return result
             except Exception as e:
                 logger.error(f"OpenAI Error: {e}. Falling back to mock.")
                 return self._run_mock(context)
@@ -142,10 +166,10 @@ class MealPlanAgent:
         resp = self._client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "Eres un API de nutrición. Devuelve JSON con desglose de macros por ingrediente."},
+                {"role": "system", "content": "Eres un API de nutrición. Devuelve JSON con 3 opciones de menú."},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.2, 
+            temperature=0.4, # Un poco más de creatividad para variaciones
             response_format={"type": "json_object"},
         )
         content = resp.choices[0].message.content
@@ -153,11 +177,7 @@ class MealPlanAgent:
 
     def _run_mock(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Mock v3: Cálculo inverso. 
-        1. Define objetivos de macros por comida.
-        2. Selecciona alimento principal (fuente proteica). Calcula gramos necesarios para cumplir P.
-        3. Selecciona alimento secundario (fuente carbos). Calcula gramos para cumplir C.
-        4. Rellena grasas si faltan.
+        Mock v3: Cálculo inverso generando 3 opciones.
         """
         total_kcal = int(float(context.get("total_kcal", 2200)))
         n_meals = int(context.get("meals", 4))
@@ -169,8 +189,6 @@ class MealPlanAgent:
         c_daily = float(macros.get("carbs", total_kcal * 0.4 / 4))
         f_daily = float(macros.get("fat", total_kcal * 0.3 / 9))
 
-        # Configuración de distribución (Ratio Kcal, Nombre, Tipo)
-        # Simplificado para v3: Usamos listas de tuplas
         dist_map = {
             3: [(0.35, "Desayuno", "breakfast"), (0.40, "Comida", "main"), (0.25, "Cena", "main")],
             4: [(0.30, "Desayuno", "breakfast"), (0.35, "Comida", "main"), (0.10, "Snack", "snack"), (0.25, "Cena", "main")],
@@ -179,49 +197,56 @@ class MealPlanAgent:
         }
         
         selected_config = dist_map.get(n_meals, dist_map[4])
-        total_ratio = sum(x[0] for x in selected_config) # Normalización
+        total_ratio = sum(x[0] for x in selected_config)
 
-        meals_out = []
-        random.seed(total_kcal + n_meals) # Determinismo
+        options = []
+        base_seed = total_kcal + n_meals
 
-        for ratio, name, m_type in selected_config:
-            # 1. Calcular objetivos de la comida
-            r_norm = ratio / total_ratio
-            target_p = int(p_daily * r_norm)
-            target_c = int(c_daily * r_norm)
-            target_f = int(f_daily * r_norm)
-            target_kcal = int(total_kcal * r_norm)
+        for opt_idx in range(1, 4): # Loop 3 times for 3 options
+            random.seed(base_seed + opt_idx * 100) # Variar semilla
+            
+            meals_out = []
+            for ratio, name, m_type in selected_config:
+                r_norm = ratio / total_ratio
+                target_p = int(p_daily * r_norm)
+                target_c = int(c_daily * r_norm)
+                target_f = int(f_daily * r_norm)
+                
+                # Seguridad P min
+                if m_type in ["breakfast", "main"] and target_p < 20:
+                    target_p = 25
 
-            # Seguridad: Mínimo 20g de proteína en comidas principales (guía de Atleta Táctico)
-            if m_type in ["breakfast", "main"] and target_p < 20:
-                target_p = 25
+                items = self._generate_granular_items(m_type, target_p, target_c, target_f)
 
-            items = self._generate_granular_items(m_type, target_p, target_c, target_f)
+                real_kcal = sum(i["kcal"] for i in items)
+                real_p = sum(i["macros"]["p"] for i in items)
+                real_c = sum(i["macros"]["c"] for i in items)
+                real_f = sum(i["macros"]["f"] for i in items)
 
-            # Recalcular totales reales basados en la suma de los items generados
-            real_kcal = sum(i["kcal"] for i in items)
-            real_p = sum(i["macros"]["p"] for i in items)
-            real_c = sum(i["macros"]["c"] for i in items)
-            real_f = sum(i["macros"]["f"] for i in items)
+                meals_out.append({
+                    "name": name,
+                    "kcal": real_kcal,
+                    "total_kcal": real_kcal,
+                    "macros": {"p": real_p, "c": real_c, "f": real_f},
+                    "items": items
+                })
 
-            meals_out.append({
-                "name": name,
-                "kcal": real_kcal,
-                "macros": {"p": real_p, "c": real_c, "f": real_f},
-                "items": items
+            # Totals for this option
+            opt_kcal = sum(m["kcal"] for m in meals_out)
+            opt_p = sum(m["macros"]["p"] for m in meals_out)
+            opt_c = sum(m["macros"]["c"] for m in meals_out)
+            opt_f = sum(m["macros"]["f"] for m in meals_out)
+
+            options.append({
+                "name": f"Opción {opt_idx}",
+                "total_kcal": opt_kcal,
+                "macros_daily": {"p": opt_p, "c": opt_c, "f": opt_f},
+                "meals": meals_out
             })
 
-        # Recalcular totales globales basados en comidas generadas reales para consistencia
-        global_real_kcal = sum(m["kcal"] for m in meals_out)
-        global_real_p = sum(m["macros"]["p"] for m in meals_out)
-        global_real_c = sum(m["macros"]["c"] for m in meals_out)
-        global_real_f = sum(m["macros"]["f"] for m in meals_out)
-
         return {
-            "source": "mock_granular_v3",
-            "total_kcal": global_real_kcal,
-            "macros_daily": {"p": global_real_p, "c": global_real_c, "f": global_real_f},
-            "meals": meals_out,
+            "source": "mock_granular_v3_multi",
+            "options": options,
             "tips": ["Pesa los alimentos en crudo a menos que se indique lo contrario.", "Bebe agua en las comidas."]
         }
 

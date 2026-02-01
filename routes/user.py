@@ -374,22 +374,11 @@ def get_progress(user_id):
             except Exception:
                 pass
 
-        progress_query = {"user_id": user_id}
         assess_query = {"user_id": user_id}
         if date_filter:
-            progress_query["date"] = date_filter
             assess_query["created_at"] = date_filter
 
-        # 1. Fetch Legacy Progress
-        progress_cursor = extensions.db.progress.find(progress_query)
-        if limit:
-            try:
-                progress_cursor = progress_cursor.sort("date", -1).limit(int(limit))
-            except (TypeError, ValueError):
-                pass
-        progress_records = list(progress_cursor)
-        
-        # 2. Fetch Body Assessments
+        # 1. Fetch Body Assessments (Legacy Progress removed)
         # We project only needed fields to match progress structure
         assess_cursor = extensions.db.body_assessments.find(
             assess_query,
@@ -452,7 +441,8 @@ def get_progress(user_id):
             })
             
         # 3. Merge and Normalize Dates
-        all_records = progress_records + assess_records
+        # 3. Use only Assessment Records
+        all_records = assess_records
         
         # Helper to get datetime for sorting
         def get_dt(r):

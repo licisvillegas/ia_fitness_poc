@@ -12,7 +12,7 @@ nutrition_bp = Blueprint('nutrition', __name__)
 
 @nutrition_bp.route("/ai/nutrition/plan/<user_id>", methods=["GET", "POST"])
 def ai_nutrition_plan(user_id: str):
-    """Genera un plan diario de comidas usando el plan activo (kcal/macros)."""
+    """Genera un plan diario de comidas usando evaluaciones corporales (TDEE) y plan activo (macros)."""
     try:
         user_id = normalize_user_id(user_id)
         if extensions.db is None:
@@ -25,10 +25,73 @@ def ai_nutrition_plan(user_id: str):
             if meals_raw is not None and str(meals_raw).strip() != "":
                 meals_val = max(3, min(6, int(meals_raw)))
         except Exception:
+            pass # Ignorar error de parsing
+
+        # Parametros opcionales
+        prefs = request.args.get("prefs", "")
+        exclude = request.args.get("exclude", "")
+        cuisine = request.args.get("cuisine", "")
+        notes = request.args.get("notes", "")
+
+        # 1. Intentar buscar evaluacion corporal reciente para TDEE
+        assessment = extensions.db.body_assessments.find_one(
+            {"user_id": user_id},
+            sort=[("created_at", -1)]
+        )
+        
+        assessment_kcal = None
+        if assessment and assessment.get("output"):
+            ee = assessment["output"].get("energy_expenditure") or {}
+            if ee.get("selected_tdee"):
+                assessment_kcal = ee.get("selected_tdee")
+
+        # 2. Intentar buscar plan activo para macros (y kcal si falta assessment)
+        active = extensions.db.plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
+        
+        total_kcal = None
+        macros = {}
+        plan_id = None
+
+        if active:
+            plan_id = str(active.get("_id"))
+            np = active.get("nutrition_plan") or {}
+            total_kcal = np.get("calories_per_day") or np.get("kcal_obj")
+            macros = np.get("macros") or {}
+        
+        # Prioridad: Assessment TDEE > Plan Kcal
+        if assessment_kcal:
+            total_kcal = assessment_kcal
+
+        if not total_kcal:
+             return jsonify({"error": "No se encontraron objetivos calóricos (ni en Body Assessment ni en Plan activo). Crea una evaluación corporal primero."}), 404
+
+        # Normaliza macros p/c/g a protein/carbs/fat
+        macros_norm = {
+            "protein": macros.get("protein", macros.get("p")),
+            "carbs": macros.get("carbs", macros.get("c")),
+            "fat": macros.get("fat", macros.get("g")),
+        }
+
+        context = {
+            "total_kcal": float(total_kcal),
+            "macros": macros_norm,
+            "meals": meals_val if meals_val is not None else 4,
+            "prefs": prefs,
+            "exclude": exclude,
+            "cuisine": cuisine,
+            "notes": notes,
+            "user_id": user_id,
+            "plan_id": plan_id,
+        }
+
+        agent = MealPlanAgent(model="gpt-4o")
+        result = agent.run(context)
+        
         log_agent_execution("end", "MealPlanAgent", agent, context, 
             {"endpoint": "/ai/nutrition/plan/<user_id>", "user_id": user_id, "output_keys": list(result.keys()) if isinstance(result, dict) else None})
         
         return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+
     except Exception as e:
         logger.error(f"Error generando plan de nutrición: {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
@@ -228,16 +291,30 @@ def activate_meal_plan(plan_id: str):
         # FIX: Define user_id from the document
         user_id = normalize_user_id(mp.get("user_id"))
         search_ids = [user_id]
-        oid = maybe_object_id(user_id)
-        if oid:
-            search_ids.append(oid)
+        user_oid = maybe_object_id(user_id)
+        if user_oid:
+            search_ids.append(user_oid)
 
         try:
-            extensions.db.meal_plans.update_many({"user_id": {"$in": search_ids}}, {"$set": {"active": False}})
-        except Exception:
+            logger.info(f"Deactivating plans for user_id={user_id} search_ids={search_ids} excluding oid={oid}")
+            up_many = extensions.db.meal_plans.update_many(
+                {"user_id": {"$in": search_ids}, "_id": {"$ne": oid}}, 
+                {"$set": {"active": False}}
+            )
+            logger.info(f"Deactivated count: {up_many.modified_count}")
+        except Exception as e:
+            logger.error(f"Error deactivating plans: {e}")
             pass
-        extensions.db.meal_plans.update_one({"_id": oid}, {"$set": {"active": True, "activated_at": datetime.utcnow()}})
-        return jsonify({"message": "Meal plan activado", "meal_plan_id": plan_id}), 200
+        
+        logger.info(f"Activating plan oid={oid}")
+        up_one = extensions.db.meal_plans.update_one({"_id": oid}, {"$set": {"active": True, "activated_at": datetime.utcnow()}})
+        logger.info(f"Activated matched={up_one.matched_count} modified={up_one.modified_count}")
+        
+        # Fetch updated to verify
+        updated_doc = extensions.db.meal_plans.find_one({"_id": oid})
+        is_active = updated_doc.get("active") if updated_doc else False
+        
+        return jsonify({"message": f"Meal plan activado (active={is_active})", "meal_plan_id": plan_id, "active": is_active}), 200
     except Exception as e:
         logger.error(f"Error al activar meal_plan: {e}", exc_info=True)
         return jsonify({"error": "Error interno al activar meal_plan"}), 500

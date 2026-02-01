@@ -83,7 +83,7 @@ async function initializeDashboardCharts(data, latestUserWeight) {
                     y: {
                         ...commonOpts.scales.y,
                         beginAtZero: false,
-                        min: Math.max(0, Math.floor((weights.length > 0 ? Math.min(...weights) : 0) - 10)),
+                        min: weights.length > 0 ? Math.floor(Math.min(...weights) / 10) * 10 : 0,
                         ticks: {
                             ...commonOpts.scales.y.ticks,
                             stepSize: 5

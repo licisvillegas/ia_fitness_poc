@@ -36,86 +36,101 @@
 
     function renderMeals(data, showSave = true) {
         hideSampleCards();
-        container.innerHTML = '';
         const out = data.output || {};
-        const meals = out.meals || [];
 
-        // Calcular totales de los items para asegurar consistencia
+        // --- MULTI-OPTION LOGIC ---
+        // Si hay 'options', renderizamos tabs y seleccionamos el primero por defecto
+        const options = out.options || [];
+
+        // Limpiamos el contenedor
+        container.innerHTML = '';
+
+        // Si hay opciones múltiples, creamos tabs
+        if (options.length > 0) {
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'd-flex justify-content-center gap-2 mb-4';
+
+            // Estado interno para saber cual está activo (pestaña)
+            let activeIdx = 0;
+
+            function renderTabs() {
+                tabsContainer.innerHTML = '';
+                options.forEach((opt, idx) => {
+                    const btnTab = document.createElement('button');
+                    btnTab.className = `btn btn-sm ${idx === activeIdx ? 'btn-primary' : 'btn-outline-primary'}`;
+                    btnTab.textContent = opt.name || `Opoción ${idx + 1}`;
+                    btnTab.onclick = () => {
+                        activeIdx = idx;
+                        renderTabs(); // Actualizar estilos botones
+                        renderOptionContent(options[idx]); // Renderizar contenido
+                    };
+                    tabsContainer.appendChild(btnTab);
+                });
+            }
+
+            container.appendChild(tabsContainer);
+            renderTabs();
+            renderOptionContent(options[0]); // Render inicial
+
+            if (showSave) {
+                btnSave.style.display = 'inline-block';
+                // Al guardar, enviamos TODO el objeto data, que incluye options. 
+                // El backend lo guardará tal cual.
+                btnSave.dataset.payload = JSON.stringify(data);
+            }
+
+            // Función interna para renderizar el contenido de UNA opción
+            function renderOptionContent(optData) {
+                // Borrar contenido previo que NO sea el tabsContainer
+                // Estrategia: limpiar todo lo que esté DESPUÉS del tabsContainer
+                // O mejor: tener un sub-contenedor para las meals
+                let contentBox = document.getElementById('mealsContentBox');
+                if (!contentBox) {
+                    contentBox = document.createElement('div');
+                    contentBox.id = 'mealsContentBox';
+                    container.appendChild(contentBox);
+                } else {
+                    contentBox.innerHTML = '';
+                }
+
+                const meals = optData.meals || [];
+                let dailySumKcal = 0;
+
+                // Render Summary (Total) Update
+                const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
+                if (summaryTotalDiv) {
+                    // Si la opción tiene total explícito, úsalo
+                    const total = optData.total_kcal || optData.kcal;
+                    summaryTotalDiv.innerHTML = `Total Opción: <strong>${total || '?'} kcal</strong>`;
+                }
+                const summaryContainer = document.getElementById('nutritionPlanSummary');
+                if (summaryContainer) summaryContainer.style.display = 'flex';
+
+                // Render Cards
+                meals.forEach(m => {
+                    const card = createMealCard(m);
+                    contentBox.appendChild(card);
+                    // Sumas para validación (opcional, ya que la opción trae sumas)
+                });
+            }
+            return;
+        }
+
+        // --- SINGLE OPTION LEGACY LOGIC ---
+        const meals = out.meals || [];
         let dailySumKcal = 0;
 
-        // Mostrar contenedor de resumen
         const summaryContainer = document.getElementById('nutritionPlanSummary');
         const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
         if (summaryContainer) summaryContainer.style.display = 'flex';
 
-        // Preparar elementos de comida
-        const mealElements = meals.map(m => {
-            const card = document.createElement('div');
-            card.className = 'meal-card';
+        meals.forEach(m => {
+            const card = createMealCard(m);
+            container.appendChild(card);
 
-            const header = document.createElement('div');
-            header.className = 'meal-header';
-            header.onclick = function () { toggleMealDetails(this); };
-
-            const details = document.createElement('div'); details.className = 'meal-details'; details.style.display = 'none';
-            const ul = document.createElement('ul'); ul.className = 'nutrition-list list-group list-group-flush';
-
-            let mealKcalSum = 0;
-            let mealP = 0, mealC = 0, mealF = 0;
-
-            // Renderizar items y acumular sumas
-            (m.items || []).forEach(it => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center bg-transparent';
-
-                const iMacros = it.macros || {};
-                const iP = Number(iMacros.p ?? iMacros.protein ?? 0);
-                const iC = Number(iMacros.c ?? iMacros.carbs ?? 0);
-                const iF = Number(iMacros.f ?? iMacros.fat ?? 0);
-                const iKcal = Number(it.kcal || 0);
-
-                mealKcalSum += iKcal;
-                mealP += iP;
-                mealC += iC;
-                mealF += iF;
-
-                li.innerHTML = `
-                <div>
-                  <strong>${it.food || ''}</strong>
-                  <div class="text-muted small">${it.qty || ''}</div>
-                </div>
-                <div class="text-end small">
-                  <span class="text-primary">${iKcal} kcal</span>
-                  <div class="text-secondary" style="font-size:0.8rem">P:${iP} C:${iC} G:${iF}</div>
-                </div>
-              `;
-                ul.appendChild(li);
-            });
-
-            // Usar valores a nivel de comida si están presentes y son válidos, de lo contrario usar sumas calculadas
-            const displayKcal = (m.total_kcal != null) ? m.total_kcal : ((m.kcal != null && m.kcal !== '-') ? m.kcal : mealKcalSum);
-
-            // Solo usar macros calculados si meal.macros falta o está vacío
-            const mac = m.macros || {};
-            const valC = (mac.c ?? mac.carbs) != null ? (mac.c ?? mac.carbs) : mealC;
-            const valP = (mac.p ?? mac.protein) != null ? (mac.p ?? mac.protein) : mealP;
-            const valF = (mac.f ?? mac.fat) != null ? (mac.f ?? mac.fat) : mealF;
-
+            // Calculo simple de total visual si no viene
+            const displayKcal = (m.total_kcal != null) ? m.total_kcal : ((m.kcal != null && m.kcal !== '-') ? m.kcal : 0);
             dailySumKcal += Number(displayKcal || 0);
-
-            const h = document.createElement('h4'); h.className = 'meal-title'; h.textContent = m.name || 'Comida';
-            const span = document.createElement('span'); span.textContent = `Calorías totales: ${displayKcal} kcal`;
-            const ico = document.createElement('i'); ico.className = 'fas fa-chevron-down';
-            header.appendChild(h); header.appendChild(span); header.appendChild(ico);
-
-            const p = document.createElement('div');
-            p.className = 'p-3 border-top';
-            p.innerHTML = `<i class="fas fa-chart-pie text-secondary me-2"></i>Macronutrientes: <strong>Carbohidratos ${valC}g</strong>, <strong>Proteína ${valP}g</strong>, <strong>Grasa ${valF}g</strong>`;
-
-            details.appendChild(ul); details.appendChild(p);
-            card.appendChild(header); card.appendChild(details);
-
-            return card;
         });
 
         // Mostrar Total Diario
@@ -124,9 +139,6 @@
             summaryTotalDiv.innerHTML = `Total del día: <strong>${dailySumKcal} kcal</strong><br><span class="text-secondary small fw-normal">(Objetivo: ${targetTotal || '-'})</span>`;
         }
 
-        // Adjuntar todas las tarjetas
-        mealElements.forEach(c => container.appendChild(c));
-
         const tips = out.tips || [];
         if (tips.length) {
             const tipsBox = document.createElement('div');
@@ -134,7 +146,69 @@
             tipsBox.innerHTML = `<strong>Consejos:</strong> ${tips.join(' · ')}`;
             container.appendChild(tipsBox);
         }
+
         if (meals.length && showSave) { btnSave.style.display = 'inline-block'; btnSave.dataset.payload = JSON.stringify(data); }
+    }
+
+    // Extracted helper to avoid code duplication
+    function createMealCard(m) {
+        const card = document.createElement('div');
+        card.className = 'meal-card';
+
+        const header = document.createElement('div');
+        header.className = 'meal-header';
+        header.onclick = function () { toggleMealDetails(this); };
+
+        const details = document.createElement('div'); details.className = 'meal-details'; details.style.display = 'none';
+        const ul = document.createElement('ul'); ul.className = 'nutrition-list list-group list-group-flush';
+
+        let mealKcalSum = 0;
+        let mealP = 0, mealC = 0, mealF = 0;
+
+        (m.items || []).forEach(it => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center bg-transparent';
+
+            const iMacros = it.macros || {};
+            const iP = Number(iMacros.p ?? iMacros.protein ?? 0);
+            const iC = Number(iMacros.c ?? iMacros.carbs ?? 0);
+            const iF = Number(iMacros.f ?? iMacros.fat ?? 0);
+            const iKcal = Number(it.kcal || 0);
+
+            mealKcalSum += iKcal;
+            mealP += iP; mealC += iC; mealF += iF;
+
+            li.innerHTML = `
+            <div>
+              <strong>${it.food || ''}</strong>
+              <div class="text-muted small">${it.qty || ''}</div>
+            </div>
+            <div class="text-end small">
+              <span class="text-primary">${iKcal} kcal</span>
+              <div class="text-secondary" style="font-size:0.8rem">P:${iP} C:${iC} G:${iF}</div>
+            </div>
+          `;
+            ul.appendChild(li);
+        });
+
+        const displayKcal = (m.total_kcal != null) ? m.total_kcal : ((m.kcal != null && m.kcal !== '-') ? m.kcal : mealKcalSum);
+        const mac = m.macros || {};
+        const valC = (mac.c ?? mac.carbs) != null ? (mac.c ?? mac.carbs) : mealC;
+        const valP = (mac.p ?? mac.protein) != null ? (mac.p ?? mac.protein) : mealP;
+        const valF = (mac.f ?? mac.fat) != null ? (mac.f ?? mac.fat) : mealF;
+
+        const h = document.createElement('h4'); h.className = 'meal-title'; h.textContent = m.name || 'Comida';
+        const span = document.createElement('span'); span.textContent = `Calorías totales: ${displayKcal} kcal`;
+        const ico = document.createElement('i'); ico.className = 'fas fa-chevron-down';
+        header.appendChild(h); header.appendChild(span); header.appendChild(ico);
+
+        const p = document.createElement('div');
+        p.className = 'p-3 border-top';
+        p.innerHTML = `<i class="fas fa-chart-pie text-secondary me-2"></i>Macronutrientes: <strong>Carbohidratos ${valC}g</strong>, <strong>Proteína ${valP}g</strong>, <strong>Grasa ${valF}g</strong>`;
+
+        details.appendChild(ul); details.appendChild(p);
+        card.appendChild(header); card.appendChild(details);
+        return card;
     }
 
     async function generate() {

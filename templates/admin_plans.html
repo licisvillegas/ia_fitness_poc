@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Synapse Fit | Admin · Edición de Planes</title>
+  <title>Synapse Fit | Admin – Planes Generales</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="/static/css/theme.css" rel="stylesheet">
@@ -12,22 +12,40 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
     /* Theme overrides are handled by theme.css */
-
-    .form-control:focus,
-    .form-select:focus {
-      background: var(--bg-input);
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: var(--bg-body);
       color: var(--text-main);
-      border-color: var(--primary);
-      box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .25);
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .form-text {
-      color: var(--text-secondary);
+    .main-content {
+      height: 100vh;
+      overflow-y: auto;
+      padding-top: 0 !important;
+    }
+
+    /* Layout matches admin_onboarding_submissions */
+    .history-list-col {
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-panel);
+    }
+
+    .history-item {
+      cursor: pointer;
+      transition: background-color 0.2s;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .history-item:hover,
+    .history-item.active {
+      background-color: rgba(59, 130, 246, 0.1) !important;
     }
 
     .badge-active {
       background: #10b981;
-      color: var(--text-main)fff;
+      color: #fff;
     }
 
     .action-toolbar {
@@ -50,522 +68,586 @@
     }
 
     @media (max-width: 768px) {
+
+      body,
+      .main-content {
+        height: auto;
+        overflow: visible;
+      }
+
+      .history-list-col {
+        height: auto;
+        max-height: 400px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+
       .action-toolbar {
         flex-direction: column;
         align-items: stretch;
-      }
-
-      .action-toolbar .action-buttons {
-        flex-wrap: wrap;
       }
 
       .action-toolbar .token-group {
         width: 100%;
         max-width: none;
       }
+    }
 
-      .action-toolbar .ms-auto {
-        width: 100%;
-        justify-content: flex-start;
-      }
+    pre {
+      background: var(--bg-card);
+      color: var(--text-main);
+      padding: 10px;
+      border-radius: 8px;
+      overflow: auto;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Search Results Overlay */
+    #userSearchResults {
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
     }
   </style>
   <meta name="robots" content="noindex,nofollow" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 </head>
 
 <body>
   {% include 'components/sidebar_admin.html' %}
 
   <div class="main-content">
-    <!-- Barra de navegacion removida -->
-
-    <main class="container py-4">
-      <h2 class="mb-3">Edición ligera de planes (Admin)</h2>
-      <p class="muted mb-4">Busca planes por usuario, edita notas y ajustes manuales. Requiere token de administrador.
-      </p>
-
-      <div class="row g-4">
-        <div class="col-lg-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="mb-3">
-                <label class="form-label text-theme">Usuario</label>
-                <div class="input-group">
-                  <input type="text" class="form-control" id="userSearchTerm"
-                    placeholder="Buscar: nombre, email o ID...">
-                  <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
-                    <i class="fas fa-search"></i>
-                  </button>
-                  <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch" title="Limpiar">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-                <!-- Campo oculto por compatibilidad -->
-                <input id="adminUserId" type="hidden">
-                <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
-                  style="z-index: 1000; display: none; width: 90%;"></div>
-              </div>
-              <div class="d-grid">
-                <button id="btnSearchPlans" class="btn btn-primary">Buscar planes</button>
-              </div>
-              <div id="adminMsg" class="mt-3 text-info"></div>
-              <div class="d-grid mt-2">
-                <button id="btnShowGenerator" class="btn btn-outline-primary" style="display: none;">Generar plan
-                  base</button>
-              </div>
-              <hr />
-              <h6 class="mb-2">Planes</h6>
-              <ul id="adminPlanList" class="list-group list-group-flush"></ul>
-            </div>
-          </div>
+    <main class="container-fluid px-0 h-100">
+      <div class="d-flex flex-column h-100">
+        <!-- Encabezado -->
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center bg-dark">
+          <h1 class="h5 mb-0 text-primary fw-bold"><i class="fas fa-dumbbell me-2"></i>Planes Generales</h1>
+          <span class="badge bg-secondary">Vista Administrador</span>
         </div>
 
-        <div class="col-lg-8">
-          <div class="card">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Editar plan</h5>
-                <span id="adminPlanActiveBadge" class="badge" style="display:none;">Activo</span>
+        <div class="row g-0 flex-grow-1 overflow-hidden">
+          <!-- COLUMNA IZQUIERDA: BUSQUEDA + LISTA -->
+          <div class="col-md-3 history-list-col d-flex flex-column">
+            <!-- Busqueda -->
+            <div class="p-3 border-bottom border-secondary bg-dark position-relative">
+              <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="userSearchTerm"
+                  placeholder="Nombre, Email o ID...">
+                <button class="btn btn-outline-primary" type="button" id="btnLookupUser">
+                  <i class="fas fa-search"></i>
+                </button>
+                <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch" title="Limpiar">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
-              <small id="adminPlanMeta" class="muted"></small>
-              <hr />
+              <!-- Resultados -->
+              <div id="userSearchResults" class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+                style="display: none; z-index: 1050; top: 100%;"></div>
 
-              <ul class="nav nav-tabs mb-3" id="planTabs" role="tablist">
-                <li class="nav-item" role="presentation">
+              <input type="hidden" id="adminUserId">
+              <div class="d-grid mt-2">
+                <button id="btnSearchPlans" class="btn btn-sm btn-primary">Cargar Planes</button>
+              </div>
+              <div id="adminMsg" class="text-info small mt-2 fst-italic"></div>
+            </div>
+
+            <!-- Lista Historial -->
+            <div id="history-list-container" class="flex-grow-1 overflow-auto p-0">
+              <ul id="adminPlanList" class="list-group list-group-flush">
+                <div class="p-4 text-center text-muted small">
+                  <i class="fas fa-search fa-2x mb-2 opacity-50"></i><br>
+                  Busca un usuario y carga sus planes.
+                </div>
+              </ul>
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: DETALLE -->
+          <div class="col-md-9 h-100 overflow-auto position-relative">
+            <!-- Estado vacio -->
+            <div id="empty-state"
+              class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary p-5">
+              <i class="fas fa-file-alt fa-4x mb-3 opacity-25"></i>
+              <p class="mb-0 fw-light fs-5">Detalle del Plan</p>
+              <small>Selecciona un plan de la lista o genera uno nuevo.</small>
+              <button class="btn btn-sm btn-outline-primary mt-3"
+                onclick="document.getElementById('planGeneratorSection').style.display='block'; document.getElementById('empty-state').style.display='none'; document.getElementById('detail-container').style.display='block';">
+                <i class="fas fa-plus me-1"></i>Nuevo Plan Base
+              </button>
+            </div>
+
+            <!-- Contenedor Detalle -->
+            <div class="p-4" id="detail-container" style="display:none;">
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4 mb-0 text-white">Editar Plan</h2>
+                <div class="d-flex gap-2">
+                  <span id="adminPlanActiveBadge" class="badge badge-active" style="display:none;">Activo</span>
+                  <small id="adminPlanMeta" class="text-muted align-self-center"></small>
+                </div>
+              </div>
+              <hr class="border-secondary opacity-50" />
+
+              <!-- Generador (Colapsable) -->
+              <div id="planGeneratorSection" class="mb-4 border border-primary rounded p-3 bg-card"
+                style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-2 cursor-pointer"
+                  onclick="document.getElementById('planGeneratorBody').style.display = document.getElementById('planGeneratorBody').style.display==='none'?'block':'none'">
+                  <strong class="text-primary"><i class="fas fa-magic me-2"></i>Generar Nuevo Plan Base</strong>
+                  <i class="fas fa-chevron-down text-muted"></i>
+                </div>
+                <div id="planGeneratorBody">
+                  <p class="small text-secondary mb-3">Genera un plan inicial calculado por algoritmo (sin IA compleja)
+                    para este usuario.</p>
+                  <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                      <label class="form-label text-theme small">Peso (kg)</label>
+                      <input type="number" id="genWeight" class="form-control form-control-sm" placeholder="Ej. 75">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label text-theme small">Objetivo</label>
+                      <select id="genGoal" class="form-select form-select-sm">
+                        <option value="gain_muscle">Ganar Músculo</option>
+                        <option value="lose_fat">Perder Grasa</option>
+                        <option value="maintain">Mantenimiento</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label text-theme small">Nivel</label>
+                      <select id="genLevel" class="form-select form-select-sm">
+                        <option value="beginner">Principiante</option>
+                        <option value="intermediate">Intermedio</option>
+                        <option value="advanced">Avanzado</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <button id="btnDoGenerate" class="btn btn-sm btn-primary w-100">
+                        <i class="fas fa-play me-1"></i> Generar
+                      </button>
+                    </div>
+                  </div>
+                  <div id="genMsg" class="mt-2 small fw-bold"></div>
+                </div>
+              </div>
+
+              <!-- Pestañas Edición -->
+              <ul class="nav nav-tabs border-secondary mb-3" id="planTabs" role="tablist">
+                <li class="nav-item">
                   <button class="nav-link active text-theme bg-transparent" id="plan-edit-tab" data-bs-toggle="tab"
-                    data-bs-target="#plan-edit" type="button" role="tab" aria-controls="plan-edit"
-                    aria-selected="true">Editar</button>
+                    data-bs-target="#plan-edit" type="button">Editar Datos</button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                   <button class="nav-link text-theme bg-transparent" id="plan-json-tab" data-bs-toggle="tab"
-                    data-bs-target="#plan-json" type="button" role="tab" aria-controls="plan-json"
-                    aria-selected="false">JSON</button>
+                    data-bs-target="#plan-json" type="button">JSON Raw</button>
                 </li>
               </ul>
 
               <div class="tab-content" id="planTabsContent">
-                <div class="tab-pane fade show active" id="plan-edit" role="tabpanel" aria-labelledby="plan-edit-tab">
+                <!-- EDITAR DATOS -->
+                <div class="tab-pane fade show active" id="plan-edit" role="tabpanel">
                   <div class="row g-3">
                     <div class="col-md-4">
-                      <label class="form-label text-theme">Calorías/día</label>
-                      <input id="fCalories" type="number" class="form-control" placeholder="p.ej. 2300">
+                      <label class="form-label text-theme small">Calorías/día</label>
+                      <input id="fCalories" type="number" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. 2300">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label text-theme">Delta kcal</label>
-                      <input id="fKcalDelta" type="number" class="form-control" placeholder="p.ej. -250">
+                      <label class="form-label text-theme small">Delta kcal</label>
+                      <input id="fKcalDelta" type="number" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. -250">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label text-theme">Cardio</label>
-                      <input id="fCardio" type="text" class="form-control" placeholder="p.ej. 2x LISS 30'">
+                      <label class="form-label text-theme small">Cardio</label>
+                      <input id="fCardio" type="text" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. 2x LISS 30'">
+                    </div>
+
+
+
+                    <div class="col-md-4">
+                      <label class="form-label text-theme small">Proteína (g)</label>
+                      <input id="fProt" type="number" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. 160">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label text-theme small">Carbohidratos (g)</label>
+                      <input id="fCarb" type="number" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. 250">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label text-theme small">Grasas (g)</label>
+                      <input id="fFat" type="number" class="form-control bg-dark text-white border-secondary"
+                        placeholder="p.ej. 70">
                     </div>
 
                     <div class="col-md-4">
-                      <label class="form-label text-theme">Objetivo (goal)</label>
-                      <select id="fGoal" class="form-select">
+                      <label class="form-label text-theme small">Volumen Δ</label>
+                      <input id="fVolumeDelta" type="number" step="0.01"
+                        class="form-control bg-dark text-white border-secondary" placeholder="p.ej. -0.12">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label text-theme small">Objetivo (goal)</label>
+                      <select id="fGoal" class="form-select bg-dark text-white border-secondary">
                         <option value="">(sin definir)</option>
                         <option value="gain_muscle">Ganar músculo</option>
                         <option value="lose_fat">Perder grasa</option>
                         <option value="maintain">Mantener</option>
                       </select>
                     </div>
-
-                    <div class="col-md-4">
-                      <label class="form-label text-theme">Proteína (g)</label>
-                      <input id="fProt" type="number" class="form-control" placeholder="p.ej. 160">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label text-theme">Carbohidratos (g)</label>
-                      <input id="fCarb" type="number" class="form-control" placeholder="p.ej. 250">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label text-theme">Grasas (g)</label>
-                      <input id="fFat" type="number" class="form-control" placeholder="p.ej. 70">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label class="form-label text-theme">Volumen Δ</label>
-                      <input id="fVolumeDelta" type="number" step="0.01" class="form-control" placeholder="p.ej. -0.12">
-                    </div>
                     <div class="col-12">
-                      <label class="form-label text-theme">Notas</label>
-                      <textarea id="fNotes" rows="4" class="form-control"
+                      <label class="form-label text-theme small">Notas</label>
+                      <textarea id="fNotes" rows="4" class="form-control bg-dark text-white border-secondary"
                         placeholder="Notas internas o indicaciones del coach"></textarea>
                     </div>
                   </div>
-
-                  <div class="action-toolbar mt-4 pt-3 border-top border-secondary">
-                    <div class="action-buttons">
-                      <button id="btnSavePlan" class="btn btn-success"><i class="fas fa-save me-1"></i> Guardar</button>
-                      <button id="btnReloadPlan" class="btn btn-outline-light"><i class="fas fa-sync me-1"></i>
-                        Recargar</button>
-                      <div class="vr bg-secondary mx-1"></div>
-                      <button id="btnDeactivatePlan" class="btn btn-outline-warning"><i class="fas fa-ban me-1"></i>
-                        Desactivar</button>
-                      <button id="btnDeletePlan" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>
-                        Borrar</button>
-                    </div>
-                    <div class="action-token">
-                      <div class="input-group input-group-sm token-group">
-                        <span class="input-group-text bg-dark border-secondary text-secondary">Token</span>
-                        <input id="adminToken" type="password" class="form-control bg-dark text-white border-secondary"
-                          placeholder="Admin">
-                      </div>
-                    </div>
-                  </div>
-                  <div id="adminSaveMsg" class="mt-2"></div>
                 </div>
-                <div class="tab-pane fade" id="plan-json" role="tabpanel" aria-labelledby="plan-json-tab">
+
+                <!-- JSON RAW -->
+                <div class="tab-pane fade" id="plan-json" role="tabpanel">
                   <pre id="planJsonDump" class="small bg-card border-theme rounded p-3"
-                    style="white-space: pre-wrap;"></pre>
+                    style="white-space: pre-wrap; height: 400px; overflow-y:auto;"></pre>
                 </div>
               </div>
 
+              <div class="action-toolbar mt-4 pt-3 border-top border-secondary">
+                <div class="action-buttons">
+                  <button id="btnSavePlan" class="btn btn-success"><i class="fas fa-save me-1"></i> Guardar</button>
+                  <button id="btnReloadPlan" class="btn btn-outline-light"><i class="fas fa-sync me-1"></i>
+                    Recargar</button>
+                  <div class="vr bg-secondary mx-1"></div>
+                  <button id="btnDeactivatePlan" class="btn btn-outline-warning"><i class="fas fa-ban me-1"></i>
+                    Desactivar</button>
+                  <button id="btnDeletePlan" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>
+                    Borrar</button>
+                </div>
+                <div class="action-token ms-auto">
+                  <div class="input-group input-group-sm token-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary">Token</span>
+                    <input id="adminToken" type="password" class="form-control bg-dark text-white border-secondary"
+                      placeholder="Admin">
+                  </div>
+                </div>
+              </div>
+              <div id="adminSaveMsg" class="mt-2 text-info small fw-bold"></div>
+
             </div>
+
           </div>
         </div>
       </div>
-
-      <!-- Seccion generador de planes (oculta por defecto) -->
-      <div class="card mt-4" id="planGeneratorCard" style="display: none;">
-        <div class="card-body border-top border-primary border-3">
-          <h5 class="card-title text-primary"><i class="fas fa-magic me-2"></i>Generar Nuevo Plan Base</h5>
-          <p class="small text-secondary">Genera un plan inicial calculado por algoritmo (sin IA compleja) para este
-            usuario.</p>
-
-          <div class="row g-3 align-items-end">
-            <div class="col-md-3">
-              <label class="form-label text-theme">Peso (kg)</label>
-              <input type="number" id="genWeight" class="form-control" placeholder="Ej. 75">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label text-theme">Objetivo</label>
-              <select id="genGoal" class="form-select">
-                <option value="gain_muscle">Ganar Músculo</option>
-                <option value="lose_fat">Perder Grasa</option>
-                <option value="maintain">Mantenimiento</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label text-theme">Nivel</label>
-              <select id="genLevel" class="form-select">
-                <option value="beginner">Principiante</option>
-                <option value="intermediate">Intermedio</option>
-                <option value="advanced">Avanzado</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <button id="btnDoGenerate" class="btn btn-primary w-100">
-                <i class="fas fa-play me-1"></i> Generar
-              </button>
-            </div>
-          </div>
-          <div id="genMsg" class="mt-2 small fw-bold"></div>
-        </div>
-      </div>
-
     </main>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/lang.js"></script>
-    <script src="/static/js/theme.js"></script>
-    <script src="/static/js/user_search.js"></script>
-    <script>
-      (function () {
-        let currentPlan = null;
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/lang.js"></script>
+  <script src="/static/js/theme.js"></script>
+  <script src="/static/js/user_search.js"></script>
+  <script>
+    (function () {
+      let currentPlan = null;
 
-        // --- Standard User Search Logic ---
-        function formatUserLabel(u) {
-          const name = (u.name || u.username || '').trim();
-          const email = (u.email || '').trim();
-          if (name && email) return `${name} (${email})`;
-          if (name) return name;
-          if (u.user_id) return u.user_id;
-          return '';
+      // --- Standard User Search Logic ---
+      function renderAdminUserResult(u) {
+        return (
+          "<div><strong>" + (u.name || u.username || "Usuario") + "</strong></div>" +
+          "<small class=\"text-secondary\">" + (u.email || "") + "</small>" +
+          "<div class=\"text-xs text-info opacity-50\">ID: " + u.user_id + "</div>"
+        );
+      }
+
+      function selectUser(u) {
+        // Auto-trigger load
+        document.getElementById('adminPlanList').innerHTML = '';
+        loadPlans(u.user_id);
+      }
+
+      initUserSearch({
+        inputId: "userSearchTerm",
+        resultsId: "userSearchResults",
+        hiddenId: "adminUserId",
+        buttonId: "btnLookupUser",
+        clearButtonId: "btnClearUserSearch",
+        storageKey: "admin_working_user",
+        itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+        renderItem: renderAdminUserResult,
+        onSelect: selectUser,
+        onClear: () => {
+          document.getElementById('adminPlanList').innerHTML = '<div class="p-4 text-center text-muted small"><i class="fas fa-search fa-2x mb-2 opacity-50"></i><br>Busca un usuario.</div>';
+          document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+          document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+          currentPlan = null;
         }
+      });
+      // ----------------------------------
 
-        function selectUser(u) {
-          if (!u) return;
-          const hidden = document.getElementById('adminUserId');
-          if (hidden) hidden.value = u.user_id || '';
-          const input = document.getElementById('userSearchTerm');
-          if (input) input.value = formatUserLabel(u);
-          // Auto-trigger load
-          loadPlans();
-        }
+      function resolveUserId(input) {
+        return (input || '').trim();
+      }
 
-        initUserSearch({
-          inputId: "userSearchTerm",
-          resultsId: "userSearchResults",
-          hiddenId: "adminUserId",
-          buttonId: "btnLookupUser",
-          clearButtonId: "btnClearUserSearch",
-          storageKey: "admin_working_user",
-          onSelect: selectUser
-        });
-        // ----------------------------------
+      async function loadPlans(uid) {
+        if (!uid) uid = resolveUserId(document.getElementById('adminUserId').value);
 
-        function resolveUserId(input) {
-          const typed = (input || '').trim();
-          try {
-            const raw = localStorage.getItem('ai_fitness_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              const loggedId = String(u.user_id || u._id || '').trim();
-              const uname = (u.username || '').trim();
-              const email = (u.email || '').trim().toLowerCase();
-              if (!typed || typed === uname || typed.toLowerCase() === email) {
-                return loggedId || typed;
-              }
-            }
-          } catch (e) { }
-          return typed;
-        }
+        const msg = document.getElementById('adminMsg');
+        const list = document.getElementById('adminPlanList');
 
-        async function loadPlans() {
-          const msg = document.getElementById('adminMsg');
-          const list = document.getElementById('adminPlanList');
-          const genBtn = document.getElementById('btnShowGenerator');
-          let uid = resolveUserId(document.getElementById('adminUserId').value);
-          if (!uid) {
-            try {
-              const raw = localStorage.getItem('admin_working_user');
-              if (raw) {
-                const u = JSON.parse(raw);
-                if (u && u.user_id) {
-                  document.getElementById('adminUserId').value = u.user_id;
-                  uid = resolveUserId(u.user_id);
-                }
-              }
-            } catch (e) { }
+        if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+        msg.textContent = 'Buscando planes...';
+        list.innerHTML = '<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i></div>';
+
+        try {
+          const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=50`);
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+            throw new Error(err.error || `HTTP ${resp.status}`);
           }
-          if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
-          msg.textContent = 'Buscando planes...'; list.innerHTML = '';
-          try {
-            const resp = await fetch(`/plans/${encodeURIComponent(uid)}?limit=50`);
-            if (!resp.ok) {
-              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-              throw new Error(err.error || `HTTP ${resp.status}`);
-            }
-            const rows = await resp.json();
-            const hasActive = rows.some(p => p.active);
-            msg.textContent = rows.length ? '' : 'Sin planes';
+          const rows = await resp.json();
+          const hasActive = rows.some(p => p.active);
+          msg.textContent = rows.length ? '' : 'Sin planes';
+          list.innerHTML = '';
 
-            // Toggle Generator if empty
-            const genCard = document.getElementById('planGeneratorCard');
-            if (rows.length === 0) {
-              currentPlan = null;
-              const jsonEl = document.getElementById('planJsonDump');
-              if (jsonEl) jsonEl.textContent = '';
-              msg.innerHTML = '<span class="text-warning">Sin planes.</span> <a href="#" class="fw-bold" onclick="document.getElementById(\'planGeneratorCard\').style.display=\'block\';return false;">Generar uno nuevo</a>';
-              genCard.style.display = 'block';
-              genBtn.style.display = 'inline-block';
-            } else if (!hasActive) {
-              msg.innerHTML = '<span class="text-warning">Sin plan activo.</span>';
-              genCard.style.display = 'none';
-              genBtn.style.display = 'inline-block';
-            } else {
-              genCard.style.display = 'none';
-              genBtn.style.display = 'none';
-            }
+          // Toggle Generator Logic:
+          // If no plans, show empty state with "New" prompt in list? 
+          // Better: List empty msg, and "New" button in Empty State right pane.
 
-            const frag = document.createDocumentFragment();
-            rows.forEach(p => {
-              const li = document.createElement('li');
-              li.className = 'list-group-item d-flex justify-content-between align-items-start';
-              const left = document.createElement('div');
-              const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
-              left.innerHTML = `<div><strong>${p._id}</strong></div><small class="muted">${ts}</small>`;
-              const right = document.createElement('div');
-              if (p.active) { const b = document.createElement('span'); b.className = 'badge badge-active'; b.textContent = 'Activo'; right.appendChild(b); }
-              li.appendChild(left); li.appendChild(right);
-              li.addEventListener('click', () => renderPlan(p));
-              frag.appendChild(li);
+          if (rows.length === 0) {
+            list.innerHTML = '<div class="p-3 text-center text-secondary small">No hay planes registrados.</div>';
+
+            // If 0 plans, prompt generation in Empty State
+            const es = document.getElementById('empty-state');
+            es.style.setProperty('display', 'flex', 'important');
+            es.querySelector('small').textContent = "Este usuario no tiene planes.";
+            es.querySelector('button').style.display = 'inline-block'; // Show New button
+            document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+            return;
+          }
+
+          const frag = document.createDocumentFragment();
+          rows.forEach(p => {
+            const li = document.createElement('div');
+            li.className = 'list-group-item list-group-item-action bg-transparent text-white history-item p-3 border-bottom border-secondary';
+
+            const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '').substring(0, 16);
+            const activeBadge = p.active ? '<span class="badge badge-active ms-2">Activo</span>' : '';
+
+            li.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="fw-bold text-primary">${ts}</small>
+                    ${activeBadge}
+                </div>
+                <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">${p._id}</div>
+              `;
+
+            li.addEventListener('click', () => {
+              document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+              li.classList.add('active');
+              renderPlan(p);
             });
-            list.appendChild(frag);
-            if (rows[0]) renderPlan(rows[0]);
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        }
+            frag.appendChild(li);
+          });
+          list.appendChild(frag);
 
-        function renderPlan(p) {
-          currentPlan = p;
-          document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
-          const badge = document.getElementById('adminPlanActiveBadge');
-          badge.style.display = p.active ? 'inline-block' : 'none';
-          const np = p.nutrition_plan || {}; const tr = p.training_plan || {}; const m = (np.macros || {});
-          document.getElementById('fCalories').value = (np.calories_per_day ?? np.kcal_obj ?? '') || '';
-          document.getElementById('fKcalDelta').value = (np.kcal_delta ?? '') || '';
-          document.getElementById('fCardio').value = (tr.cardio ?? '') || '';
-          document.getElementById('fProt').value = (m.protein ?? m.p ?? '') || '';
-          document.getElementById('fCarb').value = (m.carbs ?? m.c ?? '') || '';
-          document.getElementById('fFat').value = (m.fat ?? m.g ?? '') || '';
-          document.getElementById('fVolumeDelta').value = (tr.ai_volumen_delta_ratio ?? '') || '';
-          document.getElementById('fNotes').value = (p.notes ?? '') || '';
-          document.getElementById('fGoal').value = (p.goal ?? '') || '';
-          const jsonEl = document.getElementById('planJsonDump');
-          if (jsonEl) {
-            jsonEl.textContent = JSON.stringify(p, null, 2);
+          if (rows[0]) {
+            // Auto select first
+            list.firstElementChild.click();
           }
-          document.getElementById('adminSaveMsg').textContent = '';
-        }
 
-        function collectChanges() {
-          const body = {};
-          const np = {};
-          const tr = {};
-          const macros = {};
-          const cal = document.getElementById('fCalories').value.trim();
-          const kcald = document.getElementById('fKcalDelta').value.trim();
-          const cardio = document.getElementById('fCardio').value.trim();
-          const goal = document.getElementById('fGoal').value.trim();
-          const p = document.getElementById('fProt').value.trim();
-          const c = document.getElementById('fCarb').value.trim();
-          const g = document.getElementById('fFat').value.trim();
-          const vol = document.getElementById('fVolumeDelta').value.trim();
-          const notes = document.getElementById('fNotes').value.trim();
-          if (cal !== '') np.calories_per_day = Number(cal);
-          if (kcald !== '') np.kcal_delta = Number(kcald);
-          if (p !== '') macros.protein = Number(p);
-          if (c !== '') macros.carbs = Number(c);
-          if (g !== '') macros.fat = Number(g);
-          if (Object.keys(macros).length) np.macros = macros;
-          if (cardio !== '') tr.cardio = cardio;
-          if (vol !== '') tr.ai_volumen_delta_ratio = Number(vol);
-          if (Object.keys(np).length) body.nutrition_plan = np;
-          if (Object.keys(tr).length) body.training_plan = tr;
-          if (notes !== '') body.notes = notes; else body.notes = null;
-          if (goal !== '') body.goal = goal; else body.goal = null;
-          return body;
-        }
+        } catch (e) { msg.textContent = `Error: ${e.message}`; list.innerHTML = `<div class="p-3 text-danger small">${e.message}</div>`; }
+      }
 
-        async function confirmDeletePlan() {
-          if (typeof window.showConfirmModal === 'function') {
-            return await window.showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este plan?", "danger");
+      function renderPlan(p) {
+        currentPlan = p;
+
+        // Show Detail
+        document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
+        const dc = document.getElementById('detail-container');
+        dc.style.setProperty('display', 'block', 'important');
+
+        // Hide Generator usually, toggle if needed.
+        document.getElementById('planGeneratorSection').style.display = 'none';
+        document.getElementById('planGeneratorBody').style.display = 'block'; // reset inner
+
+        // Populate Headers
+        const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+        document.getElementById('adminPlanMeta').textContent = `ID: ${p._id} · Creado: ${ts}`;
+        document.getElementById('adminPlanActiveBadge').style.display = p.active ? 'inline-block' : 'none';
+
+        const np = p.nutrition_plan || {};
+        const tr = p.training_plan || {};
+        const m = (np.macros || {});
+
+        document.getElementById('fCalories').value = (np.calories_per_day ?? np.kcal_obj ?? '') || '';
+        document.getElementById('fKcalDelta').value = (np.kcal_delta ?? '') || '';
+        document.getElementById('fCardio').value = (tr.cardio ?? '') || '';
+        document.getElementById('fProt').value = (m.protein ?? m.p ?? '') || '';
+        document.getElementById('fCarb').value = (m.carbs ?? m.c ?? '') || '';
+        document.getElementById('fFat').value = (m.fat ?? m.g ?? '') || '';
+        document.getElementById('fVolumeDelta').value = (tr.ai_volumen_delta_ratio ?? '') || '';
+        document.getElementById('fNotes').value = (p.notes ?? '') || '';
+        document.getElementById('fGoal').value = (p.goal ?? '') || '';
+
+        const jsonEl = document.getElementById('planJsonDump');
+        if (jsonEl) {
+          jsonEl.textContent = JSON.stringify(p, null, 2);
+        }
+        document.getElementById('adminSaveMsg').textContent = '';
+      }
+
+      function collectChanges() {
+        const body = {};
+        const np = {};
+        const tr = {};
+        const macros = {};
+        const cal = document.getElementById('fCalories').value.trim();
+        const kcald = document.getElementById('fKcalDelta').value.trim();
+        const cardio = document.getElementById('fCardio').value.trim();
+        const goal = document.getElementById('fGoal').value.trim();
+        const p = document.getElementById('fProt').value.trim();
+        const c = document.getElementById('fCarb').value.trim();
+        const g = document.getElementById('fFat').value.trim();
+        const vol = document.getElementById('fVolumeDelta').value.trim();
+        const notes = document.getElementById('fNotes').value.trim();
+
+        if (cal !== '') np.calories_per_day = Number(cal);
+        if (kcald !== '') np.kcal_delta = Number(kcald);
+        if (p !== '') macros.protein = Number(p);
+        if (c !== '') macros.carbs = Number(c);
+        if (g !== '') macros.fat = Number(g);
+        if (Object.keys(macros).length) np.macros = macros;
+
+        if (cardio !== '') tr.cardio = cardio;
+        if (vol !== '') tr.ai_volumen_delta_ratio = Number(vol);
+
+        if (Object.keys(np).length) body.nutrition_plan = np;
+        if (Object.keys(tr).length) body.training_plan = tr;
+
+        if (notes !== '') body.notes = notes; else body.notes = null;
+        if (goal !== '') body.goal = goal; else body.goal = null;
+        return body;
+      }
+
+      // --- ACTIONS ---
+
+      async function confirmDeletePlan() {
+        if (typeof window.showConfirmModal === 'function') {
+          return await window.showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este plan?", "danger");
+        }
+        return window.confirm("¿Seguro que deseas borrar este plan?");
+      }
+
+      async function savePlan() {
+        const msg = document.getElementById('adminSaveMsg');
+        if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
+        const token = document.getElementById('adminToken').value.trim();
+        if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+        const body = collectChanges();
+        msg.textContent = 'Guardando...';
+        try {
+          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+            body: JSON.stringify(body)
+          });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+            throw new Error(err.error || `HTTP ${resp.status}`);
           }
-          return window.confirm("¿Seguro que deseas borrar este plan?");
+          msg.textContent = 'Cambios guardados';
+          msg.className = "mt-2 text-success small fw-bold";
+          // Optional: reload list to update timestamp if needed, or just stay
+        } catch (e) {
+          msg.textContent = `Error: ${e.message}`;
+          msg.className = "mt-2 text-danger small fw-bold";
         }
+      }
 
-        async function savePlan() {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          const body = collectChanges();
-          msg.textContent = 'Guardando...';
-          try {
-            const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/edit`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-              body: JSON.stringify(body)
-            });
-            if (!resp.ok) {
-              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-              throw new Error(err.error || `HTTP ${resp.status}`);
-            }
-            msg.textContent = 'Cambios guardados';
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        }
+      document.getElementById('btnSearchPlans').addEventListener('click', () => {
+        loadPlans(resolveUserId(document.getElementById('adminUserId').value));
+      });
 
-        document.getElementById('btnSearchPlans').addEventListener('click', loadPlans);
-        document.getElementById('btnShowGenerator').addEventListener('click', () => {
-          const genCard = document.getElementById('planGeneratorCard');
-          genCard.style.display = 'block';
-          genCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-        document.getElementById('btnSavePlan').addEventListener('click', savePlan);
-        document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
+      document.getElementById('btnSavePlan').addEventListener('click', savePlan);
+      document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
 
-        document.getElementById('btnDeactivatePlan').addEventListener('click', async () => {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          msg.textContent = 'Desactivando...';
-          try {
-            const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
-            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-            msg.textContent = 'Plan desactivado';
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        });
+      document.getElementById('btnDeactivatePlan').addEventListener('click', async () => {
+        const msg = document.getElementById('adminSaveMsg');
+        if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
+        const token = document.getElementById('adminToken').value.trim();
+        if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+        if (!confirm("¿Desactivar este plan?")) return;
+        msg.textContent = 'Desactivando...';
+        try {
+          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
+          if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+          msg.textContent = 'Plan desactivado';
+          loadPlans(resolveUserId(document.getElementById('adminUserId').value));
+        } catch (e) { msg.textContent = `Error: ${e.message}`; }
+      });
 
-        document.getElementById('btnDeletePlan').addEventListener('click', async () => {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          const confirmed = await confirmDeletePlan();
-          if (!confirmed) return;
-          msg.textContent = 'Borrando...';
-          try {
-            const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });
-            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-            msg.textContent = 'Plan borrado';
-            currentPlan = null;
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        });
+      document.getElementById('btnDeletePlan').addEventListener('click', async () => {
+        const msg = document.getElementById('adminSaveMsg');
+        if (!currentPlan) { msg.textContent = 'Selecciona un plan'; return; }
+        const token = document.getElementById('adminToken').value.trim();
+        if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+        const confirmed = await confirmDeletePlan();
+        if (!confirmed) return;
+        msg.textContent = 'Borrando...';
+        try {
+          const resp = await fetch(`/plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });
+          if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
+          msg.textContent = 'Plan borrado';
+          currentPlan = null;
+          document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+          document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+          loadPlans(resolveUserId(document.getElementById('adminUserId').value));
+        } catch (e) { msg.textContent = `Error: ${e.message}`; }
+      });
 
-        // --- Generator Logic ---
-        document.getElementById('btnDoGenerate').addEventListener('click', async () => {
-          const uid = resolveUserId(document.getElementById('adminUserId').value);
-          const weight = document.getElementById('genWeight').value;
-          const goal = document.getElementById('genGoal').value;
-          const msg = document.getElementById('genMsg');
+      // --- Generator Logic ---
+      document.getElementById('btnDoGenerate').addEventListener('click', async () => {
+        const uid = resolveUserId(document.getElementById('adminUserId').value);
+        const weight = document.getElementById('genWeight').value;
+        const goal = document.getElementById('genGoal').value;
+        const msg = document.getElementById('genMsg');
 
-          if (!uid || !weight) { msg.textContent = "Faltan datos (User ID o Peso)"; return; }
+        if (!uid || !weight) { msg.textContent = "Faltan datos (User ID o Peso)"; return; }
 
-          msg.textContent = "Generando...";
-          try {
-            const payload = {
-              user_id: uid,
-              weight_kg: Number(weight),
-              goal: goal
-            };
-            const resp = await fetch('/generate_plan', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            if (!resp.ok) {
-              const err = await resp.json();
-              throw new Error(err.error || 'Error al generar');
-            }
-            msg.textContent = "Plan generado exitosamente!";
-            msg.className = "mt-2 small fw-bold text-success";
-            loadPlans();
-          } catch (e) {
-            msg.textContent = "Error: " + e.message;
-            msg.className = "mt-2 small fw-bold text-danger";
+        msg.textContent = "Generando...";
+        try {
+          const payload = {
+            user_id: uid,
+            weight_kg: Number(weight),
+            goal: goal
+          };
+          const resp = await fetch('/generate_plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'Error al generar');
           }
-        });
+          msg.textContent = "Plan generado exitosamente!";
+          msg.className = "mt-2 small fw-bold text-success";
+          loadPlans(uid);
+        } catch (e) {
+          msg.textContent = "Error: " + e.message;
+          msg.className = "mt-2 small fw-bold text-danger";
+        }
+      });
 
-        // Autorellenar usuario con el contexto admin o el del login
-        window.addEventListener('DOMContentLoaded', () => {
-          try {
-            // Priority 1: Contexto de trabajo Admin (si existe)
-            const ctx = localStorage.getItem('admin_working_user');
-            if (ctx) {
-              const u = JSON.parse(ctx);
-              if (u && u.user_id) {
-                selectUser(u);
-                return; // Stop here, we have a context
-              }
-            }
+      // Init Check
+      setTimeout(() => {
+        const uid = resolveUserId(document.getElementById('adminUserId').value);
+        // user_search auto inits, but we can verify if we need to load list
+      }, 500);
 
-            // Priority 2: Session User (fallback)
-            const raw = localStorage.getItem('ai_fitness_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              const display = (u.username || '').trim();
-              if (display) { document.getElementById('adminUserId').value = display; }
-            }
-          } catch (e) { }
-        });
-      })();
-    </script>
-  </div> <!-- Fin de main-content -->
+    })();
+  </script>
 </body>
 
 </html>

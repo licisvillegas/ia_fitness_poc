@@ -12,19 +12,41 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
     /* Theme overrides are handled by theme.css */
-
-    .form-label {
-      font-weight: 500;
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .muted,
-    .form-text {
-      color: var(--text-muted);
+    .main-content {
+      height: 100vh;
+      overflow-y: auto;
+      padding-top: 0 !important;
+    }
+
+    /* Layout matches admin_onboarding_submissions */
+    .history-list-col {
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-panel);
+    }
+
+    .history-item {
+      cursor: pointer;
+      transition: background-color 0.2s;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .history-item:hover,
+    .history-item.active {
+      background-color: rgba(59, 130, 246, 0.1) !important;
     }
 
     .badge-active {
       background: #10b981;
-      color: var(--text-main)fff;
+      color: #fff;
+      /* Ensure contrast */
     }
 
     .action-toolbar {
@@ -47,23 +69,28 @@
     }
 
     @media (max-width: 768px) {
+
+      body,
+      .main-content {
+        height: auto;
+        overflow: visible;
+      }
+
+      .history-list-col {
+        height: auto;
+        max-height: 400px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+
       .action-toolbar {
         flex-direction: column;
         align-items: stretch;
       }
 
-      .action-toolbar .action-buttons {
-        flex-wrap: wrap;
-      }
-
       .action-toolbar .token-group {
         width: 100%;
         max-width: none;
-      }
-
-      .action-toolbar .ms-auto {
-        width: 100%;
-        justify-content: flex-start;
       }
     }
 
@@ -73,6 +100,14 @@
       padding: 10px;
       border-radius: 8px;
       overflow: auto;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Search Results Overlay */
+    #userSearchResults {
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: var(--bg-panel);
       border: 1px solid var(--border-color);
     }
   </style>
@@ -87,53 +122,73 @@
   {% include 'components/sidebar_admin.html' %}
 
   <div class="main-content">
-    <!-- Barra de navegacion removida -->
-
-    <main class="container py-4">
-      <h2 class="mb-3">Planes de nutrición (Admin)</h2>
-      <p class="muted mb-4">Busca y gestiona meal_plans por usuario. Requiere token de administrador.</p>
-
-      <div class="row g-4">
-        <div class="col-lg-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="mb-3">
-                <label class="form-label text-theme">Usuario</label>
-                <div class="input-group">
-                  <input type="text" class="form-control" id="userSearchTerm"
-                    placeholder="Buscar: nombre, email o ID...">
-                  <button class="btn btn-outline-secondary" type="button" id="btnLookupUser">
-                    <i class="fas fa-search"></i>
-                  </button>
-                  <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch" title="Limpiar">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-                <!-- Campo oculto por compatibilidad -->
-                <input id="adminUserId" type="hidden">
-                <div id="userSearchResults" class="list-group mt-1 position-absolute shadow-sm"
-                  style="z-index: 1000; display: none; width: 90%;"></div>
-              </div>
-              <div class="d-grid">
-                <button id="btnSearchPlans" class="btn btn-primary">Buscar planes</button>
-              </div>
-              <div id="adminMsg" class="mt-3 text-info"></div>
-              <hr />
-              <h6 class="mb-2">Meal plans</h6>
-              <ul id="adminPlanList" class="list-group list-group-flush"></ul>
-            </div>
-          </div>
+    <main class="container-fluid px-0 h-100">
+      <div class="d-flex flex-column h-100">
+        <!-- Encabezado -->
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center bg-dark">
+          <h1 class="h5 mb-0 text-primary fw-bold"><i class="fas fa-utensils me-2"></i>Planes de Nutrición</h1>
+          <span class="badge bg-secondary">Vista Administrador</span>
         </div>
 
-        <div class="col-lg-8">
-          <div class="card">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Editar meal_plan</h5>
-                <span id="adminPlanActiveBadge" class="badge" style="display:none;">Activo</span>
+        <div class="row g-0 flex-grow-1 overflow-hidden">
+          <!-- COLUMNA IZQUIERDA: BUSQUEDA + LISTA -->
+          <div class="col-md-3 history-list-col d-flex flex-column">
+            <!-- Busqueda -->
+            <div class="p-3 border-bottom border-secondary bg-dark position-relative">
+              <label class="form-label small text-uppercase fw-bold text-secondary mb-1">Usuario</label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="userSearchTerm"
+                  placeholder="Nombre, Email o ID...">
+                <button class="btn btn-outline-primary" type="button" id="btnLookupUser">
+                  <i class="fas fa-search"></i>
+                </button>
+                <button class="btn btn-outline-secondary" type="button" id="btnClearUserSearch" title="Limpiar">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
-              <small id="adminPlanMeta" class="muted"></small>
-              <hr />
+              <!-- Resultados -->
+              <div id="userSearchResults" class="list-group position-absolute w-100 start-0 mt-1 shadow rounded-0"
+                style="display: none; z-index: 1050; top: 100%;"></div>
+
+              <input type="hidden" id="adminUserId">
+              <div class="d-grid mt-2">
+                <button id="btnSearchPlans" class="btn btn-sm btn-primary">Cargar Planes</button>
+              </div>
+              <div id="adminMsg" class="text-info small mt-2 fst-italic"></div>
+            </div>
+
+            <!-- Lista Historial -->
+            <div id="history-list-container" class="flex-grow-1 overflow-auto p-0">
+              <ul id="adminPlanList" class="list-group list-group-flush">
+                <div class="p-4 text-center text-muted small">
+                  <i class="fas fa-search fa-2x mb-2 opacity-50"></i><br>
+                  Busca un usuario y carga sus planes.
+                </div>
+              </ul>
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: DETALLE -->
+          <div class="col-md-9 h-100 overflow-auto position-relative">
+            <!-- Estado vacio -->
+            <div id="empty-state"
+              class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary p-5">
+              <i class="fas fa-utensils fa-4x mb-3 opacity-25"></i>
+              <p class="mb-0 fw-light fs-5">Detalle del Plan</p>
+              <small>Selecciona un plan de la lista.</small>
+            </div>
+
+            <!-- Contenedor Detalle -->
+            <div class="p-4" id="detail-container" style="display:none;">
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4 mb-0 text-white">Editar Plan</h2>
+                <div class="d-flex gap-2">
+                  <span id="adminPlanActiveBadge" class="badge badge-active" style="display:none;">Activo</span>
+                  <small id="adminPlanMeta" class="text-muted align-self-center"></small>
+                </div>
+              </div>
+              <hr class="border-secondary opacity-50" />
 
               <!-- Generador AI (colapsable) -->
               <div class="mb-3 border border-primary rounded p-2 bg-card">
@@ -146,10 +201,10 @@
                   <div class="row g-2">
                     <div class="col-6 col-md-3">
                       <select id="aiMeals" class="form-select form-select-sm">
-                        <option value="3">3 Comidas (Simplicidad / Ayuno Intermitente)</option>
-                        <option value="4">4 Comidas (Estilo de vida oficina / Mantenimiento)</option>
-                        <option value="5">5 Comidas (Control de ansiedad / Estándar fitness)</option>
-                        <option value="6" selected>6 Comidas (Ganancia muscular / Alto rendimiento)</option>
+                        <option value="3">3 Comidas (Simplicidad / Ayuno)</option>
+                        <option value="4">4 Comidas (Oficina / Mantenimiento)</option>
+                        <option value="5">5 Comidas (Control ansiedad / Fitness)</option>
+                        <option value="6" selected>6 Comidas (Ganancia muscular)</option>
                       </select>
                     </div>
                     <div class="col-12 col-md-9">
@@ -169,16 +224,16 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label text-theme">Backend</label>
-                  <input id="fBackend" type="text" class="form-control" placeholder="backend" readonly>
+                  <input id="fBackend" type="text" class="form-control form-control-sm" placeholder="backend" readonly>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label text-theme">Plan ID (vinculado)</label>
-                  <input id="fPlanId" type="text" class="form-control" placeholder="plan_id">
+                  <input id="fPlanId" type="text" class="form-control form-control-sm" placeholder="plan_id">
                 </div>
 
                 <div class="col-12">
                   <label class="form-label text-theme">Notas</label>
-                  <input id="fNotes" type="text" class="form-control" placeholder="Notas opcionales">
+                  <input id="fNotes" type="text" class="form-control form-control-sm" placeholder="Notas opcionales">
                 </div>
 
                 <div class="col-12 mt-4">
@@ -250,7 +305,7 @@
                   <button id="btnDeletePlan" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>
                     Borrar</button>
                 </div>
-                <div class="action-token">
+                <div class="action-token ms-auto">
                   <div class="input-group input-group-sm token-group">
                     <span class="input-group-text bg-dark border-secondary text-secondary">Token</span>
                     <input id="adminToken" type="password" class="form-control bg-dark text-white border-secondary"
@@ -264,127 +319,187 @@
         </div>
       </div>
     </main>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/lang.js"></script>
-    <script src="/static/js/theme.js"></script>
-    <script src="/static/js/user_search.js"></script>
-    <script>
-      (function () {
-        let currentPlan = null;
-        let lastGeneratedInput = null;
-        let lastGeneratedBackend = null;
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/lang.js"></script>
+  <script src="/static/js/theme.js"></script>
+  <script src="/static/js/user_search.js"></script>
+  <script>
+    (function () {
+      let currentPlan = null;
+      let lastGeneratedInput = null;
+      let lastGeneratedBackend = null;
 
-        // Tab element refs
-        const tabVisualBtn = document.getElementById('tab-visual-btn');
-        const fOutput = document.getElementById('fOutput');
+      // Tab element refs
+      const tabVisualBtn = document.getElementById('tab-visual-btn');
+      const fOutput = document.getElementById('fOutput');
 
-        // --- Standard User Search Logic ---
-        function clearInterface() {
-          currentPlan = null;
-          lastGeneratedInput = null;
-          lastGeneratedBackend = null;
+      // --- Standard User Search Logic ---
+      function clearInterface() {
+        currentPlan = null;
+        lastGeneratedInput = null;
+        lastGeneratedBackend = null;
 
-          // Clear list & msg
-          document.getElementById('adminPlanList').innerHTML = '';
-          document.getElementById('adminMsg').textContent = '';
+        // Clear list & msg (Don't clear list completely, just unselect?) 
+        // keeping list behavior similar to old
+        document.getElementById('adminPlanList').innerHTML = '<div class="p-3 text-center text-secondary small">Cargando...</div>';
+        document.getElementById('adminMsg').textContent = '';
 
-          // Clear Details (Right Pane)
-          document.getElementById('adminPlanMeta').textContent = '';
-          document.getElementById('adminPlanActiveBadge').style.display = 'none';
-          document.getElementById('adminPlanInputSummary').innerHTML = '';
+        // Clear Details (Right Pane)
+        document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+        document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
 
-          document.getElementById('fBackend').value = '';
-          document.getElementById('fPlanId').value = '';
-          document.getElementById('fNotes').value = '';
-          document.getElementById('fOutput').value = '';
+        document.getElementById('adminPlanMeta').textContent = '';
+        document.getElementById('adminPlanActiveBadge').style.display = 'none';
+        document.getElementById('adminPlanInputSummary').innerHTML = '';
 
-          // Clear Visuals
-          document.getElementById('previewContainer').innerHTML = '<p class="text-secondary small text-center mt-5">Selecciona un plan para visualizar.</p>';
-          document.getElementById('editorContainer').innerHTML = '';
+        document.getElementById('fBackend').value = '';
+        document.getElementById('fPlanId').value = '';
+        document.getElementById('fNotes').value = '';
+        document.getElementById('fOutput').value = '';
 
-          // Clear msgs
-          if (document.getElementById('aiMsg')) document.getElementById('aiMsg').textContent = '';
-          document.getElementById('adminSaveMsg').textContent = '';
+        // Clear Visuals
+        document.getElementById('previewContainer').innerHTML = '<p class="text-secondary small text-center mt-5">Selecciona un plan para visualizar.</p>';
+        document.getElementById('editorContainer').innerHTML = '';
+
+        // Clear msgs
+        if (document.getElementById('aiMsg')) document.getElementById('aiMsg').textContent = '';
+        document.getElementById('adminSaveMsg').textContent = '';
+      }
+
+      function renderAdminUserResult(u) {
+        return (
+          "<div><strong>" + (u.name || u.username || "Usuario") + "</strong></div>" +
+          "<small class=\"text-secondary\">" + (u.email || "") + "</small>" +
+          "<div class=\"text-xs text-info opacity-50\">ID: " + u.user_id + "</div>"
+        );
+      }
+
+      function selectUser(u) {
+        // Auto-trigger load
+        document.getElementById('adminPlanList').innerHTML = '';
+        loadPlans(u.user_id);
+      }
+
+      initUserSearch({
+        inputId: "userSearchTerm",
+        resultsId: "userSearchResults",
+        hiddenId: "adminUserId",
+        buttonId: "btnLookupUser",
+        clearButtonId: "btnClearUserSearch",
+        storageKey: "admin_working_user",
+        itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+        renderItem: renderAdminUserResult,
+        onSelect: selectUser,
+        onClear: () => {
+          document.getElementById('adminPlanList').innerHTML = '<div class="p-4 text-center text-muted small"><i class="fas fa-search fa-2x mb-2 opacity-50"></i><br>Busca un usuario.</div>';
+          document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
+          document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
         }
+      });
 
-        function selectUser(u) {
-          clearInterface();
-          // Auto-trigger load
-          loadPlans();
-        }
+      // Restore user logic separate from init if needed, but init handles storageKey.
+      // But we want to trigger loadPlans if user is already there.
+      // initUserSearch might populate the input but not trigger onSelect unless clicked.
+      // Let's add manual check
+      setTimeout(() => {
+        const uid = document.getElementById('adminUserId').value;
+        // If restored from storage by initUserSearch, we might want to load.
+        // But initUserSearch doesn't auto-callback on restore currently in this version.
+        // We can check localStorage manually.
+      }, 500);
 
-        initUserSearch({
-          inputId: "userSearchTerm",
-          resultsId: "userSearchResults",
-          hiddenId: "adminUserId",
-          buttonId: "btnLookupUser",
-          clearButtonId: "btnClearUserSearch",
-          storageKey: "admin_working_user",
-          onSelect: selectUser,
-          onClear: clearInterface
-        });
-        // ----------------------------------
+      // Manual search button in left col
+      document.getElementById('btnSearchPlans').addEventListener('click', () => {
+        const uid = resolveUserId(document.getElementById('adminUserId').value);
+        if (uid) loadPlans(uid);
+      });
+      // ----------------------------------
 
-        function resolveUserId(input) {
-          const typed = (input || '').trim();
-          try {
-            const raw = localStorage.getItem('ai_fitness_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              const loggedId = String(u.user_id || u._id || '').trim();
-              const uname = (u.username || '').trim();
-              const email = (u.email || '').trim().toLowerCase();
-              if (!typed || typed === uname || typed.toLowerCase() === email) {
-                return loggedId || typed;
-              }
-            }
-          } catch (e) { }
-          return typed;
-        }
+      function resolveUserId(input) {
+        const typed = (input || '').trim();
+        // Fallback logic
+        return typed;
+      }
 
-        async function loadPlans() {
-          const msg = document.getElementById('adminMsg');
-          const list = document.getElementById('adminPlanList');
-          const uid = resolveUserId(document.getElementById('adminUserId').value);
-          if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
-          msg.textContent = 'Buscando meal_plans...'; list.innerHTML = '';
-          try {
-            const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}?limit=50`);
-            if (!resp.ok) {
-              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-              throw new Error(err.error || `HTTP ${resp.status}`);
-            }
-            const rows = await resp.json();
-            msg.textContent = rows.length ? '' : 'Sin meal_plans';
-            const frag = document.createDocumentFragment();
-            rows.forEach(p => {
-              const li = document.createElement('li');
-              li.className = 'list-group-item d-flex justify-content-between align-items-start';
-              const left = document.createElement('div');
-              const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
-              left.innerHTML = `<div><strong>${p._id}</strong></div><small class="muted">${ts}</small>`;
-              const right = document.createElement('div');
-              if (p.active) { const b = document.createElement('span'); b.className = 'badge badge-active'; b.textContent = 'Activo'; right.appendChild(b); }
-              li.appendChild(left); li.appendChild(right);
-              li.addEventListener('click', () => renderPlan(p));
-              frag.appendChild(li);
+      async function loadPlans(uid) {
+        if (!uid) uid = resolveUserId(document.getElementById('adminUserId').value);
+
+        const msg = document.getElementById('adminMsg');
+        const list = document.getElementById('adminPlanList');
+
+        if (!uid) { msg.textContent = 'Ingresa un user_id'; return; }
+        msg.textContent = 'Buscando...';
+        list.innerHTML = '<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i></div>';
+
+        try {
+          const resp = await fetch(`/meal_plans/${encodeURIComponent(uid)}?limit=50`);
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
+            throw new Error(err.error || `HTTP ${resp.status}`);
+          }
+          const rows = await resp.json();
+          msg.textContent = rows.length ? '' : 'Sin meal_plans';
+          list.innerHTML = '';
+
+          if (rows.length === 0) {
+            list.innerHTML = '<div class="p-3 text-center text-secondary small">No hay planes registrados.</div>';
+            return;
+          }
+
+          const frag = document.createDocumentFragment();
+          rows.forEach((p, idx) => {
+            const li = document.createElement('div');
+            li.className = 'list-group-item list-group-item-action bg-transparent text-white history-item p-3 border-bottom border-secondary';
+
+            const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '').substring(0, 16);
+            const activeBadge = p.active ? '<span class="badge badge-active ms-2">Activo</span>' : '';
+
+            li.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="fw-bold text-primary">${ts}</small>
+                    ${activeBadge}
+                </div>
+                <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">${p._id}</div>
+              `;
+
+            li.addEventListener('click', () => {
+              // highlight
+              document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+              li.classList.add('active');
+              renderPlan(p);
             });
-            list.appendChild(frag);
-            if (rows[0]) renderPlan(rows[0]);
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+            frag.appendChild(li);
+          });
+          list.appendChild(frag);
+
+          if (rows[0]) {
+            // Auto select first
+            list.firstElementChild.click();
+          }
+        } catch (e) {
+          msg.textContent = `Error: ${e.message}`;
+          list.innerHTML = `<div class="p-3 text-danger small">${e.message}</div>`;
         }
+      }
 
-        function renderPlan(p) {
-          currentPlan = p;
-          lastGeneratedInput = null;
-          lastGeneratedBackend = null;
-          document.getElementById('adminPlanMeta').textContent = `user_id: ${p.user_id || '-'} · creado: ${(p.created_at || '').toString().replace('T', ' ').replace('Z', '')} · id: ${p._id}`;
+      function renderPlan(p) {
+        currentPlan = p;
+        lastGeneratedInput = null;
+        lastGeneratedBackend = null;
 
-          const inputSum = document.getElementById('adminPlanInputSummary');
-          const inp = p.input || {};
-          if (inp.total_kcal || inp.meals) {
-            inputSum.innerHTML = `
+        // Show container
+        document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
+        document.getElementById('detail-container').style.setProperty('display', 'block', 'important');
+
+        const ts = (p.created_at || '').toString().replace('T', ' ').replace('Z', '');
+        document.getElementById('adminPlanMeta').textContent = `Creado: ${ts} · ID: ${p._id}`;
+
+        const inputSum = document.getElementById('adminPlanInputSummary');
+        const inp = p.input || {};
+        if (inp.total_kcal || inp.meals) {
+          inputSum.innerHTML = `
                  <span class="badge bg-dark text-info border border-info p-2">
                     <i class="fas fa-fire me-1"></i> Calorías: <strong>${inp.total_kcal || '-'}</strong>
                  </span>
@@ -392,192 +507,192 @@
                     <i class="fas fa-utensils me-1"></i> Comidas: <strong>${inp.meals || '-'}</strong>
                  </span>
              `;
-          } else {
-            inputSum.innerHTML = '';
-          }
-
-          const badge = document.getElementById('adminPlanActiveBadge');
-          badge.style.display = p.active ? 'inline-block' : 'none';
-          document.getElementById('fBackend').value = (p.backend ?? '') || '';
-          document.getElementById('fPlanId').value = (p.plan_id ?? '') || '';
-          document.getElementById('fNotes').value = (p.notes ?? '') || '';
-
-          let jsonStr = '';
-          try {
-            jsonStr = JSON.stringify(p.output ?? {}, null, 2);
-          } catch (e) { jsonStr = '{}'; }
-
-          fOutput.value = jsonStr;
-          updateVisualPreview(jsonStr); // Render visual immediately
-
-          document.getElementById('adminSaveMsg').textContent = '';
+        } else {
+          inputSum.innerHTML = '';
         }
 
-        function updateVisualPreview(jsonRaw) {
-          const container = document.getElementById('previewContainer');
-          try {
-            if (!jsonRaw.trim()) {
-              container.innerHTML = '<p class="text-secondary small">JSON vacío</p>';
-              return;
-            }
-            const data = JSON.parse(jsonRaw);
-            container.innerHTML = '';
+        const badge = document.getElementById('adminPlanActiveBadge');
+        badge.style.display = p.active ? 'inline-block' : 'none';
+        document.getElementById('fBackend').value = (p.backend ?? '') || '';
+        document.getElementById('fPlanId').value = (p.plan_id ?? '') || '';
+        document.getElementById('fNotes').value = (p.notes ?? '') || '';
 
-            // Support full object or direct output object
-            const output = data.output || data || {};
+        let jsonStr = '';
+        try {
+          jsonStr = JSON.stringify(p.output ?? {}, null, 2);
+        } catch (e) { jsonStr = '{}'; }
 
-            // --- CHECK FOR MULTI-OPTION ---
-            if (output.options && Array.isArray(output.options) && output.options.length > 0) {
-              // Render Tabs for Preview
-              let activeIdx = 0;
-              const tabsDiv = document.createElement('div');
-              tabsDiv.className = 'd-flex justify-content-center gap-2 mb-3';
+        fOutput.value = jsonStr;
+        updateVisualPreview(jsonStr);
 
-              const contentDiv = document.createElement('div');
+        document.getElementById('adminSaveMsg').textContent = '';
+      }
 
-              function renderPreviewTabs() {
-                tabsDiv.innerHTML = '';
-                output.options.forEach((opt, idx) => {
-                  const btn = document.createElement('button');
-                  btn.className = `btn btn-sm ${idx === activeIdx ? 'btn-primary' : 'btn-outline-secondary'}`;
-                  btn.textContent = opt.name || `Opción ${idx + 1}`;
-                  btn.onclick = () => { activeIdx = idx; renderPreviewTabs(); renderPreviewContent(opt); };
-                  tabsDiv.appendChild(btn);
-                });
-              }
-
-              function renderPreviewContent(opt) {
-                contentDiv.innerHTML = '';
-                renderMealCards(opt.meals || [], contentDiv, opt.total_kcal);
-              }
-
-              container.appendChild(tabsDiv);
-              container.appendChild(contentDiv);
-
-              renderPreviewTabs();
-              renderPreviewContent(output.options[0]);
-              return;
-            }
-
-            // --- SINGLE OPTION LEGACY ---
-            const meals = output.meals || (Array.isArray(output) ? output : []);
-            if (!meals || meals.length === 0) {
-              container.innerHTML = '<p class="text-warning small text-center mt-4">No se detectó lista de "meals" en el JSON.</p>';
-              return;
-            }
-            renderMealCards(meals, container, output.total_kcal);
-
-          } catch (e) {
-            container.innerHTML = `<p class="text-danger small">Error visualizando JSON: ${e.message}</p>`;
+      function updateVisualPreview(jsonRaw) {
+        const container = document.getElementById('previewContainer');
+        try {
+          if (!jsonRaw.trim()) {
+            container.innerHTML = '<p class="text-secondary small">JSON vacío</p>';
+            return;
           }
+          const data = JSON.parse(jsonRaw);
+          container.innerHTML = '';
+
+          // Support full object or direct output object
+          const output = data.output || data || {};
+
+          // --- CHECK FOR MULTI-OPTION ---
+          if (output.options && Array.isArray(output.options) && output.options.length > 0) {
+            // Render Tabs for Preview
+            let activeIdx = 0;
+            const tabsDiv = document.createElement('div');
+            tabsDiv.className = 'd-flex justify-content-center gap-2 mb-3';
+
+            const contentDiv = document.createElement('div');
+
+            function renderPreviewTabs() {
+              tabsDiv.innerHTML = '';
+              output.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `btn btn-sm ${idx === activeIdx ? 'btn-primary' : 'btn-outline-secondary'}`;
+                btn.textContent = opt.name || `Opción ${idx + 1}`;
+                btn.onclick = () => { activeIdx = idx; renderPreviewTabs(); renderPreviewContent(opt); };
+                tabsDiv.appendChild(btn);
+              });
+            }
+
+            function renderPreviewContent(opt) {
+              contentDiv.innerHTML = '';
+              renderMealCards(opt.meals || [], contentDiv, opt.total_kcal);
+            }
+
+            container.appendChild(tabsDiv);
+            container.appendChild(contentDiv);
+
+            renderPreviewTabs();
+            renderPreviewContent(output.options[0]);
+            return;
+          }
+
+          // --- SINGLE OPTION LEGACY ---
+          const meals = output.meals || (Array.isArray(output) ? output : []);
+          if (!meals || meals.length === 0) {
+            container.innerHTML = '<p class="text-warning small text-center mt-4">No se detectó lista de "meals" en el JSON.</p>';
+            return;
+          }
+          renderMealCards(meals, container, output.total_kcal);
+
+        } catch (e) {
+          container.innerHTML = `<p class="text-danger small">Error visualizando JSON: ${e.message}</p>`;
         }
+      }
 
-        // Helper to render cards into a container
-        function renderMealCards(meals, targetContainer, totalKcal) {
-          meals.forEach(m => {
-            const el = document.createElement('div');
-            el.className = 'mb-2 p-2 rounded bg-card border-theme';
+      // Helper to render cards into a container
+      function renderMealCards(meals, targetContainer, totalKcal) {
+        meals.forEach(m => {
+          const el = document.createElement('div');
+          el.className = 'mb-2 p-2 rounded bg-card border-theme';
 
-            let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
-            (m.items || []).forEach(it => {
-              itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-warning small mx-1">${it.qty || ''}</span> <span class="text-info">(${it.kcal || '-'} kcal)</span></li>`;
-            });
-            itemsHtml += '</ul>';
+          let itemsHtml = '<ul class="mb-0 ps-3 small text-theme" style="list-style-type:disc;">';
+          (m.items || []).forEach(it => {
+            itemsHtml += `<li><span class="text-theme">${it.food || ''}</span> <span class="text-warning small mx-1">${it.qty || ''}</span> <span class="text-info">(${it.kcal || '-'} kcal)</span></li>`;
+          });
+          itemsHtml += '</ul>';
 
-            el.innerHTML = `
+          el.innerHTML = `
                             <strong class="text-primary small">${m.name || 'Comida'}</strong>
                             <span class="badge bg-dark border border-secondary text-white" style="font-size:0.7em">${m.total_kcal || m.kcal || 0} kcal</span>
                         </div>
                         ${itemsHtml}
                     `;
-            targetContainer.appendChild(el);
-          });
-
-          if (totalKcal) {
-            const tot = document.createElement('div');
-            tot.className = 'mt-3 pt-2 border-top border-secondary text-end text-success fw-bold small';
-            tot.innerHTML = `TOTAL: ${totalKcal} kcal`;
-            targetContainer.appendChild(tot);
-          }
-        }
-
-        // Update visual when tab clicked (in case JSON was edited)
-        tabVisualBtn.addEventListener('click', () => {
-          updateVisualPreview(fOutput.value);
+          targetContainer.appendChild(el);
         });
 
-        const tabEditorBtn = document.getElementById('tab-editor-btn');
-        if (tabEditorBtn) {
-          tabEditorBtn.addEventListener('click', () => {
-            renderVisualEditor(fOutput.value);
+        if (totalKcal) {
+          const tot = document.createElement('div');
+          tot.className = 'mt-3 pt-2 border-top border-secondary text-end text-success fw-bold small';
+          tot.innerHTML = `TOTAL: ${totalKcal} kcal`;
+          targetContainer.appendChild(tot);
+        }
+      }
+
+      // Update visual when tab clicked (in case JSON was edited)
+      tabVisualBtn.addEventListener('click', () => {
+        updateVisualPreview(fOutput.value);
+      });
+
+      const tabEditorBtn = document.getElementById('tab-editor-btn');
+      if (tabEditorBtn) {
+        tabEditorBtn.addEventListener('click', () => {
+          renderVisualEditor(fOutput.value);
+        });
+      }
+
+      document.getElementById('btnAddMealVisual').addEventListener('click', () => {
+        addMealToVisual();
+      });
+
+      // Global state for editor tab
+      let lastEditorOptIdx = 0;
+
+      function renderVisualEditor(jsonRaw) {
+        const container = document.getElementById('editorContainer');
+        container.innerHTML = '';
+
+        let data = {};
+        try { if (jsonRaw.trim()) data = JSON.parse(jsonRaw); }
+        catch (e) { container.innerHTML = `<p class="text-danger small">JSON Inválido: ${e.message}</p>`; return; }
+
+        const output = data.output || data || {};
+
+        // --- DETECT MULTI OPTION ---
+        let isMulti = false;
+        let activeMeals = [];
+
+        if (output.options && Array.isArray(output.options) && output.options.length > 0) {
+          isMulti = true;
+          // Validate index
+          if (lastEditorOptIdx >= output.options.length) lastEditorOptIdx = 0;
+
+          // Render Editor Tabs
+          const tabsDiv = document.createElement('div');
+          tabsDiv.className = 'd-flex gap-2 mb-3 justify-content-center border-bottom border-secondary pb-2';
+
+          output.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = `btn btn-sm ${idx === lastEditorOptIdx ? 'btn-info' : 'btn-outline-secondary'}`;
+            btn.textContent = opt.name || `Opción ${idx + 1}`;
+            btn.onclick = () => {
+              lastEditorOptIdx = idx;
+              renderVisualEditor(document.getElementById('fOutput').value);
+            };
+            tabsDiv.appendChild(btn);
           });
+          container.appendChild(tabsDiv);
+
+          activeMeals = output.options[lastEditorOptIdx].meals || [];
+          container.dataset.optionIdx = lastEditorOptIdx; // Store for global helpers
+        } else {
+          isMulti = false;
+          activeMeals = output.meals || (Array.isArray(output) ? output : []);
+          container.removeAttribute('data-option-idx');
         }
 
-        document.getElementById('btnAddMealVisual').addEventListener('click', () => {
-          addMealToVisual();
-        });
+        if (!activeMeals || activeMeals.length === 0) {
+          const msg = document.createElement('p');
+          msg.className = "text-muted small";
+          msg.textContent = "Sin comidas. Agrega una.";
+          container.appendChild(msg);
+        }
 
-        // Global state for editor tab
-        let lastEditorOptIdx = 0;
+        activeMeals.forEach((m, mIdx) => {
+          const card = document.createElement('div');
+          card.className = "card mb-3 border-secondary bg-dark";
 
-        function renderVisualEditor(jsonRaw) {
-          const container = document.getElementById('editorContainer');
-          container.innerHTML = '';
-
-          let data = {};
-          try { if (jsonRaw.trim()) data = JSON.parse(jsonRaw); }
-          catch (e) { container.innerHTML = `<p class="text-danger small">JSON Inválido: ${e.message}</p>`; return; }
-
-          const output = data.output || data || {};
-
-          // --- DETECT MULTI OPTION ---
-          let isMulti = false;
-          let activeMeals = [];
-
-          if (output.options && Array.isArray(output.options) && output.options.length > 0) {
-            isMulti = true;
-            // Validate index
-            if (lastEditorOptIdx >= output.options.length) lastEditorOptIdx = 0;
-
-            // Render Editor Tabs
-            const tabsDiv = document.createElement('div');
-            tabsDiv.className = 'd-flex gap-2 mb-3 justify-content-center border-bottom border-secondary pb-2';
-
-            output.options.forEach((opt, idx) => {
-              const btn = document.createElement('button');
-              btn.className = `btn btn-sm ${idx === lastEditorOptIdx ? 'btn-info' : 'btn-outline-secondary'}`;
-              btn.textContent = opt.name || `Opción ${idx + 1}`;
-              btn.onclick = () => {
-                lastEditorOptIdx = idx;
-                renderVisualEditor(document.getElementById('fOutput').value);
-              };
-              tabsDiv.appendChild(btn);
-            });
-            container.appendChild(tabsDiv);
-
-            activeMeals = output.options[lastEditorOptIdx].meals || [];
-            container.dataset.optionIdx = lastEditorOptIdx; // Store for global helpers
-          } else {
-            isMulti = false;
-            activeMeals = output.meals || (Array.isArray(output) ? output : []);
-            container.removeAttribute('data-option-idx');
-          }
-
-          if (!activeMeals || activeMeals.length === 0) {
-            const msg = document.createElement('p');
-            msg.className = "text-muted small";
-            msg.textContent = "Sin comidas. Agrega una.";
-            container.appendChild(msg);
-          }
-
-          activeMeals.forEach((m, mIdx) => {
-            const card = document.createElement('div');
-            card.className = "card mb-3 border-secondary bg-dark";
-
-            let itemsHtml = '';
-            (m.items || []).forEach((it, itIdx) => {
-              const mac = it.macros || {};
-              itemsHtml += `
+          let itemsHtml = '';
+          (m.items || []).forEach((it, itIdx) => {
+            const mac = it.macros || {};
+            itemsHtml += `
                       <div class="row g-1 align-items-center mb-2 item-row" data-m="${mIdx}" data-i="${itIdx}">
                         <div class="col-3">
                            <input type="text" class="form-control form-control-sm bg-black text-white border-secondary inp-food" value="${it.food || ''}" placeholder="Alimento">
@@ -598,9 +713,9 @@
                         </div>
                       </div>
                     `;
-            });
+          });
 
-            card.innerHTML = `
+          card.innerHTML = `
                     <div class="card-header p-2 d-flex gap-2 align-items-center bg-secondary bg-opacity-10 border-bottom border-secondary">
                         <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary fw-bold inp-m-name" 
                           style="max-width:200px;" value="${m.name || 'Comida'}" data-m="${mIdx}">
@@ -617,367 +732,327 @@
                         ${itemsHtml || '<small class="text-muted fst-italic">Sin alimentos</small>'}
                     </div>
                 `;
-            container.appendChild(card);
-          });
+          container.appendChild(card);
+        });
 
-          // Attach listeners
-          container.querySelectorAll('input').forEach(inp => {
-            inp.addEventListener('change', syncVisualToJSON);
-          });
+        // Attach listeners
+        container.querySelectorAll('input').forEach(inp => {
+          inp.addEventListener('change', syncVisualToJSON);
+        });
+      }
+
+      // --- HELPER TO GET TARGET MEALS ARRAY ---
+      function getMealsContext(dataObj) {
+        const container = document.getElementById('editorContainer');
+        const optIdxStr = container.dataset.optionIdx;
+
+        // Normalize Output
+        let out = dataObj.output || dataObj;
+
+        // Check Multi
+        if (out.options && Array.isArray(out.options) && optIdxStr != null) {
+          const idx = parseInt(optIdxStr);
+          if (out.options[idx]) return out.options[idx].meals;
         }
 
-        // --- HELPER TO GET TARGET MEALS ARRAY ---
-        function getMealsContext(dataObj) {
-          const container = document.getElementById('editorContainer');
-          const optIdxStr = container.dataset.optionIdx;
+        // Legacy / Single
+        if (out.meals) return out.meals;
+        // Fallback if structure is just array
+        if (Array.isArray(out)) return out;
 
-          // Normalize Output
-          let out = dataObj.output || dataObj;
+        // Init if missing
+        if (!out.meals) out.meals = [];
+        return out.meals;
+      }
 
-          // Check Multi
-          if (out.options && Array.isArray(out.options) && optIdxStr != null) {
-            const idx = parseInt(optIdxStr);
-            if (out.options[idx]) return out.options[idx].meals;
-          }
-
-          // Legacy / Single
-          if (out.meals) return out.meals;
-          // Fallback if structure is just array
-          if (Array.isArray(out)) return out;
-
-          // Init if missing
-          if (!out.meals) out.meals = [];
-          return out.meals;
-        }
-
-        window.removeVisualItem = function (mIdx, itIdx) {
-          const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsContext(current);
-          if (meals[mIdx] && meals[mIdx].items) {
-            meals[mIdx].items.splice(itIdx, 1);
-            updateAndRender(current);
-          }
-        };
-
-        window.removeVisualMeal = function (mIdx) {
-          const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsContext(current);
-          meals.splice(mIdx, 1);
+      window.removeVisualItem = function (mIdx, itIdx) {
+        const current = parseOrEmpty(fOutput.value);
+        const meals = getMealsContext(current);
+        if (meals[mIdx] && meals[mIdx].items) {
+          meals[mIdx].items.splice(itIdx, 1);
           updateAndRender(current);
-        };
+        }
+      };
 
-        window.addVisualItem = function (mIdx) {
-          const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsContext(current);
+      window.removeVisualMeal = function (mIdx) {
+        const current = parseOrEmpty(fOutput.value);
+        const meals = getMealsContext(current);
+        meals.splice(mIdx, 1);
+        updateAndRender(current);
+      };
+
+      window.addVisualItem = function (mIdx) {
+        const current = parseOrEmpty(fOutput.value);
+        const meals = getMealsContext(current);
+        if (meals[mIdx]) {
+          if (!meals[mIdx].items) meals[mIdx].items = [];
+          meals[mIdx].items.push({ food: "", qty: "", kcal: 0, macros: { p: 0, c: 0, f: 0 } });
+          updateAndRender(current);
+        }
+      };
+
+      window.addMealToVisual = function () {
+        const current = parseOrEmpty(fOutput.value);
+        const meals = getMealsContext(current);
+        meals.push({ name: "Nueva Comida", total_kcal: 0, items: [] });
+        updateAndRender(current);
+      };
+
+      function parseOrEmpty(jsonStr) {
+        try { return jsonStr.trim() ? JSON.parse(jsonStr) : {}; }
+        catch (e) { return {}; }
+      }
+
+      function updateAndRender(dataObj) {
+        // Recalculate totals for the ACTIVE context (or all, but context is easier)
+        // We'll regenerate totals for the context we just edited.
+        const meals = getMealsContext(dataObj);
+
+        let total = 0;
+        meals.forEach(m => {
+          let mTotal = 0;
+          if (m.items) { m.items.forEach(i => mTotal += Number(i.kcal || 0)); }
+          // If manual total is 0/null, use sum. Else trust manual (or just sum always?) 
+          // Let's force sum for items if present.
+          if (!m.total_kcal && m.items && m.items.length > 0) m.total_kcal = mTotal;
+
+          total += Number(m.total_kcal || m.kcal || 0);
+        });
+
+        // Update Option Total or Main Output Total
+        const container = document.getElementById('editorContainer');
+        const optIdxStr = container.dataset.optionIdx;
+        let out = dataObj.output || dataObj;
+
+        if (out.options && optIdxStr != null) {
+          const idx = parseInt(optIdxStr);
+          if (out.options[idx]) out.options[idx].total_kcal = total;
+        } else {
+          if (dataObj.output) dataObj.output.total_kcal = total;
+          else if (dataObj.total_kcal !== undefined) dataObj.total_kcal = total;
+        }
+
+        const str = JSON.stringify(dataObj, null, 2);
+        fOutput.value = str;
+        renderVisualEditor(str);
+      }
+
+      function syncVisualToJSON() {
+        const container = document.getElementById('editorContainer');
+        const cards = container.querySelectorAll('.card');
+
+        const current = parseOrEmpty(fOutput.value);
+        const meals = getMealsContext(current); // Target correct list
+
+        // Rebuild meals array from DOM inputs
+        cards.forEach((card, mIdx) => {
+          const mName = card.querySelector('.inp-m-name').value;
+          const mKcal = card.querySelector('.inp-m-kcal').value;
+
           if (meals[mIdx]) {
+            meals[mIdx].name = mName;
+            meals[mIdx].total_kcal = Number(mKcal);
+            delete meals[mIdx].kcal;
+
+            const itemRows = card.querySelectorAll('.item-row');
             if (!meals[mIdx].items) meals[mIdx].items = [];
-            meals[mIdx].items.push({ food: "", qty: "", kcal: 0, macros: { p: 0, c: 0, f: 0 } });
-            updateAndRender(current);
+
+            itemRows.forEach((row, itIdx) => {
+              if (meals[mIdx].items[itIdx]) {
+                const f = row.querySelector('.inp-food').value;
+                const q = row.querySelector('.inp-qty').value;
+                const k = row.querySelector('.inp-kcal').value;
+                const p = row.querySelector('.inp-p').value;
+                const c = row.querySelector('.inp-c').value;
+                const fat = row.querySelector('.inp-f').value;
+
+                meals[mIdx].items[itIdx].food = f;
+                meals[mIdx].items[itIdx].qty = q;
+                meals[mIdx].items[itIdx].kcal = Number(k);
+                meals[mIdx].items[itIdx].macros = {
+                  p: Number(p), c: Number(c), f: Number(fat)
+                };
+              }
+            });
           }
-        };
+        });
 
-        window.addMealToVisual = function () {
-          const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsContext(current);
-          meals.push({ name: "Nueva Comida", total_kcal: 0, items: [] });
-          updateAndRender(current);
-        };
+        const str = JSON.stringify(current, null, 2);
+        fOutput.value = str;
+      }
 
-        function parseOrEmpty(jsonStr) {
-          try { return jsonStr.trim() ? JSON.parse(jsonStr) : {}; }
-          catch (e) { return {}; }
+      function collectChanges() {
+        const body = {};
+        const notes = document.getElementById('fNotes').value.trim();
+        const planId = document.getElementById('fPlanId').value.trim();
+        const out = fOutput.value;
+        if (notes !== '') body.notes = notes; else body.notes = null;
+        if (planId !== '') body.plan_id = planId; else body.plan_id = null;
+        if (out.trim() !== '') {
+          try {
+            body.output = JSON.parse(out);
+          } catch (e) {
+            throw new Error('Output JSON inválido');
+          }
         }
+        return body;
+      }
 
-        function updateAndRender(dataObj) {
-          // Recalculate totals for the ACTIVE context (or all, but context is easier)
-          // We'll regenerate totals for the context we just edited.
-          const meals = getMealsContext(dataObj);
-
-          let total = 0;
-          meals.forEach(m => {
-            let mTotal = 0;
-            if (m.items) { m.items.forEach(i => mTotal += Number(i.kcal || 0)); }
-            // If manual total is 0/null, use sum. Else trust manual (or just sum always?) 
-            // Let's force sum for items if present.
-            if (!m.total_kcal && m.items && m.items.length > 0) m.total_kcal = mTotal;
-
-            total += Number(m.total_kcal || m.kcal || 0);
-          });
-
-          // Update Option Total or Main Output Total
-          const container = document.getElementById('editorContainer');
-          const optIdxStr = container.dataset.optionIdx;
-          let out = dataObj.output || dataObj;
-
-          if (out.options && optIdxStr != null) {
-            const idx = parseInt(optIdxStr);
-            if (out.options[idx]) out.options[idx].total_kcal = total;
+      async function savePlan() {
+        const msg = document.getElementById('adminSaveMsg');
+        const token = document.getElementById('adminToken').value.trim();
+        if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
+        let body;
+        try { body = collectChanges(); } catch (e) { msg.textContent = `Error: ${e.message}`; return; }
+        msg.textContent = 'Guardando...';
+        try {
+          let resp;
+          if (!currentPlan) {
+            const uid = resolveUserId(document.getElementById('adminUserId').value);
+            if (!uid) { msg.textContent = 'Selecciona usuario'; return; }
+            const inputPayload = lastGeneratedInput ? { ...lastGeneratedInput } : {};
+            if (body.plan_id) { inputPayload.plan_id = body.plan_id; }
+            const payload = {
+              user_id: uid,
+              token: token,
+              plan_data: { input: inputPayload, ...body }
+            };
+            // Create not directly supported by single endpoint?? 
+            // Actually we usually updated existing or created new via generate.
+            // Let's assume update logic for now or we need a CREATE endpoint.
+            // admin endpoints might be different. 
+            // Using the general endpoints from legacy code:
+            //   POST /meal_plans/generate (creates)
+            //   PUT /meal_plans/<id> (updates)
+            // We only have UPDATE button here mostly. 
+            // If currentPlan is null, we can't really "Save" unless we are generating.
+            msg.textContent = 'Error: No hay plan seleccionado para actualizar. Usa Generar para crear uno nuevo.';
+            return;
           } else {
-            if (dataObj.output) dataObj.output.total_kcal = total;
-            else if (dataObj.total_kcal !== undefined) dataObj.total_kcal = total;
+            // Update
+            resp = await fetch(`/meal_plans/${currentPlan._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, ...body })
+            });
           }
 
-          const str = JSON.stringify(dataObj, null, 2);
-          fOutput.value = str;
-          renderVisualEditor(str);
-        }
-
-        function syncVisualToJSON() {
-          const container = document.getElementById('editorContainer');
-          const cards = container.querySelectorAll('.card');
-
-          const current = parseOrEmpty(fOutput.value);
-          const meals = getMealsContext(current); // Target correct list
-
-          // Rebuild meals array from DOM inputs
-          cards.forEach((card, mIdx) => {
-            const mName = card.querySelector('.inp-m-name').value;
-            const mKcal = card.querySelector('.inp-m-kcal').value;
-
-            if (meals[mIdx]) {
-              meals[mIdx].name = mName;
-              meals[mIdx].total_kcal = Number(mKcal);
-              delete meals[mIdx].kcal;
-
-              const itemRows = card.querySelectorAll('.item-row');
-              if (!meals[mIdx].items) meals[mIdx].items = [];
-
-              itemRows.forEach((row, itIdx) => {
-                if (meals[mIdx].items[itIdx]) {
-                  const f = row.querySelector('.inp-food').value;
-                  const q = row.querySelector('.inp-qty').value;
-                  const k = row.querySelector('.inp-kcal').value;
-                  const p = row.querySelector('.inp-p').value;
-                  const c = row.querySelector('.inp-c').value;
-                  const fat = row.querySelector('.inp-f').value;
-
-                  meals[mIdx].items[itIdx].food = f;
-                  meals[mIdx].items[itIdx].qty = q;
-                  meals[mIdx].items[itIdx].kcal = Number(k);
-                  meals[mIdx].items[itIdx].macros = {
-                    p: Number(p), c: Number(c), f: Number(fat)
-                  };
-                }
-              });
-            }
-          });
-
-          const str = JSON.stringify(current, null, 2);
-          fOutput.value = str;
-        }
-
-        function collectChanges() {
-          const body = {};
-          const notes = document.getElementById('fNotes').value.trim();
-          const planId = document.getElementById('fPlanId').value.trim();
-          const out = fOutput.value;
-          if (notes !== '') body.notes = notes; else body.notes = null;
-          if (planId !== '') body.plan_id = planId; else body.plan_id = null;
-          if (out.trim() !== '') {
-            try {
-              body.output = JSON.parse(out);
-            } catch (e) {
-              throw new Error('Output JSON inválido');
-            }
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+            throw new Error(err.error);
           }
-          return body;
+          msg.textContent = 'Guardado OK';
+          msg.className = 'mt-2 text-success small fw-bold';
+          // Reload
+          const uid = resolveUserId(document.getElementById('adminUserId').value);
+          loadPlans(uid);
+        } catch (e) {
+          msg.textContent = `Error: ${e.message}`;
+          msg.className = 'mt-2 text-danger small fw-bold';
         }
+      }
 
-        async function savePlan() {
-          const msg = document.getElementById('adminSaveMsg');
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          let body;
-          try { body = collectChanges(); } catch (e) { msg.textContent = `Error: ${e.message}`; return; }
-          msg.textContent = 'Guardando...';
-          try {
-            let resp;
-            if (!currentPlan) {
-              const uid = resolveUserId(document.getElementById('adminUserId').value);
-              if (!uid) { msg.textContent = 'Selecciona usuario'; return; }
-              const inputPayload = lastGeneratedInput ? { ...lastGeneratedInput } : {};
-              if (body.plan_id) { inputPayload.plan_id = body.plan_id; }
-              const payload = {
-                user_id: uid,
-                backend: lastGeneratedBackend || document.getElementById('fBackend').value.trim() || "manual",
-                input: inputPayload,
-                output: body.output || {},
-                notes: body.notes,
-              };
-              resp = await fetch('/meal_plans/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-                body: JSON.stringify(payload)
-              });
-            } else {
-              resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/edit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-                body: JSON.stringify(body)
-              });
-            }
-            if (!resp.ok) {
-              const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-              throw new Error(err.error || `HTTP ${resp.status}`);
-            }
-            const updated = await resp.json();
-            msg.textContent = 'Cambios guardados';
-            if (updated && updated.meal_plan) { renderPlan(updated.meal_plan); }
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
+      document.getElementById('btnSavePlan').addEventListener('click', savePlan);
+      document.getElementById('btnReloadPlan').addEventListener('click', () => {
+        if (currentPlan) renderPlan(currentPlan); // primitive reload
+        else {
+          const uid = resolveUserId(document.getElementById('adminUserId').value);
+          if (uid) loadPlans(uid);
         }
+      });
 
-        document.getElementById('btnSearchPlans').addEventListener('click', loadPlans);
-        document.getElementById('btnSavePlan').addEventListener('click', savePlan);
-        document.getElementById('btnReloadPlan').addEventListener('click', () => { if (currentPlan) renderPlan(currentPlan); });
+      // Activate/Deactivate/Delete
+      async function doAction(action) {
+        if (!currentPlan) return;
+        const token = document.getElementById('adminToken').value.trim();
+        if (!token) { alert('Ingresa Admin Token'); return; }
 
-        document.getElementById('btnActivatePlan').addEventListener('click', async () => {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          msg.textContent = 'Activando...';
-          try {
-            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/activate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
-            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-            msg.textContent = 'Meal plan activado';
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        });
+        if (!confirm(`¿${action.toUpperCase()} este plan?`)) return;
 
-        document.getElementById('btnDeactivatePlan').addEventListener('click', async () => {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          msg.textContent = 'Desactivando...';
-          try {
-            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}/deactivate`, { method: 'POST', headers: { 'X-Admin-Token': token } });
-            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-            msg.textContent = 'Meal plan desactivado';
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        });
+        try {
+          let url = `/meal_plans/${currentPlan._id}`;
+          let method = 'PUT';
+          let body = { token };
 
-        document.getElementById('btnDeletePlan').addEventListener('click', async () => {
-          const msg = document.getElementById('adminSaveMsg');
-          if (!currentPlan) { msg.textContent = 'Selecciona un meal_plan'; return; }
-          const token = document.getElementById('adminToken').value.trim();
-          if (!token) { msg.textContent = 'Ingresa Admin Token'; return; }
-          const confirmed = await showConfirmModal("Eliminar plan", "¿Seguro que deseas borrar este meal_plan?", "danger");
-          if (!confirmed) return;
-          msg.textContent = 'Borrando...';
-          try {
-            const resp = await fetch(`/meal_plans/${encodeURIComponent(currentPlan._id)}`, { method: 'DELETE', headers: { 'X-Admin-Token': token } });
-            if (!resp.ok) { const err = await resp.json().catch(() => ({ error: 'Error desconocido' })); throw new Error(err.error || `HTTP ${resp.status}`); }
-            msg.textContent = 'Meal plan borrado';
-            currentPlan = null;
-            loadPlans();
-          } catch (e) { msg.textContent = `Error: ${e.message}`; }
-        });
+          if (action === 'delete') {
+            method = 'DELETE';
+            // Delete uses query param or body? usually body is safer but delete often no body.
+            // Admin endpoints usually support body for token.
+            // Flask `delete` with body is allowed.
+          } else if (action === 'activate') {
+            body.active = true;
+          } else if (action === 'deactivate') {
+            body.active = false;
+          }
 
-        // --- Nutrition Generator Logic ---
-        const btnAi = document.getElementById('btnAiGenerate');
-        if (btnAi) {
-          btnAi.addEventListener('click', async () => {
-            // adminUserId holds the raw ID (set by selectUser)
-            const uid = document.getElementById('adminUserId').value.trim();
-            const meals = document.getElementById('aiMeals').value;
-            const prefs = document.getElementById('aiPrefs').value;
-            const msg = document.getElementById('aiMsg');
-
-            if (!uid) { msg.textContent = "Selecciona usuario primero"; return; }
-
-            msg.textContent = "Generando plan con AI... (puede tardar 10-20s)";
-            msg.className = "text-info d-block mt-1";
-
-            try {
-              const qs = new URLSearchParams({ meals, prefs, exclude: "", cuisine: "" }).toString();
-              // Call the AI endpoint (GET)
-              const resp = await fetch(`/ai/nutrition/plan/${uid}?${qs}`);
-              if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                throw new Error(err.error || "Error al llamar AI");
-              }
-              const data = await resp.json();
-
-              // If successful, populate the Editor
-              // data = { backend, input, output: {...} }
-              // We want output in fOutput
-
-              const output = data.output || {};
-              document.getElementById('fOutput').value = JSON.stringify(output, null, 2);
-              document.getElementById('fBackend').value = data.backend || "AI-Gen";
-              document.getElementById('fNotes').value = `Generado por Admin AI el ${new Date().toLocaleString()}`;
-              lastGeneratedInput = data.input || {};
-              lastGeneratedBackend = data.backend || "AI-Gen";
-
-              // Update Input Summary for the newly generated plan
-              const inputSum = document.getElementById('adminPlanInputSummary');
-              const inp = lastGeneratedInput;
-              if (inp.total_kcal || inp.meals) {
-                inputSum.innerHTML = `
-                     <span class="badge bg-dark text-info border border-info p-2">
-                        <i class="fas fa-fire me-1"></i> Calorías: <strong>${inp.total_kcal || '-'}</strong>
-                     </span>
-                     <span class="badge bg-dark text-success border border-success p-2">
-                        <i class="fas fa-utensils me-1"></i> Comidas: <strong>${inp.meals || '-'}</strong>
-                     </span>
-                 `;
-              } else {
-                inputSum.innerHTML = '';
-              }
-
-              // Clear Plan ID if it's new
-              document.getElementById('fPlanId').value = "";
-              currentPlan = null; // Unselect any current plan
-              document.getElementById('adminPlanActiveBadge').style.display = 'none';
-              document.getElementById('adminPlanMeta').textContent = "Borrador Generado (No guardado)";
-
-              // Update Preview
-              try { window.updateVisualPreview(); } catch (e) { }
-
-              msg.textContent = "Plan generado y cargado en el editor. Revisa y Guarda.";
-              msg.className = "text-success d-block mt-1 fw-bold";
-
-              // Switch to preview tab if possible
-              try {
-                const tabEl = document.querySelector('#visual-tab');
-                if (tabEl) { const tab = new bootstrap.Tab(tabEl); tab.show(); }
-              } catch (e) { }
-
-            } catch (e) {
-              msg.textContent = "Error: " + e.message;
-              msg.className = "text-danger d-block mt-1 fw-bold";
-            }
+          const resp = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
           });
+
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+          // Reload list
+          const uid = resolveUserId(document.getElementById('adminUserId').value);
+          if (action === 'delete') clearInterface();
+          loadPlans(uid);
+
+        } catch (e) {
+          alert(`Error: ${e.message}`);
         }
+      }
 
-        // Autorellenar usuario con el contexto admin o el del login
-        window.addEventListener('DOMContentLoaded', () => {
-          try {
-            // Priority 1: Contexto de trabajo Admin (si existe)
-            const ctx = localStorage.getItem('admin_working_user');
-            if (ctx) {
-              const u = JSON.parse(ctx);
-              if (u && u.user_id) {
-                selectUser(u);
-                return;
-              }
-            }
+      document.getElementById('btnActivatePlan').addEventListener('click', () => doAction('activate'));
+      document.getElementById('btnDeactivatePlan').addEventListener('click', () => doAction('deactivate'));
+      document.getElementById('btnDeletePlan').addEventListener('click', () => doAction('delete'));
 
-            // Priority 2: Session User
-            const raw = localStorage.getItem('ai_fitness_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              const display = (u.username || '').trim();
-              if (display) { document.getElementById('adminUserId').value = display; }
-            }
-          } catch (e) { }
-        });
-      })();
-    </script>
-  </div> <!-- Fin de main-content -->
+
+      // AI GENERATION
+      document.getElementById('btnAiGenerate').addEventListener('click', async () => {
+        const uid = resolveUserId(document.getElementById('adminUserId').value);
+        const token = document.getElementById('adminToken').value.trim();
+        const msg = document.getElementById('aiMsg');
+        if (!uid) { msg.textContent = 'Selecciona usuario primero'; return; }
+        if (!token) { msg.textContent = 'Token admin requerido'; return; }
+
+        const mealsVal = parseInt(document.getElementById('aiMeals').value);
+        const prefs = document.getElementById('aiPrefs').value.trim();
+
+        msg.textContent = 'Generando... (esto puede tardar)';
+        try {
+          const resp = await fetch('/meal_plans/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: uid,
+              token: token,
+              meals_per_day: mealsVal,
+              preferences: prefs,
+              // If we are "overwriting" a plan, backend usually creates NEW one. 
+              // The UI implies generating a preview.
+              // Let's create proper payload.
+            })
+          });
+          if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'Err');
+          }
+          const data = await resp.json();
+
+          // data contains { message, plan_id, plan: {...} } usually
+          // or just the plan depending on implementation.
+          // Looking at old logic: it reloads list.
+          msg.textContent = 'Generado con éxito.';
+          loadPlans(uid);
+
+        } catch (e) {
+          msg.textContent = `Error: ${e.message}`;
+        }
+      });
+
+    })();
+  </script>
 </body>
 
 </html>

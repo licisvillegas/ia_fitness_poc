@@ -156,8 +156,24 @@ def api_search_exercises():
         body_part = (request.args.get("body_part") or "").strip()
         equipment = (request.args.get("equipment") or "").strip()
         ex_type = (request.args.get("type") or "").strip()
+        
+        # New Params
+        sort_by = request.args.get("sort", "name")
+        sort_order = request.args.get("order", "asc")
+        filter_incomplete = request.args.get("incomplete") == "true"
 
         query = {}
+        
+        # Incomplete Data Filter (Admin Tool)
+        if filter_incomplete:
+            query["$or"] = [
+                {"taxonomy.section_id": {"$in": [None, ""]}},
+                {"taxonomy.group_id": {"$in": [None, ""]}},
+                {"taxonomy.muscle_id": {"$in": [None, ""]}},
+                {"equipment": {"$in": [None, ""]}},
+                {"type": {"$in": [None, ""]}},
+            ]
+        
         if body_part:
             query["$or"] = [
                 {"body_part": body_part},
@@ -189,8 +205,7 @@ def api_search_exercises():
             ]
 
         total = db.exercises.count_documents(query)
-        docs = list(
-            db.exercises.find(
+        docs_cursor = db.exercises.find(
                 query,
                 {
                     "exercise_id": 1,
@@ -217,10 +232,20 @@ def api_search_exercises():
                     "is_custom": 1,
                 },
             )
-            .sort("name", 1)
-            .skip(skip)
-            .limit(limit)
-        )
+
+        
+        # Apply Sorting
+        mongo_sort_order = 1 if sort_order == "asc" else -1
+        
+        if sort_by == "newest":
+            # Sort by _id (approx timestamp)
+            docs_cursor = docs_cursor.sort("_id", -1)
+        else:
+            # Default to name
+            docs_cursor = docs_cursor.sort("name", mongo_sort_order)
+            
+        docs = list(docs_cursor.skip(skip).limit(limit))
+
         for d in docs:
             d["_id"] = str(d["_id"])
         return jsonify({"items": docs, "total": total, "page": page, "limit": limit}), 200

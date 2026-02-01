@@ -32,24 +32,45 @@ def fetch_user_progress_for_agent(user_id: str) -> list:
     """
     Obtiene el historial de progreso del usuario para alimentar agentes de IA.
     Retorna una lista de registros de progreso ordenados por fecha.
+    (Versión migrada a body_assessments)
     """
     if not user_id or extensions.db is None:
         return []
     
+    # Reutilizamos la lógica del helper principal importándolo o replicando
+    # Para evitar dependencia circular limpia, replicamos la lectura básica
     try:
-        progress_cursor = extensions.db.progress.find(
-            {"user_id": user_id}
-        ).sort("date", -1).limit(30)
+        cursor = extensions.db.body_assessments.find(
+            {"user_id": user_id},
+            {"created_at": 1, "input": 1, "output": 1}
+        ).sort("created_at", -1).limit(30)
         
         progress_list = []
-        for p in progress_cursor:
-            # Convertir ObjectId y datetime a strings
+        for p in cursor:
+            # Metrics Extraction
+            inp = p.get("input") or {}
+            meas = inp.get("measurements") or {}
+            out = p.get("output") or {}
+            bc = out.get("body_composition") or {}
+
+            weight = meas.get("weight_kg") or inp.get("weight")
+            
+            bf = None
+            if bc.get("body_fat_percent"): bf = bc.get("body_fat_percent")
+            elif out.get("body_fat_percent"): bf = out.get("body_fat_percent")
+            elif meas.get("body_fat_percent"): bf = meas.get("body_fat_percent")
+            elif meas.get("body_fat"): bf = meas.get("body_fat")
+
+            muscle_mass = None
+            if bc.get("muscle_mass_percent"): muscle_mass = bc.get("muscle_mass_percent")
+            elif meas.get("muscle_mass_percent"): muscle_mass = meas.get("muscle_mass_percent")
+
             progress_item = {
-                "date": p.get("date").isoformat() if p.get("date") else None,
-                "weight": p.get("weight"),
-                "body_fat": p.get("body_fat"),
-                "muscle_mass": p.get("muscle_mass"),
-                "notes": p.get("notes", "")
+                "date": p.get("created_at").isoformat() if p.get("created_at") else None,
+                "weight": weight,
+                "body_fat": bf,
+                "muscle_mass": muscle_mass,
+                "notes": inp.get("notes", "") # assessment notes
             }
             progress_list.append(progress_item)
         

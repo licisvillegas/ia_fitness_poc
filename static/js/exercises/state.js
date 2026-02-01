@@ -11,6 +11,9 @@
         isAdmin,
         isEmbed,
         currentView: localStorage.getItem('exercises_view_mode') || 'grid',
+        sortBy: 'name',     // 'name' | 'newest'
+        sortOrder: 'asc',   // 'asc' | 'desc'
+        filterIncomplete: false, // Admin only filter
         allExercises: [],
         exerciseLookup: {},
         exerciseLookupByName: {},

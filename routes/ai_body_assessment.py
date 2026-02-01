@@ -293,17 +293,8 @@ def ai_body_assessment():
                     body_fat = meas.get("body_fat")
 
                 if weight_kg is not None or body_fat is not None:
-                    extensions.db.progress.insert_one(
-                        {
-                            "user_id": context.get("user_id"),
-                            "date": created_at,
-                            "weight_kg": weight_kg,
-                            "body_fat": body_fat,
-                            "performance": None,
-                            "nutrition_adherence": None,
-                            "source": "body_assessment",
-                        }
-                    )
+                    # Logs for legacy tracking optional, but we stop writing to deprecated collection 'progress'
+                    pass
         except Exception as persist_err:
             logger.warning(f"No se pudo guardar evaluacion corporal: {persist_err}")
 

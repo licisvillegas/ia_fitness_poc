@@ -130,24 +130,21 @@ def compute_age(birth_date: Optional[datetime]) -> Optional[int]:
         return None
 
 def fetch_user_progress_for_agent(user_id: str, limit: Optional[int] = None):
-    """Obtiene el progreso de un usuario desde MongoDB y lo formatea
+    """Obtiene el progreso de un usuario desde MongoDB (body_assessments) y lo formatea
     como JSON utilizable por el agente AI.
+    
+    Nota: performance y nutrition_adherence no existen en body_assessments, se retornan como None/0.
     """
     try:
         if extensions.db is None:
             raise RuntimeError("Conexión a MongoDB no inicializada")
 
-        projection = {
-            "_id": 0,
-            "user_id": 1,
-            "date": 1,
-            "weight_kg": 1,
-            "body_fat": 1,
-            "performance": 1,
-            "nutrition_adherence": 1,
-        }
-
-        cursor = extensions.db.progress.find({"user_id": user_id}, projection=projection).sort("date", 1)
+        # Query body_assessments directly
+        cursor = extensions.db.body_assessments.find(
+            {"user_id": user_id},
+            {"created_at": 1, "input": 1, "output": 1}
+        ).sort("created_at", 1)
+        
         items = list(cursor)
 
         if limit is not None and isinstance(limit, int) and limit > 0:
@@ -155,22 +152,45 @@ def fetch_user_progress_for_agent(user_id: str, limit: Optional[int] = None):
 
         normalized = []
         for it in items:
-            d = it.get("date")
+            # Date mapping
+            d = it.get("created_at")
             if isinstance(d, datetime):
                 date_str = d.strftime("%Y-%m-%d")
             else:
                 date_str = str(d) if d is not None else None
 
+            # Extract metrics from standard structure
+            inp = it.get("input") or {}
+            meas = inp.get("measurements") or {}
+            out = it.get("output") or {}
+            body_comp = out.get("body_composition") or {}
+
+            # Weight
+            weight = meas.get("weight_kg")
+            if not weight: 
+                weight = inp.get("weight")
+
+            # Body Fat
+            bf = None
+            if body_comp.get("body_fat_percent"):
+                bf = body_comp.get("body_fat_percent")
+            elif out.get("body_fat_percent"):
+                bf = out.get("body_fat_percent")
+            elif meas.get("body_fat_percent"):
+                bf = meas.get("body_fat_percent")
+            elif meas.get("body_fat"):
+                bf = meas.get("body_fat")
+
             normalized.append({
                 "user_id": str(it.get("user_id")) if it.get("user_id") is not None else user_id,
                 "date": date_str,
-                "weight_kg": it.get("weight_kg"),
-                "body_fat": it.get("body_fat"),
-                "performance": it.get("performance"),
-                "nutrition_adherence": it.get("nutrition_adherence"),
+                "weight_kg": weight,
+                "body_fat": bf,
+                "performance": None, # Not tracked in body_assessments
+                "nutrition_adherence": None, # Not tracked in body_assessments
             })
 
-        return {"progress": normalized}
+        return {"progress": normalized} # Mantener clave 'progress' para compatibilidad con Agentes
     except Exception as e:
         logger.error(f"Error en fetch_user_progress_for_agent({user_id}): {e}", exc_info=True)
         return {"progress": []}

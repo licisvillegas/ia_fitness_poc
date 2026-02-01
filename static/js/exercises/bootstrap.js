@@ -3,6 +3,7 @@
     function onReady() {
         const state = window.ExercisesState;
         if (state.isAdmin) {
+            document.getElementById('adminControls')?.classList.remove('d-none');
             document.getElementById('btnNewExercise')?.classList.remove('d-none');
             document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('d-none'));
         }

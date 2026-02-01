@@ -70,7 +70,15 @@
         if (group) params.set('group', group);
         if (muscle) params.set('muscle', muscle);
         if (equipment) params.set('equipment', equipment);
+        if (equipment) params.set('equipment', equipment);
         if (type) params.set('type', type);
+
+        // Sort & Incomplete
+        const state = window.ExercisesState;
+        if (state.sortBy) params.set('sort', state.sortBy);
+        if (state.sortOrder) params.set('order', state.sortOrder);
+        if (state.filterIncomplete) params.set('incomplete', 'true');
+
         return params;
     }
 
@@ -190,6 +198,33 @@
             }
         }
         window.ExercisesApi.loadExercisesPage(1);
+        window.ExercisesApi.loadExercisesPage(1);
+    }
+
+    // Sort & Incomplete Actions
+    function setSort(field, order) {
+        window.ExercisesState.sortBy = field;
+        window.ExercisesState.sortOrder = order;
+        // Update UI logic for dropdown could be here or in render
+        window.ExercisesApi.loadExercisesPage(1);
+    }
+
+    function toggleIncompleteFilter() {
+        const state = window.ExercisesState;
+        state.filterIncomplete = !state.filterIncomplete;
+
+        // Update Button UI immediately
+        const btn = document.getElementById('btnIncompleteToggle');
+        if (btn) {
+            if (state.filterIncomplete) {
+                btn.classList.add('active', 'btn-warning');
+                btn.classList.remove('btn-outline-warning');
+            } else {
+                btn.classList.remove('active', 'btn-warning');
+                btn.classList.add('btn-outline-warning');
+            }
+        }
+        window.ExercisesApi.loadExercisesPage(1);
     }
 
     window.ExercisesFilters = {
@@ -201,10 +236,16 @@
         resetFilters,
         renderMuscleIcons,
         updateIconSelectionFromDropdown,
-        filterByIcon
+        renderMuscleIcons,
+        updateIconSelectionFromDropdown,
+        filterByIcon,
+        setSort,
+        toggleIncompleteFilter
     };
 
     window.switchView = switchView;
     window.resetFilters = resetFilters;
     window.filterByIcon = filterByIcon;
+    window.setSort = setSort;
+    window.toggleIncompleteFilter = toggleIncompleteFilter;
 })();

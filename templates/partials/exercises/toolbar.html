@@ -9,11 +9,38 @@
             <div class="w-100">
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-end gap-2">
                     <!-- Boton nuevo admin -->
-                    <div id="adminControls d-none">
-                        <button class="btn btn-cyber-primary text-nowrap d-none" id="btnNewExercise"
+                    <!-- Boton nuevo admin -->
+                    <div id="adminControls" class="d-none flex-wrap align-items-center gap-2">
+                        <button class="btn btn-outline-warning btn-sm text-nowrap" id="btnIncompleteToggle"
+                            onclick="window.toggleIncompleteFilter()" title="Ver ejercicios con datos faltantes">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Falta Data
+                        </button>
+                        <button class="btn btn-cyber-primary text-nowrap" id="btnNewExercise"
                             onclick="openExerciseModal()">
                             <i class="fas fa-plus me-1"></i> <span class="d-none d-md-inline">Nuevo</span>
                         </button>
+                    </div>
+
+                    <!-- Sort Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown">
+                            <i class="fas fa-sort me-1"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end bg-card border-secondary shadow">
+                            <li>
+                                <h6 class="dropdown-header text-muted small">Ordenar por</h6>
+                            </li>
+                            <li><a class="dropdown-item text-white" href="#"
+                                    onclick="window.setSort('name', 'asc')">Nombre (A-Z)</a></li>
+                            <li><a class="dropdown-item text-white" href="#"
+                                    onclick="window.setSort('name', 'desc')">Nombre (Z-A)</a></li>
+                            <li>
+                                <hr class="dropdown-divider bg-secondary">
+                            </li>
+                            <li><a class="dropdown-item text-white" href="#"
+                                    onclick="window.setSort('newest', 'desc')">Más Recientes</a></li>
+                        </ul>
                     </div>
 
                     <!-- Selector de vista -->
@@ -48,12 +75,14 @@
                         </select>
                     </div>
                     <div class="col-6 col-md-4 col-xl-2">
-                        <select class="form-select bg-dark text-white border-secondary w-100 opacity-50" id="filterGroup" disabled>
+                        <select class="form-select bg-dark text-white border-secondary w-100 opacity-50"
+                            id="filterGroup" disabled>
                             <option value="">Grupo...</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-4 col-xl-2">
-                        <select class="form-select bg-dark text-white border-secondary w-100 opacity-50" id="filterMuscle" disabled>
+                        <select class="form-select bg-dark text-white border-secondary w-100 opacity-50"
+                            id="filterMuscle" disabled>
                             <option value="">Músculo...</option>
                         </select>
                     </div>

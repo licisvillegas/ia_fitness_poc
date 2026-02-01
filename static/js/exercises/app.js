@@ -135,7 +135,14 @@ async function sendSelection(idOrObj) {
 
 document.addEventListener("DOMContentLoaded", () => {
     if (isAdmin) {
-        document.getElementById("btnNewExercise").classList.remove("d-none");
+        // Show container for all admin controls
+        const adminControls = document.getElementById("adminControls");
+        if (adminControls) adminControls.classList.remove("d-none");
+
+        // Also ensure individual buttons are visible if they had d-none (though parent handles it now mostly)
+        const btnNew = document.getElementById("btnNewExercise");
+        if (btnNew) btnNew.classList.remove("d-none");
+
         document.querySelectorAll(".admin-col").forEach(el => el.classList.remove("d-none"));
     }
 

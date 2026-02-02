@@ -22,7 +22,8 @@ body {
     url('/static/images/IMG_1552.jpg');
   background-size: cover;
   background-position: center;
-  height: 65vh;
+  height: 40vh;
+  min-height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;

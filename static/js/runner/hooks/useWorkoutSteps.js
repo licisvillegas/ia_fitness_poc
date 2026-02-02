@@ -164,7 +164,7 @@
             // 2. Esperar 2 segundos y luego mostrar modal
             setTimeout(() => {
                 setShowCompletionIcon(false);
-                showConfirm("Finalizar Rutina", "Â¿Deseas guardar el entrenamiento completado?", async () => {
+                showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
                     setStatus('FINISHED');
                     const payload = {
                         routine_id: (routineState?.id || routine?.id),
@@ -172,7 +172,7 @@
                         end_time: new Date().toISOString(),
                         sets: sessionLogRef.current // Usar REF para asegurar datos más recientes
                     };
-                    if (window.showLoader) window.showLoader("Guardando sesiÃ³n...");
+                    if (window.showLoader) window.showLoader("Guardando sesión...");
                     // Lógica de guardado
                     try {
 
@@ -241,7 +241,7 @@
                             isOpen: true,
 
                             title: "Error al Guardar",
-                            message: "No se pudo guardar la sesiÃ³n (ni en nube ni local). Â¿QuÃ© deseas hacer?",
+                            message: "No se pudo guardar la sesión (ni en nube ni local). ¿Qué deseas hacer?",
                             confirmText: "Reintentar Local",
                             cancelText: "Salir sin Guardar",
                             type: "danger",
@@ -251,7 +251,7 @@
                                     window.showLoader("Forzando guardado local...");
                                     if (window.offlineManager) {
                                         await window.offlineManager.saveSession(payload);
-                                        window.showAlertModal("Ã‰xito", "Guardado localmente forzado.", "success");
+                                        window.showAlertModal("Éxito", "Guardado localmente forzado.", "success");
                                         setTimeout(() => window.location.href = getReturnUrl(), 1000);
                                     } else {
                                         throw new Error("Offline Manager no disponible");
@@ -259,7 +259,7 @@
                                 } catch (retryErr) {
                                     console.error("Retry failed:", retryErr);
                                     window.hideLoader();
-                                    alert("Error final: " + retryErr.message + ". Se saldrÃ¡ y cancelarÃ¡ la sesiÃ³n.");
+                                    alert("Error final: " + retryErr.message + ". Se saldrá y cancelará la sesión.");
 
                                     // CANCELACIÓN FORZADA
                                     try {
@@ -272,7 +272,7 @@
                             },
                             onCancel: async () => {
                                 // Salir sin guardar
-                                if (confirm("Â¿Seguro que deseas perder los datos de esta sesiÃ³n?")) {
+                                if (confirm("¿Seguro que deseas perder los datos de esta sesión?")) {
                                     // CANCELACIÓN FORZADA para desbloquear servidor
                                     try {
                                         localStorage.removeItem("workout_running_state");

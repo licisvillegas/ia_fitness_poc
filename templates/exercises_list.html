@@ -22,7 +22,10 @@
             background: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(37, 99, 235, 0.4)), url('/static/images/IMG_1558.JPG');
             background-size: cover;
             background-position: center;
-            padding: 2rem 0;
+            aspect-ratio: 1024 / 438;
+            height: auto;
+            min-height: 240px;
+            padding: 1.75rem 0;
             text-align: center;
             color: var(--text-main);
             margin-bottom: 2rem;
@@ -108,7 +111,10 @@
 
         @media (max-width: 767px) {
             .hero-sm {
-                padding: 1.25rem 0;
+                aspect-ratio: 1024 / 438;
+                height: auto;
+                min-height: 200px;
+                padding: 1.2rem 0;
                 margin-bottom: 1.5rem;
                 background-position: center 25%;
             }

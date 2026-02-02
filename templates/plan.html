@@ -42,8 +42,9 @@
         url('/static/images/IMG_1558.JPG');
       background-size: cover;
       background-position: center;
-      height: 50vh;
-      min-height: 340px;
+      aspect-ratio: 1024 / 438;
+      height: auto;
+      min-height: 280px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -65,9 +66,10 @@
 
     @media (max-width: 767px) {
       .hero {
-        height: 34vh;
+        aspect-ratio: 1024 / 438;
+        height: auto;
         min-height: 210px;
-        padding: 2rem 0;
+        padding: 1.75rem 0;
         background-position: center 25%;
       }
 

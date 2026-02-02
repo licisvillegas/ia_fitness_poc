@@ -93,7 +93,7 @@ def ai_nutrition_plan(user_id: str):
         return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
 
     except Exception as e:
-        logger.error(f"Error generando plan de nutrición: {e}", exc_info=True)
+        logger.error(f"Error generando : {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
 
 

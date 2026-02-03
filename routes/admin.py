@@ -1726,3 +1726,98 @@ def get_onboarding_history(user_id):
     except Exception as e:
         logger.error(f"Error getting onboarding history: {e}")
         return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.route("/admin/notifications")
+def admin_notifications_page():
+    ok, err = check_admin_access()
+    if not ok: return redirect("/admin/login")
+    return render_template("admin_notifications.html")
+
+@admin_bp.post("/admin/notifications/broadcast")
+def admin_notifications_broadcast():
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    data = request.get_json() or {}
+    title = data.get("title")
+    message = data.get("message")
+    url = data.get("url", "/")
+    notif_type = data.get("type", "info")
+    send_in_app = data.get("sendInApp", False)
+    send_push = data.get("sendPush", False)
+    
+    if not title or not message:
+         return jsonify({"error": "Faltan datos (título o mensaje)"}), 400
+
+    db = extensions.db
+    if db is None: return jsonify({"error": "DB not ready"}), 503
+
+    result_summary = {
+        "in_app_count": 0,
+        "push_count": 0,
+        "push_errors": 0
+    }
+
+    # 1. In-App Broadcast
+    if send_in_app:
+        try:
+            users = list(db.users.find({}, {"_id": 1}))
+            notifications = []
+            now = datetime.utcnow()
+            for u in users:
+                notifications.append({
+                    "user_id": u["_id"], # ObjectId
+                    "title": title,
+                    "message": message,
+                    "type": notif_type,
+                    "link": url,
+                    "read": False,
+                    "created_at": now
+                })
+            
+            if notifications:
+                 res = db.notifications.insert_many(notifications)
+                 result_summary["in_app_count"] = len(res.inserted_ids)
+                 logger.info(f"Admin Broadcast: Inserted {len(res.inserted_ids)} in-app notifications.")
+        except Exception as e:
+            logger.error(f"Admin Broadcast In-App Error: {e}")
+            return jsonify({"error": f"Error In-App: {str(e)}"}), 500
+
+    # 2. Web Push Broadcast
+    if send_push:
+        try:
+            # Import helper from push route
+            from routes.push import _send_push_notification_sync
+            
+            # Get unique users with subscriptions
+            user_ids = db.push_subscriptions.distinct("user_id")
+            count = 0
+            errs = 0
+            
+            for uid in user_ids:
+                try:
+                    # _send_push_notification_sync handles finding subscriptions for the user
+                    _send_push_notification_sync(
+                        user_id=uid,
+                        title=title,
+                        body=message,
+                        url=url,
+                        context="admin_broadcast",
+                        meta={"type": "broadcast", "urgency": "high"}
+                    )
+                    count += 1
+                except Exception as e:
+                    logger.error(f"Push Broadcast Error for {uid}: {e}")
+                    errs += 1
+            
+            result_summary["push_count"] = count
+            result_summary["push_errors"] = errs
+            logger.info(f"Admin Broadcast: Processed {count} push users ({errs} errors).")
+
+        except Exception as e:
+             logger.error(f"Admin Broadcast Push Error: {e}")
+             # Don't fail the whole request if partial success?
+             # But lets return clean
+             result_summary["push_error_msg"] = str(e)
+
+    return jsonify(result_summary), 200

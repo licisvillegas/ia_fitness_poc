@@ -199,22 +199,39 @@
 
                 // --- Lógica de Posicionamiento Dinámico ---
                 const rect = toggleLink.getBoundingClientRect();
+                const sidebarEl = document.querySelector('.sidebar-fixed');
+                // Si la sidebar está oculta (móvil 100% off-canvas), right será 0 o negativo. Usar 250px como fallback.
+                const sidebarRect = sidebarEl ? sidebarEl.getBoundingClientRect() : { right: 250 };
                 const dropdownWidth = 300; // Coincidir con el ancho de CSS en notifications.css
+                const isCollapsed = document.body.classList.contains('sb-collapsed');
 
-                // Posicionar a la derecha del botón por defecto (Barra lateral expandida)
-                let left = rect.right + 10;
-                let top = rect.top;
+                let left, top;
 
-                // Ajustar vertical si se desborda por abajo
-                // (Refinamiento opcional: if (top + height > window.innerHeight) ...)
+                if (isCollapsed) {
+                    // Barra Lateral COLAPSADA: Estilo "Side Bubble" (a la derecha del icono)
+                    left = rect.right + 10;
+                } else {
+                    // Barra Lateral EXPANDIDA: También estilo "Side Bubble" (a la derecha de la sidebar)
+                    // Usar el borde real de la sidebar para evitar que se superponga al contenido del menú
+                    let sbRight = sidebarRect.right;
+                    // En móvil, si la sidebar está visible (clase .show-mobile o similar), right debería ser 250.
+                    // Si no, 0.
+                    if (sbRight < 50) sbRight = 250; // Fallback simple para móvil expandido
 
+                    left = sbRight + 10;
+                }
+
+                // Alineación vertical consistente con el botón
+                top = rect.top;
+
+                // Ajustes de seguridad
                 // Verificar desbordamiento horizontal (Móvil o pantallas pequeñas)
                 if (left + dropdownWidth > window.innerWidth) {
-                    // Intentar alinear a la izquierda (ej. para barra lateral derecha o solapamiento móvil)
-                    // ¿O centrar?
-                    // Retorno seguro: margen derecho mínimo
                     left = window.innerWidth - dropdownWidth - 10;
                 }
+
+                // Evitar offset negativo
+                if (left < 10) left = 10;
 
                 // Aplicar estilos
                 dropdownEl.style.top = `${top}px`;

@@ -1,0 +1,145 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card bg-panel border-secondary shadow-lg">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white"><i class="fas fa-bullhorn me-2 text-warning"></i>Difusor de Notificaciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="broadcastForm">
+                    <div class="mb-3">
+                        <label for="title" class="form-label text-light">Título</label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="title"
+                            name="title" required placeholder="Ej: Nueva Funcionalidad Disponible">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="message" class="form-label text-light">Mensaje / Cuerpo</label>
+                        <textarea class="form-control bg-dark text-white border-secondary" id="message" name="message"
+                            rows="3" required placeholder="Ej: Hemos añadido..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="url" class="form-label text-light">URL de Destino (Opcional)</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="url"
+                                name="url" placeholder="/dashboard" value="/">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label text-light">Tipo</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="type" name="type">
+                                <option value="info">Información (Azul)</option>
+                                <option value="success">Éxito (Verde)</option>
+                                <option value="warning">Advertencia (Amarillo)</option>
+                                <option value="error">Error (Rojo)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary my-4">
+
+                    <h6 class="text-white mb-3">Canales de Envío</h6>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="sendInApp" name="sendInApp" checked>
+                        <label class="form-check-label text-light" for="sendInApp">
+                            <i class="fas fa-bell me-2"></i> In-App Notification (Base de Datos)
+                            <div class="form-text text-muted">Aparecerá en el menú de notificaciones para
+                                <strong>todos</strong> los usuarios registrados.</div>
+                        </label>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" id="sendPush" name="sendPush">
+                        <label class="form-check-label text-light" for="sendPush">
+                            <i class="fas fa-mobile-alt me-2"></i> Web Push Notification (Server Push)
+                            <div class="form-text text-muted">Se enviará a los dispositivos suscritos
+                                (Navegador/Android). Requiere configuración VAPID.</div>
+                        </label>
+                    </div>
+
+                    <div class="alert alert-info border-secondary d-none" id="resultAlert"></div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary" id="sendBtn">
+                            <i class="fas fa-paper-plane me-2"></i> Enviar Difusión
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('broadcastForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        if (!confirm('¿Estás seguro de enviar esta difusión a TODOS los usuarios?')) return;
+
+        const btn = document.getElementById('sendBtn');
+        const alertBox = document.getElementById('resultAlert');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Enviando...';
+        alertBox.classList.add('d-none');
+
+        const formData = {
+            title: document.getElementById('title').value,
+            message: document.getElementById('message').value,
+            url: document.getElementById('url').value,
+            type: document.getElementById('type').value,
+            sendInApp: document.getElementById('sendInApp').checked,
+            sendPush: document.getElementById('sendPush').checked
+        };
+
+        try {
+            const res = await fetch('/admin/notifications/broadcast', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCookie('admin_csrf')
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+
+            alertBox.classList.remove('d-none', 'alert-info', 'alert-danger', 'alert-success');
+
+            if (res.ok) {
+                alertBox.classList.add('alert-success');
+                alertBox.innerHTML = `
+                <strong>¡Envío completado!</strong><br>
+                <ul>
+                    <li>In-App: ${data.in_app_count} usuarios.</li>
+                    <li>Web Push: ${data.push_count} enviados (${data.push_errors} errores).</li>
+                </ul>
+            `;
+                document.getElementById('broadcastForm').reset();
+            } else {
+                alertBox.classList.add('alert-danger');
+                alertBox.textContent = data.error || 'Error al enviar.';
+            }
+
+        } catch (err) {
+            console.error(err);
+            alertBox.classList.remove('d-none');
+            alertBox.classList.add('alert-danger');
+            alertBox.textContent = 'Error de conexión.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Enviar Difusión';
+        }
+    });
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+</script>
+{% endblock %}

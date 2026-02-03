@@ -94,7 +94,7 @@
   dict['sesiones_completas_que_activan_todos_los_grupos_musculares_p'] = dict['sesiones_completas_que_activan_todos_los_grupos_musculares_p'] || { es: 'Sesiones completas que activan todos los grupos musculares. Perfecto para mantenerte en forma cuando dispones de poco tiempo.', en: 'Full sessions that activate all muscle groups. Perfect for staying fit when you have little time.' };
   // Página: Dashboard
   dict['dashboard_hero_title'] = { es: 'Monitorea tu evolución', en: 'Monitor your progress' };
-  dict['dashboard_hero_p'] = { es: 'Selecciona tu usuario, carga tus datos y observa tu progreso en tiempo real.', en: 'Select your user, upload your data and view your progress in real time.' };
+  dict['dashboard_hero_p'] = { es: 'Tu evolución bajo control. Analizamos tus métricas en tiempo real para potenciar cada paso de tu transformación.', en: 'Your evolution under control. We analyze your metrics in real time to power every step of your transformation.' };
   dict['stat_weight_title'] = { es: 'Peso Actual', en: 'Current Weight' };
   dict['stat_fat_title'] = { es: 'Grasa Corporal', en: 'Body Fat' };
   dict['stat_performance_title'] = { es: 'Rendimiento', en: 'Performance' };

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synapse-fit-v2';
+const CACHE_NAME = 'synapse-fit-v3';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = [
     OFFLINE_URL,
@@ -37,6 +37,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+    const url = new URL(request.url);
+
+    // No interceptar llamadas a la API
+    if (url.pathname.startsWith('/api/')) {
+        return;
+    }
 
     if (request.mode === 'navigate') {
         event.respondWith(

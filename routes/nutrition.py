@@ -362,3 +362,76 @@ def delete_meal_plan(plan_id: str):
     except Exception as e:
         logger.error(f"Error al eliminar meal_plan: {e}", exc_info=True)
         return jsonify({"error": "Error interno al eliminar meal_plan"}), 500
+
+
+@nutrition_bp.get("/api/nutrition/find-equivalents")
+def find_equivalents():
+    """Busca un alimento y devuelve otros del mismo grupo nutricional."""
+    try:
+        nombre_busqueda = request.args.get("q", "").strip()
+        if not nombre_busqueda:
+            return jsonify({"error": "Debe proporcionar un nombre de alimento"}), 400
+        
+        if extensions.db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+
+        # 1. Buscar matches
+        # Usamos un regex más flexible para asegurar coincidencias
+        query = {"nombre": {"$regex": f".*{nombre_busqueda}.*", "$options": "i"}}
+        
+        # Si se pide exacto, buscamos coincidencia exacta (case insensitive)
+        is_exact = request.args.get("exact", "false").lower() == "true"
+        if is_exact:
+            query = {"nombre": {"$regex": f"^{nombre_busqueda}$", "$options": "i"}}
+
+        all_matches = list(extensions.db.alimentos_equivalentes.find(query).limit(20))
+
+        if not all_matches:
+            # DEBUG: Intentar obtener una muestra para ver qué hay en la colección
+            muestra = list(extensions.db.alimentos_equivalentes.find().limit(5))
+            for m in muestra: m["_id"] = str(m["_id"])
+            
+            logger.warning(f"Alimento no encontrado: '{nombre_busqueda}'. Hay {len(muestra)} ejemplos.")
+            return jsonify({
+                "error": f"No encontré el alimento '{nombre_busqueda}'",
+                "debug_samples": muestra,
+                "searched_query": str(query)
+            }), 404
+
+        # Si hay múltiples matches y no es exacto, los devolvemos para que el usuario elija
+        if len(all_matches) > 1 and not is_exact:
+            matches_list = []
+            for m in all_matches:
+                matches_list.append({
+                    "id": str(m["_id"]),
+                    "nombre": m.get("nombre"),
+                    "grupo": m.get("grupo")
+                })
+            return jsonify({
+                "multiple_matches": True,
+                "matches": matches_list
+            }), 200
+
+        # Si llegamos aquí, tomamos el primero (o único)
+        alimento_base = all_matches[0]
+        alimento_base["_id"] = str(alimento_base["_id"])
+        grupo = alimento_base.get("grupo")
+        
+        # 2. Buscar intercambios (mismo grupo, diferente nombre)
+        intercambios_cursor = extensions.db.alimentos_equivalentes.find({
+            "grupo": grupo,
+            "nombre": {"$ne": alimento_base['nombre']}
+        }).limit(12)
+
+        intercambios = []
+        for doc in intercambios_cursor:
+            doc["_id"] = str(doc["_id"])
+            intercambios.append(doc)
+
+        return jsonify({
+            "alimento_solicitado": alimento_base,
+            "opciones_intercambio": intercambios
+        }), 200
+    except Exception as e:
+        logger.error(f"Error buscando equivalentes: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al buscar equivalentes"}), 500

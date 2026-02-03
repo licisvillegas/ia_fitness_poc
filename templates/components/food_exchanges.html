@@ -1,0 +1,142 @@
+<section class="food-exchanges mb-5">
+    <div class="container">
+        <header class="exchange-header mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="text-theme fw-bold mb-0">Equivalencias de Alimentos</h2>
+                <button type="button" class="btn btn-link p-0 text-muted" id="btnShowHelp"
+                    title="¿Cómo usar la calculadora?" data-bs-toggle="modal" data-bs-target="#helpModal">
+                    <i class="fas fa-info-circle fs-5"></i>
+                </button>
+            </div>
+
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="foodSearchInput" placeholder="Busca un alimento (ej. Pechuga de pollo)..."
+                    class="form-control food-search-input" autocomplete="off">
+                <div id="foodSearchSuggestions" class="search-suggestions" style="display: none;"></div>
+            </div>
+        </header>
+
+        <div id="exchangeResults" class="exchange-results" style="display: none;">
+            <!-- Alimento Base -->
+            <div id="baseFoodCard" class="base-food-card shadow-lg mb-4">
+                <div class="card-header-flex">
+                    <div class="d-flex align-items-center">
+                        <div id="baseFoodIcon" class="base-food-icon me-3">
+                            <!-- Icono se inserta via JS -->
+                        </div>
+                        <div>
+                            <p class="category-label">Alimento Base</p>
+                            <h3 id="baseFoodName" class="base-name">--</h3>
+                        </div>
+                    </div>
+                    <span id="baseFoodGroup" class="group-badge">--</span>
+                </div>
+
+                <div class="base-info-row mt-2">
+                    <span class="standard-label opacity-75 small">
+                        <i class="fas fa-balance-scale me-1"></i> Porción estándar: <strong
+                            id="baseOriginalAmount">--</strong>
+                    </span>
+                </div>
+
+                <div class="quantity-calculator mt-3">
+                    <p class="category-label mb-1">Tu porción (ej. 1/2, 1/3, 1.5)</p>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="baseQuantityInput" class="form-control" value="1" placeholder="Ej. 1/2">
+                        <span id="baseUnitLabel"
+                            class="input-group-text bg-transparent text-white border-0">unidad</span>
+                    </div>
+                </div>
+
+                <!-- Info Nutricional Estimada (Base) -->
+                <div id="baseNutrientInfo" class="mt-3 pt-3 border-top border-white border-opacity-25"
+                    style="display: none;">
+                    <p class="category-label mb-1" style="font-size: 0.75rem;">Aporte Nutricional Aprox.</p>
+                    <div id="baseNutrientValues" class="small text-white opacity-90"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equivalentes -->
+        <div class="equivalents-section">
+            <div class="section-title-flex mb-3">
+                <h4 class="fw-bold fs-5">Equivalentes sugeridos</h4>
+            </div>
+
+            <div id="equivalentsGrid" class="equivalents-grid">
+                <!-- Opciones de intercambio se cargarán aquí -->
+            </div>
+        </div>
+
+        <footer class="exchange-footer mt-4 p-3 rounded-4">
+            <p class="text-secondary small italic mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Recuerda que estos intercambios mantienen el aporte nutricional del grupo pero pueden variar en
+                micronutrientes.
+            </p>
+        </footer>
+    </div>
+
+    <div id="exchangeEmpty" class="text-center py-5 text-secondary">
+        <i class="fas fa-utensils fa-3x mb-3 opacity-25"></i>
+        <p>Busca un alimento para ver sus equivalentes nutricionales.</p>
+    </div>
+
+    <div id="exchangeLoading" class="text-center py-5" style="display: none;">
+        <div class="spinner-border text-theme" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- Modal de Ayuda -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">¿Cómo usar la calculadora?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3 d-flex gap-2">
+                        <span class="text-primary">•</span>
+                        <span><strong>Cálculo Automático:</strong> Selecciona un alimento y ajusta "Tu porción" para ver
+                            equivalencias proporcionales.</span>
+                    </li>
+                    <li class="mb-3 d-flex gap-2">
+                        <span class="text-primary">•</span>
+                        <span><strong>Soporte de Unidades:</strong> Interpreta formatos como "1/2 taza", "30g" o "1/3
+                            pza" automáticamente.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <span class="text-primary">•</span>
+                        <span><strong>Prueba Sugerida:</strong> Busca "Aguacate", selecciónalo y cambia la cantidad de
+                            0.3 a 1.</span>
+                    </li>
+                </ul>
+
+                <hr class="my-4 opacity-75">
+
+                <h6 class="fw-bold mb-3 d-flex align-items-center">
+                    <i class="fas fa-tags text-primary me-2"></i> Glosario de Grupos
+                </h6>
+                <div class="small text-muted">
+                    <div class="row g-2">
+                        <div class="col-12"><strong>V:</strong> Verduras </div>
+                        <div class="col-12"><strong>F / Fr:</strong> Frutas </div>
+                        <div class="col-12"><strong>C / Cer sg:</strong> Cereales sin grasa</div>
+                        <div class="col-12"><strong>AOAMB:</strong> Muy bajo aporte de grasa</div>
+                        <div class="col-12"><strong>AOA B:</strong> Bajo aporte de grasa</div>
+                        <div class="col-12"><strong>AOA MOD:</strong> Moderado aporte de grasa</div>
+                        <div class="col-12"><strong>AOA A:</strong> Alto aporte de grasa</div>
+                        <div class="col-12"><strong>AyG s/p:</strong> Aceites y grasas sin proteína</div>
+                        <div class="col-12"><strong>AyG c/p:</strong> Aceites y grasas con proteína</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

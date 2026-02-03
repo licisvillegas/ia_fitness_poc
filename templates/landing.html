@@ -99,6 +99,20 @@
             .logo-adaptive {
                 height: 120px !important;
             }
+
+            .btn-hero-mobile {
+                flex-direction: column !important;
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+                gap: 0.5rem !important;
+                min-width: 140px;
+            }
+
+            .btn-hero-mobile i {
+                margin-right: 0 !important;
+                margin-bottom: 0.25rem;
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -123,11 +137,12 @@
                         de la IA.
                     </p>
                     <div class="d-flex justify-content-center gap-3">
-                        <a href="/plan" class="btn btn-lg btn-primary shadow-lg rounded-pill px-5">
+                        <a href="/plan"
+                            class="btn btn-lg btn-primary shadow-lg rounded-pill px-5 d-flex align-items-center btn-hero-mobile">
                             <i class="fas fa-play me-2"></i> Mi Plan
                         </a>
                         <a href="/dashboard"
-                            class="btn btn-lg btn-outline-secondary shadow-sm rounded-pill px-5 bg-card">
+                            class="btn btn-lg btn-outline-secondary shadow-sm rounded-pill px-5 bg-card d-flex align-items-center btn-hero-mobile">
                             <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                         </a>
                     </div>

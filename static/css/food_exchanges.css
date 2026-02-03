@@ -1,0 +1,375 @@
+/* food_exchanges.css */
+.food-exchanges {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Info Icon Button */
+#btnShowHelp {
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    color: var(--text-muted);
+}
+
+#btnShowHelp:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    color: var(--primary) !important;
+}
+
+/* Modal Customization */
+#helpModal .modal-content {
+    background: var(--bg-card);
+    border-radius: 1.5rem;
+}
+
+#helpModal .modal-title {
+    color: var(--text-main);
+}
+
+#helpModal .modal-body {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.base-info-row {
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.exchange-header .search-wrapper {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.food-search-input {
+    padding: 1rem 1rem 1rem 3.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+.food-search-input:focus {
+    box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.15);
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    margin-top: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: var(--bg-panel);
+}
+
+.suggestion-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.suggestion-group {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
+/* Base Food Card */
+.base-food-card {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-radius: 2rem;
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.base-food-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.base-food-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.category-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.25rem;
+}
+
+.base-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.group-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.quantity-calculator {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 1rem;
+    border-radius: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.quantity-calculator input {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+    border-radius: 0.5rem !important;
+}
+
+.quantity-calculator input:focus {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+    box-shadow: none;
+    color: white;
+}
+
+.btn-fraction {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-fraction:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-fraction:active {
+    transform: scale(0.95);
+    background: white;
+    color: var(--primary);
+}
+
+.calculated-result {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.calc-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.fraction-display {
+    display: inline-flex;
+    align-items: baseline;
+    font-weight: 800;
+}
+
+.fraction-whole {
+    font-size: 1.2rem;
+    margin-right: 0.1rem;
+}
+
+.fraction-part {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    font-size: 0.75rem;
+    line-height: 1;
+    position: relative;
+    top: -0.1rem;
+}
+
+.fraction-numerator {
+    border-bottom: 1.5px solid currentColor;
+    padding: 0 0.1rem;
+}
+
+.fraction-denominator {
+    padding: 0 0.1rem;
+}
+
+.calc-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Equivalents Grid */
+.equivalents-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.equivalent-item {
+    background: var(--bg-card);
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.equivalent-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.equivalent-icon {
+    width: 3rem;
+    height: 3rem;
+    background-color: rgba(249, 115, 22, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.eq-amount {
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.eq-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: block;
+    margin-top: 0.25rem;
+    line-height: 1.3;
+}
+
+/* Footer Info */
+.exchange-footer {
+    background-color: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.exchange-footer p {
+    color: #1e40af;
+}
+
+/* Dark Mode Overrides (if applicable) */
+[data-theme='dark'] .food-search-input {
+    background-color: #1e293b;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .equivalent-item {
+    background-color: #1e293b;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 576px) {
+    .base-name {
+        font-size: 1.35rem;
+    }
+
+    .amount-value {
+        font-size: 2.25rem;
+    }
+
+    .equivalents-grid {
+        grid-template-columns: 1fr;
+    }
+}

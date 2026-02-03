@@ -1,0 +1,391 @@
+/* nutrition.css - Estilos específicos para Nutrición Inteligente */
+/* Codificación: UTF-8 */
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+/* Navbar */
+.navbar {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand {
+    color: var(--primary) !important;
+    font-weight: 700;
+}
+
+.navbar a {
+    color: var(--text-main) !important;
+}
+
+/* Hero Section */
+.hero {
+    position: relative;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(37, 99, 235, 0.25));
+    background-color: var(--bg-body);
+    aspect-ratio: 16 / 5;
+    height: auto;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-main);
+    overflow: hidden;
+}
+
+.hero-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(37, 99, 235, 0.18));
+    z-index: 1;
+}
+
+.hero .container {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 767px) {
+    .hero-video {
+        display: none;
+    }
+
+    .hero {
+        aspect-ratio: 16 / 9;
+        min-height: 180px;
+        padding: 1.5rem 0;
+        background-image: url('/static/images/IMG_3664.jpeg');
+        background-size: cover;
+        background-position: center 25%;
+    }
+
+    .hero h1 {
+        font-size: 1.4rem;
+    }
+
+    .hero p {
+        font-size: 0.85rem;
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-video {
+        display: none;
+    }
+
+    .hero {
+        aspect-ratio: 16 / 5;
+        min-height: 200px;
+        padding: 1.5rem 0;
+        background-image: url('/static/images/IMG_3664.jpeg');
+        background-size: cover;
+        background-position: center 25%;
+    }
+}
+
+.hero h1 {
+    font-size: clamp(1.5rem, 2.8vw, 2.3rem);
+    font-weight: 700;
+    color: #ffffff !important;
+    margin-bottom: 0.5rem;
+}
+
+.hero p {
+    font-size: 0.95rem;
+    color: #ffffff !important;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Daily Plan */
+.daily-plan {
+    padding: 3rem 0 0 0;
+}
+
+/* Meal Cards */
+.meal-card {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.meal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    background-color: var(--bg-panel);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.meal-header:hover {
+    background-color: var(--bg-card-hover);
+}
+
+.meal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.nutrition-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 1rem;
+}
+
+.meal-details p {
+    margin: 0 1rem 1rem;
+    color: var(--text-secondary);
+}
+
+/* Recipes */
+.recipes {
+    padding: 4rem 0;
+}
+
+.recipe-card {
+    background-color: var(--bg-card);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: 0.3s;
+    height: 100%;
+    border: 1px solid var(--border-color);
+}
+
+.recipe-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.recipe-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+    background-color: var(--bg-card-hover);
+}
+
+.recipe-card h5 {
+    color: var(--primary);
+}
+
+
+
+/* Footer */
+footer {
+    background-color: var(--bg-panel);
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Alert Modal Custom Styles */
+@keyframes alertSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.alert-modal-backdrop.show {
+    display: flex;
+}
+
+.alert-modal-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    padding: 1.5rem;
+    color: var(--text-main);
+    animation: alertSlideIn 0.25s ease-out;
+}
+
+.alert-modal-card .alert-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-modal-card .alert-message {
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.4;
+}
+
+.alert-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.alert-tone-warning {
+    color: #ff9d00;
+}
+
+.alert-tone-danger {
+    color: #ff5c5c;
+}
+
+.alert-tone-success {
+    color: #00ff9d;
+}
+
+/* Print Styles */
+@media print {
+
+    .sidebar,
+    .navbar,
+    .hero,
+    .recipes,
+
+    footer,
+    #daily-plan-controls,
+    #btnGenMeals,
+    #btnSaveMealPlan,
+    .main-content>.container>h3>button {
+        display: none !important;
+    }
+
+    body,
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: var(--text-main) !important;
+        color: black !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .daily-plan {
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    .daily-plan .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px !important;
+    }
+
+    #mealsContainer {
+        display: block !important;
+    }
+
+    .meal-card {
+        break-inside: avoid;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        background-color: var(--text-main) !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid;
+    }
+
+    .meal-header {
+        background-color: var(--bg-input) !important;
+        color: black !important;
+        border-bottom: 1px solid #ddd !important;
+    }
+
+    .meal-title {
+        color: black !important;
+    }
+
+    .meal-header span {
+        color: #333 !important;
+    }
+
+    .nutrition-list li {
+        color: black !important;
+        border-color: var(--text-muted) !important;
+    }
+
+    .nutrition-list li strong {
+        color: #000 !important;
+    }
+
+    .nutrition-list li .small {
+        color: #555 !important;
+    }
+
+    .meal-details {
+        display: block !important;
+    }
+
+    .meal-details p {
+        color: #333 !important;
+    }
+
+    .meal-header i,
+    .meal-details i {
+        display: none !important;
+    }
+
+    .h5.text-white {
+        color: black !important;
+        font-size: 1.2rem !important;
+        margin-bottom: 1.5rem !important;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+    }
+
+    h3.text-center {
+        text-align: left !important;
+        font-size: 2rem !important;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 20px !important;
+        color: #000 !important;
+    }
+
+    .list-group-item {
+        background-color: transparent !important;
+    }
+}

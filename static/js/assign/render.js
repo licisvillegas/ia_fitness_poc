@@ -65,7 +65,7 @@
                             <span>${dateStr}</span>
                         </div>
                     </div>
-                    <p class="text-muted small mb-0 text-truncate">${routine.description || 'Sin descripci�n disponible.'}</p>
+                    <p class="text-muted small mb-0 text-truncate">${routine.description || 'Sin descripción disponible.'}</p>
 
                     <div>
                         <label class="form-label small text-muted mb-1">Vigencia (días)</label>

@@ -97,6 +97,119 @@ def ai_nutrition_plan(user_id: str):
         return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
 
 
+
+@nutrition_bp.post("/meal_plans/generate")
+def generate_meal_plan():
+    """Genera un plan de nutrición AI desde admin y lo guarda."""
+    try:
+        if extensions.db is None:
+            return jsonify({"error": "DB no inicializada"}), 503
+        
+        ok, err = check_admin_access()
+        if not ok: return err
+
+        data = request.get_json() or {}
+        user_id = normalize_user_id(data.get("user_id"))
+        if not user_id:
+             return jsonify({"error": "user_id requerido"}), 400
+
+        # Leer parámetros
+        meals_val = data.get("meals_per_day")
+        try:
+            if meals_val is not None:
+                meals_val = max(3, min(6, int(meals_val)))
+        except: pass
+        
+        prefs = data.get("preferences", "")
+        # Defaults
+        exclude = ""
+        cuisine = ""
+        notes = "Generado desde Admin"
+
+        # --- CONTEXT BUILD (Logic mirrored from ai_nutrition_plan) ---
+        # 1. Intentar buscar evaluacion corporal reciente para TDEE
+        assessment = extensions.db.body_assessments.find_one(
+            {"user_id": user_id},
+            sort=[("created_at", -1)]
+        )
+        
+        assessment_kcal = None
+        if assessment and assessment.get("output"):
+            ee = assessment["output"].get("energy_expenditure") or {}
+            if ee.get("selected_tdee"):
+                assessment_kcal = ee.get("selected_tdee")
+
+        # 2. Intentar buscar plan activo para macros (y kcal si falta assessment)
+        active = extensions.db.plans.find_one({"user_id": user_id, "active": True}, sort=[("activated_at", -1), ("created_at", -1)])
+        
+        total_kcal = None
+        macros = {}
+        plan_id = None
+
+        if active:
+            plan_id = str(active.get("_id"))
+            np = active.get("nutrition_plan") or {}
+            total_kcal = np.get("calories_per_day") or np.get("kcal_obj")
+            macros = np.get("macros") or {}
+        
+        # Prioridad: Assessment TDEE > Plan Kcal
+        if assessment_kcal:
+            total_kcal = assessment_kcal
+
+        if not total_kcal:
+             return jsonify({"error": "No se encontraron objetivos calóricos (ni en Body Assessment ni en Plan activo). Crea una evaluación corporal primero."}), 400
+
+        # Normaliza macros p/c/g a protein/carbs/fat
+        macros_norm = {
+            "protein": macros.get("protein", macros.get("p")),
+            "carbs": macros.get("carbs", macros.get("c")),
+            "fat": macros.get("fat", macros.get("g")),
+        }
+
+        context = {
+            "total_kcal": float(total_kcal),
+            "macros": macros_norm,
+            "meals": meals_val if meals_val is not None else 4,
+            "prefs": prefs,
+            "exclude": exclude,
+            "cuisine": cuisine,
+            "notes": notes,
+            "user_id": user_id,
+            "plan_id": plan_id,
+        }
+        # -----------------------------------------------------------
+
+        agent = MealPlanAgent(model="gpt-4o")
+        result = agent.run(context)
+        
+        log_agent_execution("end", "MealPlanAgent", agent, context, 
+            {"endpoint": "/meal_plans/generate", "user_id": user_id, "output_keys": list(result.keys()) if isinstance(result, dict) else None})
+        
+        # Save to DB
+        doc = {
+            "user_id": user_id,
+            "plan_id": plan_id,
+            "backend": agent.backend(),
+            "input": context,
+            "output": result,
+            "active": False, # Inactive by default so admin can review
+            "created_at": datetime.utcnow(),
+            "activated_at": None,
+            "notes": notes
+        }
+        res = extensions.db.meal_plans.insert_one(doc)
+        doc["_id"] = str(res.inserted_id)
+
+        # Handle dates for JSON
+        doc["created_at"] = doc["created_at"].isoformat() + "Z"
+
+        return jsonify({"message": "Plan generado correctamente", "meal_plan": doc}), 201
+
+    except Exception as e:
+        logger.error(f"Error generando plan admin: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al generar plan de nutrición"}), 500
+
+
 @nutrition_bp.get("/meal_plans/<user_id>/active")
 def get_active_meal_plan(user_id: str):
     """Obtiene el plan de nutrición activo del usuario, si existe."""
@@ -202,6 +315,7 @@ def list_meal_plans(user_id: str):
         return jsonify({"error": "Error interno al listar meal_plans"}), 500
 
 
+@nutrition_bp.put("/meal_plans/<plan_id>")
 @nutrition_bp.post("/meal_plans/<plan_id>/edit")
 def edit_meal_plan(plan_id: str):
     """Actualiza campos permitidos de un meal_plan. Requiere X-Admin-Token."""

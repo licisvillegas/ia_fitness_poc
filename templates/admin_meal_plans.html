@@ -976,13 +976,12 @@
 
           if (action === 'delete') {
             method = 'DELETE';
-            // Delete uses query param or body? usually body is safer but delete often no body.
-            // Admin endpoints usually support body for token.
-            // Flask `delete` with body is allowed.
           } else if (action === 'activate') {
-            body.active = true;
+            url = `/meal_plans/${currentPlan._id}/activate`;
+            method = 'POST';
           } else if (action === 'deactivate') {
-            body.active = false;
+            url = `/meal_plans/${currentPlan._id}/deactivate`;
+            method = 'POST';
           }
 
           const resp = await fetch(url, {

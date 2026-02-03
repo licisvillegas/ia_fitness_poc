@@ -104,7 +104,7 @@
 
                         <section id="guidedStep2" class="guided-step-section" style="display:none;">
                             <h6 class="text-cyber-green mb-3">Ajusta series, reps y descanso</h6>
-                            <div class="d-flex flex-wrap gap-2 mb-3">
+                            <div class="d-flex flex-wrap gap-2 mb-3 sticky-actions-header">
                                 <button class="btn btn-sm btn-outline-info" type="button" id="guidedAddGroupBtn">
                                     <i class="fas fa-layer-group me-1"></i> Agregar grupo
                                 </button>
@@ -149,7 +149,7 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="d-flex justify-content-between align-items-center mt-4 sticky-footer-actions">
                     <button class="btn btn-outline-secondary" id="guidedPrevBtn" type="button"
                         disabled>Anterior</button>
                     <div class="d-flex gap-2">
@@ -415,6 +415,67 @@
         .guided-step-section textarea {
             font-size: 16px;
         }
+    }
+
+    /* Sticky Actions Header */
+    .sticky-actions-header {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: var(--bg-panel);
+        padding: 0.75rem 0;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+    }
+
+    @media (max-width: 991.98px) {
+        .sticky-actions-header {
+            top: 60px;
+            /* Adjust for mobile navbar height */
+        }
+    }
+
+    /* Sticky Footer Actions */
+    .sticky-footer-actions {
+        position: -webkit-sticky;
+        position: sticky;
+        bottom: 0;
+        z-index: 1020;
+        background-color: var(--bg-panel);
+        padding: 1rem 0;
+        margin-top: 0 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+    }
+
+    /* Drag Handles & Group Styles */
+    .cursor-grab {
+        cursor: grab;
+    }
+
+    .cursor-grab:active {
+        cursor: grabbing;
+    }
+
+    .guided-block {
+        border-color: rgba(0, 210, 255, 0.2);
+        /* Cyber Blue tint */
+        background: rgba(0, 210, 255, 0.02);
+    }
+
+    .guided-handle {
+        transition: color 0.2s;
+    }
+
+    .guided-handle:hover i {
+        color: var(--text-main) !important;
+    }
+
+    .sortable-ghost {
+        opacity: 0.5;
+        background: rgba(255, 255, 255, 0.1);
     }
 </style>
 

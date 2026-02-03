@@ -12,6 +12,8 @@
     const profileBadgeEl = document.getElementById('profile-notification-badge');
     const userIconContainer = document.querySelector('.user-icon-container');
     const dropdownEl = document.getElementById('notifications-dropdown');
+    const backdropEl = document.getElementById('notifications-backdrop');
+    const closeBtn = document.getElementById('notifications-close-btn');
     const listEl = document.getElementById('notifications-list');
     const parentContainer = document.getElementById('notifications-menu-item'); // Li container
     const markAllBtn = document.getElementById('notifications-mark-all');
@@ -177,79 +179,64 @@
         }
     }
 
-    // Lógica de Alternancia
+    // Logic Key: Modal now
     const toggleLink = parentContainer.querySelector('a');
+
+    function closeNotifications() {
+        if (dropdownEl) dropdownEl.classList.remove('show');
+        if (backdropEl) backdropEl.classList.remove('show');
+    }
+
+    function openNotifications() {
+        if (dropdownEl) dropdownEl.classList.add('show');
+        if (backdropEl) backdropEl.classList.add('show');
+
+        // Fetch latest
+        fetch('/api/notifications/pending')
+            .then(res => res.json())
+            .then(data => {
+                unreadCount = data.count || 0;
+                updateBadge();
+                renderList(data.notifications || []);
+            })
+            .catch(console.error);
+    }
+
     if (toggleLink) {
-        toggleLink.addEventListener('click', async (e) => {
+        toggleLink.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
 
             const isShown = dropdownEl.classList.contains('show');
             if (isShown) {
-                dropdownEl.classList.remove('show');
+                closeNotifications();
             } else {
-                // Obtener lo último antes de mostrar
-                const res = await fetch('/api/notifications/pending');
-                if (res.ok) {
-                    const data = await res.json();
-                    unreadCount = data.count;
-                    updateBadge();
-                    renderList(data.notifications);
-                }
-
-                // --- Lógica de Posicionamiento Dinámico ---
-                const rect = toggleLink.getBoundingClientRect();
-                const sidebarEl = document.querySelector('.sidebar-fixed');
-                // Si la sidebar está oculta (móvil 100% off-canvas), right será 0 o negativo. Usar 250px como fallback.
-                const sidebarRect = sidebarEl ? sidebarEl.getBoundingClientRect() : { right: 250 };
-                const dropdownWidth = 300; // Coincidir con el ancho de CSS en notifications.css
-                const isCollapsed = document.body.classList.contains('sb-collapsed');
-
-                let left, top;
-
-                if (isCollapsed) {
-                    // Barra Lateral COLAPSADA: Estilo "Side Bubble" (a la derecha del icono)
-                    left = rect.right + 10;
-                } else {
-                    // Barra Lateral EXPANDIDA: También estilo "Side Bubble" (a la derecha de la sidebar)
-                    // Usar el borde real de la sidebar para evitar que se superponga al contenido del menú
-                    let sbRight = sidebarRect.right;
-                    // En móvil, si la sidebar está visible (clase .show-mobile o similar), right debería ser 250.
-                    // Si no, 0.
-                    if (sbRight < 50) sbRight = 250; // Fallback simple para móvil expandido
-
-                    left = sbRight + 10;
-                }
-
-                // Alineación vertical consistente con el botón
-                top = rect.top;
-
-                // Ajustes de seguridad
-                // Verificar desbordamiento horizontal (Móvil o pantallas pequeñas)
-                if (left + dropdownWidth > window.innerWidth) {
-                    left = window.innerWidth - dropdownWidth - 10;
-                }
-
-                // Evitar offset negativo
-                if (left < 10) left = 10;
-
-                // Aplicar estilos
-                dropdownEl.style.top = `${top}px`;
-                dropdownEl.style.left = `${left}px`;
-
-                dropdownEl.classList.add('show');
+                openNotifications();
             }
         });
-
-        // Cerrar al redimensionar/desplazar para evitar separación flotante
-        window.addEventListener('resize', () => {
-            if (dropdownEl.classList.contains('show')) dropdownEl.classList.remove('show');
-        });
-        window.addEventListener('scroll', () => {
-            // Opcional: Cerrar al desplazar, ¿o actualizar posición? Cerrar es más seguro/fácil.
-            if (dropdownEl.classList.contains('show')) dropdownEl.classList.remove('show');
-        }, true); // Fase de captura para detectar el desplazamiento de cualquier contenedor
     }
+
+    // Close Button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeNotifications();
+        });
+    }
+
+    // Backdrop Click
+    if (backdropEl) {
+        backdropEl.addEventListener('click', () => {
+            closeNotifications();
+        });
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdownEl && dropdownEl.classList.contains('show')) {
+            closeNotifications();
+        }
+    });
 
     // Manejador de Marcar Todo
     if (markAllBtn) {
@@ -262,8 +249,8 @@
     // Cerrar al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (dropdownEl && dropdownEl.classList.contains('show')) {
-            if (!dropdownEl.contains(e.target) && !parentContainer.contains(e.target)) {
-                dropdownEl.classList.remove('show');
+            if (!dropdownEl.contains(e.target) && !parentContainer.contains(e.target) && !backdropEl.contains(e.target)) {
+                // Let backdrop handle its own close
             }
         }
     });

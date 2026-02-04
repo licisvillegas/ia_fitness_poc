@@ -109,7 +109,7 @@ async function sendSelection(idOrObj) {
     }
 
     const name = ex.name || "este ejercicio";
-    const message = `Â¿Deseas seleccionar "${name}"?`;
+    const message = `¿Deseas seleccionar "${name}"?`;
 
     let ok = false;
     if (window.showConfirmModal) {
@@ -505,7 +505,7 @@ function renderGrid(items) {
                              <span class="badge bg-secondary" style="font-size: 0.65rem;">${bodyPartLabel}</span>
                              <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">${ex.type || 'N/A'}</span>
                         </div>
-                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripciÃ³n'}</p>
+                        <p class="small text-muted text-truncate mb-0">${ex.description || 'Sin descripción'}</p>
                     </div>
                 </div>
             `;
@@ -609,7 +609,7 @@ function renderList(items) {
                                 ${ex.is_custom ? 'CUSTOM' : 'GLOBAL'}
                             </span>
                         </div>
-                        <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripciÃ³n'}</p>
+                        <p class="card-text text-secondary small text-truncate mb-3">${ex.description || 'Sin descripción'}</p>
                         ${adminMobile}
                     </div>
                 `;
@@ -692,7 +692,7 @@ async function openExerciseDetails(id) {
     titleEl.textContent = ex.name || "Ejercicio";
     imgEl.src = resolveImage(ex);
     imgEl.alt = ex.name || "Ejercicio";
-    if (descEl) descEl.textContent = ex.description || "Sin descripciÃ³n disponible.";
+    if (descEl) descEl.textContent = ex.description || "Sin descripción disponible.";
 
     if (badgesEl) {
         badgesEl.innerHTML = `
@@ -1073,7 +1073,7 @@ function populateSubstitutes(exercises, currentId, selectedIds = [], exIdForFilt
     const availHeader = document.createElement("h6");
     availHeader.className = "text-info border-bottom border-secondary pb-2 mb-3 mt-4";
     availHeader.innerHTML = searchTerm
-        ? `<i class="fas fa-search me-2"></i>Resultados de bÃºsqueda`
+        ? `<i class="fas fa-search me-2"></i>Resultados de búsqueda`
         : `<i class="fas fa-lightbulb me-2"></i>Recomendados (Mismo Grupo)`;
     container.appendChild(availHeader);
 
@@ -1272,7 +1272,7 @@ async function duplicateExercise(id) {
     const ex = exerciseLookup[id];
     if (!ex) return;
 
-    const confirmed = await localShowConfirmModal("Duplicar Ejercicio", `Â¿Deseas crear una copia personalizada de "${ex.name}"?`);
+    const confirmed = await localShowConfirmModal("Duplicar Ejercicio", `¿Deseas crear una copia personalizada de "${ex.name}"?`);
     if (!confirmed) return;
 
     try {

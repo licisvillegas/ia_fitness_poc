@@ -60,7 +60,7 @@
                             <i class="fas fa-list-ol"></i>
                             <span>${exerciseCount} ejercicios</span>
                         </div>
-                        <div class="stat-item" title="Fecha de creaci�n">
+                        <div class="stat-item" title="Fecha de creación">
                             <i class="far fa-calendar-alt"></i>
                             <span>${dateStr}</span>
                         </div>
@@ -84,7 +84,7 @@
                             <i class="fas fa-sync-alt me-2"></i>Actualizar vigencia
                         </button>
                         <button class="btn btn-remove btn-sm" onclick="unassignRoutine('${routine._id}', event)" ${!window.AssignState.selectedUserId ? 'disabled' : ''}>
-                            <i class="fas fa-times-circle me-2"></i>Remover asignaci�n
+                            <i class="fas fa-times-circle me-2"></i>Remover asignación
                         </button>
                     ` : ''}
 

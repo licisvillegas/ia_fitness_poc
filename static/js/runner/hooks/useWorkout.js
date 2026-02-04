@@ -408,6 +408,28 @@
             };
         }, [isActive]);
 
+        useEffect(() => {
+            const handleVisibilityForRest = () => {
+                if (document.visibilityState !== "hidden") return;
+                if (statusRef.current !== "REST") return;
+                if (scheduledPushTaskIdsRef.current.length > 0) return;
+                const duration = stepTimerRef.current || 0;
+                if (duration <= 0 || !window.Runner.utils.schedulePush) return;
+                window.Runner.utils.schedulePush(
+                    duration + 1,
+                    "Tiempo Completado",
+                    "Tu descanso ha terminado. ¡A trabajar!",
+                    "rest_timer",
+                    {
+                        visibility: document.visibilityState,
+                        displayMode: window.matchMedia && window.matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser"
+                    }
+                ).then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+            };
+            document.addEventListener("visibilitychange", handleVisibilityForRest);
+            return () => document.removeEventListener("visibilitychange", handleVisibilityForRest);
+        }, []);
+
         // Restablecer rastreadores al cambiar el paso
         useEffect(() => {
             statusRef.current = status;
@@ -417,7 +439,8 @@
                 // ENTRANDO EN DESCANSO: Programar Push
                 const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
 
-                if (duration > 0 && window.Runner.utils.schedulePush) {
+                if (document.visibilityState !== 'visible') {
+                    if (duration > 0 && window.Runner.utils.schedulePush) {
                     // Cancelar cualquiera existente
                     if (scheduledPushTaskIdsRef.current.length > 0) {
                         scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
@@ -435,6 +458,7 @@
                         }
                     )
                         .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                    }
                 }
             }
 

@@ -287,7 +287,7 @@
             setStepTimer(t => {
                 const nextValue = Math.max(0, t + seconds);
                 // Reprogramar Push
-                if (schedulePush) {
+                if (schedulePush && document.visibilityState !== 'visible') {
                     schedulePush(
                         nextValue,
                         "Tiempo Completado",

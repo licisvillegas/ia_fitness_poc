@@ -1,6 +1,6 @@
 (function () {
     const { useMemo } = React;
-    const { useWorkout } = window.Runner.hooks;
+        const { useWorkout } = window.Runner.hooks;
     const { formatTime } = window.Runner.utils;
 
     window.Runner.components.Header = ({ focusMode, onToggleFocus, showPending, onTogglePending }) => {
@@ -15,6 +15,8 @@
             const passed = queue.slice(0, cursor + 1).filter(s => s.type === 'work').length;
             return { passed, total };
         }, [cursor, queue]);
+
+        const { CountdownTimer } = window.Runner.components;
 
         return (
             <div className="header-section d-flex justify-content-between align-items-center p-3 relative">
@@ -53,6 +55,7 @@
                     >
                         <i className="fas fa-adjust"></i>
                     </button>
+                    <CountdownTimer variant="icon" />
 
                     {status !== 'IDLE' && status !== 'FINISHED' && (
                         <button

@@ -11,6 +11,13 @@
         const animRef = useRef(null);
         const onCompleteRef = useRef(null);
 
+        const formatClock = (total) => {
+            const safeTotal = Math.max(0, Math.floor(Number(total) || 0));
+            const mins = Math.floor(safeTotal / 60);
+            const secs = safeTotal % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        };
+
         const cleanup = () => {
             if (animRef.current) {
                 animRef.current.pause();
@@ -41,7 +48,7 @@
             if (!ringEl || !textEl || !containerEl) return;
 
             const durationMs = Math.max(1, Number(durationSeconds) || 10) * 1000;
-            textEl.innerText = String(Math.ceil(durationMs / 1000));
+            textEl.innerText = formatClock(Math.ceil(durationMs / 1000));
 
             if (!window.anime) {
                 const tickInterval = 250;
@@ -49,7 +56,7 @@
                 const intervalId = setInterval(() => {
                     elapsed += tickInterval;
                     const remaining = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
-                    textEl.innerText = String(remaining);
+                    textEl.innerText = formatClock(remaining);
                     if (elapsed >= durationMs) {
                         clearInterval(intervalId);
                         textEl.innerText = "OK";
@@ -72,7 +79,7 @@
                 update: function (anim) {
                     const progress = anim.progress / 100;
                     const remaining = Math.ceil((durationMs / 1000) * (1 - progress));
-                    textEl.innerText = remaining > 0 ? String(remaining) : "0";
+                    textEl.innerText = remaining > 0 ? formatClock(remaining) : "00:00";
                 },
                 complete: () => {
                     textEl.innerText = "OK";
@@ -104,34 +111,56 @@
 
         if (!isActive) return null;
 
+        const cancelTimer = () => {
+            onCompleteRef.current = null;
+            cleanup();
+        };
+
         return ReactDOM.createPortal(
             <div
-                ref={containerRef}
-                className="position-fixed top-50 start-50 translate-middle d-flex align-items-center justify-content-center"
-                style={{ zIndex: 3000, width: '200px', height: '200px' }}
+                className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                style={{
+                    zIndex: 3000,
+                    background: 'radial-gradient(circle, rgba(45, 52, 54, 0.75) 0%, rgba(0, 0, 0, 0.9) 100%)',
+                    pointerEvents: 'auto'
+                }}
             >
-                <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="15" />
-                    <circle
-                        ref={ringRef}
-                        className="progress-ring"
-                        cx="100"
-                        cy="100"
-                        r="90"
-                        fill="none"
-                        stroke="#ffc107"
-                        strokeWidth="15"
-                        strokeDasharray="565.48"
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                    />
-                </svg>
-                <div
-                    ref={textRef}
-                    className="timer-text position-absolute text-white fw-bold display-4"
-                    style={{ textShadow: '0 0 10px black' }}
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-light rounded-pill position-absolute bottom-0 start-50 translate-middle-x mb-4 px-4"
+                    onClick={cancelTimer}
+                    title="Cancelar temporizador"
                 >
-                    {durationSeconds}
+                    Cerrar
+                </button>
+                <div
+                    ref={containerRef}
+                    className="d-flex align-items-center justify-content-center position-relative"
+                    style={{ width: '200px', height: '200px' }}
+                >
+                    <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="15" />
+                        <circle
+                            ref={ringRef}
+                            className="progress-ring"
+                            cx="100"
+                            cy="100"
+                            r="90"
+                            fill="none"
+                            stroke="#ffc107"
+                            strokeWidth="15"
+                            strokeDasharray="565.48"
+                            strokeDashoffset="0"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                    <div
+                        ref={textRef}
+                        className="timer-text position-absolute text-white fw-bold display-4"
+                        style={{ textShadow: '0 0 10px black' }}
+                    >
+                        {formatClock(durationSeconds)}
+                    </div>
                 </div>
             </div>,
             document.body

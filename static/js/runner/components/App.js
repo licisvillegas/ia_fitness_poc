@@ -3,7 +3,7 @@
     const { useWorkout } = window.Runner.hooks;
 
     window.Runner.components.App = () => {
-        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal, VideoModal, GlitchOverlay, PauseOverlay, TextRevealOverlay, CountdownOverlay, BreathingOverlay, EnduranceTimerOverlay, PulseOverlay, FlexOverlay, ThunderOverlay, VictoryOverlay, ImpactOverlay, FireOverlay, GoalOverlay, ZenOverlay, NutritionOverlay, RoutinePreparationOverlay, SadOverlay, SnowOverlay, StarsOverlay, EmojiRainOverlay, RealisticOverlay, BasicConfettiOverlay, PrideOverlay, SchoolPrideOverlay, FireworksOverlay, MegaBurstOverlay, FountainOverlay, SvgSuccessOverlay } = window.Runner.components;
+        const { PreStart, Header, MessageBar, NextUpBar, NavigationWrapper, ActiveExercise, PendingPanel, RestOverlay, SubstitutesModal, ConfirmModal, RMCalculatorModal, VideoModal, GlitchOverlay, PauseOverlay, TextRevealOverlay, CountdownOverlay, BreathingOverlay, EnduranceTimerOverlay, TempoOverlay, PulseOverlay, FlexOverlay, ThunderOverlay, VictoryOverlay, ImpactOverlay, FireOverlay, GoalOverlay, ZenOverlay, NutritionOverlay, RoutinePreparationOverlay, SadOverlay, SnowOverlay, StarsOverlay, EmojiRainOverlay, RealisticOverlay, BasicConfettiOverlay, PrideOverlay, SchoolPrideOverlay, FireworksOverlay, MegaBurstOverlay, FountainOverlay, SvgSuccessOverlay } = window.Runner.components;
         const { currentStep, status, queue, cursor, showCompletionIcon, showCountdown, countdownValue, showPending, setShowPending, finishWorkout } = useWorkout();
         const [focusMode, setFocusMode] = useState(false);
         // El estado showPending se movió al contexto
@@ -111,6 +111,7 @@
                 <CountdownOverlay />
                 <BreathingOverlay />
                 <EnduranceTimerOverlay />
+                <TempoOverlay />
                 <PulseOverlay />
                 <FlexOverlay />
                 <ThunderOverlay />

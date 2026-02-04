@@ -5,7 +5,7 @@
     const { getExerciseWithLookup, resolveSubstitutes, openVideoModal } = window.Runner.logic;
 
     window.Runner.components.ActiveExercise = ({ focusMode }) => {
-        const { TimerControls, InputControls } = window.Runner.components;
+        const { TimerControls, InputControls, CountdownTimer } = window.Runner.components;
         const { currentStep, exerciseLookup, openSubstituteModal, deferExercise } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
@@ -87,6 +87,9 @@
                             {currentStep.isTimeBased && (
                                 <div className="text-secondary small mt-1">Tiempo objetivo: {Math.round((currentStep.target?.time || 0) / 60)} min</div>
                             )}
+                            <div className="mt-3 d-flex justify-content-center">
+                                <CountdownTimer />
+                            </div>
                         </div>
                         <div className="flex-grow-1 d-flex flex-column justify-content-center">
                             {currentStep.isTimeBased ? (
@@ -147,6 +150,7 @@
                                         <i className="fas fa-exchange-alt me-1"></i> Sustitutos
                                     </button>
                                 )}
+                                <CountdownTimer />
                                 <button
                                     type="button"
                                     className="btn btn-sm btn-outline-warning rounded-pill px-3 py-0"

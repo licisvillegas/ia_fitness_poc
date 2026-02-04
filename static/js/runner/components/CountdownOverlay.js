@@ -78,8 +78,12 @@
         return ReactDOM.createPortal(
             <div
                 ref={containerRef}
-                className="position-fixed top-50 start-50 translate-middle text-center"
-                style={{ zIndex: 3000, pointerEvents: 'none' }}
+                className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                style={{
+                    zIndex: 3000,
+                    background: 'radial-gradient(circle, rgba(45, 52, 54, 0.75) 0%, rgba(0, 0, 0, 0.9) 100%)',
+                    pointerEvents: 'auto'
+                }}
             >
                 <h1
                     ref={numberRef}

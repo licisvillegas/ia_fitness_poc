@@ -441,8 +441,10 @@
             if (status === 'WORK') {
                 // ENTRANDO EN TRABAJO: Programar Push de Motivación (si es basado en tiempo)
                 if (scheduledPushTaskIdsRef.current.length > 0) {
-                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
-                    scheduledPushTaskIdsRef.current = [];
+                    if (document.visibilityState === 'visible') {
+                        scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                        scheduledPushTaskIdsRef.current = [];
+                    }
                 }
 
                 const meta = getStepExerciseMeta(currentStep);
@@ -523,6 +525,7 @@
             ensureNotificationPermission,
             getReturnUrl,
             triggerHaptic,
+            getAudio,
             logSet,
             next,
             isPausedRef,
@@ -556,6 +559,13 @@
                 const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
                 if (prevStatus === 'REST') {
                     showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
+                    if (sendNotification) {
+                        sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
+                    }
+                    try {
+                        if (getAudio) getAudio().play().catch(() => { });
+                    } catch (e) { }
+                    triggerHaptic([200, 100, 200]);
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage(`Inicia ejercicio ${exName}`, "info");
                 }
@@ -564,6 +574,21 @@
 
             if (status === 'FINISHED' && prevStatus !== 'FINISHED') {
                 showMessage("Fin de la Rutina", "success");
+                if (sendNotification) {
+                    sendNotification("Rutina finalizada", "Buen trabajo. Tu entrenamiento ha terminado.");
+                }
+                if (window.Runner.utils.schedulePush) {
+                    window.Runner.utils.schedulePush(
+                        1,
+                        "Rutina finalizada",
+                        "Buen trabajo. Tu entrenamiento ha terminado.",
+                        "workout_finished",
+                        {
+                            visibility: document.visibilityState,
+                            displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                        }
+                    );
+                }
                 lastAnnouncementRef.current = { status: 'FINISHED', stepId: null };
             }
 

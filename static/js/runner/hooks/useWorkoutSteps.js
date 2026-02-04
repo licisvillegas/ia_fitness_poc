@@ -24,6 +24,7 @@
             ensureNotificationPermission,
             getReturnUrl,
             triggerHaptic,
+            getAudio,
             logSet,
             next,
             isPausedRef,
@@ -138,6 +139,9 @@
             console.log("DEBUG: Estableciendo ShowCompletionIcon a VERDADERO");
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
+            try {
+                if (getAudio) getAudio().play().catch(() => { });
+            } catch (e) { }
 
             // Disparador de Celebración
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);

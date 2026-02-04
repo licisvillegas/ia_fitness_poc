@@ -175,7 +175,7 @@
                 {ReactDOM.createPortal(
                     <div className="modal fade" tabIndex="-1" ref={modalRef} data-bs-backdrop="static" data-bs-keyboard="false">
                         <div className="modal-dialog modal-dialog-centered">
-                            <div className="modal-content bg-dark text-white border-secondary">
+                            <div className="modal-content bg-dark text-white border-secondary runner-timer-modal">
                                 <div className="modal-header border-secondary">
                                     <h5 className="modal-title">Temporizador</h5>
                                     <button

@@ -7,6 +7,10 @@
         const { logSet, next, sessionLog, sessionLogRef, historyMaxByExercise, unit, setUnit, updateCurrentInput, openRmModal } = useWorkout();
 
         const [weight, setWeight] = useState(step.target.weight || '');
+        const [weightBaseKg, setWeightBaseKg] = useState(() => {
+            const initialVal = parseFloat(step.target.weight);
+            return Number.isFinite(initialVal) ? initialVal : null;
+        });
         const [reps, setReps] = useState(step.target.reps || '');
         const [rpe, setRpe] = useState(8);
         const [plateModalOpen, setPlateModalOpen] = useState(false);
@@ -18,6 +22,27 @@
         const repsInputRef = useRef(null);
         const rpe8Ref = useRef(null);
         const completeBtnRef = useRef(null);
+        const KG_TO_LB = 2.20462;
+        const parseNumber = (value) => {
+            if (value == null) return null;
+            const normalized = String(value).replace(',', '.');
+            const num = parseFloat(normalized);
+            return Number.isFinite(num) ? num : null;
+        };
+        const formatDisplay = (value) => {
+            const rounded = Math.round(value * 2) / 2;
+            return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+        };
+        const getDisplayFromKg = (kgValue, targetUnit) => {
+            if (kgValue == null) return '';
+            const displayVal = targetUnit === 'kg' ? kgValue : kgValue * KG_TO_LB;
+            return formatDisplay(displayVal);
+        };
+        const getKgFromDisplay = (displayValue, sourceUnit) => {
+            const num = parseNumber(displayValue);
+            if (num == null) return null;
+            return sourceUnit === 'kg' ? num : num / KG_TO_LB;
+        };
 
         // ... (focusWeightInput y useEffects permanecen sin cambios)
 
@@ -54,20 +79,14 @@
                     }
                 }
             }
-            if (unit === 'lb' && nextWeight !== '') {
-                const valKg = parseFloat(nextWeight);
-                if (!isNaN(valKg)) {
-                    const valLb = valKg * 2.20462;
-                    const roundedLb = Math.round(valLb * 2) / 2;
-                    nextWeight = roundedLb % 1 === 0 ? roundedLb.toString() : roundedLb.toFixed(1);
-                }
-            }
-
-            setWeight(nextWeight);
+            const baseKg = parseNumber(nextWeight);
+            setWeightBaseKg(baseKg);
+            const displayWeight = unit === 'kg' ? nextWeight : getDisplayFromKg(baseKg, unit);
+            setWeight(displayWeight);
             setReps(nextReps);
             setRpe(8);
             updateCurrentInput({
-                weight: nextWeight,
+                weight: displayWeight,
                 reps: nextReps,
                 unit: unit,
                 exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
@@ -95,7 +114,17 @@
                     }
                 }, 350);
             }
-        }, [step, sessionLog, historyMaxByExercise, unit]);
+        }, [step, sessionLog, historyMaxByExercise]);
+
+        useEffect(() => {
+            const displayWeight = getDisplayFromKg(weightBaseKg, unit);
+            setWeight(displayWeight);
+            updateCurrentInput({
+                weight: displayWeight,
+                unit: unit,
+                exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+            });
+        }, [unit, weightBaseKg]);
 
         useEffect(() => {
             setIsCompleting(false);
@@ -126,46 +155,46 @@
         };
 
         const toggleUnit = () => {
-            setUnit(prev => prev === 'kg' ? 'lb' : 'kg');
-            const val = parseFloat(weight) || 0;
-            if (val > 0) {
-                let converted;
-                if (unit === 'kg') {
-                    converted = val * 2.20462; // kg -> lb
-                } else {
-                    converted = val / 2.20462; // lb -> kg
-                }
-                const rounded = Math.round(converted * 2) / 2;
-                setWeight(rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1));
-            }
+            const nextUnit = unit === 'kg' ? 'lb' : 'kg';
+            const nextWeight = getDisplayFromKg(weightBaseKg, nextUnit);
+            setWeight(nextWeight);
+            setUnit(nextUnit);
             updateCurrentInput({
-                unit: unit === 'kg' ? 'lb' : 'kg'
+                weight: nextWeight,
+                unit: nextUnit,
+                exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
             });
         };
 
         const adjustWeight = (delta) => {
-            let val = parseFloat(weight) || 0;
-            const newVal = Math.max(0, val + delta);
+            const currentVal = parseNumber(weight) || 0;
+            const newVal = Math.max(0, currentVal + delta);
             if (newVal >= 1000) return;
-            setWeight(newVal.toFixed(1));
+            const displayWeight = formatDisplay(newVal);
+            setWeight(displayWeight);
+            const baseKg = unit === 'kg' ? newVal : newVal / KG_TO_LB;
+            setWeightBaseKg(baseKg);
+            updateCurrentInput({
+                weight: displayWeight,
+                unit: unit,
+                exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+            });
         };
 
         const equivalentText = useMemo(() => {
-            const val = parseFloat(weight) || 0;
-            if (val === 0) return "";
+            if (weightBaseKg == null || weightBaseKg === 0) return "";
             let converted;
             let targetUnit;
             if (unit === 'kg') {
-                converted = val * 2.20462;
+                converted = weightBaseKg * KG_TO_LB;
                 targetUnit = 'lb';
             } else {
-                converted = val / 2.20462;
+                converted = weightBaseKg;
                 targetUnit = 'kg';
             }
-            const rounded = Math.round(converted * 2) / 2;
-            const displayVal = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
-            return `≈ ${displayVal} ${targetUnit}`;
-        }, [weight, unit]);
+            const displayVal = formatDisplay(converted);
+            return `~= ${displayVal} ${targetUnit}`;
+        }, [weightBaseKg, unit]);
 
         return (
             <div className="py-1">
@@ -232,6 +261,7 @@
                                         onChange={e => {
                                             const nextVal = e.target.value;
                                             setWeight(nextVal);
+                                            setWeightBaseKg(getKgFromDisplay(nextVal, unit));
                                             updateCurrentInput({
                                                 weight: nextVal,
                                                 unit: unit,
@@ -358,7 +388,15 @@
                 <PlateCalculatorModal
                     isOpen={plateModalOpen}
                     onClose={() => setPlateModalOpen(false)}
-                    onApply={(newWeight) => setWeight(newWeight)}
+                    onApply={(newWeight) => {
+                        setWeight(newWeight);
+                        setWeightBaseKg(getKgFromDisplay(newWeight, unit));
+                        updateCurrentInput({
+                            weight: newWeight,
+                            unit: unit,
+                            exerciseName: step.exercise?.exercise_name || step.exercise?.name || ""
+                        });
+                    }}
                     unit={unit}
                 />
 

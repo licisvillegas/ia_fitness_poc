@@ -141,3 +141,20 @@
     font-size: 0.65rem;
     color: var(--text-muted);
 }
+
+/* Timer modal: keep a stable size to avoid layout jumps */
+.runner-timer-modal {
+    min-height: min(520px, 90vh);
+}
+
+@media (max-width: 575.98px) {
+    .runner-timer-modal {
+        min-height: min(560px, 90vh);
+    }
+}
+
+@media (max-width: 991.98px) and (orientation: landscape) {
+    .runner-timer-modal {
+        min-height: min(420px, 85vh);
+    }
+}

@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse Fit | Contáctanos</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="/static/css/theme.css" rel="stylesheet">
+  <link href="/static/css/sidebar.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-body) 100%);
+      padding: 3.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-panel {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.75rem;
+      height: 100%;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .contact-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-panel);
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.6rem;
+    }
+
+    .contact-chip i {
+      color: var(--primary);
+    }
+
+    .form-control,
+    .form-select {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .form-control::placeholder {
+      color: var(--text-muted);
+    }
+
+    .status-msg {
+      min-height: 1.5rem;
+    }
+
+    footer {
+      background-color: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem 0;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+
+<body>
+  {% include 'components/sidebar.html' %}
+  <div class="main-content">
+    <section class="hero">
+      <div class="container">
+        <span class="badge bg-primary-subtle text-primary mb-3">CONTACTO</span>
+        <h1 class="fw-bold">Estamos aquí para ayudarte</h1>
+        <p class="lead text-secondary">Déjanos tus comentarios o dudas. Nuestro equipo te responderá lo antes posible.</p>
+      </div>
+    </section>
+
+    <main class="container my-5">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card-panel">
+            <h3 class="mb-3">Datos de contacto</h3>
+            <div class="contact-chip"><i class="fas fa-envelope"></i> contact.fit41@gmail.com</div>
+            <div class="contact-chip"><i class="fas fa-phone"></i> +00 000 000 000</div>
+            <div class="contact-chip"><i class="fas fa-map-marker-alt"></i> Dirección de ejemplo, Ciudad</div>
+            <div class="contact-chip"><i class="fas fa-clock"></i> Lunes a Viernes · 9:00 - 18:00</div>
+            <p class="text-secondary mt-3 mb-0">Estos datos son de prueba.</p>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card-panel">
+            <h3 class="mb-3">Envíanos un comentario</h3>
+            <form id="contactForm">
+              <div class="mb-3">
+                <label class="form-label">Asunto (opcional)</label>
+                <input type="text" class="form-control" id="contactSubject" maxlength="200" placeholder="Ej. Problemas con mi plan de entrenamiento">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Correo de contacto (opcional)</label>
+                <input type="email" class="form-control" id="contactEmail" placeholder="correo@dominio.com">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Comentario</label>
+                <textarea class="form-control" id="contactComment" rows="6" maxlength="2000" placeholder="Escribe tu comentario o duda aquí..."></textarea>
+              </div>
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-paper-plane me-2"></i>Enviar comentario
+                </button>
+                <span class="status-msg text-secondary" id="contactStatus"></span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p id="footer-text" class="mb-0">© 2025 Synapse Fit | Contáctanos</p>
+      <small class="text-secondary d-block">v. beta 1.1.0.3</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script>
+      const contactForm = document.getElementById('contactForm');
+      const statusEl = document.getElementById('contactStatus');
+
+      contactForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        statusEl.textContent = 'Enviando...';
+
+        const payload = {
+          subject: document.getElementById('contactSubject').value.trim(),
+          contact_email: document.getElementById('contactEmail').value.trim(),
+          comment: document.getElementById('contactComment').value.trim(),
+        };
+
+        if (!payload.comment) {
+          statusEl.textContent = 'Escribe un comentario antes de enviar.';
+          return;
+        }
+
+        try {
+          const resp = await fetch('/api/contact/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await resp.json();
+          if (!resp.ok) {
+            statusEl.textContent = data.error || 'No se pudo enviar el comentario.';
+            return;
+          }
+
+          statusEl.textContent = 'Comentario enviado. ¡Gracias!';
+          contactForm.reset();
+        } catch (err) {
+          statusEl.textContent = 'Error de red. Intenta nuevamente.';
+        }
+      });
+    </script>
+  </div>
+</body>
+
+</html>

@@ -42,6 +42,10 @@ def nutrition_page():
 def about_page():
     return render_template("about.html")
 
+@user_bp.route("/contactanos")
+def contactanos_page():
+    return render_template("contactanos.html")
+
 @user_bp.route("/plan")
 def plan_page():
     return render_template("plan.html")
@@ -195,6 +199,43 @@ def profile_page():
 @user_bp.route("/payment")
 def payment_page():
     return render_template("payment.html")
+
+@user_bp.post("/api/contact/comments")
+def api_contact_comments():
+    """Recibe comentarios desde Contactanos y los guarda en MongoDB."""
+    try:
+        user_id = request.cookies.get("user_session")
+        if not user_id:
+            return jsonify({"error": "No autenticado"}), 401
+        if extensions.db is None:
+            return jsonify({"error": "DB no disponible"}), 503
+
+        data = request.get_json() or {}
+        comment = (data.get("comment") or "").strip()
+        subject = (data.get("subject") or "").strip()
+        contact_email = (data.get("contact_email") or "").strip() or None
+
+        if not comment:
+            return jsonify({"error": "El comentario es obligatorio"}), 400
+        if len(comment) > 2000:
+            return jsonify({"error": "El comentario es demasiado largo"}), 400
+        if subject and len(subject) > 200:
+            return jsonify({"error": "El asunto es demasiado largo"}), 400
+
+        doc = {
+            "user_id": user_id,
+            "subject": subject or None,
+            "comment": comment,
+            "contact_email": contact_email,
+            "created_at": datetime.utcnow(),
+        }
+
+        extensions.db.contact_comments.insert_one(doc)
+        return jsonify({"message": "Comentario enviado"}), 200
+
+    except Exception as e:
+        logger.error(f"Error guardando comentario de contacto: {e}", exc_info=True)
+        return jsonify({"error": "Error interno"}), 500
 
 @user_bp.post("/api/user/payments/simulate")
 def api_simulate_payment():

@@ -124,6 +124,11 @@ def create_indexes(db_instance):
             db_instance.workout_sessions.create_index([("user_id", 1), ("created_at", -1)])
         except Exception as e:
             logger.warning(f"Could not create workout_sessions index: {e}")
+
+        try:
+            db_instance.contact_comments.create_index([("user_id", 1), ("created_at", -1)])
+        except Exception:
+            pass
         
         logger.info("✔  Índices creados: plans.user_id+created_at, ai_adjustments.user_id+created_at")
         

@@ -566,6 +566,12 @@
                         if (getAudio) getAudio().play().catch(() => { });
                     } catch (e) { }
                     triggerHaptic([200, 100, 200]);
+                    if (document.visibilityState === 'visible' && scheduledPushTaskIdsRef.current.length > 0) {
+                        if (window.Runner.utils.cancelPush) {
+                            scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                        }
+                        scheduledPushTaskIdsRef.current = [];
+                    }
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage(`Inicia ejercicio ${exName}`, "info");
                 }

@@ -267,10 +267,60 @@
       margin: 0 4px;
       color: #0d6efd;
     }
+
+    /* Splash Screen Styles */
+    #auth-splash-screen {
+      position: fixed;
+      inset: 0;
+      background-color: var(--bg-body);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    }
+
+    #auth-splash-screen.splash-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 1rem;
+      animation: pulseLogo 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseLogo {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 
 <body>
+  <!-- Splash Screen -->
+  <div id="auth-splash-screen">
+    <img src="/static/images/logo.png" alt="Synapse Fit" class="splash-logo">
+    <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
       <a class="navbar-brand" href="/">
@@ -740,6 +790,21 @@
   </script>
   <script src="/static/js/theme.js"></script>
   <script src="/static/js/lang.js"></script>
+  <script>
+    // Splash Screen Logic
+    document.addEventListener("DOMContentLoaded", () => {
+      const splash = document.getElementById('auth-splash-screen');
+      if (splash) {
+        setTimeout(() => {
+          splash.classList.add('splash-hidden');
+          // Optional: remove from DOM after transition
+          setTimeout(() => {
+            splash.remove();
+          }, 600);
+        }, 5000); // 5 seconds
+      }
+    });
+  </script>
 </body>
 
 </html>

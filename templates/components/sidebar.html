@@ -66,11 +66,7 @@
             <!-- Logica token admin/bloqueo -->
             {% if current_user_role == 'admin' and not is_impersonating %}
             <li>
-                <a href="#" id="sidebar-lock-btn"
-                    class="d-flex align-items-center text-danger text-decoration-none py-1 hover-white"
-                    title="Bloquear sesi?n de admin" {% if not has_admin_token %}style="display:none" {% endif %}>
-                    <i class="fas fa-lock me-2"></i> Bloquear Admin
-                </a>
+
                 <a href="#" id="sidebar-token-btn"
                     class="d-flex align-items-center text-warning text-decoration-none py-1 hover-white"
                     data-bs-toggle="modal" data-bs-target="#adminTokenModal" {% if has_admin_token
@@ -88,11 +84,21 @@
             </li>
             <!-- Boton busqueda admin (reemplaza contenedor) -->
             {% if current_user_role == 'admin' %}
-            <li id="sidebar-search-user-li">
+            <li id="sidebar-search-user-li" class="d-none">
                 <a href="#" id="sidebar-search-user-btn"
                     class="d-flex align-items-center text-primary text-decoration-none py-1 hover-white"
                     data-bs-toggle="modal" data-bs-target="#userContextModal">
                     <i class="fas fa-search me-2"></i> Buscar Usuario
+                </a>
+            </li>
+            {% endif %}
+
+            {% if current_user_role == 'admin' and not is_impersonating %}
+            <li>
+                <a href="#" id="sidebar-lock-btn"
+                    class="d-flex align-items-center text-danger text-decoration-none py-1 hover-white"
+                    title="Bloquear sesi?n de admin" {% if not has_admin_token %}style="display:none" {% endif %}>
+                    <i class="fas fa-lock me-2"></i> Bloquear Admin
                 </a>
             </li>
             {% endif %}
@@ -105,8 +111,8 @@
         {{ macros.nav_link('/landing', 'Inicio', 'fas fa-home') }}
         {{ macros.nav_link('/dashboard', 'Dashboard', 'fas fa-tachometer-alt') }}
         {{ macros.nav_link('/workout/adherence', 'Adherencia', 'fas fa-fire-alt') }}
-        {{ macros.nav_link('/plan', 'Mi Plan', 'fas fa-dumbbell') }}
         {{ macros.nav_link('/nutrition', 'Nutrición', 'fas fa-utensils') }}
+        {{ macros.nav_link('/plan', 'Mi Plan', 'fas fa-dumbbell') }}
 
         <li class="nav-item sidebar-section">
             Entrenamiento
@@ -273,31 +279,21 @@
     function setAdminMenuState(isUnlocked) {
         const lockBtn = document.getElementById('sidebar-lock-btn');
         const tokenBtn = document.getElementById('sidebar-token-btn');
-        if (lockBtn) lockBtn.style.display = isUnlocked ? "" : "none";
+        const searchLi = document.getElementById('sidebar-search-user-li');
+
+        // Logic:
+        // If Unlocked: Hide Token Btn, Show Lock Btn, Show Search Option
+        // If Locked: Show Token Btn, Hide Lock Btn, Hide Search Option
+
         if (tokenBtn) tokenBtn.style.display = isUnlocked ? "none" : "";
+        if (lockBtn) lockBtn.style.display = isUnlocked ? "" : "none";
 
-        const searchBtn = document.getElementById('sidebar-search-user-btn');
-        if (!searchBtn) return;
-
-        if (isUnlocked) {
-            searchBtn.classList.remove('disabled');
-            searchBtn.removeAttribute('aria-disabled');
-            searchBtn.setAttribute('data-bs-toggle', 'modal');
-            searchBtn.setAttribute('data-bs-target', '#userContextModal');
-            searchBtn.onclick = null;
-        } else {
-            searchBtn.classList.add('disabled');
-            searchBtn.setAttribute('aria-disabled', 'true');
-            searchBtn.removeAttribute('data-bs-toggle');
-            searchBtn.removeAttribute('data-bs-target');
-            searchBtn.onclick = (e) => {
-                e.preventDefault();
-                if (window.showAlertModal) {
-                    window.showAlertModal("Token requerido", "Valida el token admin para habilitar la busqueda de usuarios.", "warning");
-                } else {
-                    alert("Valida el token admin para habilitar la busqueda de usuarios.");
-                }
-            };
+        if (searchLi) {
+            if (isUnlocked) {
+                searchLi.classList.remove('d-none');
+            } else {
+                searchLi.classList.add('d-none');
+            }
         }
     }
 
@@ -379,13 +375,7 @@
 
         // Check if admin unlocked
         const isAdminUnlocked = sessionStorage.getItem('admin_unlocked') === 'true';
-        if (isAdminUnlocked) {
-            const cont = document.getElementById('admin-user-search-container');
-            // Only show if available and not impersonating
-            if (cont && cont.dataset.impersonating !== 'true') {
-                cont.classList.remove('d-none');
-            }
-        }
+        // Logic moved to setAdminMenuState
 
         // Lock Admin Logic
         const lockBtn = document.getElementById('sidebar-lock-btn');
@@ -420,6 +410,7 @@
                 // Slight delay to ensure modal transition finishes
                 setTimeout(() => {
                     setAdminMenuState(false);
+                    confirmLockBtn.disabled = false; // Re-enable button
                 }, 300);
             });
         }
@@ -749,6 +740,28 @@
     </div>
 </div>
 
+<!-- Modal confirmacion logout -->
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fs-5">Cerrar Sesión</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres cerrar la sesión?</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmLogoutBtn" class="btn btn-danger btn-sm">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Boton toggle movil (solo visible en movil) -->
 <!-- Barra fija movil (solo visible en movil) -->
 <nav class="navbar navbar-dark bg-dark fixed-top d-lg-none shadow-sm sidebar-mobile-nav"
@@ -794,10 +807,23 @@
         });
 
         // 2. Logout Logic (User Sidebar specific)
+        // 2. Logout Logic (User Sidebar specific)
         const logoutBtn = document.getElementById('sidebar-logout');
+        const logoutModalEl = document.getElementById('logoutConfirmModal');
+        const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+        let logoutModal = null;
+
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function (e) {
+            logoutBtn.addEventListener('click', function (e) {
                 e.preventDefault();
+                if (!logoutModal && logoutModalEl) logoutModal = new bootstrap.Modal(logoutModalEl);
+                if (logoutModal) logoutModal.show();
+            });
+        }
+
+        if (confirmLogoutBtn) {
+            confirmLogoutBtn.addEventListener('click', async function () {
+                confirmLogoutBtn.disabled = true;
                 try {
                     await fetch('/auth/logout', { method: 'POST' });
                 } catch (e) { console.error(e); }
@@ -807,6 +833,8 @@
                 localStorage.removeItem('ai_fitness_uid');
                 sessionStorage.removeItem('admin_unlocked');
 
+                // Hide modal and redirect
+                if (logoutModal) logoutModal.hide();
                 window.location.href = '/';
             });
         }

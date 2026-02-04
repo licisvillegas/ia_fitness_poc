@@ -780,7 +780,19 @@ img {
 
 /* --- Global Print Styles --- */
 @media print {
+    :root {
+        --bg-body: #ffffff !important;
+        --bg-panel: #ffffff !important;
+        --bg-card: #ffffff !important;
+        --bg-card-hover: #ffffff !important;
+        --bg-input: #ffffff !important;
+        --text-main: #000000 !important;
+        --text-header: #000000 !important;
+        --text-secondary: #000000 !important;
+        --text-muted: #333333 !important;
+    }
 
+    html,
     body,
     .bg-body,
     .bg-panel,

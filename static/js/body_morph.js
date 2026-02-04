@@ -166,18 +166,30 @@ if (themeSelect && imgThin && imgMuscle && imgOver) {
 if (themeToggle) {
   themeToggle.addEventListener('click', () => {
     console.log('Theme toggle clicked. Current gender:', currentGender);
+
+    // Determine the target mode based on the current visible gender's state
+    // If currently Standard (HD2/FD1), switch BOTH to Fitness.
+    // If currently Fitness (MaleFitness/FemaleFitness), switch BOTH to Standard.
+    let targetMode = 'fitness';
+
     if (currentGender === 'male') {
-      // Toggle between MaleFitness and HD2
-      activeMaleTheme = (activeMaleTheme === 'MaleFitness') ? 'HD2' : 'MaleFitness';
-      console.log('Switched male theme to:', activeMaleTheme);
+      if (activeMaleTheme === 'MaleFitness') targetMode = 'standard';
     } else {
-      // Toggle between FemaleFitness and FD1
-      activeFemaleTheme = (activeFemaleTheme === 'FemaleFitness') ? 'FD1' : 'FemaleFitness';
-      console.log('Switched female theme to:', activeFemaleTheme);
+      if (activeFemaleTheme === 'FemaleFitness') targetMode = 'standard';
     }
 
+    if (targetMode === 'fitness') {
+      activeMaleTheme = 'MaleFitness';
+      activeFemaleTheme = 'FemaleFitness';
+    } else {
+      activeMaleTheme = 'HD2';
+      activeFemaleTheme = 'FD1';
+    }
+
+    console.log(`Switched both themes to ${targetMode}. Male:${activeMaleTheme}, Female:${activeFemaleTheme}`);
+
     // Agregar retroalimentación visual
-    if (activeMaleTheme === 'MaleFitness' || activeFemaleTheme === 'FemaleFitness') {
+    if (activeMaleTheme === 'MaleFitness') {
       themeToggle.classList.remove('btn-outline-warning');
       themeToggle.classList.add('btn-warning');
     } else {

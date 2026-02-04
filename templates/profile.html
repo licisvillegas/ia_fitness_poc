@@ -154,7 +154,7 @@
 
   <div class="main-content">
     <div class="container mt-5">
-      <h2 class="mb-4 text-theme">Perfil de Usuario <small class="text-muted" style="font-size: 0.5em;">v1.1</small>
+      <h2 class="mb-4 text-theme">Perfil de Usuario <small class="text-muted" style="font-size: 0.5em;"></small>
       </h2>
 
       <!-- Mensajes de feedback -->
@@ -198,7 +198,8 @@
                 <div class="mb-3">
                   <label class="form-label small text-muted text-start w-100">Foto de Perfil</label>
                   <input type="file" class="form-control form-control-sm" id="inputProfileImage" accept="image/*">
-                  <button type="button" class="btn btn-outline-primary btn-sm mt-2 w-100" id="btnUploadProfileImage">
+                  <button type="button" class="btn btn-outline-primary btn-sm mt-2 w-100" id="btnUploadProfileImage"
+                    disabled>
                     Guardar Foto
                   </button>
                 </div>
@@ -473,9 +474,10 @@
     inputProfileImage.addEventListener('change', () => {
       const file = inputProfileImage.files && inputProfileImage.files[0];
       if (!file) {
-        btnUploadProfileImage.disabled = false;
+        btnUploadProfileImage.disabled = true;
         return;
       }
+      btnUploadProfileImage.disabled = false;
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfileImage(e.target.result);

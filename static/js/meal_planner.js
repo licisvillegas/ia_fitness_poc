@@ -39,80 +39,92 @@
         const out = data.output || {};
 
         // --- MULTI-OPTION LOGIC ---
-        // Si hay 'options', renderizamos tabs y seleccionamos el primero por defecto
+        // Si hay 'options', renderizamos todos los contenedores pero solo mostramos el activo
         const options = out.options || [];
 
-        // Limpiamos el contenedor
+        // Limpiamos el contenedor principal
         container.innerHTML = '';
 
-        // Si hay opciones múltiples, creamos tabs
         if (options.length > 0) {
             const tabsContainer = document.createElement('div');
-            tabsContainer.className = 'd-flex justify-content-center gap-2 mb-4';
+            tabsContainer.className = 'd-flex justify-content-center gap-2 mb-4 d-print-none'; // Ocultar tabs en impresión
 
-            // Estado interno para saber cual está activo (pestaña)
             let activeIdx = 0;
 
-            function renderTabs() {
+            // Contenedor para TODAS las opciones
+            const allOptionsWrapper = document.createElement('div');
+            allOptionsWrapper.className = 'all-options-wrapper';
+
+            // Generar DOM para cada opción
+            options.forEach((opt, idx) => {
+                const optContainer = document.createElement('div');
+                optContainer.className = 'meal-option-container';
+                optContainer.id = `meal-option-${idx}`;
+                optContainer.style.display = (idx === activeIdx) ? 'block' : 'none';
+
+                // Header interno para impresión (para saber qué opción es)
+                const printHeader = document.createElement('div');
+                printHeader.className = 'd-none d-print-block mb-3 border-bottom pb-2';
+                printHeader.innerHTML = `<h4>${opt.name || `Opción ${idx + 1}`} <small>(${opt.total_kcal || opt.kcal} kcal)</small></h4>`;
+                optContainer.appendChild(printHeader);
+
+                // Renderizar comidas de esta opción
+                const meals = opt.meals || [];
+                meals.forEach(m => {
+                    const card = createMealCard(m);
+                    optContainer.appendChild(card);
+                });
+
+                allOptionsWrapper.appendChild(optContainer);
+            });
+
+            // Función para actualizar tabs y visibilidad
+            function updateTabs() {
                 tabsContainer.innerHTML = '';
                 options.forEach((opt, idx) => {
                     const btnTab = document.createElement('button');
                     btnTab.className = `btn btn-sm ${idx === activeIdx ? 'btn-primary' : 'btn-outline-primary'}`;
-                    btnTab.textContent = opt.name || `Opoción ${idx + 1}`;
+                    btnTab.textContent = opt.name || `Opción ${idx + 1}`;
                     btnTab.onclick = () => {
                         activeIdx = idx;
-                        renderTabs(); // Actualizar estilos botones
-                        renderOptionContent(options[idx]); // Renderizar contenido
+                        updateTabs();
+
+                        // Actualizar visibilidad de contenedores
+                        options.forEach((_, i) => {
+                            const el = document.getElementById(`meal-option-${i}`);
+                            if (el) el.style.display = (i === activeIdx) ? 'block' : 'none';
+                        });
+
+                        // Actualizar Total Header Global
+                        const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
+                        if (summaryTotalDiv) {
+                            const total = options[activeIdx].total_kcal || options[activeIdx].kcal;
+                            summaryTotalDiv.innerHTML = `Total Opción: <strong>${total || '?'} kcal</strong>`;
+                        }
                     };
                     tabsContainer.appendChild(btnTab);
                 });
+
+                // Inicializar Total Header Global si es la primera vez
+                const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
+                if (summaryTotalDiv) {
+                    const total = options[activeIdx].total_kcal || options[activeIdx].kcal;
+                    summaryTotalDiv.innerHTML = `Total Opción: <strong>${total || '?'} kcal</strong>`;
+                }
             }
 
             container.appendChild(tabsContainer);
-            renderTabs();
-            renderOptionContent(options[0]); // Render inicial
+            container.appendChild(allOptionsWrapper);
+            updateTabs();
 
             if (showSave) {
                 btnSave.style.display = 'inline-block';
-                // Al guardar, enviamos TODO el objeto data, que incluye options. 
-                // El backend lo guardará tal cual.
                 btnSave.dataset.payload = JSON.stringify(data);
             }
+            // Asegurar que el resumen global se muestre
+            const summaryContainer = document.getElementById('nutritionPlanSummary');
+            if (summaryContainer) summaryContainer.style.display = 'flex';
 
-            // Función interna para renderizar el contenido de UNA opción
-            function renderOptionContent(optData) {
-                // Borrar contenido previo que NO sea el tabsContainer
-                // Estrategia: limpiar todo lo que esté DESPUÉS del tabsContainer
-                // O mejor: tener un sub-contenedor para las meals
-                let contentBox = document.getElementById('mealsContentBox');
-                if (!contentBox) {
-                    contentBox = document.createElement('div');
-                    contentBox.id = 'mealsContentBox';
-                    container.appendChild(contentBox);
-                } else {
-                    contentBox.innerHTML = '';
-                }
-
-                const meals = optData.meals || [];
-                let dailySumKcal = 0;
-
-                // Render Summary (Total) Update
-                const summaryTotalDiv = document.getElementById('nutritionPlanTotal');
-                if (summaryTotalDiv) {
-                    // Si la opción tiene total explícito, úsalo
-                    const total = optData.total_kcal || optData.kcal;
-                    summaryTotalDiv.innerHTML = `Total Opción: <strong>${total || '?'} kcal</strong>`;
-                }
-                const summaryContainer = document.getElementById('nutritionPlanSummary');
-                if (summaryContainer) summaryContainer.style.display = 'flex';
-
-                // Render Cards
-                meals.forEach(m => {
-                    const card = createMealCard(m);
-                    contentBox.appendChild(card);
-                    // Sumas para validación (opcional, ya que la opción trae sumas)
-                });
-            }
             return;
         }
 

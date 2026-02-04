@@ -55,30 +55,37 @@
           </button>
         </div>
 
-        {% if current_user_role == 'admin' %}
-        <div class="text-center mb-3" id="daily-plan-controls" style="display:none;">
+        <div class="text-center mb-3" id="daily-plan-controls" style="display:none;"
+          data-role="{{ 'admin' if current_user_role == 'admin' else 'user' }}">
           <div class="input-group justify-content-center" style="max-width:820px;margin:0 auto;gap:8px;">
+            {% if current_user_role == 'admin' %}
             <input id="nutriUserId" type="text" class="form-control text-center"
               placeholder="user_id o deja vacío para usar el del login" autocomplete="off" autocorrect="off"
               autocapitalize="off" spellcheck="false">
+            {% else %}
+            <input id="nutriUserId" type="hidden" value="{{ current_user.user_id if current_user else '' }}">
+            {% endif %}
             <select id="nutriMeals" class="form-select" style="max-width:300px;">
               <option value="3">3 comidas (Simplicidad / Ayuno Intermitente)</option>
               <option value="4">4 comidas (Estilo de vida oficina / Mantenimiento)</option>
               <option value="5">5 comidas (Control de ansiedad / Estándar fitness)</option>
               <option value="6" selected>6 comidas (Ganancia muscular / Alto rendimiento)</option>
             </select>
+            {% if current_user_role == 'admin' %}
             <input id="nutriPrefs" type="text" class="form-control" placeholder="preferencias (opcional)">
             <input id="nutriExclude" type="text" class="form-control" placeholder="exclusiones (opcional)">
+            {% endif %}
             <button id="btnGenMeals" class="btn btn-primary">Generar plan</button>
             <button id="btnSaveMealPlan" class="btn btn-success" style="display:none;">Guardar y activar</button>
           </div>
+          {% if current_user_role == 'admin' %}
           <div class="mt-2">
             <input id="nutriCuisine" type="text" class="form-control" style="max-width:820px;margin:0 auto;"
               placeholder="cocina preferida / notas (opcional)">
           </div>
+          {% endif %}
           <div id="nutriMsg" class="mt-2 text-info"></div>
         </div>
-        {% endif %}
 
         <div id="mealsContainer"></div>
       </div>

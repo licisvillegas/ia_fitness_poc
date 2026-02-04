@@ -226,9 +226,12 @@
     async function generate() {
         const userInput = document.getElementById('nutriUserId');
         const mealsSel = document.getElementById('nutriMeals');
-        const prefs = document.getElementById('nutriPrefs').value.trim();
-        const exclude = document.getElementById('nutriExclude').value.trim();
-        const cuisine = document.getElementById('nutriCuisine').value.trim();
+        const prefsEl = document.getElementById('nutriPrefs');
+        const excludeEl = document.getElementById('nutriExclude');
+        const cuisineEl = document.getElementById('nutriCuisine');
+        const prefs = prefsEl ? prefsEl.value.trim() : '';
+        const exclude = excludeEl ? excludeEl.value.trim() : '';
+        const cuisine = cuisineEl ? cuisineEl.value.trim() : '';
         const uid = resolveUserId(userInput ? userInput.value : '');
         if (!uid) { if (msg) msg.textContent = 'Ingresa un user_id'; return; }
         if (window.showLoader) window.showLoader("Generando plan de comidas...");
@@ -296,11 +299,17 @@
                 // Ocultar resumen si no hay plan
                 const s = document.getElementById('nutritionPlanSummary');
                 if (s) s.style.display = 'none';
+                const controls = document.getElementById('daily-plan-controls');
+                if (controls) controls.style.display = 'block';
                 return;
             }
             const doc = await resp.json();
             renderMeals({ backend: doc.backend, input: doc.input, output: doc.output }, false);
             if (msg) msg.textContent = 'Plan de nutrición activo cargado';
+            const controls = document.getElementById('daily-plan-controls');
+            if (controls && controls.dataset.role === 'user') {
+                controls.style.display = 'none';
+            }
         } catch (e) {
             if (msg) msg.textContent = `Error al cargar plan activo: ${e.message}`;
         } finally {

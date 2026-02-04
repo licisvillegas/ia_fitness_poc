@@ -443,10 +443,26 @@
           msg.textContent = rows.length ? '' : 'Sin meal_plans';
           list.innerHTML = '';
 
-          if (rows.length === 0) {
-            list.innerHTML = '<div class="p-3 text-center text-secondary small">No hay planes registrados.</div>';
-            return;
-          }
+            if (rows.length === 0) {
+              list.innerHTML = '<div class="p-3 text-center text-secondary small">No hay planes registrados.</div>';
+              currentPlan = null;
+              lastGeneratedInput = null;
+              lastGeneratedBackend = null;
+              document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
+              document.getElementById('detail-container').style.setProperty('display', 'block', 'important');
+              document.getElementById('adminPlanMeta').textContent = 'Este usuario no tiene planes.';
+              document.getElementById('adminPlanActiveBadge').style.display = 'none';
+              document.getElementById('adminPlanInputSummary').innerHTML = '';
+              document.getElementById('fBackend').value = '';
+              document.getElementById('fPlanId').value = '';
+              document.getElementById('fNotes').value = '';
+              document.getElementById('fOutput').value = '';
+              document.getElementById('previewContainer').innerHTML = '<p class="text-secondary small text-center mt-5">Sin planes. Usa el Generador AI para crear uno.</p>';
+              document.getElementById('editorContainer').innerHTML = '';
+              const aiBody = document.getElementById('aiGenBody');
+              if (aiBody) aiBody.style.display = 'block';
+              return;
+            }
 
           const frag = document.createDocumentFragment();
           rows.forEach((p, idx) => {

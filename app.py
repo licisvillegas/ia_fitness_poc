@@ -81,6 +81,9 @@ def create_app():
 
     app.register_blueprint(onboarding_bp) # Rutas /onboarding/*
     app.register_blueprint(notifications_bp)
+    
+    from routes.integrations import integrations_bp
+    app.register_blueprint(integrations_bp, url_prefix="/api/integrations")
 
     print("--- [DEBUG] Blueprints registrados exitosamente ---", file=sys.stdout, flush=True)
 

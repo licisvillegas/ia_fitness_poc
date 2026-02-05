@@ -51,6 +51,11 @@
         items.forEach(ex => {
             const img = resolveImage(ex);
             const hasVideo = ex.video_url && ex.video_url.trim();
+            let displayImg = img;
+            if (hasVideo && img === '/static/images/gym.png') {
+                const videoThumb = Utils.getVideoThumbnailUrl(ex.video_url);
+                if (videoThumb) displayImg = videoThumb;
+            }
             const bodyPartLabel = state.bodyPartMap[ex.body_part_key] || state.bodyPartMap[ex.body_part] || ex.body_part;
 
             const adminHtml = state.isAdmin ? `
@@ -76,7 +81,7 @@
                     
                     ${adminHtml}
 
-                    <img src="${img}" class="exercise-grid-img" alt="${ex.name}">
+                    <img src="${displayImg}" class="exercise-grid-img" alt="${ex.name}">
                     <div class="card-body p-3">
                         <h6 class="fw-bold text-white text-truncate mb-1" title="${ex.name}">${ex.name}</h6>
                         <div class="d-flex gap-1 mb-2">

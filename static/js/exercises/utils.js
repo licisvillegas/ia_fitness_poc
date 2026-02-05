@@ -39,6 +39,20 @@
                 if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
             }
             return trimmed;
+        },
+        getVideoThumbnailUrl(url) {
+            const trimmed = (url || "").trim();
+            if (!trimmed) return "";
+            let videoId = "";
+            if (trimmed.includes("youtube.com/watch")) {
+                const match = trimmed.match(/[?&]v=([^&]+)/);
+                if (match && match[1]) videoId = match[1];
+            } else if (trimmed.includes("youtu.be/")) {
+                const match = trimmed.match(/youtu\.be\/([^?&]+)/);
+                if (match && match[1]) videoId = match[1];
+            }
+            if (!videoId) return "";
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
     };
 })();

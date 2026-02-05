@@ -130,6 +130,14 @@
                 return sum / weights.length;
             })();
 
+            const totalLoad = (() => {
+                const weights = sets
+                    .map(set => Number(set.weight))
+                    .filter(weight => Number.isFinite(weight) && weight > 0);
+                if (!weights.length) return 0;
+                return weights.reduce((acc, value) => acc + value, 0);
+            })();
+
             // Duración: Suma de duraciones de series (Tiempo Activo) o recurso a reloj de pared
             let totalSeconds = 0;
             sets.forEach(s => totalSeconds += Number(s.duration_seconds || 0));
@@ -138,6 +146,17 @@
             const displayDuration = totalSeconds > 0
                 ? formatDuration(totalSeconds)
                 : (session.duration_seconds ? formatDuration(session.duration_seconds) : '-');
+
+            const totalTimeSeconds = (() => {
+                const startRaw = session.started_at || session.start_time || session.created_at;
+                const endRaw = session.completed_at || session.end_time || session.ended_at || session.finished_at || session.end_date;
+                const start = startRaw ? new Date(startRaw) : null;
+                const end = endRaw ? new Date(endRaw) : null;
+                if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+                const diff = Math.floor((end.getTime() - start.getTime()) / 1000);
+                return diff > 0 ? diff : 0;
+            })();
+            const displayTotalTime = totalTimeSeconds > 0 ? formatDuration(totalTimeSeconds) : '-';
 
             // Agrupar series por ejercicio
             const exerciseGroups = {};
@@ -151,6 +170,8 @@
                 }
                 exerciseGroups[exId].sets.push(set);
             });
+
+            const uniqueExercises = Object.keys(exerciseGroups).length;
 
             const detailsRows = Object.entries(exerciseGroups).flatMap(([exId, group]) => {
                 return group.sets.map((set, idx) => {
@@ -207,25 +228,30 @@
                                 <i class="far fa-calendar me-1"></i>
                                 ${formatDate(session.start_time || session.created_at)}
                             </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="mb-2 d-flex justify-content-end">
-                                <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); window.deleteSession('${session._id}', ${index});">
-                                    <i class="fas fa-trash-alt me-1"></i>Eliminar
-                                </button>
-                            </div>
                             <div class="text-secondary small">
                                 <span class="me-3">
                                     <i class="fas fa-weight-hanging text-cyber-blue me-1"></i>
                                     <span class="text-theme">${avgWeight != null ? formatWeightValue(avgWeight) : '-'}</span> ${sessionWeightUnit}
                                 </span>
                                 <span class="me-3">
+                                    <i class="fas fa-layer-group text-cyber-green me-1"></i>
+                                    <span class="text-theme">${formatVolumeValue(totalLoad)}</span> ${sessionWeightUnit}
+                                </span>
+                                <span class="me-3">
                                     <i class="fas fa-list text-cyber-orange me-1"></i>
                                     <span class="text-theme">${totalSets}</span> series
+                                </span>
+                                <span class="me-3">
+                                    <i class="fas fa-dumbbell text-cyber-purple me-1"></i>
+                                    <span class="text-theme">${uniqueExercises}</span> ejercicios
                                 </span>
                                 <span>
                                     <i class="far fa-clock text-cyber-green me-1"></i>
                                     <span class="text-theme">${displayDuration}</span>
+                                </span>
+                                <span class="ms-3">
+                                    <i class="far fa-clock text-cyber-blue me-1"></i>
+                                    <span class="text-theme">${displayTotalTime}</span>
                                 </span>
                             </div>
                             <div class="text-secondary small mt-1">

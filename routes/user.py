@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, send_file, redirect
 from datetime import datetime, timedelta
+import io
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
@@ -31,6 +32,58 @@ def landing_page():
 def dashboard_page():
     # Redirige al dashboard directamente
     return render_template("dashboard.html")
+
+
+@user_bp.get("/dashboard/print/summary")
+def dashboard_print_summary():
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return redirect("/login")
+
+    try:
+        from playwright.sync_api import sync_playwright
+        from pypdf import PdfReader, PdfWriter
+    except Exception as e:
+        logger.error(f"PDF engine not available: {e}")
+        return jsonify({"error": "PDF engine not available"}), 503
+
+    base_url = request.url_root.rstrip("/")
+    target_urls = [
+        f"{base_url}/ai/body_assessment/history/view/{user_id}",
+        f"{base_url}/nutrition",
+        f"{base_url}/workout/routines"
+    ]
+
+    pdf_buffers = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            context = browser.new_context()
+            cookies = []
+            for name, value in request.cookies.items():
+                cookies.append({"name": name, "value": value, "url": f"{base_url}/"})
+            if cookies:
+                context.add_cookies(cookies)
+            page = context.new_page()
+            for url in target_urls:
+                page.goto(url, wait_until="networkidle", timeout=60000)
+                page.emulate_media(media="print")
+                pdf_bytes = page.pdf(format="A4", print_background=True)
+                pdf_buffers.append(pdf_bytes)
+            browser.close()
+    except Exception as e:
+        logger.error(f"Error generating PDF summary: {e}")
+        return jsonify({"error": "Error generating PDF"}), 500
+
+    writer = PdfWriter()
+    for pdf_bytes in pdf_buffers:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        for page in reader.pages:
+            writer.add_page(page)
+    output = io.BytesIO()
+    writer.write(output)
+    output.seek(0)
+    return send_file(output, mimetype="application/pdf", as_attachment=True, download_name="resumen_dashboard.pdf")
 
 @user_bp.route("/nutrition")
 def nutrition_page():

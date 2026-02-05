@@ -15,6 +15,10 @@
             const passed = queue.slice(0, cursor + 1).filter(s => s.type === 'work').length;
             return { passed, total };
         }, [cursor, queue]);
+        const progressPercent = useMemo(() => {
+            if (!workStats.total) return 0;
+            return Math.min(100, Math.max(0, (workStats.passed / workStats.total) * 100));
+        }, [workStats]);
 
         const { CountdownTimer } = window.Runner.components;
 
@@ -28,6 +32,16 @@
                         <h5 className="m-0 fw-bold text-theme text-truncate" style={{ fontSize: '1rem' }}>{routine ? routine.name : ''}</h5>
                         <div className="text-secondary small text-truncate">
                             Serie {workStats.passed} / {workStats.total}
+                        </div>
+                        <div className="progress mt-1" style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                            <div
+                                className="progress-bar bg-info"
+                                role="progressbar"
+                                style={{ width: `${progressPercent}%` }}
+                                aria-valuenow={Math.round(progressPercent)}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                            />
                         </div>
                     </div>
                 </div>

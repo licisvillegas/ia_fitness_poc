@@ -2,7 +2,7 @@
 # Synapse Fit - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import os
 import traceback
 import sys
@@ -87,6 +87,27 @@ def create_app():
     @app.get("/health")
     def healthcheck():
         return {"status": "ok"}, 200
+
+    @app.after_request
+    def refresh_user_session_cookie(response):
+        try:
+            user_id = request.cookies.get("user_session")
+            if not user_id:
+                return response
+            # No refrescar en logout para evitar reescribir cookie eliminada
+            if request.path.startswith("/auth/logout"):
+                return response
+            response.set_cookie(
+                "user_session",
+                user_id,
+                httponly=True,
+                samesite="Lax",
+                max_age=86400 * 30,
+                secure=request.is_secure
+            )
+        except Exception:
+            pass
+        return response
 
     return app
 

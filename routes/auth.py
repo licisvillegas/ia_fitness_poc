@@ -176,9 +176,8 @@ def auth_login_api():
         
         resp = jsonify({"message": "Inicio de sesión exitoso", "user": user})
         
-        remember = data.get("remember", False)
-        # 30 days if remember is true, else session cookie (None)
-        max_age = 86400 * 30 if remember else None
+        # Mantener sesión por varios días para evitar expiraciones tras inactividad
+        max_age = 86400 * 30
         
         # Safari and modern browsers require SameSite/Secure for some contexts.
         # Max-age=None makes it a session cookie.

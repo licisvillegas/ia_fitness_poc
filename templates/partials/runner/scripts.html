@@ -11,12 +11,14 @@
         routine: {{ routine | tojson }},
         currentUserName: {{ current_user_name | default('', true) | tojson }},
         currentUserId: {{ current_user_id | default('', true) | tojson }},
+        currentUserAge: {{ current_user_age | default(none, true) | tojson }},
         restoredState: {{ restored_state | tojson }}
     };
 
     window.initialRoutine = window.__RUNNER__.routine;
     window.currentUserName = window.__RUNNER__.currentUserName;
     window.currentUserId = window.__RUNNER__.currentUserId;
+    window.currentUserAge = window.__RUNNER__.currentUserAge;
     window.restoredState = window.__RUNNER__.restoredState;
 </script>
 
@@ -47,6 +49,7 @@
 <script type="text/babel" src="/static/js/runner/components/PlateCalculatorModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/SubstitutesModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/RMCalculatorModal.js"></script>
+<script type="text/babel" src="/static/js/runner/components/HeartRateModal.js"></script>
 <script type="text/babel" src="/static/js/runner/components/RoutineDetails.js"></script>
 <script type="text/babel" src="/static/js/runner/components/PreStart.js"></script>
 <script type="text/babel" src="/static/js/runner/components/TimerControls.js"></script>

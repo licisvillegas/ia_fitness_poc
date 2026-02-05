@@ -5,12 +5,13 @@
     const { getExerciseWithLookup, resolveSubstitutes, openVideoModal } = window.Runner.logic;
 
     window.Runner.components.ActiveExercise = ({ focusMode }) => {
-        const { TimerControls, InputControls, CountdownTimer } = window.Runner.components;
+        const { TimerControls, InputControls, CountdownTimer, HeartRateModal } = window.Runner.components;
         const { currentStep, exerciseLookup, openSubstituteModal, deferExercise } = useWorkout();
 
         if (!currentStep || currentStep.type !== 'work' || !currentStep.exercise) return null;
 
         const ex = getExerciseWithLookup(currentStep.exercise || {}, exerciseLookup);
+        const exType = (ex.exercise_type || ex.type || "").toString().toLowerCase();
         const name = ex.exercise_name || ex.name || 'Ejercicio';
         const bodyPart = translateBodyPart(ex.body_part);
         const hasVideo = ex.video_url && ex.video_url.trim() !== "";
@@ -21,7 +22,10 @@
         const exerciseComment = ex.comment || ex.note || ex.description || "";
         const groupComment = currentStep.groupComment || "";
         const [showExerciseNote, setShowExerciseNote] = useState(false);
+        const [showHeartRate, setShowHeartRate] = useState(false);
         const hasExerciseNote = Boolean(exerciseComment);
+        const showHeartRateButton = currentStep.isTimeBased && (exType === "cardio" || exType === "time" || currentStep.isTimeBased);
+        const userAge = window.__RUNNER__?.currentUserAge ?? window.currentUserAge ?? null;
 
         const exerciseNoteButton = hasExerciseNote ? (
             <button
@@ -56,6 +60,10 @@
             </div>
         ) : null;
 
+        const heartRateModal = showHeartRate ? (
+            <HeartRateModal isOpen={showHeartRate} onClose={() => setShowHeartRate(false)} age={userAge} />
+        ) : null;
+
         const cardClassName = `active-card ${currentStep.isTimeBased ? 'time-mode' : ''} animate-entry d-flex flex-column position-relative ${focusMode ? 'h-100' : ''}`;
         const contentClassName = focusMode
             ? "d-flex flex-column justify-content-between h-100"
@@ -82,6 +90,16 @@
                                     Serie <span className="text-white fw-bold">{currentStep.setNumber}</span> / <span className="text-secondary">{currentStep.totalSets}</span>
                                 </span>
                                 {exerciseNoteButton}
+                                {showHeartRateButton && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-danger rounded-circle"
+                                        title="Zonas de frecuencia cardiaca"
+                                        onClick={() => setShowHeartRate(true)}
+                                    >
+                                        <i className="fas fa-heartbeat"></i>
+                                    </button>
+                                )}
                             </div>
                             <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
                             {currentStep.isTimeBased && (
@@ -99,6 +117,7 @@
                             )}
                         </div>
                         {exerciseNoteModal}
+                        {heartRateModal}
                     </div>
                 </div>
             );
@@ -150,6 +169,17 @@
                                         <i className="fas fa-exchange-alt me-1"></i> Sustitutos
                                     </button>
                                 )}
+                                {showHeartRateButton && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-danger rounded-pill px-3 py-0"
+                                        style={{ fontSize: '0.75rem' }}
+                                        onClick={() => setShowHeartRate(true)}
+                                        title="Zonas de frecuencia cardiaca"
+                                    >
+                                        <i className="fas fa-heartbeat me-1"></i> FC
+                                    </button>
+                                )}
                                 <CountdownTimer />
                                 <button
                                     type="button"
@@ -184,8 +214,9 @@
                             {exerciseComment && <div className="text-secondary small">{exerciseComment}</div>}
                         </div>
                     )}
+                    {exerciseNoteModal}
+                    {heartRateModal}
                 </div>
-                {exerciseNoteModal}
             </div>
         );
     };

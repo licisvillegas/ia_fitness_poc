@@ -129,7 +129,7 @@
                 clearInterval(stepIntervalRef.current);
             }
             return () => clearInterval(stepIntervalRef.current);
-        }, [isTimerRunning, stepTimer, isPaused]);
+        }, [isTimerRunning, isPaused]);
 
         // Manejo de la finalización del temporizador vía efecto
         useEffect(() => {

@@ -55,7 +55,7 @@
         const prevStatusRef = useRef(status);
         const lastHistoryRoutineIdRef = useRef(null);
 
-        const getStepExerciseMeta = (step) => {
+        const getStepExerciseMeta = React.useCallback((step) => {
             if (!step || !step.exercise) return null;
             const exName = step.exercise.exercise_name || step.exercise.name || "Ejercicio";
             const stepType = String(
@@ -78,9 +78,9 @@
             );
             const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
             return { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime };
-        };
+        }, []);
 
-        const checkRepMotivation = (elapsed, flags, exName) => {
+        const checkRepMotivation = React.useCallback((elapsed, flags, exName) => {
             // Lógica de notificación local migrada a Server Push al inicio del paso
             if (elapsed === 180 && !flags.min3) {
                 flags.min3 = true;
@@ -88,7 +88,7 @@
             if (elapsed === 300 && !flags.min5) {
                 flags.min5 = true;
             }
-        };
+        }, []);
 
         const currentStep = useMemo(() => queue[cursor], [queue, cursor]);
         const nextStep = useMemo(() => queue[cursor + 1], [queue, cursor]);
@@ -441,23 +441,23 @@
 
                 if (document.visibilityState !== 'visible') {
                     if (duration > 0 && window.Runner.utils.schedulePush) {
-                    // Cancelar cualquiera existente
-                    if (scheduledPushTaskIdsRef.current.length > 0) {
-                        scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
-                        scheduledPushTaskIdsRef.current = [];
-                    }
-                    // Programar nuevo
-                    window.Runner.utils.schedulePush(
-                        duration + 1,
-                        "Tiempo Completado",
-                        "Tu descanso ha terminado. ¡A trabajar!",
-                        "rest_timer",
-                        {
-                            visibility: document.visibilityState,
-                            displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                        // Cancelar cualquiera existente
+                        if (scheduledPushTaskIdsRef.current.length > 0) {
+                            scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                            scheduledPushTaskIdsRef.current = [];
                         }
-                    )
-                        .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                        // Programar nuevo
+                        window.Runner.utils.schedulePush(
+                            duration + 1,
+                            "Tiempo Completado",
+                            "Tu descanso ha terminado. ¡A trabajar!",
+                            "rest_timer",
+                            {
+                                visibility: document.visibilityState,
+                                displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                            }
+                        )
+                            .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                     }
                 }
             }

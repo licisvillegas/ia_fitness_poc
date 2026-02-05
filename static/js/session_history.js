@@ -254,9 +254,17 @@
                                     <span class="text-theme">${displayTotalTime}</span>
                                 </span>
                             </div>
-                            <div class="text-secondary small mt-1">
-                                <i id="chevron-${index}" class="fas fa-chevron-down"></i>
-                                <span class="ms-1">Ver detalles</span>
+                            <div class="text-secondary small mt-1 d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-danger p-0 border-0" 
+                                        onclick="event.stopPropagation(); window.deleteSession('${session._id}', ${index})"
+                                        title="Eliminar sesión"
+                                        style="width: 24px; height: 24px;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <div onclick="window.toggleSessionDetails(${index})">
+                                    <i id="chevron-${index}" class="fas fa-chevron-down"></i>
+                                    <span class="ms-1">Ver detalles</span>
+                                </div>
                             </div>
                         </div>
                     </div>

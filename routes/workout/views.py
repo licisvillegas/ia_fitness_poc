@@ -3,6 +3,7 @@ from bson import ObjectId
 from extensions import logger
 import extensions
 from .utils import get_db, hydrate_routines_with_substitutes
+from utils.helpers import compute_age
 
 def dashboard():
     """Renderiza el Dashboard de Entrenamiento."""
@@ -108,12 +109,16 @@ def run_routine(routine_id):
 
         user_id = request.cookies.get("user_session")
         user_name = ""
+        user_age = None
         restored_state = None
         
         if user_id:
              u = db.users.find_one({"user_id": user_id})
              if u:
                  user_name = u.get("name") or u.get("username")
+             profile = db.user_profiles.find_one({"user_id": user_id}) if db is not None else None
+             if profile:
+                 user_age = compute_age(profile.get("birth_date"))
              
              active_session = db.active_workout_sessions.find_one({
                  "user_id": user_id, 
@@ -128,6 +133,7 @@ def run_routine(routine_id):
                                routine=routine,
                                current_user_id=user_id,
                                current_user_name=user_name,
+                               current_user_age=user_age,
                                restored_state=restored_state)
     except Exception as e:
         logger.error(f"Error running routine: {e}")

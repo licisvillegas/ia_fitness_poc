@@ -1733,6 +1733,13 @@ def admin_notifications_page():
     if not ok: return redirect("/admin/login")
     return render_template("admin_notifications.html")
 
+
+@admin_bp.route("/admin/audio-tests")
+def admin_audio_tests_page():
+    ok, err = check_admin_access()
+    if not ok: return redirect("/admin/login")
+    return render_template("admin_audio_tests.html")
+
 @admin_bp.post("/admin/notifications/broadcast")
 def admin_notifications_broadcast():
     ok, err = check_admin_access()

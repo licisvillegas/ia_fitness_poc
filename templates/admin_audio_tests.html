@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse Fit | Admin ? Audio Tests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <style>
+        .audio-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .audio-card h5 {
+            font-weight: 600;
+        }
+
+        .audio-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .audio-actions .btn {
+            min-width: 140px;
+        }
+
+        .audio-slider {
+            accent-color: #ffc107;
+        }
+
+        .helper-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container py-4">
+            <div class="mb-4">
+                <h2 class="text-theme">Pruebas de Audio / Beep</h2>
+                <p class="text-secondary">Valida volumen, tono y origen del sonido antes de aplicarlo a produccion.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-lg-6">
+                    <div class="card audio-card p-4">
+                        <h5 class="text-warning"><i class="fas fa-cloud-download-alt me-2"></i>Audio remoto</h5>
+                        <p class="helper-text">Prueba un archivo externo. Util para comparar volumen o tono.</p>
+                        <div class="mb-3">
+                            <label class="form-label text-light" for="remoteUrl">URL de audio</label>
+                            <input id="remoteUrl" type="text" class="form-control bg-dark text-white border-secondary"
+                                value="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light" for="remoteVolume">Volumen (0 - 1)</label>
+                            <input id="remoteVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range audio-slider">
+                            <div class="text-info small" id="remoteVolumeValue">1.00</div>
+                        </div>
+                        <div class="audio-actions">
+                            <button class="btn btn-warning text-dark" id="playRemote"><i class="fas fa-play me-2"></i>Reproducir</button>
+                            <button class="btn btn-outline-secondary" id="stopRemote"><i class="fas fa-stop me-2"></i>Detener</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <div class="card audio-card p-4">
+                        <h5 class="text-info"><i class="fas fa-music me-2"></i>Audio local</h5>
+                        <p class="helper-text">Usa archivos locales para evitar variaciones de red.</p>
+                        <div class="mb-3">
+                            <label class="form-label text-light" for="localFile">Archivo local</label>
+                            <select id="localFile" class="form-select bg-dark text-white border-secondary">
+                                <option value="/static/audio/beep_strong.wav">beep_strong.wav (local)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light" for="localVolume">Volumen (0 - 1)</label>
+                            <input id="localVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range audio-slider">
+                            <div class="text-info small" id="localVolumeValue">1.00</div>
+                        </div>
+                        <div class="audio-actions">
+                            <button class="btn btn-info text-dark" id="playLocal"><i class="fas fa-play me-2"></i>Reproducir</button>
+                            <button class="btn btn-outline-secondary" id="stopLocal"><i class="fas fa-stop me-2"></i>Detener</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card audio-card p-4">
+                        <h5 class="text-success"><i class="fas fa-wave-square me-2"></i>Web Audio API (tono agresivo)</h5>
+                        <p class="helper-text">Genera un beep con onda cuadrada o sawtooth para mayor impacto.</p>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-light" for="waveType">Onda</label>
+                                <select id="waveType" class="form-select bg-dark text-white border-secondary">
+                                    <option value="square">Cuadrada</option>
+                                    <option value="sawtooth">Sawtooth</option>
+                                    <option value="triangle">Triangular</option>
+                                    <option value="sine">Senoidal</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-light" for="frequency">Frecuencia (Hz)</label>
+                                <input id="frequency" type="number" min="100" max="3000" step="50" value="880"
+                                    class="form-control bg-dark text-white border-secondary">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-light" for="duration">Duracion (ms)</label>
+                                <input id="duration" type="number" min="50" max="1500" step="50" value="250"
+                                    class="form-control bg-dark text-white border-secondary">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-light" for="webVolume">Volumen (0 - 1)</label>
+                                <input id="webVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range audio-slider">
+                                <div class="text-info small" id="webVolumeValue">1.00</div>
+                            </div>
+                        </div>
+                        <div class="audio-actions mt-3">
+                            <button class="btn btn-success" id="playWeb"><i class="fas fa-play me-2"></i>Reproducir tono</button>
+                        </div>
+                        <p class="helper-text mt-3">Nota: En iOS/Safari el audio requiere interaccion directa del usuario.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            const remoteUrl = document.getElementById('remoteUrl');
+            const remoteVolume = document.getElementById('remoteVolume');
+            const remoteVolumeValue = document.getElementById('remoteVolumeValue');
+            const playRemote = document.getElementById('playRemote');
+            const stopRemote = document.getElementById('stopRemote');
+            const localFile = document.getElementById('localFile');
+            const localVolume = document.getElementById('localVolume');
+            const localVolumeValue = document.getElementById('localVolumeValue');
+            const playLocal = document.getElementById('playLocal');
+            const stopLocal = document.getElementById('stopLocal');
+            const waveType = document.getElementById('waveType');
+            const frequency = document.getElementById('frequency');
+            const duration = document.getElementById('duration');
+            const webVolume = document.getElementById('webVolume');
+            const webVolumeValue = document.getElementById('webVolumeValue');
+            const playWeb = document.getElementById('playWeb');
+
+            let remoteAudio = null;
+            let localAudio = null;
+            let audioCtx = null;
+
+            const updateVolumeLabel = (el, target) => {
+                const val = Number(el.value || 0);
+                target.textContent = val.toFixed(2);
+            };
+
+            updateVolumeLabel(remoteVolume, remoteVolumeValue);
+            updateVolumeLabel(localVolume, localVolumeValue);
+            updateVolumeLabel(webVolume, webVolumeValue);
+
+            remoteVolume.addEventListener('input', () => updateVolumeLabel(remoteVolume, remoteVolumeValue));
+            localVolume.addEventListener('input', () => updateVolumeLabel(localVolume, localVolumeValue));
+            webVolume.addEventListener('input', () => updateVolumeLabel(webVolume, webVolumeValue));
+
+            playRemote.addEventListener('click', () => {
+                if (remoteAudio) {
+                    remoteAudio.pause();
+                }
+                remoteAudio = new Audio(remoteUrl.value.trim());
+                remoteAudio.volume = Number(remoteVolume.value || 1);
+                remoteAudio.currentTime = 0;
+                remoteAudio.play().catch(() => { });
+            });
+
+            stopRemote.addEventListener('click', () => {
+                if (!remoteAudio) return;
+                remoteAudio.pause();
+                remoteAudio.currentTime = 0;
+            });
+
+            playLocal.addEventListener('click', () => {
+                if (localAudio) {
+                    localAudio.pause();
+                }
+                localAudio = new Audio(localFile.value);
+                localAudio.volume = Number(localVolume.value || 1);
+                localAudio.currentTime = 0;
+                localAudio.play().catch(() => { });
+            });
+
+            stopLocal.addEventListener('click', () => {
+                if (!localAudio) return;
+                localAudio.pause();
+                localAudio.currentTime = 0;
+            });
+
+            playWeb.addEventListener('click', () => {
+                const freq = Number(frequency.value || 880);
+                const dur = Math.max(50, Number(duration.value || 250));
+                const vol = Number(webVolume.value || 1);
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = waveType.value;
+                oscillator.frequency.value = freq;
+                gainNode.gain.value = vol;
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+                oscillator.start(now);
+                oscillator.stop(now + (dur / 1000));
+            });
+        })();
+    </script>
+</body>
+
+</html>

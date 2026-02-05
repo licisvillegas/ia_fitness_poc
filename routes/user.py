@@ -8,7 +8,7 @@ import cloudinary.uploader
 import extensions
 from extensions import logger
 from utils.auth_helpers import ensure_user_status
-from utils.helpers import parse_birth_date
+from utils.helpers import parse_birth_date, compute_age
 
 # Configuracion Cloudinary (perfil)
 cloudinary.config(
@@ -31,7 +31,19 @@ def landing_page():
 @user_bp.route("/dashboard")
 def dashboard_page():
     # Redirige al dashboard directamente
-    return render_template("dashboard.html")
+    user_id = request.cookies.get("user_session")
+    user_age = None
+    if user_id and extensions.db is not None:
+        try:
+            profile = extensions.db.user_profiles.find_one({"user_id": user_id})
+            if profile:
+                birth_date = profile.get("birth_date")
+                if birth_date and not isinstance(birth_date, datetime):
+                    birth_date = parse_birth_date(str(birth_date))
+                user_age = compute_age(birth_date)
+        except Exception as e:
+            logger.error(f"Error loading dashboard profile context: {e}")
+    return render_template("dashboard.html", current_user_age=user_age)
 
 
 @user_bp.get("/dashboard/print/summary")

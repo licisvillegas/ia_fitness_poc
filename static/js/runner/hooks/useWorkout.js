@@ -587,7 +587,11 @@
                         sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
                     }
                     try {
-                        if (getAudio) getAudio().play().catch(() => { });
+                        if (window.Runner.utils.playAlert) {
+                            window.Runner.utils.playAlert('beep_strong');
+                        } else if (getAudio) {
+                            getAudio().play().catch(() => { });
+                        }
                     } catch (e) { }
                     triggerHaptic([200, 100, 200]);
                     if (document.visibilityState === 'visible' && scheduledPushTaskIdsRef.current.length > 0) {
@@ -607,6 +611,23 @@
                 if (sendNotification) {
                     sendNotification("Rutina finalizada", "Buen trabajo. Tu entrenamiento ha terminado.");
                 }
+
+                // Reproducir secuencia de victoria (3 beeps rapidos)
+                try {
+                    if (window.Runner.utils.playAlert) {
+                        const playVictory = async () => {
+                            window.Runner.utils.playAlert('victory');
+                            await new Promise(r => setTimeout(r, 200));
+                            window.Runner.utils.playAlert('victory');
+                            await new Promise(r => setTimeout(r, 200));
+                            window.Runner.utils.playAlert('victory');
+                        };
+                        playVictory();
+                    } else if (getAudio) {
+                        getAudio().play().catch(() => { });
+                    }
+                } catch (e) { console.warn("Victory sound failed", e); }
+
                 if (window.Runner.utils.schedulePush) {
                     window.Runner.utils.schedulePush(
                         1,

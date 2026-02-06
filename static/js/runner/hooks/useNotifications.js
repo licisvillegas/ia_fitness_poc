@@ -95,14 +95,57 @@
         }, [notificationPermission, ensurePushSubscriptionSafe]);
 
         const sendNotification = useCallback((title, body) => {
+            logClient(`[useNotifications] sendNotification called: ${title}`);
+            console.log("[useNotifications] sendNotification called:", title, body, "Enabled:", isNotificationsEnabled, "Permission:", notificationPermission);
+
             if (isNotificationsEnabled && notificationPermission === 'granted') {
-                try {
-                    new Notification(title, { body, icon: '/static/icons/icon-192x192.png' });
-                } catch (e) {
-                    console.error("Notification error", e);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(title, {
+                            body: body,
+                            icon: '/static/images/icon/synapse_fit_192.png',
+                            badge: '/static/images/icon/synapse_fit_192.png',
+                            vibrate: [200, 100, 200],
+                            tag: 'rest-finished',
+                            renotify: true,
+                            requireInteraction: true,
+                            data: { url: window.location.href }
+                        }).then(() => {
+                            logClient(`[useNotifications] SW showNotification resolved: ${title}`);
+                            console.log("[useNotifications] SW Notification scheduled");
+                        }).catch(err => {
+                            logClient(`[useNotifications] SW showNotification failed: ${err.message}`);
+                            console.error("SW showNotification error", err);
+                        });
+                    }).catch(e => {
+                        logClient(`[useNotifications] SW registration error: ${e.message}`);
+                        console.error("[useNotifications] SW registration error", e);
+                        // Fallback
+                        try {
+                            const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png' });
+                            n.onclick = () => { window.focus(); n.close(); };
+                            logClient(`[useNotifications] Fallback Notification created`);
+                        } catch (err) {
+                            logClient(`[useNotifications] Fallback error: ${err.message}`);
+                            console.error("Notification fallback error", err);
+                        }
+                    });
+                } else {
+                    try {
+                        const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png' });
+                        logClient(`[useNotifications] Standard Notification created`);
+                        console.log("[useNotifications] Standard Notification created:", n);
+                        n.onclick = () => { window.focus(); n.close(); };
+                    } catch (e) {
+                        logClient(`[useNotifications] Standard error: ${e.message}`);
+                        console.error("[useNotifications] Notification error", e);
+                    }
                 }
+            } else {
+                logClient(`[useNotifications] Skipped. Enabled: ${isNotificationsEnabled}, Permission: ${notificationPermission}`);
+                console.warn("[useNotifications] Notification skipped. Enabled:", isNotificationsEnabled, "Permission:", notificationPermission);
             }
-        }, [isNotificationsEnabled, notificationPermission]);
+        }, [isNotificationsEnabled, notificationPermission, logClient]);
 
         return {
             notificationPermission,

@@ -317,6 +317,7 @@
   };
 
   const startTimer = () => {
+    initAudio(); // Initialize audio for timer
     if (timerInterval) return;
     if (remainingSeconds <= 0) {
       const m = parseInt(timerMinutes.value, 10) || 0;
@@ -340,6 +341,7 @@
           timerInterval = null;
           updateEnduranceOverlay();
           updateTimerRing();
+          playBeep("finish");
         }
       }, 1000);
     });

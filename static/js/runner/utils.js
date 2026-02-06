@@ -7,8 +7,25 @@
         return `${m}:${s}`;
     };
 
-    utils.getAudio = () => {
-        return new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    const AUDIO_FILES = {
+        beep_short: '/static/audio/beep_strong.wav', // Usando beep_strong como short por defecto si no hay otro
+        beep_strong: '/static/audio/beep_strong.wav',
+        victory: '/static/audio/beep_strong.wav' // Placeholder si no hay victory.mp3, usaremos patrón rítmico
+    };
+
+    utils.getAudio = (type = 'beep_short') => {
+        return new Audio(AUDIO_FILES[type] || AUDIO_FILES.beep_short);
+    };
+
+    utils.playAlert = (type = 'beep_short') => {
+        try {
+            const audio = utils.getAudio(type);
+            audio.play().catch(e => console.warn("Audio play failed", e));
+            return audio;
+        } catch (e) {
+            console.warn("Audio creation failed", e);
+            return null;
+        }
     };
 
     utils.triggerHaptic = (pattern) => {

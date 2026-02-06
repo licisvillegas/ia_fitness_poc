@@ -136,11 +136,6 @@
             if (stepTimer === 0 && isTimerRunning) {
                 setIsTimerRunning(false);
                 if (status === 'WORK' || status === 'REST') {
-                    try {
-                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                        if (getAudio) getAudio().play().catch(() => { });
-                    } catch (e) { }
-                    triggerHaptic([200, 100, 200, 100, 500]);
                     if (onTimerCompleteRef.current) onTimerCompleteRef.current();
                 }
             }

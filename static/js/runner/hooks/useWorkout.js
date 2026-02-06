@@ -582,8 +582,18 @@
             if (status === 'WORK' && currentStep.type === 'work') {
                 const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
                 if (prevStatus === 'REST') {
+                    // Prioridad: Cancelar Push programado para evitar duplicados si ya estamos aquí
+                    if (scheduledPushTaskIdsRef.current.length > 0) {
+                        if (window.Runner.utils.cancelPush) {
+                            scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                        }
+                        scheduledPushTaskIdsRef.current = [];
+                    }
+
                     showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
-                    if (sendNotification) {
+
+                    // Solo enviar notificacion local si estamos visibles (si no, el Push programado se encarga)
+                    if (sendNotification && document.visibilityState === 'visible') {
                         sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
                     }
                     try {
@@ -594,12 +604,6 @@
                         }
                     } catch (e) { }
                     triggerHaptic([200, 100, 200]);
-                    if (document.visibilityState === 'visible' && scheduledPushTaskIdsRef.current.length > 0) {
-                        if (window.Runner.utils.cancelPush) {
-                            scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
-                        }
-                        scheduledPushTaskIdsRef.current = [];
-                    }
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage(`Inicia ejercicio ${exName}`, "info");
                 }
@@ -613,16 +617,10 @@
                 }
 
                 // Reproducir secuencia de victoria (3 beeps rapidos)
+                // Reproducir secuencia de victoria (Sintetizada en utils)
                 try {
                     if (window.Runner.utils.playAlert) {
-                        const playVictory = async () => {
-                            window.Runner.utils.playAlert('victory');
-                            await new Promise(r => setTimeout(r, 200));
-                            window.Runner.utils.playAlert('victory');
-                            await new Promise(r => setTimeout(r, 200));
-                            window.Runner.utils.playAlert('victory');
-                        };
-                        playVictory();
+                        window.Runner.utils.playAlert('victory');
                     } else if (getAudio) {
                         getAudio().play().catch(() => { });
                     }

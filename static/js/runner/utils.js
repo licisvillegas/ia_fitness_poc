@@ -17,8 +17,39 @@
         return new Audio(AUDIO_FILES[type] || AUDIO_FILES.beep_short);
     };
 
+    let audioCtx = null;
+    const initAudio = () => {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    };
+
     utils.playAlert = (type = 'beep_short') => {
         try {
+            if (type === 'victory') {
+                const ctx = initAudio();
+                if (ctx) {
+                    const now = ctx.currentTime;
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.1, now + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.4);
+                        osc.start(now + i * 0.15);
+                        osc.stop(now + i * 0.15 + 0.4);
+                    });
+                    return;
+                }
+            }
+
             const audio = utils.getAudio(type);
             audio.play().catch(e => console.warn("Audio play failed", e));
             return audio;

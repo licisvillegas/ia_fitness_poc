@@ -592,10 +592,6 @@
 
                     showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
 
-                    // Solo enviar notificacion local si estamos visibles (si no, el Push programado se encarga)
-                    if (sendNotification && document.visibilityState === 'visible') {
-                        sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
-                    }
                     try {
                         if (window.Runner.utils.playAlert) {
                             window.Runner.utils.playAlert('beep_strong');
@@ -650,6 +646,7 @@
         }, [status, currentStep?.id]);
 
         const togglePause = () => {
+            if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
             if (status !== 'WORK' && status !== 'REST') return;
             if (!isPaused) {
                 resumeTimerRef.current = isTimerRunning;

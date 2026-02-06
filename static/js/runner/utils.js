@@ -23,10 +23,14 @@
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (AudioContext) audioCtx = new AudioContext();
         }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
         return audioCtx;
+    };
+
+    utils.resumeAudio = () => {
+        const ctx = initAudio();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume().catch(e => console.log("Audio resume failed", e));
+        }
     };
 
     utils.playAlert = (type = 'beep_short') => {
@@ -34,18 +38,25 @@
             if (type === 'victory') {
                 const ctx = initAudio();
                 if (ctx) {
+                    if (ctx.state === 'suspended') ctx.resume().catch(() => { });
                     const now = ctx.currentTime;
+                    // Melodía tipo 'Final Fantasy' corta: Do-Mi-Sol-Do(octava)
                     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         osc.connect(gain);
                         gain.connect(ctx.destination);
                         osc.frequency.value = freq;
+                        gain.type = "triangle"; // Sonido más suave
                         gain.gain.setValueAtTime(0.1, now + i * 0.15);
-                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.4);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
                         osc.start(now + i * 0.15);
                         osc.stop(now + i * 0.15 + 0.4);
                     });
+                    // Si el contexto funciona, terminamos aquí.
+                    // Si está suspendido y no se reanuda, no sonará, pero habremos intentado.
+                    // El fallback de abajo suena horrible si esto falla silenciosamente, 
+                    // pero si ctx existe, asumimos que intenta sonar.
                     return;
                 }
             }
@@ -54,8 +65,11 @@
             audio.play().catch(e => console.warn("Audio play failed", e));
             return audio;
         } catch (e) {
-            console.warn("Audio creation failed", e);
-            return null;
+            console.warn("Utils playAlert failed", e);
+            try {
+                // Fallback de emergencia
+                new Audio(AUDIO_FILES.beep_short).play().catch(() => { });
+            } catch (err) { }
         }
     };
 

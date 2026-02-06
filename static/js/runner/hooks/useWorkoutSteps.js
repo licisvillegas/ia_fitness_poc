@@ -139,9 +139,6 @@
             console.log("DEBUG: Estableciendo ShowCompletionIcon a VERDADERO");
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
-            try {
-                if (getAudio) getAudio().play().catch(() => { });
-            } catch (e) { }
 
             // Disparador de Celebración
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
@@ -336,6 +333,7 @@
             if (!queueRef?.current || queueRef.current.length === 0) return;
 
             console.log("Starting countdown...");
+            if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio(); // Pre-warm audio context
             ensureNotificationPermission();
 
             // NOTA: Ya no usamos estado interno para cuenta regresiva (setShowCountdown) 

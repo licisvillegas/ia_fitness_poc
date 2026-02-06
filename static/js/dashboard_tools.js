@@ -12,6 +12,11 @@
   const plateUnitSuffix = document.getElementById("plateUnitSuffix");
   const plateTotalEl = document.getElementById("plateTotal");
   const plateTotalWithBarEl = document.getElementById("plateTotalWithBar");
+  const plateConvertValue = document.getElementById("plateConvertValue");
+  const plateConvertUnit = document.getElementById("plateConvertUnit");
+  const plateConvertResult = document.getElementById("plateConvertResult");
+  const plateConvertSwap = document.getElementById("plateConvertSwap");
+  let isSyncingUnit = false;
 
   const plateSets = {
     kg: [
@@ -82,6 +87,26 @@
     }
   };
 
+  const convertWeightBasic = (value, fromUnit, toUnit) => {
+    if (!value || fromUnit === toUnit) return value;
+    const kgToLb = 2.20462;
+    return fromUnit === "kg" ? value * kgToLb : value / kgToLb;
+  };
+
+  const updatePlateConversion = () => {
+    if (!plateConvertValue || !plateConvertUnit || !plateConvertResult) return;
+    const raw = parseFloat(plateConvertValue.value);
+    if (!Number.isFinite(raw)) {
+      plateConvertResult.textContent = "--";
+      return;
+    }
+    const fromUnit = plateConvertUnit.value || "lb";
+    const toUnit = fromUnit === "kg" ? "lb" : "kg";
+    const converted = convertWeightBasic(raw, fromUnit, toUnit);
+    const rounded = Math.round(converted * 100) / 100;
+    plateConvertResult.textContent = `${rounded} ${toUnit}`;
+  };
+
   const syncPlateUI = () => {
     renderPlateGrid();
     updatePlateTotals();
@@ -102,12 +127,47 @@
     plateGrid.addEventListener("click", handlePlateClick);
   }
 
+  const setPlateUnit = (unit) => {
+    if (!plateUnit || !unit) return;
+    if (plateUnit.value === unit) {
+      if (plateConvertUnit) plateConvertUnit.value = unit;
+      updatePlateConversion();
+      return;
+    }
+    isSyncingUnit = true;
+    plateUnit.value = unit;
+    if (plateConvertUnit) plateConvertUnit.value = unit;
+    barWeightInput.value = unit === "kg" ? 20 : 45;
+    resetCounts(unit);
+    syncPlateUI();
+    updatePlateConversion();
+    isSyncingUnit = false;
+  };
+
   if (plateUnit) {
     plateUnit.addEventListener("change", () => {
+      if (isSyncingUnit) return;
       const unit = plateUnit.value;
-      barWeightInput.value = unit === "kg" ? 20 : 45;
-      resetCounts(unit);
-      syncPlateUI();
+      setPlateUnit(unit);
+    });
+  }
+
+  if (plateConvertUnit) {
+    plateConvertUnit.addEventListener("change", () => {
+      if (isSyncingUnit) return;
+      const unit = plateConvertUnit.value;
+      setPlateUnit(unit);
+      updatePlateConversion();
+    });
+  }
+  if (plateConvertValue) {
+    plateConvertValue.addEventListener("input", updatePlateConversion);
+  }
+  if (plateConvertSwap) {
+    plateConvertSwap.addEventListener("click", () => {
+      if (!plateConvertUnit) return;
+      const next = plateConvertUnit.value === "kg" ? "lb" : "kg";
+      setPlateUnit(next);
     });
   }
 
@@ -142,6 +202,8 @@
 
   resetCounts(plateUnit.value || "lb");
   syncPlateUI();
+  if (plateConvertUnit) plateConvertUnit.value = plateUnit.value || "lb";
+  updatePlateConversion();
 
   // Timer
   const timerDisplay = document.getElementById("timerDisplay");
@@ -201,7 +263,7 @@
     updateTimerRing();
   };
 
-  const updateEnduranceOverlay = () => {};
+  const updateEnduranceOverlay = () => { };
 
   const runCountdown = (onDone) => {
     if (!countdownOverlay || !countdownNumber) {
@@ -350,4 +412,558 @@
   if (hrModal) {
     hrModal.addEventListener("show.bs.modal", calcHeartRate);
   }
+
+  // Breathing tool
+  const breathModal = document.getElementById("toolBreathModal");
+  const breathStartBtn = document.getElementById("breathStartBtn");
+  const breathStopBtn = document.getElementById("breathStopBtn");
+  let breathInterval = null;
+  let breathTimeout = null;
+  let breathActive = false;
+  let breathOverlay = null;
+  let breathCircle = null;
+  let breathText = null;
+  let breathControls = null;
+  let breathStopInline = null;
+
+  const cleanupBreath = () => {
+    if (breathInterval) {
+      clearInterval(breathInterval);
+      breathInterval = null;
+    }
+    if (breathTimeout) {
+      clearTimeout(breathTimeout);
+      breathTimeout = null;
+    }
+    if (breathOverlay) {
+      breathOverlay.remove();
+      breathOverlay = null;
+    }
+    if (breathCircle) {
+      breathCircle.remove();
+      breathCircle = null;
+    }
+    if (breathText) {
+      breathText.remove();
+      breathText = null;
+    }
+    if (breathControls) {
+      breathControls.remove();
+      breathControls = null;
+    }
+    breathStopInline = null;
+    breathActive = false;
+  };
+
+  const startBreath = () => {
+    if (breathActive) return;
+    breathActive = true;
+
+    breathOverlay = document.createElement("div");
+    breathOverlay.className = "breath-overlay";
+    document.body.appendChild(breathOverlay);
+
+    breathCircle = document.createElement("div");
+    breathCircle.className = "breath-circle";
+    document.body.appendChild(breathCircle);
+
+    breathText = document.createElement("div");
+    breathText.className = "breath-text";
+    breathText.textContent = "Inhala...";
+    document.body.appendChild(breathText);
+
+    breathControls = document.createElement("div");
+    breathControls.className = "breath-controls";
+    breathStopInline = document.createElement("button");
+    breathStopInline.type = "button";
+    breathStopInline.className = "btn btn-outline-light";
+    breathStopInline.innerHTML = '<i class="fas fa-stop me-2"></i>Detener';
+    breathStopInline.addEventListener("click", cleanupBreath);
+    breathControls.appendChild(breathStopInline);
+    document.body.appendChild(breathControls);
+
+    let inhale = true;
+    breathInterval = setInterval(() => {
+      inhale = !inhale;
+      if (breathText) breathText.textContent = inhale ? "Inhala..." : "Exhala...";
+    }, 4000);
+  };
+
+  if (breathStartBtn) {
+    breathStartBtn.addEventListener("click", startBreath);
+  }
+  if (breathStopBtn) {
+    breathStopBtn.addEventListener("click", cleanupBreath);
+  }
+  if (breathModal) {
+    breathModal.addEventListener("hidden.bs.modal", cleanupBreath);
+  }
+
+  // 1RM calculator
+  const rmModal = document.getElementById("toolRmModal");
+  const rmWeight = document.getElementById("rmWeight");
+  const rmReps = document.getElementById("rmReps");
+  const rmUnitToggle = document.getElementById("rmUnitToggle");
+  const rmUnitLabel = document.getElementById("rmUnitLabel");
+  const rmPesoLabel = document.getElementById("rmPesoLabel");
+  const rmRepsLabel = document.getElementById("rmRepsLabel");
+  const rmOneRm = document.getElementById("rmOneRm");
+  const rmGrid = document.getElementById("rmGrid");
+  const rmShowMore = document.getElementById("rmShowMore");
+  const rmPctList = document.getElementById("rmPctList");
+  const rmPctBase = document.getElementById("rmPctBase");
+  const rmPctUnit = document.getElementById("rmPctUnit");
+  let rmUnit = "lb";
+  let rmShowAll = false;
+
+  const rmFormulas = {
+    brzycki: (w, r) => w * (36 / (37 - r)),
+    epley: (w, r) => w * (1 + 0.0333 * r),
+    lander: (w, r) => (100 * w) / (101.3 - 2.67123 * r),
+    lombardi: (w, r) => w * Math.pow(r, 0.1),
+    mayhew: (w, r) => (100 * w) / (52.2 + 41.9 * Math.exp(-0.055 * r)),
+    oconner: (w, r) => w * (1 + 0.025 * r),
+    wathen: (w, r) => (100 * w) / (48.8 + 53.8 * Math.exp(-0.075 * r))
+  };
+
+  const rmPercentages = {
+    1: 1.0, 2: 0.95, 3: 0.93, 4: 0.9,
+    5: 0.87, 6: 0.85, 7: 0.83, 8: 0.8,
+    9: 0.77, 10: 0.75, 11: 0.7, 12: 0.67,
+    13: 0.65, 14: 0.63, 15: 0.6, 16: 0.58,
+    17: 0.56, 18: 0.55, 19: 0.53, 20: 0.5
+  };
+
+  const convertWeight = (value, fromUnit, toUnit) => {
+    if (!value || fromUnit === toUnit) return value;
+    const kgToLb = 2.20462;
+    return fromUnit === "kg" ? value * kgToLb : value / kgToLb;
+  };
+
+  const calcOneRm = (w, r) => {
+    if (!w || !r) return 0;
+    if (r <= 1) return w;
+    const values = Object.values(rmFormulas).map((fn) => fn(w, r));
+    return values.reduce((sum, val) => sum + val, 0) / values.length;
+  };
+
+  const renderRmGrid = (oneRm) => {
+    if (!rmGrid) return;
+    rmGrid.innerHTML = "";
+    if (!oneRm) {
+      rmGrid.innerHTML = '<div class="text-secondary small">Ingresa peso y repeticiones para ver resultados.</div>';
+      return;
+    }
+    const maxRm = rmShowAll ? 20 : 12;
+    Object.entries(rmPercentages).forEach(([rep, pct]) => {
+      const repNum = Number(rep);
+      if (repNum > maxRm) return;
+      const val = Math.round(oneRm * pct);
+      const isSource = repNum === Math.round(parseFloat(rmReps.value) || 0);
+      const isOne = repNum === 1;
+      rmGrid.innerHTML += `
+        <div class="col-4 col-md-3">
+          <div class="rm-tile ${isOne ? "rm-tile--one" : ""} ${isSource ? "rm-tile--source" : ""}">
+            <div class="text-secondary small">${repNum}RM</div>
+            <div class="fw-bold text-white">${val}</div>
+            <div class="text-muted small">${rmUnit}</div>
+          </div>
+        </div>
+      `;
+    });
+  };
+
+  const renderRmPercentages = (oneRm) => {
+    if (!rmPctList) return;
+    rmPctList.innerHTML = "";
+    if (!oneRm) {
+      rmPctList.innerHTML = '<div class="text-secondary small">Ingresa peso y repeticiones para ver resultados.</div>';
+      if (rmPctBase) rmPctBase.textContent = "--";
+      if (rmPctUnit) rmPctUnit.textContent = rmUnit;
+      return;
+    }
+    if (rmPctBase) rmPctBase.textContent = `${Math.round(oneRm)} ${rmUnit}`;
+    if (rmPctUnit) rmPctUnit.textContent = rmUnit;
+    for (let pct = 125; pct >= 5; pct -= 5) {
+      const val = Math.round(oneRm * (pct / 100));
+      rmPctList.innerHTML += `
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="rm-tile">
+            <div class="text-secondary small">${pct}%</div>
+            <div class="fw-bold text-white">${val}</div>
+            <div class="text-muted small">${rmUnit}</div>
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  const syncRm = () => {
+    if (!rmWeight || !rmReps) return;
+    const w = parseFloat(rmWeight.value) || 0;
+    const r = parseFloat(rmReps.value) || 0;
+    const oneRm = calcOneRm(w, r);
+    if (rmOneRm) rmOneRm.textContent = oneRm ? Math.round(oneRm) : "--";
+    if (rmUnitLabel) rmUnitLabel.textContent = rmUnit;
+    if (rmPesoLabel) rmPesoLabel.textContent = w ? w : "--";
+    if (rmRepsLabel) rmRepsLabel.textContent = r ? r : "--";
+    renderRmGrid(oneRm);
+    renderRmPercentages(oneRm);
+    if (rmShowMore) rmShowMore.textContent = rmShowAll ? "Mostrar menos" : "Mostrar más";
+    if (rmUnitToggle) rmUnitToggle.textContent = rmUnit.toUpperCase();
+  };
+
+  if (rmWeight) rmWeight.addEventListener("input", syncRm);
+  if (rmReps) rmReps.addEventListener("input", syncRm);
+  if (rmShowMore) {
+    rmShowMore.addEventListener("click", () => {
+      rmShowAll = !rmShowAll;
+      syncRm();
+    });
+  }
+  if (rmUnitToggle) {
+    rmUnitToggle.addEventListener("click", () => {
+      const nextUnit = rmUnit === "kg" ? "lb" : "kg";
+      const val = parseFloat(rmWeight.value) || 0;
+      if (val > 0) {
+        const converted = convertWeight(val, rmUnit, nextUnit);
+        rmWeight.value = (Math.round(converted * 10) / 10).toString();
+      }
+      rmUnit = nextUnit;
+      syncRm();
+    });
+  }
+  if (rmModal) {
+    rmModal.addEventListener("show.bs.modal", () => {
+      rmShowAll = false;
+      syncRm();
+    });
+  }
+  // Tabata Timer
+  const tabataModal = document.getElementById("toolTabataModal");
+  const tabataConfig = document.getElementById("tabataConfig");
+  const tabataActive = document.getElementById("tabataActive");
+  const btnStartTabata = document.getElementById("btnStartTabata");
+  const btnPauseTabata = document.getElementById("btnPauseTabata");
+  const btnResetTabata = document.getElementById("btnResetTabata");
+
+  const inpWork = document.getElementById("tabataWork");
+  const inpRest = document.getElementById("tabataRest");
+  const inpRounds = document.getElementById("tabataRounds");
+
+  const stateLabel = document.getElementById("tabataStateLabel");
+  const timeDisplay = document.getElementById("tabataTimerDisplay");
+  const progressBar = document.getElementById("tabataProgressBar");
+  const roundDisplay = document.getElementById("tabataRoundDisplay");
+  const totalRoundsDisplay = document.getElementById("tabataTotalRounds");
+  const totalTimeDisplay = document.getElementById("tabataTotalTime");
+  const estimatedTimeDisplay = document.getElementById("tabataEstimatedTime");
+
+  let tabataInterval = null;
+  let tabataState = "IDLE"; // IDLE, PREPARE, WORK, REST, PAUSED_WORK, PAUSED_REST
+  let currentRound = 1;
+  let maxRounds = 8;
+  let workTime = 20;
+  let restTime = 10;
+  let timeLeft = 0;
+  let totalSecondsElapsed = 0;
+
+  const formatTabataTime = (sec) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const updateEstimatedTime = () => {
+    if (!inpWork || !inpRest || !inpRounds || !estimatedTimeDisplay) return;
+    const w = parseInt(inpWork.value) || 0;
+    const r = parseInt(inpRest.value) || 0;
+    const rounds = parseInt(inpRounds.value) || 0;
+    const total = (w + r) * rounds;
+    estimatedTimeDisplay.textContent = `Tiempo Total Estimado: ${formatTabataTime(total)}`;
+  };
+
+  if (inpWork) inpWork.addEventListener("input", updateEstimatedTime);
+  if (inpRest) inpRest.addEventListener("input", updateEstimatedTime);
+  if (inpRounds) inpRounds.addEventListener("input", updateEstimatedTime);
+  // Call initially
+  updateEstimatedTime();
+
+  const updateTabataUI = () => {
+    if (!timeDisplay) return;
+
+    timeDisplay.textContent = formatTabataTime(timeLeft);
+    roundDisplay.textContent = currentRound;
+    totalRoundsDisplay.textContent = maxRounds;
+    totalTimeDisplay.textContent = formatTabataTime(totalSecondsElapsed);
+
+    // Progress Bar
+    let maxTime = (tabataState.includes("WORK")) ? workTime : (tabataState.includes("REST") ? restTime : 3);
+    if (tabataState === "PREPARE") maxTime = 3;
+
+    let pct = (timeLeft / maxTime) * 100;
+    progressBar.style.width = `${pct}%`;
+
+    // Colors & Labels
+    if (tabataState === "WORK" || tabataState === "PAUSED_WORK") {
+      stateLabel.textContent = "¡TRABAJO!";
+      stateLabel.className = "fw-bold display-6 mb-2 text-success";
+      progressBar.className = "progress-bar bg-success";
+    } else if (tabataState === "REST" || tabataState === "PAUSED_REST") {
+      stateLabel.textContent = "DESCANSO";
+      stateLabel.className = "fw-bold display-6 mb-2 text-warning";
+      progressBar.className = "progress-bar bg-warning";
+    } else if (tabataState === "PREPARE") {
+      stateLabel.textContent = "PREPARAR";
+      stateLabel.className = "fw-bold display-6 mb-2 text-info";
+      progressBar.className = "progress-bar bg-info";
+    } else {
+      stateLabel.textContent = "LISTO";
+    }
+  };
+
+  const tickTabata = () => {
+    if (timeLeft > 0) {
+      timeLeft--;
+      updateTabataUI();
+    } else {
+      // Transition State
+      if (tabataState === "PREPARE") {
+        tabataState = "WORK";
+        timeLeft = workTime;
+        playBeep("go");
+      } else if (tabataState === "WORK") {
+        if (currentRound >= maxRounds) {
+          finishTabata();
+          return;
+        }
+        tabataState = "REST";
+        timeLeft = restTime;
+        playBeep("rest");
+      } else if (tabataState === "REST") {
+        currentRound++;
+        tabataState = "WORK";
+        timeLeft = workTime;
+        playBeep("go");
+      }
+      updateTabataUI();
+    }
+    totalSecondsElapsed++;
+  };
+
+  // Init Audio Context on user interaction
+  let audioCtx = null;
+  const initAudio = () => {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  };
+
+  const playBeep = (type) => {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === "go") {
+      // High pitch for GO
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    } else if (type === "rest") {
+      // Low pitch for REST
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    } else if (type === "finish") {
+      // Success tune
+      const now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.frequency.value = freq;
+        gain2.gain.setValueAtTime(0.1, now + i * 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.4);
+        osc2.start(now + i * 0.15);
+        osc2.stop(now + i * 0.15 + 0.4);
+      });
+    }
+  };
+
+  const startTabata = () => {
+    initAudio(); // Initialize audio context on start button click
+    workTime = parseInt(inpWork.value) || 20;
+    restTime = parseInt(inpRest.value) || 10;
+    maxRounds = parseInt(inpRounds.value) || 8;
+    currentRound = 1;
+    totalSecondsElapsed = 0;
+
+    tabataConfig.classList.add("d-none");
+    tabataActive.classList.remove("d-none");
+
+    tabataState = "PREPARE";
+    timeLeft = 3; // 3 sec prep
+    updateTabataUI();
+
+    if (tabataInterval) clearInterval(tabataInterval);
+    tabataInterval = setInterval(tickTabata, 1000);
+  };
+
+  const pauseTabata = () => {
+    if (tabataInterval) {
+      clearInterval(tabataInterval);
+      tabataInterval = null;
+      if (tabataState === "WORK") tabataState = "PAUSED_WORK";
+      if (tabataState === "REST") tabataState = "PAUSED_REST";
+      btnPauseTabata.textContent = "Reanudar";
+      btnPauseTabata.classList.replace("btn-outline-warning", "btn-outline-success");
+    } else {
+      if (tabataState === "PAUSED_WORK") tabataState = "WORK";
+      if (tabataState === "PAUSED_REST") tabataState = "REST";
+      btnPauseTabata.textContent = "Pausa";
+      btnPauseTabata.classList.replace("btn-outline-success", "btn-outline-warning");
+      tabataInterval = setInterval(tickTabata, 1000);
+    }
+    updateTabataUI();
+  };
+
+  const resetTabata = () => {
+    if (tabataInterval) clearInterval(tabataInterval);
+    tabataInterval = null;
+    tabataState = "IDLE";
+    tabataConfig.classList.remove("d-none");
+    tabataActive.classList.add("d-none");
+    btnPauseTabata.textContent = "Pausa";
+    btnPauseTabata.classList.replace("btn-outline-success", "btn-outline-warning");
+  };
+
+  // Session Saving
+  const btnSaveTabata = document.getElementById("btnSaveTabata");
+  const tabataFinishModal = new bootstrap.Modal(document.getElementById("toolTabataFinishModal"));
+
+  const finishTabata = () => {
+    if (tabataInterval) clearInterval(tabataInterval);
+    stateLabel.textContent = "¡COMPLETADO!";
+    stateLabel.className = "fw-bold display-6 mb-2 text-primary";
+    progressBar.style.width = "100%";
+    progressBar.className = "progress-bar bg-primary";
+    playBeep("finish");
+    setTimeout(() => {
+      // FORCE SWITCH: Manual & Aggressive
+      const tm = bootstrap.Modal.getOrCreateInstance(tabataModal);
+      tm.hide();
+
+      // Wait a tiny bit for Bootstrap to try its thing, then NUKE IT
+      setTimeout(() => {
+        // 1. Remove any backdrop in DOM
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+
+        // 2. Clear body classes
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // 3. Show new modal
+        tabataFinishModal.show();
+      }, 500); // 500ms should be enough for any fade transition to finish naturally
+    }, 2000);
+  };
+
+  const saveTabataSession = async () => {
+    const btn = document.getElementById("btnSaveTabata");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+
+    try {
+      const duration = (workTime + restTime) * maxRounds; // Estimate
+      const today = new Date().toISOString();
+      const payload = {
+        routine_id: null, // Ad-hoc session
+        start_time: new Date(Date.now() - duration * 1000).toISOString(),
+        end_time: new Date().toISOString(),
+        sets: [{
+          exercise_name: "Tabata HIIT",
+          reps: maxRounds,
+          weight: 0,
+          cardio_duration: duration,
+          notes: `Tabata: ${workTime}s work / ${restTime}s rest`
+        }]
+      };
+
+      const res = await fetch("/workout/api/session/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        // Refresh session history if available
+        if (window.loadSessionHistory) window.loadSessionHistory(localStorage.getItem("ai_fitness_uid"));
+        if (window.loadHeatmap) window.loadHeatmap(localStorage.getItem("ai_fitness_uid"));
+
+        tabataFinishModal.hide();
+        resetTabata();
+      } else {
+        alert("Error al guardar la sesión.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de conexión.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  };
+
+  if (btnSaveTabata) btnSaveTabata.addEventListener("click", saveTabataSession);
+
+  // Stepper Logic
+  document.querySelectorAll(".tabata-stepper").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.getAttribute("data-target");
+      const step = parseInt(btn.getAttribute("data-step")) || 0;
+      const input = document.getElementById(targetId);
+      if (input) {
+        let val = parseInt(input.value) || 0;
+        val = Math.max(0, val + step);
+        input.value = val;
+        updateEstimatedTime();
+      }
+    });
+  });
+
+  if (btnStartTabata) btnStartTabata.addEventListener("click", startTabata);
+  if (btnPauseTabata) btnPauseTabata.addEventListener("click", pauseTabata);
+  if (btnResetTabata) btnResetTabata.addEventListener("click", resetTabata);
+
+  const cleanupStaleBackdrops = () => {
+    const openModals = document.querySelectorAll(".modal.show");
+    if (openModals.length > 0) return;
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+  };
+
+  document.addEventListener("hidden.bs.modal", () => {
+    setTimeout(cleanupStaleBackdrops, 50);
+  });
+
+  // Defensive cleanup on load in case a backdrop gets stuck.
+  setTimeout(cleanupStaleBackdrops, 300);
+
 })();

@@ -2,7 +2,7 @@
 # Synapse Fit - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 import os
 import traceback
 import sys
@@ -182,8 +182,12 @@ def test_push():
 
 @app.route('/service-worker.js')
 def service_worker():
-    from flask import send_from_directory
     return send_from_directory(app.static_folder, 'service-worker.js')
+
+@app.route('/favicon.ico')
+def favicon():
+    # Servir el logo como favicon para evitar 404 en el navegador
+    return send_from_directory(app.static_folder, 'images/logo.png', mimetype='image/png')
 
 if __name__ == "__main__":
     # Solo ejecutar inicializacion DB en el proceso hijo del reloader

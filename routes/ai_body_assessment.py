@@ -16,6 +16,7 @@ from utils.db_helpers import log_agent_execution
 from utils.auth_helpers import check_admin_access
 from ai_agents.body_metrics_agent import BodyMetricsAgent
 from ai_agents.photo_assessment_agent import PhotoAssessmentAgent
+from ai_agents.photo_judge_agent import PhotoJudgeAgent
 from utils.id_helpers import normalize_user_id, maybe_object_id
 
 # Configuracion Cloudinary
@@ -233,6 +234,23 @@ def _persist_body_assessment(context: Dict[str, Any], result: Dict[str, Any], ba
         logger.warning(f"No se pudo guardar evaluacion corporal: {persist_err}")
 
 
+def _persist_photo_judge(context: Dict[str, Any], result: Dict[str, Any], backend: str) -> None:
+    try:
+        if extensions.db is not None and context.get("user_id"):
+            created_at = datetime.utcnow()
+            extensions.db.body_photo_judgements.insert_one(
+                {
+                    "user_id": context.get("user_id"),
+                    "backend": backend,
+                    "input": context,
+                    "output": result,
+                    "created_at": created_at,
+                }
+            )
+    except Exception as persist_err:
+        logger.warning(f"No se pudo guardar evaluacion visual juez: {persist_err}")
+
+
 def _get_assessment_defaults(user_id):
     """Helper to fetch default values for body assessment from DB."""
     defaults = {}
@@ -350,9 +368,20 @@ def ai_body_assessment():
         log_agent_execution("end", "PhotoAssessmentAgent", photo_agent, context, {"endpoint": "/ai/body_assessment"})
         photo_backend = photo_agent.backend()
 
+        judge_output = None
+        judge_backend = None
+        if images_for_agent:
+            judge_agent = PhotoJudgeAgent()
+            log_agent_execution("start", "PhotoJudgeAgent", judge_agent, context, {"endpoint": "/ai/body_assessment"})
+            judge_output = judge_agent.run(context, images=images_for_agent)
+            log_agent_execution("end", "PhotoJudgeAgent", judge_agent, context, {"endpoint": "/ai/body_assessment"})
+            judge_backend = judge_agent.backend()
+
         result = _merge_outputs(metrics_output, photo_output)
         backend = _combine_backends(metrics_agent.backend(), photo_backend)
         _persist_body_assessment(context, result, backend)
+        if judge_output is not None:
+            _persist_photo_judge(context, judge_output, judge_backend or "unknown")
         return jsonify({"backend": backend, "input": context, "output": result}), 200
     except _PayloadError as e:
         return jsonify({"error": str(e)}), e.status_code
@@ -390,6 +419,16 @@ def ai_body_assessment_photos():
         log_agent_execution("start", "PhotoAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment/photos"})
         result = agent.run(context, images=images_for_agent)
         log_agent_execution("end", "PhotoAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment/photos"})
+
+        judge_output = None
+        judge_backend = None
+        if images_for_agent:
+            judge_agent = PhotoJudgeAgent()
+            log_agent_execution("start", "PhotoJudgeAgent", judge_agent, context, {"endpoint": "/ai/body_assessment/photos"})
+            judge_output = judge_agent.run(context, images=images_for_agent)
+            log_agent_execution("end", "PhotoJudgeAgent", judge_agent, context, {"endpoint": "/ai/body_assessment/photos"})
+            judge_backend = judge_agent.backend()
+            _persist_photo_judge(context, judge_output, judge_backend or "unknown")
 
         return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
     except _PayloadError as e:
@@ -475,6 +514,42 @@ def get_body_assessment_history(user_id):
         return jsonify(history), 200
     except Exception as e:
         logger.error(f"Error fetching history: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+
+@ai_body_assessment_bp.get("/ai/body_assessment/photos_judge/history/<user_id>")
+def get_photo_judge_history(user_id):
+    try:
+        user_id = normalize_user_id(user_id)
+        if extensions.db is None:
+            return jsonify({"error": "DB not ready"}), 503
+
+        cursor = (
+            extensions.db.body_photo_judgements.find(
+                {"user_id": user_id},
+                {"created_at": 1, "output": 1, "backend": 1, "input": 1},
+            )
+            .sort("created_at", -1)
+        )
+
+        history = []
+        for doc in cursor:
+            created = doc.get("created_at")
+            str_date = created.strftime("%Y-%m-%d %H:%M") if created else "Fecha desconocida"
+            history.append(
+                {
+                    "id": str(doc.get("_id")),
+                    "date": str_date,
+                    "created_at": created.isoformat() if created else None,
+                    "output": doc.get("output"),
+                    "backend": doc.get("backend"),
+                    "input": doc.get("input"),
+                }
+            )
+
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error fetching photo judge history: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 

@@ -9,6 +9,8 @@ Incluye:
   evaluaciones corporales basadas en medidas.
 - :class:`~ai_agents.photo_assessment_agent.PhotoAssessmentAgent` para
   analisis de fotos corporales.
+- :class:`~ai_agents.photo_judge_agent.PhotoJudgeAgent` para
+  evaluacion visual avanzada tipo juez.
 
 Cada agente puede trabajar con OpenAI (si hay ``OPENAI_API_KEY``) o con un
 backend mock determinístico para pruebas locales.

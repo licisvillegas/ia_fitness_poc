@@ -244,6 +244,9 @@
   const timerResetBtn = document.getElementById("timerResetBtn");
   const timerStepBtns = document.querySelectorAll(".tool-timer-step");
   const timerPresetBtns = document.querySelectorAll(".tool-timer-preset");
+  const timerConfigToggle = document.getElementById("timerConfigToggle");
+  const timerConfigPanel = document.getElementById("timerConfigPanel");
+  const timerModal = document.getElementById("toolTimerModal");
   const enduranceOverlay = null;
   const enduranceNumber = null;
   const countdownOverlay = document.getElementById("toolCountdownOverlay");
@@ -398,6 +401,23 @@
       syncFromInputs();
     });
   });
+  if (timerConfigToggle && timerConfigPanel) {
+    timerConfigToggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      timerConfigPanel.classList.toggle("d-none");
+    });
+    timerConfigPanel.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    document.addEventListener("click", () => {
+      timerConfigPanel.classList.add("d-none");
+    });
+  }
+  if (timerConfigPanel && timerModal) {
+    timerModal.addEventListener("hidden.bs.modal", () => {
+      timerConfigPanel.classList.add("d-none");
+    });
+  }
   syncFromInputs();
   updateEnduranceOverlay();
   updateTimerRing();

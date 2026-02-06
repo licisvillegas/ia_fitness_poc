@@ -496,6 +496,97 @@ footer {
   position: absolute;
 }
 
+#toolTimerModal .input-group {
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+#toolTimerModal .input-group > .btn {
+  min-width: 24px;
+  height: 20px;
+  border-radius: 8px;
+  padding: 0;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+#toolTimerModal .input-group > input {
+  min-width: 40px;
+  height: 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0 8px;
+  line-height: 16px;
+}
+
+#toolTimerModal .input-group > input[type="number"]::-webkit-outer-spin-button,
+#toolTimerModal .input-group > input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#toolTimerModal .input-group > input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+#toolTimerModal .form-label.text-secondary {
+  margin-bottom: 2px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+#toolTimerModal .tool-timer-step i {
+  font-size: 0.6rem;
+}
+
+#toolTimerModal .timer-step-value {
+  font-size: 0.55rem;
+  font-weight: 700;
+  margin-left: 1px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+#toolTimerModal .timer-config {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 6;
+}
+
+#toolTimerModal .timer-config-toggle {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+#toolTimerModal .timer-config-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 5;
+  width: 260px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+#toolTimerModal .modal-body {
+  text-align: center;
+  position: relative;
+}
+
 /* Replica altura modal timer del runner */
 .runner-timer-modal {
   min-height: min(520px, 90vh);
@@ -504,6 +595,131 @@ footer {
 @media (max-width: 575.98px) {
   .runner-timer-modal {
     min-height: min(560px, 90vh);
+  }
+}
+
+@media (orientation: landscape) {
+  #toolTimerModal .modal-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px 12px;
+    align-items: start;
+    justify-items: center;
+    text-align: center;
+    position: relative;
+  }
+
+  #toolTimerModal .modal-body > .d-flex.flex-wrap {
+    grid-column: 1;
+    grid-row: 3;
+    flex-wrap: nowrap !important;
+    overflow-x: visible;
+    justify-content: center;
+    gap: 8px;
+    padding-bottom: 4px;
+    width: 100%;
+    margin-top: 0;
+  }
+
+  #toolTimerModal .timer-config {
+    margin-top: 0;
+  }
+
+  #toolTimerModal .tool-timer-progress {
+    grid-column: 1;
+    grid-row: 1;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto;
+  }
+
+  #toolTimerModal .tool-timer-ring {
+    width: 140px;
+    height: 140px;
+  }
+
+  #toolTimerModal .tool-timer-display {
+    font-size: 1.9rem;
+    letter-spacing: 0.05em;
+  }
+
+  #toolTimerModal .text-secondary.small.mt-3 {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: center;
+    margin-top: 0 !important;
+    margin-bottom: 4px;
+  }
+
+  #toolTimerModal .modal-body > .d-flex.justify-content-center.gap-2.mt-3 {
+    grid-column: 1;
+    grid-row: 4;
+    justify-content: center;
+    margin-top: 0 !important;
+    margin-bottom: 0;
+  }
+
+  #toolTimerModal .tool-timer-preset {
+    padding: 6px 12px;
+    min-width: 68px;
+  }
+
+  #toolTimerModal .input-group > .btn {
+    min-width: 44px;
+    height: 38px;
+  }
+
+  #toolTimerModal .input-group > input {
+    min-width: 72px;
+    height: 38px;
+  }
+
+  #toolTimerModal .input-group {
+    align-items: center;
+  }
+
+  #toolTimerModal .timer-config-panel .col-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  #toolTimerModal .timer-config-panel .row {
+    row-gap: 6px;
+  }
+
+  #toolTimerModal .timer-config-panel .form-label {
+    margin-bottom: 4px;
+  }
+}
+
+@media (orientation: portrait) {
+  #toolTimerModal .modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+  }
+
+  #toolTimerModal .tool-timer-progress {
+    order: 1;
+    margin-top: 16px;
+  }
+
+  #toolTimerModal .text-secondary.small.mt-3 {
+    order: 2;
+  }
+
+  #toolTimerModal .modal-body > .d-flex.flex-wrap {
+    order: 3;
+    flex-wrap: nowrap !important;
+    justify-content: center;
+    width: 100%;
+    margin: 8px 0 12px;
+  }
+
+  #toolTimerModal .modal-body > .d-flex.justify-content-center.gap-2.mt-3 {
+    order: 4;
+    justify-content: center;
   }
 }
 
@@ -604,6 +820,12 @@ footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+}
+
+@media (orientation: landscape) {
+  #toolHeartModal .tool-hr-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .tool-hr-card {

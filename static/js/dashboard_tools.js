@@ -17,6 +17,8 @@
   const plateConvertResult = document.getElementById("plateConvertResult");
   const plateConvertSwap = document.getElementById("plateConvertSwap");
   let isSyncingUnit = false;
+  let isSyncingConvert = false;
+  let lastPlateUnit = null;
 
   const plateSets = {
     kg: [
@@ -40,12 +42,34 @@
 
   let plateCounts = {};
   let plateMode = "per_side";
+  const plateState = {
+    lb: { counts: null, barWeight: 45, includeBar: true },
+    kg: { counts: null, barWeight: 20, includeBar: true }
+  };
 
-  const resetCounts = (unit) => {
-    plateCounts = {};
+  const initCounts = (unit) => {
+    const counts = {};
     plateSets[unit].forEach((p) => {
-      plateCounts[p.value] = 0;
+      counts[p.value] = 0;
     });
+    return counts;
+  };
+
+  const savePlateState = (unit) => {
+    if (!unit) return;
+    plateState[unit] = {
+      counts: { ...plateCounts },
+      barWeight: parseFloat(barWeightInput.value) || (unit === "kg" ? 20 : 45),
+      includeBar: includeBarInput ? includeBarInput.checked : true
+    };
+  };
+
+  const loadPlateState = (unit) => {
+    if (!unit) return;
+    const state = plateState[unit] || {};
+    plateCounts = state.counts ? { ...state.counts } : initCounts(unit);
+    if (barWeightInput) barWeightInput.value = state.barWeight ?? (unit === "kg" ? 20 : 45);
+    if (includeBarInput) includeBarInput.checked = state.includeBar ?? true;
   };
 
   const renderPlateGrid = () => {
@@ -127,36 +151,33 @@
     plateGrid.addEventListener("click", handlePlateClick);
   }
 
-  const setPlateUnit = (unit) => {
+  const setPlateUnit = (unit, force = false) => {
     if (!plateUnit || !unit) return;
-    if (plateUnit.value === unit) {
-      if (plateConvertUnit) plateConvertUnit.value = unit;
-      updatePlateConversion();
+    if (!force && plateUnit.value === unit) {
       return;
     }
     isSyncingUnit = true;
+    const previousUnit = lastPlateUnit || plateUnit.value;
+    savePlateState(previousUnit);
     plateUnit.value = unit;
-    if (plateConvertUnit) plateConvertUnit.value = unit;
-    barWeightInput.value = unit === "kg" ? 20 : 45;
-    resetCounts(unit);
+    loadPlateState(unit);
     syncPlateUI();
-    updatePlateConversion();
+    lastPlateUnit = unit;
     isSyncingUnit = false;
   };
 
   if (plateUnit) {
+    lastPlateUnit = plateUnit.value || "lb";
     plateUnit.addEventListener("change", () => {
       if (isSyncingUnit) return;
       const unit = plateUnit.value;
-      setPlateUnit(unit);
+      setPlateUnit(unit, true);
     });
   }
 
   if (plateConvertUnit) {
     plateConvertUnit.addEventListener("change", () => {
-      if (isSyncingUnit) return;
-      const unit = plateConvertUnit.value;
-      setPlateUnit(unit);
+      if (isSyncingConvert) return;
       updatePlateConversion();
     });
   }
@@ -166,8 +187,18 @@
   if (plateConvertSwap) {
     plateConvertSwap.addEventListener("click", () => {
       if (!plateConvertUnit) return;
-      const next = plateConvertUnit.value === "kg" ? "lb" : "kg";
-      setPlateUnit(next);
+      const current = plateConvertUnit.value || "lb";
+      const next = current === "kg" ? "lb" : "kg";
+      const raw = parseFloat(plateConvertValue.value);
+      isSyncingConvert = true;
+      plateConvertUnit.value = next;
+      if (Number.isFinite(raw)) {
+        const converted = convertWeightBasic(raw, current, next);
+        const rounded = Math.round(converted * 100) / 100;
+        plateConvertValue.value = rounded.toString();
+      }
+      isSyncingConvert = false;
+      updatePlateConversion();
     });
   }
 
@@ -200,9 +231,8 @@
     });
   }
 
-  resetCounts(plateUnit.value || "lb");
+  loadPlateState(plateUnit.value || "lb");
   syncPlateUI();
-  if (plateConvertUnit) plateConvertUnit.value = plateUnit.value || "lb";
   updatePlateConversion();
 
   // Timer

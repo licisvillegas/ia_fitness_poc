@@ -280,22 +280,49 @@
       <div class="modal-content plate-modal">
         <div class="plate-modal-header text-white">
           <div class="fw-bold">Calculadora de Discos (<span id="plateUnitLabel">lb</span>)</div>
-          <div class="d-flex align-items-center gap-2">
-            <select id="plateUnit" class="form-select form-select-sm bg-dark text-white border-secondary">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="plate-modal-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="text-secondary small fw-bold">Unidad de discos</div>
+            <select id="plateUnit" class="form-select form-select-sm bg-dark text-white border-secondary"
+              style="width: 90px;">
               <option value="lb">lb</option>
               <option value="kg">kg</option>
             </select>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" aria-label="Cerrar">
-              <i class="fas fa-times"></i>
-            </button>
           </div>
-        </div>
-        <div class="plate-modal-body">
           <div class="plate-mode-row">
             <div class="plate-mode-label text-muted small uppercase">Modo de Conteo</div>
             <div class="btn-group btn-group-sm" role="group" id="plateModeGroup">
               <button type="button" class="btn btn-info text-dark" data-mode="per_side">Por lado</button>
               <button type="button" class="btn btn-outline-secondary" data-mode="total">Total</button>
+            </div>
+          </div>
+          <div class="plate-grid" id="plateGrid"></div>
+          <div class="plate-calc-details bg-dark-glass p-3 rounded-4 mt-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="text-secondary small">Suma de discos</div>
+              <div id="plateTotal" class="plate-total fw-bold text-white">0</div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="text-secondary small">Peso de barra</div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" id="plateIncludeBar" checked>
+                </div>
+                <input id="barWeight" type="number" min="0"
+                  class="form-control form-control-sm bg-dark border-secondary text-white text-center"
+                  style="width: 70px" value="45">
+                <span class="text-secondary small" id="plateUnitSuffix">lb</span>
+              </div>
+            </div>
+            <hr class="border-secondary opacity-25 my-2" />
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="text-cyber-primary small fw-bold">PESO TOTAL</div>
+              <div id="plateTotalWithBar" class="plate-total-final fw-bold text-cyber-primary"
+                style="font-size: 1.4rem">0</div>
             </div>
           </div>
           <div class="mt-3 p-3 bg-dark-glass rounded-4 border border-secondary">
@@ -325,31 +352,6 @@
             </div>
             <div class="mt-2 text-secondary small">
               Resultado: <span class="text-white fw-bold" id="plateConvertResult">--</span>
-            </div>
-          </div>
-          <div class="plate-grid" id="plateGrid"></div>
-          <div class="plate-calc-details bg-dark-glass p-3 rounded-4 mt-3">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="text-secondary small">Suma de discos</div>
-              <div id="plateTotal" class="plate-total fw-bold text-white">0</div>
-            </div>
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="text-secondary small">Peso de barra</div>
-              <div class="d-flex align-items-center gap-2">
-                <div class="form-check form-switch m-0">
-                  <input class="form-check-input" type="checkbox" id="plateIncludeBar" checked>
-                </div>
-                <input id="barWeight" type="number" min="0"
-                  class="form-control form-control-sm bg-dark border-secondary text-white text-center"
-                  style="width: 70px" value="45">
-                <span class="text-secondary small" id="plateUnitSuffix">lb</span>
-              </div>
-            </div>
-            <hr class="border-secondary opacity-25 my-2" />
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="text-cyber-primary small fw-bold">PESO TOTAL</div>
-              <div id="plateTotalWithBar" class="plate-total-final fw-bold text-cyber-primary"
-                style="font-size: 1.4rem">0</div>
             </div>
           </div>
         </div>

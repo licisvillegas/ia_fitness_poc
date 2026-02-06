@@ -592,13 +592,10 @@
 
                     showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
 
-                    try {
-                        if (window.Runner.utils.playAlert) {
-                            window.Runner.utils.playAlert('beep_strong');
-                        } else if (getAudio) {
-                            getAudio().play().catch(() => { });
-                        }
-                    } catch (e) { }
+                    if (sendNotification) {
+                        sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
+                    }
+
                     triggerHaptic([200, 100, 200]);
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
                     showMessage(`Inicia ejercicio ${exName}`, "info");
@@ -612,15 +609,10 @@
                     sendNotification("Rutina finalizada", "Buen trabajo. Tu entrenamiento ha terminado.");
                 }
 
-                // Reproducir secuencia de victoria (3 beeps rapidos)
-                // Reproducir secuencia de victoria (Sintetizada en utils)
+                // Victory sound moved to interaction handler in useWorkoutSteps.js for better mobile support
                 try {
-                    if (window.Runner.utils.playAlert) {
-                        window.Runner.utils.playAlert('victory');
-                    } else if (getAudio) {
-                        getAudio().play().catch(() => { });
-                    }
-                } catch (e) { console.warn("Victory sound failed", e); }
+                    if (getAudio) getAudio().play().catch(() => { });
+                } catch (e) { console.warn("Fallback sound failed", e); }
 
                 if (window.Runner.utils.schedulePush) {
                     window.Runner.utils.schedulePush(

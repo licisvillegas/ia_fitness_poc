@@ -48,7 +48,7 @@
                         gain.connect(ctx.destination);
                         osc.frequency.value = freq;
                         gain.type = "triangle"; // Sonido más suave
-                        gain.gain.setValueAtTime(0.1, now + i * 0.15);
+                        gain.gain.setValueAtTime(0.5, now + i * 0.15);
                         gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
                         osc.start(now + i * 0.15);
                         osc.stop(now + i * 0.15 + 0.4);

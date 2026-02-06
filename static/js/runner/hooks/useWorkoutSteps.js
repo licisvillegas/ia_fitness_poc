@@ -140,6 +140,14 @@
             setShowCompletionIcon(true);
             showMessage("Rutina finalizada", "success");
 
+            try {
+                // Ensure audio is ready/resumed if possible
+                if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
+                if (window.Runner.utils.playAlert) window.Runner.utils.playAlert('victory');
+            } catch (e) {
+                console.warn("Victory sound trigger failed", e);
+            }
+
             // Disparador de Celebración
             triggerHaptic([100, 50, 100, 50, 200, 100, 500]);
             try {
@@ -166,6 +174,10 @@
             setTimeout(() => {
                 setShowCompletionIcon(false);
                 showConfirm("Finalizar Rutina", "¿Deseas guardar el entrenamiento completado?", async () => {
+                    // Critical: Play sound on USER INTERACTION to bypass autoplay policies
+                    if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
+                    // Victory message played earlier in finishWorkout
+
                     setStatus('FINISHED');
                     const payload = {
                         routine_id: (routineState?.id || routine?.id),

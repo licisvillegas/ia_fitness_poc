@@ -201,149 +201,315 @@
                         </div>
 
                         <!-- Contenedor de detalle -->
-                        <div class="p-4" id="detail-container" style="display:none;">
+                        <div class="d-none flex-column h-100" id="detail-container">
 
-                            <!-- Informacion de encabezado -->
-                            <div
-                                class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
-                                <div>
-                                    <h2 class="h4 mb-1 text-white" id="det-date">-</h2>
-                                    <div class="d-flex gap-2">
-                                        <span class="badge bg-primary" id="det-goal">-</span>
-                                        <span class="badge bg-dark border border-secondary text-secondary"
-                                            id="det-backend">-</span>
-                                        <span class="badge bg-info text-dark" id="det-id-badge">ID: -</span>
+                            <!-- Tab Navigation -->
+                            <div class="px-4 pt-3 bg-dark border-bottom border-secondary">
+                                <ul class="nav nav-tabs border-0" id="assessmentTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button
+                                            class="nav-link active rounded-top-2 text-white bg-dark border border-secondary border-bottom-0"
+                                            id="view-tab" data-bs-toggle="tab" data-bs-target="#view-pane" type="button"
+                                            role="tab" aria-controls="view-pane" aria-selected="true"
+                                            style="margin-bottom: -1px;">
+                                            <i class="fas fa-eye me-2"></i>Vista
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded-top-2 text-secondary border-0" id="edit-tab"
+                                            data-bs-toggle="tab" data-bs-target="#edit-pane" type="button" role="tab"
+                                            aria-controls="edit-pane" aria-selected="false">
+                                            <i class="fas fa-edit me-2"></i>Editar
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="tab-content flex-grow-1 overflow-auto bg-panel custom-scrollbar"
+                                id="assessmentTabsContent">
+                                <!-- VISTA TAB -->
+                                <div class="tab-pane fade show active p-4" id="view-pane" role="tabpanel"
+                                    aria-labelledby="view-tab" tabindex="0">
+
+                                    <!-- Informacion de encabezado -->
+                                    <div
+                                        class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
+                                        <div>
+                                            <h2 class="h4 mb-1 text-white" id="det-date">-</h2>
+                                            <div class="d-flex gap-2">
+                                                <span class="badge bg-primary" id="det-goal">-</span>
+                                                <span class="badge bg-dark border border-secondary text-secondary"
+                                                    id="det-backend">-</span>
+                                                <span class="badge bg-info text-dark" id="det-id-badge">ID: -</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-4">
+                                        <!-- Columna Izquierda: Datos Input -->
+                                        <div class="col-lg-5">
+                                            <!-- Fotos -->
+                                            <section class="mb-4">
+                                                <h5 class="section-title h6 mb-3">Fotografías</h5>
+                                                <div class="photo-grid" id="det-photos"></div>
+                                                <p id="no-photos-msg" class="text-muted small mt-2 d-none">Sin fotos
+                                                    registradas.</p>
+                                            </section>
+
+                                            <!-- Datos Generales -->
+                                            <section class="mb-4">
+                                                <h5 class="section-title h6 mb-3">Información General</h5>
+                                                <ul class="list-group list-group-flush bg-transparent small"
+                                                    id="det-general">
+                                                </ul>
+                                            </section>
+
+                                            <!-- Medidas -->
+                                            <section class="mb-4">
+                                                <h5 class="section-title h6 mb-3">Medidas Corporales</h5>
+                                                <div class="row g-2 small" id="det-measurements"></div>
+                                            </section>
+                                        </div>
+
+                                        <!-- Columna Derecha: Resultados AI -->
+                                        <div class="col-lg-7">
+                                            <section class="mb-4">
+                                                <h5 class="section-title h6 mb-3">Resultados del Análisis</h5>
+
+                                                <!-- Resumen -->
+                                                <div class="alert alert-dark border-secondary mb-3">
+                                                    <p class="mb-0 small" id="det-summary"></p>
+                                                </div>
+
+                                                <!-- Métricas Clave -->
+                                                <div class="row g-2 mb-4" id="det-metrics"></div>
+
+                                                <!-- Accordion Detalle -->
+                                                <div class="accordion" id="accordionDetail">
+                                                    <!-- Gasto Energetico -->
+                                                    <div class="accordion-item bg-dark border-secondary">
+                                                        <h2 class="accordion-header">
+                                                            <button
+                                                                class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                                type="button" data-bs-toggle="collapse"
+                                                                data-bs-target="#collapseEnergy">
+                                                                <i class="fas fa-fire me-2 text-warning"></i> Gasto
+                                                                Energético
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapseEnergy" class="accordion-collapse collapse"
+                                                            data-bs-parent="#accordionDetail">
+                                                            <div class="accordion-body">
+                                                                <div class="d-flex justify-content-between mb-2">
+                                                                    <span>TMB (Basal)</span>
+                                                                    <strong class="text-warning" id="det-tmb">--
+                                                                        kcal</strong>
+                                                                </div>
+                                                                <hr class="border-secondary my-1">
+                                                                <ul class="list-unstyled small mb-0" id="det-tdee"></ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Proporciones -->
+                                                    <div class="accordion-item bg-dark border-secondary">
+                                                        <h2 class="accordion-header">
+                                                            <button
+                                                                class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                                type="button" data-bs-toggle="collapse"
+                                                                data-bs-target="#collapseProps">
+                                                                <i class="fas fa-ruler-combined me-2 text-info"></i>
+                                                                Proporciones
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapseProps" class="accordion-collapse collapse"
+                                                            data-bs-parent="#accordionDetail">
+                                                            <div class="accordion-body small" id="det-props"></div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Recomendaciones -->
+                                                    <div class="accordion-item bg-dark border-secondary">
+                                                        <h2 class="accordion-header">
+                                                            <button
+                                                                class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                                type="button" data-bs-toggle="collapse"
+                                                                data-bs-target="#collapseRecs">
+                                                                <i class="fas fa-clipboard-list me-2 text-success"></i>
+                                                                Recomendaciones
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapseRecs" class="accordion-collapse collapse"
+                                                            data-bs-parent="#accordionDetail">
+                                                            <div class="accordion-body p-0">
+                                                                <ul id="det-recs"
+                                                                    class="list-group list-group-flush bg-transparent">
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Feedback Fotos -->
+                                                    <div class="accordion-item bg-dark border-secondary">
+                                                        <h2 class="accordion-header">
+                                                            <button
+                                                                class="accordion-button collapsed bg-transparent text-white shadow-none"
+                                                                type="button" data-bs-toggle="collapse"
+                                                                data-bs-target="#collapsePhotoFeedback">
+                                                                <i class="fas fa-camera-retro me-2 text-warning"></i>
+                                                                Feedback
+                                                                Fotos
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapsePhotoFeedback"
+                                                            class="accordion-collapse collapse"
+                                                            data-bs-parent="#accordionDetail">
+                                                            <div class="accordion-body small text-secondary"
+                                                                id="det-photo-feedback"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </section>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            <!-- EDIT TAB -->
+                    <div class="tab-pane fade p-4" id="edit-pane" role="tabpanel" tabindex="0">
+                        <form id="editForm">
+                            <input type="hidden" id="edit-id">
 
-                            <div class="row g-4">
-                                <!-- Columna Izquierda: Datos Input -->
-                                <div class="col-lg-5">
-                                    <!-- Fotos -->
-                                    <section class="mb-4">
-                                        <h5 class="section-title h6 mb-3">Fotografías</h5>
-                                        <div class="photo-grid" id="det-photos"></div>
-                                        <p id="no-photos-msg" class="text-muted small mt-2 d-none">Sin fotos
-                                            registradas.</p>
-                                    </section>
-
-                                    <!-- Datos Generales -->
-                                    <section class="mb-4">
-                                        <h5 class="section-title h6 mb-3">Información General</h5>
-                                        <ul class="list-group list-group-flush bg-transparent small" id="det-general">
-                                        </ul>
-                                    </section>
-
-                                    <!-- Medidas -->
-                                    <section class="mb-4">
-                                        <h5 class="section-title h6 mb-3">Medidas Corporales</h5>
-                                        <div class="row g-2 small" id="det-measurements"></div>
-                                    </section>
+                            <!-- GENERAL -->
+                            <h5 class="section-title h6 mb-3">General</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary small">Meta</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="edit-goal">
+                                        <option value="lose_fat">Perder Grasa</option>
+                                        <option value="build_muscle">Ganar Músculo</option>
+                                        <option value="maintain">Mantener</option>
+                                        <option value="recomp">Recomposición</option>
+                                        <option value="general">General</option>
+                                    </select>
                                 </div>
-
-                                <!-- Columna Derecha: Resultados AI -->
-                                <div class="col-lg-7">
-                                    <section class="mb-4">
-                                        <h5 class="section-title h6 mb-3">Resultados del Análisis</h5>
-
-                                        <!-- Resumen -->
-                                        <div class="alert alert-dark border-secondary mb-3">
-                                            <p class="mb-0 small" id="det-summary"></p>
-                                        </div>
-
-                                        <!-- Métricas Clave -->
-                                        <div class="row g-2 mb-4" id="det-metrics"></div>
-
-                                        <!-- Accordion Detalle -->
-                                        <div class="accordion" id="accordionDetail">
-                                            <!-- Gasto Energetico -->
-                                            <div class="accordion-item bg-dark border-secondary">
-                                                <h2 class="accordion-header">
-                                                    <button
-                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
-                                                        type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#collapseEnergy">
-                                                        <i class="fas fa-fire me-2 text-warning"></i> Gasto Energético
-                                                    </button>
-                                                </h2>
-                                                <div id="collapseEnergy" class="accordion-collapse collapse"
-                                                    data-bs-parent="#accordionDetail">
-                                                    <div class="accordion-body">
-                                                        <div class="d-flex justify-content-between mb-2">
-                                                            <span>TMB (Basal)</span>
-                                                            <strong class="text-warning" id="det-tmb">-- kcal</strong>
-                                                        </div>
-                                                        <hr class="border-secondary my-1">
-                                                        <ul class="list-unstyled small mb-0" id="det-tdee"></ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Proporciones -->
-                                            <div class="accordion-item bg-dark border-secondary">
-                                                <h2 class="accordion-header">
-                                                    <button
-                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
-                                                        type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#collapseProps">
-                                                        <i class="fas fa-ruler-combined me-2 text-info"></i>
-                                                        Proporciones
-                                                    </button>
-                                                </h2>
-                                                <div id="collapseProps" class="accordion-collapse collapse"
-                                                    data-bs-parent="#accordionDetail">
-                                                    <div class="accordion-body small" id="det-props"></div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Recomendaciones -->
-                                            <div class="accordion-item bg-dark border-secondary">
-                                                <h2 class="accordion-header">
-                                                    <button
-                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
-                                                        type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#collapseRecs">
-                                                        <i class="fas fa-clipboard-list me-2 text-success"></i>
-                                                        Recomendaciones
-                                                    </button>
-                                                </h2>
-                                                <div id="collapseRecs" class="accordion-collapse collapse"
-                                                    data-bs-parent="#accordionDetail">
-                                                    <div class="accordion-body p-0">
-                                                        <ul id="det-recs"
-                                                            class="list-group list-group-flush bg-transparent"></ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Feedback Fotos -->
-                                            <div class="accordion-item bg-dark border-secondary">
-                                                <h2 class="accordion-header">
-                                                    <button
-                                                        class="accordion-button collapsed bg-transparent text-white shadow-none"
-                                                        type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#collapsePhotoFeedback">
-                                                        <i class="fas fa-camera-retro me-2 text-warning"></i> Feedback
-                                                        Fotos
-                                                    </button>
-                                                </h2>
-                                                <div id="collapsePhotoFeedback" class="accordion-collapse collapse"
-                                                    data-bs-parent="#accordionDetail">
-                                                    <div class="accordion-body small text-secondary"
-                                                        id="det-photo-feedback"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </section>
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary small">Nivel Actividad</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="edit-activity">
+                                        <option value="sedentary">Sedentario</option>
+                                        <option value="light">Ligero</option>
+                                        <option value="moderate">Moderado</option>
+                                        <option value="active">Activo</option>
+                                        <option value="very_active">Muy Activo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary small">Edad</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        id="edit-age">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary small">Sexo</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="edit-sex">
+                                        <option value="male">Masculino</option>
+                                        <option value="female">Femenino</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary small">Backend</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary"
+                                        id="edit-backend" placeholder="openai:gpt-4o-mini+openai:gpt-4o-mini">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Notas (Input)</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary" id="edit-notes"
+                                        rows="2"></textarea>
                                 </div>
                             </div>
+
+                            <!-- MEASUREMENTS -->
+                            <h5 class="section-title h6 mb-3">Medidas (cm / kg)</h5>
+                            <div class="row g-2 mb-4" id="edit-measurements-container">
+                                <!-- JS will populate this -->
+                            </div>
+
+                            <!-- OUTPUT OVERRIDES -->
+                            <h5 class="section-title h6 mb-3">Resultados (AI Override)</h5>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Resumen AI</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary" id="edit-summary"
+                                        rows="3"></textarea>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label text-secondary small">% Grasa</label>
+                                    <input type="number" step="0.1"
+                                        class="form-control bg-dark text-white border-secondary" id="edit-bf">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label text-secondary small">% Músculo</label>
+                                    <input type="number" step="0.1"
+                                        class="form-control bg-dark text-white border-secondary" id="edit-muscle">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label text-secondary small">TMB (kcal)</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        id="edit-tmb">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Recomendaciones (una por
+                                        línea)</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary" id="edit-recs"
+                                        rows="4"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- JSON FULL EDIT -->
+                            <h5 class="section-title h6 mt-4 mb-3">Edici?n Completa (JSON)</h5>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="edit-use-json">
+                                <label class="form-check-label text-secondary small" for="edit-use-json">Usar JSON como fuente de verdad</label>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Input (JSON)</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary font-monospace"
+                                        id="edit-input-json" rows="8" spellcheck="false"></textarea>
+                                    <div class="form-text text-secondary">Si editas aqu?, se usar? este JSON como
+                                        fuente de verdad para guardar.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Output (JSON)</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary font-monospace"
+                                        id="edit-output-json" rows="10" spellcheck="false"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-secondary small">Meta (JSON)</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary font-monospace"
+                                        id="edit-meta-json" rows="4" spellcheck="false"></textarea>
+                                    <div class="form-text text-secondary">Campos soportados: created_at, updated_at (ISO 8601).</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4 pt-3 border-top border-secondary gap-2">
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteAssessment()">
+                                    <i class="fas fa-trash me-2"></i>Eliminar
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="saveChanges()">
+                                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+</div>
                         </div>
                     </div>
+
+                    
+
                 </div>
             </div>
-        </main>
+    </div>
+    </main>
     </div>
 
     <!-- Modal de imagen -->
@@ -446,8 +612,19 @@
             const listEl = document.getElementById('history-list');
             try {
                 listEl.innerHTML = '<div class="p-3 text-center text-secondary"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
-                document.getElementById('empty-state').style.setProperty('display', 'flex', 'important');
-                document.getElementById('detail-container').style.setProperty('display', 'none', 'important');
+
+                // Reset View
+                const emptyState = document.getElementById('empty-state');
+                const detailContainer = document.getElementById('detail-container');
+
+                emptyState.classList.remove('d-none');
+                emptyState.classList.add('d-flex');
+
+                detailContainer.classList.remove('d-flex');
+                detailContainer.classList.add('d-none');
+
+                emptyState.style.display = '';
+                detailContainer.style.display = '';
 
                 // Using AI History Endpoint (Available to Admin)
                 const resp = await fetch(`/ai/body_assessment/history/${userId}`);
@@ -516,8 +693,20 @@
         }
 
         function showDetail(data) {
-            document.getElementById('empty-state').style.setProperty('display', 'none', 'important');
-            document.getElementById('detail-container').style.setProperty('display', 'block', 'important');
+            const emptyState = document.getElementById('empty-state');
+            const detailContainer = document.getElementById('detail-container');
+
+            // Hide empty state
+            emptyState.classList.remove('d-flex');
+            emptyState.classList.add('d-none');
+
+            // Show detail container
+            detailContainer.classList.remove('d-none');
+            detailContainer.classList.add('d-flex');
+
+            // Clear any inline styles that might conflict
+            emptyState.style.display = '';
+            detailContainer.style.display = '';
 
             const input = data.input || {};
             const output = data.output || {};
@@ -674,6 +863,207 @@
             if (!pf) { pfContainer.innerHTML = '<span class="text-muted">No hay feedback específico.</span>'; }
             else if (Array.isArray(pf)) { let html = '<ul class="list-unstyled mb-0">'; pf.forEach(p => html += `<li class="mb-1"><i class="fas fa-comment-dots text-warning me-2 small"></i>${p}</li>`); html += '</ul>'; pfContainer.innerHTML = html; }
             else { pfContainer.innerHTML = pf.toString().replace(/\n/g, '<br>'); }
+
+            // --- POPULATE EDIT FORM ---
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('edit-goal').value = (input.goal || 'general').toLowerCase();
+            document.getElementById('edit-activity').value = (input.activity_level || 'moderate').toLowerCase();
+            document.getElementById('edit-age').value = input.age || '';
+            document.getElementById('edit-sex').value = (input.sex || 'male').toLowerCase();
+            document.getElementById('edit-notes').value = input.notes || '';
+            document.getElementById('edit-backend').value = data.backend || '';
+            document.getElementById('edit-input-json').value = JSON.stringify(input || {}, null, 2);
+            document.getElementById('edit-output-json').value = JSON.stringify(output || {}, null, 2);
+            document.getElementById('edit-meta-json').value = JSON.stringify({
+                created_at: data.created_at || null,
+                updated_at: data.updated_at || null
+            }, null, 2);
+            document.getElementById('edit-use-json').checked = false;
+
+            // Edit Measurements
+            const editMeasContainer = document.getElementById('edit-measurements-container');
+            editMeasContainer.innerHTML = '';
+            // We use the same keys as displayed or all possible? ideally all keys present in input.measurements
+            if (m) {
+                for (const [k, v] of Object.entries(m)) {
+                    if (k === 'unit_system') continue;
+                    // We try to use a nice label if available, else key
+                    const label = DICT.measures[k] || k;
+                    editMeasContainer.innerHTML += `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label text-secondary small" style="font-size:0.7em">${label}</label>
+                            <input type="number" step="0.1" class="form-control form-control-sm bg-dark text-white border-secondary edit-measurement-input" data-key="${k}" value="${v}">
+                        </div>
+                     `;
+                }
+            }
+
+            // Edit Output
+            document.getElementById('edit-summary').value = output.summary || '';
+            document.getElementById('edit-bf').value = bc.body_fat_percent || '';
+            document.getElementById('edit-muscle').value = bc.muscle_mass_percent || '';
+
+            const enEdit = output.energy_expenditure || {};
+            document.getElementById('edit-tmb').value = enEdit.tmb || '';
+
+            const recsEdit = output.recommendations?.actions || [];
+            document.getElementById('edit-recs').value = recsEdit.join('\n');
+        }
+
+        async function saveChanges() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) return alert("No hay evaluaci?n seleccionada");
+
+            const currentItem = historyData.find(d => d.id === id);
+            if (!currentItem) return alert("Error de consistencia de datos");
+
+            const useJson = document.getElementById('edit-use-json').checked;
+            const inputJsonText = (document.getElementById('edit-input-json').value || '').trim();
+            const outputJsonText = (document.getElementById('edit-output-json').value || '').trim();
+            const metaJsonText = (document.getElementById('edit-meta-json').value || '').trim();
+
+            let finalInput = null;
+            let finalOutput = null;
+            let metaObj = null;
+
+            if (useJson) {
+                if (!inputJsonText || !outputJsonText) {
+                    return alert("Debes completar ambos JSON para guardar en modo JSON");
+                }
+                try {
+                    finalInput = JSON.parse(inputJsonText);
+                } catch (e) {
+                    return alert("Input JSON inv?lido: " + e.message);
+                }
+                try {
+                    finalOutput = JSON.parse(outputJsonText);
+                } catch (e) {
+                    return alert("Output JSON inv?lido: " + e.message);
+                }
+                if (metaJsonText) {
+                    try {
+                        metaObj = JSON.parse(metaJsonText);
+                    } catch (e) {
+                        return alert("Meta JSON inv?lido: " + e.message);
+                    }
+                }
+            }
+
+            if (!finalInput || !finalOutput) {
+                const inputUpdate = {
+                    goal: document.getElementById('edit-goal').value,
+                    activity_level: document.getElementById('edit-activity').value,
+                    age: parseInt(document.getElementById('edit-age').value) || 0,
+                    sex: document.getElementById('edit-sex').value,
+                    notes: document.getElementById('edit-notes').value,
+                    measurements: { ...(currentItem.input?.measurements || {}) }
+                };
+
+                document.querySelectorAll('.edit-measurement-input').forEach(inp => {
+                    if (inp.value) inputUpdate.measurements[inp.dataset.key] = parseFloat(inp.value);
+                });
+
+                const outputUpdate = {
+                    summary: document.getElementById('edit-summary').value,
+                    body_composition: {
+                        ...(currentItem.output?.body_composition || {}),
+                        body_fat_percent: parseFloat(document.getElementById('edit-bf').value) || 0,
+                        muscle_mass_percent: parseFloat(document.getElementById('edit-muscle').value) || 0
+                    },
+                    energy_expenditure: {
+                        ...(currentItem.output?.energy_expenditure || {}),
+                        tmb: parseFloat(document.getElementById('edit-tmb').value) || 0
+                    },
+                    recommendations: {
+                        ...(currentItem.output?.recommendations || {}),
+                        actions: document.getElementById('edit-recs').value.split('\n').filter(l => l.trim().length > 0)
+                    }
+                };
+
+                finalInput = { ...(currentItem.input || {}), ...inputUpdate };
+                finalOutput = { ...(currentItem.output || {}), ...outputUpdate };
+                finalOutput.body_composition = outputUpdate.body_composition;
+                finalOutput.energy_expenditure = outputUpdate.energy_expenditure;
+                finalOutput.recommendations = outputUpdate.recommendations;
+            }
+
+            const backendValue = document.getElementById('edit-backend').value || currentItem.backend || '';
+
+            try {
+                const btn = document.querySelector('#editForm button.btn-primary');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+
+                const resp = await fetch('/api/admin/body_assessments/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id,
+                        backend: backendValue,
+                        input: finalInput,
+                        output: finalOutput,
+                        meta: metaObj
+                    })
+                });
+
+                if (!resp.ok) throw new Error("Error updating");
+
+                currentItem.input = finalInput;
+                currentItem.output = finalOutput;
+                currentItem.backend = backendValue;
+                if (metaObj && typeof metaObj === 'object') {
+                    if (metaObj.created_at) currentItem.created_at = metaObj.created_at;
+                    if (metaObj.updated_at) currentItem.updated_at = metaObj.updated_at;
+                }
+
+                alert("Evaluaci?n actualizada correctamente.");
+                showDetail(currentItem);
+
+                const viewTab = document.getElementById('view-tab');
+                if (viewTab) {
+                    const tab = new bootstrap.Tab(viewTab);
+                    tab.show();
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            } finally {
+                const btn = document.querySelector('#editForm button.btn-primary');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Cambios';
+                }
+            }
+        }
+
+        async function deleteAssessment() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) return alert("No hay evaluaci?n seleccionada");
+            if (!confirm("?Eliminar esta evaluaci?n? Esta acci?n no se puede deshacer.")) return;
+
+            try {
+                const resp = await fetch('/api/admin/body_assessments/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+
+                if (!resp.ok) throw new Error("Error eliminando");
+
+                historyData = historyData.filter(d => d.id !== id);
+                renderHistory(historyData);
+
+                if (historyData.length === 0) {
+                    const detailContainer = document.getElementById('detail-container');
+                    const emptyState = document.getElementById('empty-state');
+                    detailContainer.classList.add('d-none');
+                    emptyState.classList.remove('d-none');
+                    emptyState.classList.add('d-flex');
+                }
+
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
         }
 
         const zoomModal = new bootstrap.Modal(document.getElementById('imageZoomModal'));

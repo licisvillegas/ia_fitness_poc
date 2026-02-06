@@ -1,0 +1,542 @@
+
+        // --- 1. ADMIN USER SEARCH LOGIC ---
+        const searchMsg = document.getElementById('searchMsg');
+
+        function renderAdminUserResult(u) {
+            return (
+                "<div><strong>" + (u.name || u.username || "Usuario") + "</strong></div>" +
+                "<small class=\"text-secondary\">" + (u.email || "") + "</small>" +
+                "<div class=\"text-xs text-info opacity-50\">ID: " + u.user_id + "</div>"
+            );
+        }
+
+        function selectUser(u) {
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username);
+            // Trigger Load History
+            loadHistory(u.user_id);
+        }
+
+        initUserSearch({
+            inputId: "userSearchTerm",
+            resultsId: "userSearchResults",
+            hiddenId: "adminUserId",
+            buttonId: "btnLookupUser",
+            clearButtonId: "btnClearUserSearch",
+            storageKey: "admin_working_user",
+            storageUidKey: "admin_working_user_id",
+            itemClass: "list-group-item list-group-item-action bg-dark text-white border-secondary text-start",
+            renderItem: renderAdminUserResult,
+            onSelect: selectUser,
+            onClear: () => {
+                if (searchMsg) searchMsg.textContent = "";
+            }
+        });
+
+        function restoreSelectedUser() {
+            try {
+                const stored = localStorage.getItem("admin_working_user");
+                if (!stored) return;
+                const user = JSON.parse(stored);
+                if (!user || !user.user_id) return;
+                const inputEl = document.getElementById("userSearchTerm");
+                const hiddenEl = document.getElementById("adminUserId");
+                if (hiddenEl) hiddenEl.value = user.user_id;
+                if (inputEl) {
+                    const label = user.name || user.username || "";
+                    const email = user.email || "";
+                    inputEl.value = label && email ? `${label} (${email})` : (label || user.user_id || "");
+                }
+                if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (user.name || user.username || user.user_id);
+                loadHistory(user.user_id);
+            } catch (e) { }
+        }
+
+        restoreSelectedUser();
+
+        window.addEventListener("admin-user-selected", (evt) => {
+            const u = evt.detail || {};
+            if (!u.user_id) return;
+            const inputEl = document.getElementById("userSearchTerm");
+            const hiddenEl = document.getElementById("adminUserId");
+            if (hiddenEl) hiddenEl.value = u.user_id;
+            if (inputEl) {
+                const label = u.name || u.username || "";
+                const email = u.email || "";
+                inputEl.value = label && email ? `${label} (${email})` : (label || u.user_id || "");
+            }
+            if (searchMsg) searchMsg.textContent = "Usuario seleccionado: " + (u.name || u.username || u.user_id);
+            loadHistory(u.user_id);
+        });
+
+        window.addEventListener("admin-user-cleared", () => {
+            if (searchMsg) searchMsg.textContent = "";
+        });
+
+
+        // --- 2. HISTORY LOGIC (Ported) ---
+        let historyData = [];
+
+        async function loadHistory(userId) {
+            const listEl = document.getElementById('history-list');
+            try {
+                listEl.innerHTML = '<div class="p-3 text-center text-secondary"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+
+                // Reset View
+                const emptyState = document.getElementById('empty-state');
+                const detailContainer = document.getElementById('detail-container');
+
+                emptyState.classList.remove('d-none');
+                emptyState.classList.add('d-flex');
+
+                detailContainer.classList.remove('d-flex');
+                detailContainer.classList.add('d-none');
+
+                emptyState.style.display = '';
+                detailContainer.style.display = '';
+
+                // Using AI History Endpoint (Available to Admin)
+                const resp = await fetch(`/ai/body_assessment/history/${userId}`);
+                if (!resp.ok) throw new Error("Error fetching history");
+
+                historyData = await resp.json();
+                renderList();
+
+                // Save last search
+                localStorage.setItem('ai_fitness_last_search_uid', userId);
+
+            } catch (e) {
+                listEl.innerHTML = `<div class="p-3 text-danger text-center"><small>${e.message}</small></div>`;
+            }
+        }
+
+        function renderList() {
+            const listEl = document.getElementById('history-list');
+            if (historyData.length === 0) {
+                listEl.innerHTML = '<div class="p-3 text-secondary text-center small">No hay evaluaciones registradas para este usuario.</div>';
+                return;
+            }
+
+            const GOAL_DICT = {
+                "lose_fat": "Perder Grasa",
+                "build_muscle": "Ganar Músculo",
+                "maintain": "Mantener",
+                "maintenance": "Mantenimiento",
+                "general": "General",
+                "recomp": "Recomposición"
+            };
+
+            let html = '<div class="list-group list-group-flush">';
+            historyData.forEach((item, idx) => {
+                const date = item.date || "Fecha desconocida";
+                const rawGoal = (item.input && item.input.goal) ? item.input.goal.toLowerCase() : "N/A";
+                const goal = GOAL_DICT[rawGoal] || rawGoal;
+                const idShort = item.id.substring(item.id.length - 4);
+
+                html += `
+                    <div class="list-group-item list-group-item-action bg-transparent text-white history-item p-3 border-bottom border-secondary" onclick="selectItem(${idx})">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-primary">${date}</small>
+                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size:0.6em">#${idShort}</span>
+                        </div>
+                        <div class="small text-secondary text-uppercase" style="font-size: 0.7rem;">${goal}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listEl.innerHTML = html;
+
+            // Auto-select first
+            if (historyData.length > 0) selectItem(0);
+        }
+
+        function selectItem(idx) {
+            // Highlight list
+            document.querySelectorAll('.history-item').forEach((el, i) => {
+                if (i === idx) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+
+            const data = historyData[idx];
+            showDetail(data);
+        }
+
+        function showDetail(data) {
+            const emptyState = document.getElementById('empty-state');
+            const detailContainer = document.getElementById('detail-container');
+
+            // Hide empty state
+            emptyState.classList.remove('d-flex');
+            emptyState.classList.add('d-none');
+
+            // Show detail container
+            detailContainer.classList.remove('d-none');
+            detailContainer.classList.add('d-flex');
+
+            // Clear any inline styles that might conflict
+            emptyState.style.display = '';
+            detailContainer.style.display = '';
+
+            const input = data.input || {};
+            const output = data.output || {};
+
+            // Dictionaries
+            const DICT = {
+                sex: { "male": "Masculino", "female": "Femenino" },
+                activity: { "sedentary": "Sedentario", "light": "Ligero", "moderate": "Moderado", "active": "Activo", "very_active": "Muy Activo", "lightly_active": "Ligero", "moderately_active": "Moderado", "extra_active": "Muy Activo", "strong": "Fuerte", "very_strong": "Muy Fuerte" },
+                goal: { "lose_fat": "Perder Grasa", "build_muscle": "Ganar Músculo", "maintain": "Mantener", "maintenance": "Mantenimiento", "general": "General", "recomp": "Recomposición" },
+                measures: { "weight_kg": "Peso", "height_cm": "Altura", "cuello": "Cuello", "neck": "Cuello", "hombros": "Hombros", "shoulders": "Hombros", "torax": "Torax", "chest": "Pecho", "cintura": "Cintura", "waist": "Cintura", "abdomen": "Abdomen", "cadera": "Cadera", "forearm": "Antebrazo", "forearm_left": "Antebrazo (Izq)", "forearm_right": "Antebrazo (Der)", "antebrazo_izq": "Antebrazo (Izq)", "antebrazo_der": "Antebrazo (Der)", "hips": "Caderas", "hip": "Cadera", "arm_relaxed": "Brazo (Relajado)", "arm_relaxed_left": "Brazo (Relajado Izq)", "arm_relaxed_right": "Brazo (Relajado Der)", "arm_flexed": "Brazo (Flex)", "arm_flexed_left": "Brazo (Flex Izq)", "arm_flexed_right": "Brazo (Flex Der)", "biceps_izq": "Biceps (Izq)", "biceps_der": "Biceps (Der)", "biceps_l": "Bíceps (I)", "biceps_r": "Bíceps (D)", "thigh": "Muslo", "thigh_left": "Muslo (Izq)", "thigh_right": "Muslo (Der)", "muslo_izq": "Muslo (Izq)", "muslo_der": "Muslo (Der)", "thigh_l": "Muslo (I)", "thigh_r": "Muslo (D)", "calf": "Pantorrilla", "calf_left": "Pantorrilla (Izq)", "calf_right": "Pantorrilla (Der)", "pantorrilla_izq": "Pantorrilla (Izq)", "pantorrilla_der": "Pantorrilla (Der)", "calf_l": "Pantorrilla (I)", "calf_r": "Pantorrilla (D)" }
+            };
+
+            // Header
+            document.getElementById('det-date').innerText = data.date || "Sin fecha";
+            const rawGoal = (input.goal || "general").toLowerCase();
+            document.getElementById('det-goal').innerText = (DICT.goal[rawGoal] || rawGoal).toUpperCase();
+            document.getElementById('det-backend').innerText = data.backend || "Backend";
+            document.getElementById('det-id-badge').innerText = `ID: ${data.id}`;
+
+            // Photos
+            const photosContainer = document.getElementById('det-photos');
+            photosContainer.innerHTML = '';
+            const photos = input.photos || [];
+            if (photos.length > 0) {
+                document.getElementById('no-photos-msg').classList.add('d-none');
+                photos.forEach(ph => {
+                    if (ph.url) {
+                        const img = document.createElement('img');
+                        img.src = ph.url;
+                        img.className = 'photo-thumb';
+                        img.onclick = () => openZoom(ph.url);
+                        photosContainer.appendChild(img);
+                    }
+                });
+            } else {
+                document.getElementById('no-photos-msg').classList.remove('d-none');
+            }
+
+            // General Info
+            const sexVal = (input.sex || "").toLowerCase();
+            const actVal = (input.activity_level || "").toLowerCase();
+            document.getElementById('det-general').innerHTML = `
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Sexo:</span> <span class="text-white">${DICT.sex[sexVal] || input.sex || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Edad:</span> <span class="text-white">${input.age || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1 d-flex justify-content-between"><span>Nivel Act.:</span> <span class="text-white">${DICT.activity[actVal] || input.activity_level || '--'}</span></li>
+                <li class="list-group-item bg-transparent text-secondary px-0 py-1"><span>Notas:</span> <div class="text-white fst-italic mt-1">${input.notes || '--'}</div></li>
+            `;
+
+            // Measurements
+            const measContainer = document.getElementById('det-measurements');
+            measContainer.innerHTML = '';
+            const m = input.measurements || {};
+            const hasKey = (key) => Object.prototype.hasOwnProperty.call(m, key);
+            const skipKeys = new Set();
+            if (hasKey("cuello")) skipKeys.add("neck");
+            if (hasKey("hombros")) skipKeys.add("shoulders");
+            if (hasKey("torax")) skipKeys.add("chest");
+            if (hasKey("cintura")) skipKeys.add("waist");
+            if (hasKey("cadera")) {
+                skipKeys.add("hip");
+                skipKeys.add("hips");
+            }
+            if (hasKey("biceps_izq")) skipKeys.add("biceps_l");
+            if (hasKey("biceps_der")) skipKeys.add("biceps_r");
+            if (hasKey("biceps_izq")) {
+                skipKeys.add("arm_relaxed_left");
+                skipKeys.add("arm_flexed_left");
+            }
+            if (hasKey("biceps_der")) {
+                skipKeys.add("arm_relaxed_right");
+                skipKeys.add("arm_flexed_right");
+            }
+            if (hasKey("antebrazo_izq")) skipKeys.add("forearm_left");
+            if (hasKey("antebrazo_der")) skipKeys.add("forearm_right");
+            if (hasKey("muslo_izq")) skipKeys.add("thigh_l");
+            if (hasKey("muslo_der")) skipKeys.add("thigh_r");
+            if (hasKey("muslo_izq")) skipKeys.add("thigh_left");
+            if (hasKey("muslo_der")) skipKeys.add("thigh_right");
+            if (hasKey("pantorrilla_izq")) skipKeys.add("calf_l");
+            if (hasKey("pantorrilla_der")) skipKeys.add("calf_r");
+            if (hasKey("pantorrilla_izq")) skipKeys.add("calf_left");
+            if (hasKey("pantorrilla_der")) skipKeys.add("calf_right");
+            for (const [k, v] of Object.entries(m)) {
+                if (skipKeys.has(k)) {
+                    continue;
+                }
+                if (v && k !== 'unit_system') {
+                    const label = DICT.measures[k] || k;
+                    let unit = (k.includes('weight') || k === 'peso') ? "kg" : "cm";
+                    measContainer.innerHTML += `
+                        <div class="col-4 col-sm-4 col-md-6 col-lg-4">
+                            <div class="p-2 border border-secondary rounded bg-dark text-center h-100 d-flex flex-column justify-content-center">
+                                <span class="text-secondary small text-uppercase" style="font-size:0.65rem; letter-spacing:0.5px;">${label}</span>
+                                <span class="text-white fw-bold mt-1">${v} <span class="text-secondary fw-normal" style="font-size:0.7rem;">${unit}</span></span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // AI Results
+            document.getElementById('det-summary').innerText = output.summary || "Sin resumen.";
+
+            // Metrics
+            const bc = output.body_composition || {};
+            document.getElementById('det-metrics').innerHTML = `
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.body_fat_percent || '--'}%</div><div class="metric-label">Grasa</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.muscle_mass_percent || '--'}%</div><div class="metric-label">Músculo</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.lean_mass_kg || '--'} kg</div><div class="metric-label">Masa Magra</div></div></div>
+                <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-value">${bc.fat_mass_kg || '--'} kg</div><div class="metric-label">Masa Grasa</div></div></div>
+            `;
+
+            // TMB & TDEE
+            const en = output.energy_expenditure || {};
+            document.getElementById('det-tmb').innerText = en.tmb ? `${en.tmb} kcal` : "--";
+            const tdeeList = document.getElementById('det-tdee');
+            tdeeList.innerHTML = '';
+            if (en.tdee) {
+                const tdeeLabels = { "sedentary": "Sedentario", "light": "Ligero (1-3 días)", "moderate": "Moderado (3-5 días)", "strong": "Fuerte (6-7 días)", "very_strong": "Muy fuerte", "active": "Activo", "lightly_active": "Ligeramente Activo", "moderately_active": "Moderadamente Activo", "extra_active": "Extra Activo" };
+                for (const [lvl, cal] of Object.entries(en.tdee)) {
+                    const normLvl = lvl.toLowerCase();
+                    const label = tdeeLabels[normLvl] || DICT.activity[normLvl] || lvl;
+                    const isSelected = en.selected_activity === lvl;
+                    const labelClass = isSelected ? "text-white fw-bold" : "text-secondary";
+                    const valueClass = isSelected ? "text-warning fw-bold" : "text-light";
+                    const bgClass = isSelected ? "bg-dark border border-warning rounded shadow-sm py-2 px-2 my-2" : "py-1 px-2";
+                    const checkIcon = isSelected ? '<i class="fas fa-check-circle text-warning me-2"></i>' : '';
+                    tdeeList.innerHTML += `<li class="d-flex justify-content-between align-items-center ${bgClass}"><span class="${labelClass}">${checkIcon}${label}</span><span class="${valueClass} font-monospace">${cal} kcal</span></li>`;
+                }
+            } else {
+                tdeeList.innerHTML = '<li class="text-muted fst-italic">No disponible</li>';
+            }
+
+            // Props
+            let props = output.body_proportions;
+            if (!props && output.proportions) {
+                props = { symmetry_analysis: output.proportions.symmetry_notes, waist_to_height_ratio: output.proportions.waist_to_height, waist_to_hip_ratio: output.proportions.waist_to_hip };
+            }
+            const pDiv = document.getElementById('det-props');
+            if (props) {
+                pDiv.innerHTML = `<p class="mb-2 fst-italic text-info">${props.symmetry_analysis || ''}</p><div class="d-flex gap-3 text-white"><span>Cintura/Altura: <strong>${props.waist_to_height_ratio || '--'}</strong></span><span>Cintura/Cadera: <strong>${props.waist_to_hip_ratio || '--'}</strong></span></div>`;
+            } else { pDiv.innerHTML = '<span class="text-muted">No disponible</span>'; }
+
+            // Recs
+            const recList = document.getElementById('det-recs');
+            recList.innerHTML = '';
+            const recs = output.recommendations?.actions || [];
+            if (recs.length > 0) { recs.forEach(r => recList.innerHTML += `<li class="list-group-item bg-transparent text-white border-0 px-0 py-1"><i class="fas fa-check text-success me-2"></i>${r}</li>`); }
+            else { recList.innerHTML = '<li class="text-muted small">Sin recomendaciones.</li>'; }
+
+            // Photo Feedback
+            const pf = output.photo_feedback;
+            const pfContainer = document.getElementById('det-photo-feedback');
+            if (!pf) { pfContainer.innerHTML = '<span class="text-muted">No hay feedback específico.</span>'; }
+            else if (Array.isArray(pf)) { let html = '<ul class="list-unstyled mb-0">'; pf.forEach(p => html += `<li class="mb-1"><i class="fas fa-comment-dots text-warning me-2 small"></i>${p}</li>`); html += '</ul>'; pfContainer.innerHTML = html; }
+            else { pfContainer.innerHTML = pf.toString().replace(/\n/g, '<br>'); }
+
+            // --- POPULATE EDIT FORM ---
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('edit-goal').value = (input.goal || 'general').toLowerCase();
+            document.getElementById('edit-activity').value = (input.activity_level || 'moderate').toLowerCase();
+            document.getElementById('edit-age').value = input.age || '';
+            document.getElementById('edit-sex').value = (input.sex || 'male').toLowerCase();
+            document.getElementById('edit-notes').value = input.notes || '';
+            document.getElementById('edit-backend').value = data.backend || '';
+            document.getElementById('edit-input-json').value = JSON.stringify(input || {}, null, 2);
+            document.getElementById('edit-output-json').value = JSON.stringify(output || {}, null, 2);
+            document.getElementById('edit-meta-json').value = JSON.stringify({
+                created_at: data.created_at || null,
+                updated_at: data.updated_at || null
+            }, null, 2);
+            document.getElementById('edit-use-json').checked = false;
+
+            // Edit Measurements
+            const editMeasContainer = document.getElementById('edit-measurements-container');
+            editMeasContainer.innerHTML = '';
+            // We use the same keys as displayed or all possible? ideally all keys present in input.measurements
+            if (m) {
+                for (const [k, v] of Object.entries(m)) {
+                    if (k === 'unit_system') continue;
+                    // We try to use a nice label if available, else key
+                    const label = DICT.measures[k] || k;
+                    editMeasContainer.innerHTML += `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label text-secondary small" style="font-size:0.7em">${label}</label>
+                            <input type="number" step="0.1" class="form-control form-control-sm bg-dark text-white border-secondary edit-measurement-input" data-key="${k}" value="${v}">
+                        </div>
+                     `;
+                }
+            }
+
+            // Edit Output
+            document.getElementById('edit-summary').value = output.summary || '';
+            document.getElementById('edit-bf').value = bc.body_fat_percent || '';
+            document.getElementById('edit-muscle').value = bc.muscle_mass_percent || '';
+
+            const enEdit = output.energy_expenditure || {};
+            document.getElementById('edit-tmb').value = enEdit.tmb || '';
+
+            const recsEdit = output.recommendations?.actions || [];
+            document.getElementById('edit-recs').value = recsEdit.join('\n');
+        }
+
+        async function saveChanges() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) return alert("No hay evaluaci?n seleccionada");
+
+            const currentItem = historyData.find(d => d.id === id);
+            if (!currentItem) return alert("Error de consistencia de datos");
+
+            const useJson = document.getElementById('edit-use-json').checked;
+            const inputJsonText = (document.getElementById('edit-input-json').value || '').trim();
+            const outputJsonText = (document.getElementById('edit-output-json').value || '').trim();
+            const metaJsonText = (document.getElementById('edit-meta-json').value || '').trim();
+
+            let finalInput = null;
+            let finalOutput = null;
+            let metaObj = null;
+
+            if (useJson) {
+                if (!inputJsonText || !outputJsonText) {
+                    return alert("Debes completar ambos JSON para guardar en modo JSON");
+                }
+                try {
+                    finalInput = JSON.parse(inputJsonText);
+                } catch (e) {
+                    return alert("Input JSON inv?lido: " + e.message);
+                }
+                try {
+                    finalOutput = JSON.parse(outputJsonText);
+                } catch (e) {
+                    return alert("Output JSON inv?lido: " + e.message);
+                }
+                if (metaJsonText) {
+                    try {
+                        metaObj = JSON.parse(metaJsonText);
+                    } catch (e) {
+                        return alert("Meta JSON inv?lido: " + e.message);
+                    }
+                }
+            }
+
+            if (!finalInput || !finalOutput) {
+                const inputUpdate = {
+                    goal: document.getElementById('edit-goal').value,
+                    activity_level: document.getElementById('edit-activity').value,
+                    age: parseInt(document.getElementById('edit-age').value) || 0,
+                    sex: document.getElementById('edit-sex').value,
+                    notes: document.getElementById('edit-notes').value,
+                    measurements: { ...(currentItem.input?.measurements || {}) }
+                };
+
+                document.querySelectorAll('.edit-measurement-input').forEach(inp => {
+                    if (inp.value) inputUpdate.measurements[inp.dataset.key] = parseFloat(inp.value);
+                });
+
+                const outputUpdate = {
+                    summary: document.getElementById('edit-summary').value,
+                    body_composition: {
+                        ...(currentItem.output?.body_composition || {}),
+                        body_fat_percent: parseFloat(document.getElementById('edit-bf').value) || 0,
+                        muscle_mass_percent: parseFloat(document.getElementById('edit-muscle').value) || 0
+                    },
+                    energy_expenditure: {
+                        ...(currentItem.output?.energy_expenditure || {}),
+                        tmb: parseFloat(document.getElementById('edit-tmb').value) || 0
+                    },
+                    recommendations: {
+                        ...(currentItem.output?.recommendations || {}),
+                        actions: document.getElementById('edit-recs').value.split('\n').filter(l => l.trim().length > 0)
+                    }
+                };
+
+                finalInput = { ...(currentItem.input || {}), ...inputUpdate };
+                finalOutput = { ...(currentItem.output || {}), ...outputUpdate };
+                finalOutput.body_composition = outputUpdate.body_composition;
+                finalOutput.energy_expenditure = outputUpdate.energy_expenditure;
+                finalOutput.recommendations = outputUpdate.recommendations;
+            }
+
+            const backendValue = document.getElementById('edit-backend').value || currentItem.backend || '';
+
+            try {
+                const btn = document.querySelector('#editForm button.btn-primary');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+
+                const resp = await fetch('/api/admin/body_assessments/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id,
+                        backend: backendValue,
+                        input: finalInput,
+                        output: finalOutput,
+                        meta: metaObj
+                    })
+                });
+
+                if (!resp.ok) throw new Error("Error updating");
+
+                currentItem.input = finalInput;
+                currentItem.output = finalOutput;
+                currentItem.backend = backendValue;
+                if (metaObj && typeof metaObj === 'object') {
+                    if (metaObj.created_at) currentItem.created_at = metaObj.created_at;
+                    if (metaObj.updated_at) currentItem.updated_at = metaObj.updated_at;
+                }
+
+                alert("Evaluaci?n actualizada correctamente.");
+                showDetail(currentItem);
+
+                const viewTab = document.getElementById('view-tab');
+                if (viewTab) {
+                    const tab = new bootstrap.Tab(viewTab);
+                    tab.show();
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            } finally {
+                const btn = document.querySelector('#editForm button.btn-primary');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Cambios';
+                }
+            }
+        }
+
+        async function deleteAssessment() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) return alert("No hay evaluaci?n seleccionada");
+            if (!confirm("?Eliminar esta evaluaci?n? Esta acci?n no se puede deshacer.")) return;
+
+            try {
+                const resp = await fetch('/api/admin/body_assessments/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+
+                if (!resp.ok) throw new Error("Error eliminando");
+
+                historyData = historyData.filter(d => d.id !== id);
+                renderHistory(historyData);
+
+                if (historyData.length === 0) {
+                    const detailContainer = document.getElementById('detail-container');
+                    const emptyState = document.getElementById('empty-state');
+                    detailContainer.classList.add('d-none');
+                    emptyState.classList.remove('d-none');
+                    emptyState.classList.add('d-flex');
+                }
+
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        const zoomModal = new bootstrap.Modal(document.getElementById('imageZoomModal'));
+        window.openZoom = function (src) {
+            document.getElementById('zoomedImage').src = src;
+            zoomModal.show();
+        }
+    

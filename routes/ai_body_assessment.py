@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, render_template
 import os
 import base64
 from datetime import datetime
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 from bson import ObjectId
 import cloudinary
@@ -13,7 +14,8 @@ from extensions import logger
 from utils.helpers import normalize_measurements, sanitize_photos
 from utils.db_helpers import log_agent_execution
 from utils.auth_helpers import check_admin_access
-from ai_agents.body_assessment_agent import BodyAssessmentAgent
+from ai_agents.body_metrics_agent import BodyMetricsAgent
+from ai_agents.photo_assessment_agent import PhotoAssessmentAgent
 from utils.id_helpers import normalize_user_id, maybe_object_id
 
 # Configuracion Cloudinary
@@ -58,6 +60,177 @@ def _cloudinary_public_id_from_url(url: str):
         parts[-1] = last.rsplit(".", 1)[0]
     public_id = "/".join([p for p in parts if p])
     return public_id or None
+
+
+class _PayloadError(Exception):
+    def __init__(self, message: str, status_code: int = 400) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def _parse_body_assessment_request(allow_images: bool, upload_images: bool):
+    """Parse payload and optional images from request."""
+    images_for_agent = None
+    payload = None
+    total_photo_bytes = 0
+
+    content_type = request.headers.get("Content-Type", "")
+    if "multipart/form-data" in content_type.lower():
+        payload_str = request.form.get("payload")
+        if not payload_str:
+            raise _PayloadError("Falta el campo 'payload' con JSON", 400)
+        try:
+            import json as _json
+            payload = _json.loads(payload_str)
+        except Exception:
+            raise _PayloadError("'payload' no es JSON valido", 400)
+
+        photos_meta = payload.get("photos") if isinstance(payload, dict) else None
+        if isinstance(photos_meta, list) and len(photos_meta) > MAX_PHOTOS_PER_ASSESSMENT:
+            raise _PayloadError(f"Maximo {MAX_PHOTOS_PER_ASSESSMENT} fotos permitidas.", 413)
+
+        if allow_images and isinstance(photos_meta, list):
+            img_list = []
+            for ph in photos_meta:
+                if not isinstance(ph, dict):
+                    continue
+                file_key = ph.get("file_key")
+                if not file_key:
+                    continue
+                file_storage = request.files.get(file_key)
+                if not file_storage:
+                    continue
+                try:
+                    raw = file_storage.read()
+                    if not raw:
+                        continue
+                    if len(raw) > MAX_PHOTO_BYTES:
+                        raise _PayloadError("Imagen demasiado grande. Maximo 5MB por foto.", 413)
+                    total_photo_bytes += len(raw)
+                    if total_photo_bytes > MAX_TOTAL_PHOTO_BYTES:
+                        raise _PayloadError("Total de imagenes demasiado grande. Maximo 20MB.", 413)
+
+                    file_storage.seek(0)
+
+                    b64 = base64.b64encode(raw).decode("utf-8")
+                    mime = file_storage.mimetype or "image/jpeg"
+                    img_list.append({"data": b64, "mime": mime, "view": ph.get("view")})
+
+                    if upload_images:
+                        if os.getenv("CLOUDINARY_CLOUD_NAME"):
+                            try:
+                                file_storage.seek(0)
+                                user_folder_id = payload.get("user_id") or "unknown"
+                                date_folder = datetime.now().strftime("%Y%m%d")
+                                upload_result = cloudinary.uploader.upload(
+                                    file_storage,
+                                    folder=f"ia_fitness/body_assessments/{user_folder_id}/{date_folder}",
+                                    resource_type="image",
+                                )
+                                secure_url = upload_result.get("secure_url")
+                                if secure_url:
+                                    ph["url"] = secure_url
+                            except Exception as cloud_err:
+                                logger.error(f"Error subiendo a Cloudinary: {cloud_err}")
+                        else:
+                            logger.warning("Cloudinary no configurado. No se subiran imagenes.")
+                finally:
+                    try:
+                        file_storage.close()
+                    except Exception:
+                        pass
+            if img_list:
+                images_for_agent = img_list
+    else:
+        payload = request.get_json(silent=True) or {}
+
+    return payload, images_for_agent
+
+
+def _build_context(payload):
+    measurements_raw = (payload or {}).get("measurements")
+    if not isinstance(measurements_raw, dict):
+        raise _PayloadError("'measurements' debe ser un objeto con las medidas", 400)
+
+    measurements = normalize_measurements(measurements_raw)
+    context = {
+        "user_id": normalize_user_id((payload or {}).get("user_id")),
+        "sex": ((payload or {}).get("sex") or "male").lower(),
+        "age": (payload or {}).get("age"),
+        "goal": (payload or {}).get("goal"),
+        "activity_level": (payload or {}).get("activity_level"),
+        "measurements": measurements,
+        "photos": sanitize_photos((payload or {}).get("photos")),
+        "notes": (payload or {}).get("notes"),
+        "admin_internal_notes": (payload or {}).get("admin_internal_notes"),
+        "admin_user_notes": (payload or {}).get("admin_user_notes"),
+        "manual_adjustments": (payload or {}).get("manual_adjustments"),
+    }
+    return context
+
+
+def _combine_backends(metrics_backend: str, photo_backend: Optional[str]) -> str:
+    if not photo_backend:
+        return metrics_backend or "unknown"
+    if metrics_backend == photo_backend:
+        return metrics_backend
+    return f"{metrics_backend}+{photo_backend}"
+
+
+def _merge_outputs(metrics_output: Dict[str, Any], photo_output: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    combined = dict(metrics_output or {})
+    if not photo_output:
+        combined.setdefault("photo_feedback", [])
+        return combined
+
+    if photo_output.get("photo_feedback") is not None:
+        combined["photo_feedback"] = photo_output.get("photo_feedback")
+
+    if photo_output.get("proportions") and photo_output["proportions"].get("symmetry_notes"):
+        proportions = combined.get("proportions") or {}
+        proportions["symmetry_notes"] = photo_output["proportions"]["symmetry_notes"]
+        combined["proportions"] = proportions
+
+        body_props = combined.get("body_proportions") or {}
+        body_props["symmetry_analysis"] = photo_output["proportions"]["symmetry_notes"]
+        combined["body_proportions"] = body_props
+
+    return combined
+
+
+def _persist_body_assessment(context: Dict[str, Any], result: Dict[str, Any], backend: str) -> None:
+    try:
+        if extensions.db is not None and context.get("user_id"):
+            created_at = datetime.utcnow()
+            extensions.db.body_assessments.insert_one(
+                {
+                    "user_id": context.get("user_id"),
+                    "backend": backend,
+                    "input": context,
+                    "output": result,
+                    "created_at": created_at,
+                }
+            )
+
+            meas = (context or {}).get("measurements") or {}
+            weight_kg = meas.get("weight_kg") or meas.get("weight")
+            body_fat = None
+            out = result or {}
+            bc = out.get("body_composition") or {}
+            if bc.get("body_fat_percent"):
+                body_fat = bc.get("body_fat_percent")
+            elif out.get("body_fat_percent"):
+                body_fat = out.get("body_fat_percent")
+            elif meas.get("body_fat_percent"):
+                body_fat = meas.get("body_fat_percent")
+            elif meas.get("body_fat"):
+                body_fat = meas.get("body_fat")
+
+            if weight_kg is not None or body_fat is not None:
+                # Logs for legacy tracking optional, but we stop writing to deprecated collection 'progress'
+                pass
+    except Exception as persist_err:
+        logger.warning(f"No se pudo guardar evaluacion corporal: {persist_err}")
 
 
 def _get_assessment_defaults(user_id):
@@ -163,145 +336,84 @@ def body_assessment_unified():
 @ai_body_assessment_bp.post("/ai/body_assessment")
 def ai_body_assessment():
     try:
-        images_for_agent = None
-        payload = None
-        total_photo_bytes = 0
+        payload, images_for_agent = _parse_body_assessment_request(allow_images=True, upload_images=True)
+        context = _build_context(payload)
 
-        content_type = request.headers.get("Content-Type", "")
-        if "multipart/form-data" in content_type.lower():
-            payload_str = request.form.get("payload")
-            if not payload_str:
-                return jsonify({"error": "Falta el campo 'payload' con JSON"}), 400
-            try:
-                import json as _json
+        metrics_agent = BodyMetricsAgent()
+        log_agent_execution("start", "BodyMetricsAgent", metrics_agent, context, {"endpoint": "/ai/body_assessment"})
+        metrics_output = metrics_agent.run(context)
+        log_agent_execution("end", "BodyMetricsAgent", metrics_agent, context, {"endpoint": "/ai/body_assessment"})
 
-                payload = _json.loads(payload_str)
-            except Exception:
-                return jsonify({"error": "'payload' no es JSON valido"}), 400
+        photo_agent = PhotoAssessmentAgent()
+        log_agent_execution("start", "PhotoAssessmentAgent", photo_agent, context, {"endpoint": "/ai/body_assessment"})
+        photo_output = photo_agent.run(context, images=images_for_agent)
+        log_agent_execution("end", "PhotoAssessmentAgent", photo_agent, context, {"endpoint": "/ai/body_assessment"})
+        photo_backend = photo_agent.backend()
 
-            photos_meta = payload.get("photos") if isinstance(payload, dict) else None
-            if isinstance(photos_meta, list) and len(photos_meta) > MAX_PHOTOS_PER_ASSESSMENT:
-                return jsonify({"error": f"Maximo {MAX_PHOTOS_PER_ASSESSMENT} fotos permitidas."}), 413
-            img_list = []
-            if isinstance(photos_meta, list):
-                for ph in photos_meta:
-                    if not isinstance(ph, dict):
-                        continue
-                    file_key = ph.get("file_key")
-                    if not file_key:
-                        continue
-                    file_storage = request.files.get(file_key)
-                    if not file_storage:
-                        continue
-                    try:
-                        # Leer bytes para base64 (agente)
-                        raw = file_storage.read()
-                        if not raw:
-                            continue
-                        if len(raw) > MAX_PHOTO_BYTES:
-                            return jsonify({"error": "Imagen demasiado grande. Maximo 5MB por foto."}), 413
-                        total_photo_bytes += len(raw)
-                        if total_photo_bytes > MAX_TOTAL_PHOTO_BYTES:
-                            return jsonify({"error": "Total de imagenes demasiado grande. Maximo 20MB."}), 413
-
-                        # Reset pointer para posible subida o relectura
-                        file_storage.seek(0)
-
-                        # 1. Base64 para el Agente (procesamiento inmediato)
-                        b64 = base64.b64encode(raw).decode("utf-8")
-                        mime = file_storage.mimetype or "image/jpeg"
-                        img_list.append({"data": b64, "mime": mime, "view": ph.get("view")})
-
-                        # 2. Subida a Cloudinary (persistencia)
-                        if os.getenv("CLOUDINARY_CLOUD_NAME"):
-                            try:
-                                file_storage.seek(0)
-                                user_folder_id = payload.get("user_id") or "unknown"
-                                date_folder = datetime.now().strftime("%Y%m%d")
-                                upload_result = cloudinary.uploader.upload(
-                                    file_storage,
-                                    folder=f"ia_fitness/body_assessments/{user_folder_id}/{date_folder}",
-                                    resource_type="image",
-                                )
-                                secure_url = upload_result.get("secure_url")
-                                if secure_url:
-                                    ph["url"] = secure_url
-                            except Exception as cloud_err:
-                                logger.error(f"Error subiendo a Cloudinary: {cloud_err}")
-                        else:
-                            logger.warning("Cloudinary no configurado. No se subiran imagenes.")
-
-                    finally:
-                        try:
-                            file_storage.close()
-                        except Exception:
-                            pass
-            if img_list:
-                images_for_agent = img_list
-        else:
-            payload = request.get_json(silent=True) or {}
-
-        measurements_raw = (payload or {}).get("measurements")
-        if not isinstance(measurements_raw, dict):
-            return jsonify({"error": "'measurements' debe ser un objeto con las medidas"}), 400
-
-        measurements = normalize_measurements(measurements_raw)
-        context = {
-            "user_id": normalize_user_id((payload or {}).get("user_id")),
-            "sex": ((payload or {}).get("sex") or "male").lower(),
-            "age": (payload or {}).get("age"),
-            "goal": (payload or {}).get("goal"),
-            "activity_level": (payload or {}).get("activity_level"),
-            "measurements": measurements,
-            "photos": sanitize_photos((payload or {}).get("photos")),
-            "notes": (payload or {}).get("notes"),
-            "admin_internal_notes": (payload or {}).get("admin_internal_notes"),
-            "admin_user_notes": (payload or {}).get("admin_user_notes"),
-            "manual_adjustments": (payload or {}).get("manual_adjustments"),
-        }
-
-        agent = BodyAssessmentAgent()
-        log_agent_execution("start", "BodyAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment"})
-        result = agent.run(context, images=images_for_agent)
-        log_agent_execution("end", "BodyAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment"})
-        try:
-            if extensions.db is not None and context.get("user_id"):
-                created_at = datetime.utcnow()
-                extensions.db.body_assessments.insert_one(
-                    {
-                        "user_id": context.get("user_id"),
-                        "backend": agent.backend(),
-                        "input": context,
-                        "output": result,
-                        "created_at": created_at,
-                    }
-                )
-
-                # Mirror essential metrics into progress for consistency
-                meas = (context or {}).get("measurements") or {}
-                weight_kg = meas.get("weight_kg") or meas.get("weight")
-                body_fat = None
-                out = result or {}
-                bc = out.get("body_composition") or {}
-                if bc.get("body_fat_percent"):
-                    body_fat = bc.get("body_fat_percent")
-                elif out.get("body_fat_percent"):
-                    body_fat = out.get("body_fat_percent")
-                elif meas.get("body_fat_percent"):
-                    body_fat = meas.get("body_fat_percent")
-                elif meas.get("body_fat"):
-                    body_fat = meas.get("body_fat")
-
-                if weight_kg is not None or body_fat is not None:
-                    # Logs for legacy tracking optional, but we stop writing to deprecated collection 'progress'
-                    pass
-        except Exception as persist_err:
-            logger.warning(f"No se pudo guardar evaluacion corporal: {persist_err}")
-
-        return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+        result = _merge_outputs(metrics_output, photo_output)
+        backend = _combine_backends(metrics_agent.backend(), photo_backend)
+        _persist_body_assessment(context, result, backend)
+        return jsonify({"backend": backend, "input": context, "output": result}), 200
+    except _PayloadError as e:
+        return jsonify({"error": str(e)}), e.status_code
     except Exception as e:
         logger.error(f"Error generando evaluacion corporal: {e}", exc_info=True)
         return jsonify({"error": "Error interno al generar evaluacion corporal"}), 500
+
+
+@ai_body_assessment_bp.post("/ai/body_assessment/metrics")
+def ai_body_assessment_metrics():
+    try:
+        payload, _ = _parse_body_assessment_request(allow_images=False, upload_images=False)
+        context = _build_context(payload)
+
+        agent = BodyMetricsAgent()
+        log_agent_execution("start", "BodyMetricsAgent", agent, context, {"endpoint": "/ai/body_assessment/metrics"})
+        result = agent.run(context)
+        log_agent_execution("end", "BodyMetricsAgent", agent, context, {"endpoint": "/ai/body_assessment/metrics"})
+
+        return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+    except _PayloadError as e:
+        return jsonify({"error": str(e)}), e.status_code
+    except Exception as e:
+        logger.error(f"Error generando metricas corporales: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al generar metricas"}), 500
+
+
+@ai_body_assessment_bp.post("/ai/body_assessment/photos")
+def ai_body_assessment_photos():
+    try:
+        payload, images_for_agent = _parse_body_assessment_request(allow_images=True, upload_images=True)
+        context = _build_context(payload)
+
+        agent = PhotoAssessmentAgent()
+        log_agent_execution("start", "PhotoAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment/photos"})
+        result = agent.run(context, images=images_for_agent)
+        log_agent_execution("end", "PhotoAssessmentAgent", agent, context, {"endpoint": "/ai/body_assessment/photos"})
+
+        return jsonify({"backend": agent.backend(), "input": context, "output": result}), 200
+    except _PayloadError as e:
+        return jsonify({"error": str(e)}), e.status_code
+    except Exception as e:
+        logger.error(f"Error generando analisis de fotos: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al analizar fotos"}), 500
+
+
+@ai_body_assessment_bp.post("/ai/body_assessment/record")
+def ai_body_assessment_record():
+    try:
+        payload = request.get_json(silent=True) or {}
+        backend = payload.get("backend") or "unknown"
+        context = payload.get("input")
+        output = payload.get("output")
+        if not isinstance(context, dict) or not isinstance(output, dict):
+            return jsonify({"error": "Se requieren 'input' y 'output' validos"}), 400
+
+        _persist_body_assessment(context, output, backend)
+        return jsonify({"stored": True}), 200
+    except Exception as e:
+        logger.error(f"Error guardando evaluacion corporal: {e}", exc_info=True)
+        return jsonify({"error": "Error interno al guardar evaluacion"}), 500
 
 
 @ai_body_assessment_bp.get("/ai/body_assessment/history/view/<user_id>")
@@ -345,12 +457,15 @@ def get_body_assessment_history(user_id):
         history = []
         for doc in cursor:
             created = doc.get("created_at")
+            updated = doc.get("updated_at")
             str_date = created.strftime("%Y-%m-%d %H:%M") if created else "Fecha desconocida"
 
             history.append(
                 {
                     "id": str(doc.get("_id")),
                     "date": str_date,
+                    "created_at": created.isoformat() if created else None,
+                    "updated_at": updated.isoformat() if updated else None,
                     "output": doc.get("output"),
                     "backend": doc.get("backend"),
                     "input": doc.get("input"),

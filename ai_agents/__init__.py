@@ -5,8 +5,10 @@ Incluye:
   nutrición y entrenamiento.
 - :class:`~ai_agents.meal_plan_agent.MealPlanAgent` para planes diarios de
   comidas.
-- :class:`~ai_agents.body_assessment_agent.BodyAssessmentAgent` para
-  evaluaciones corporales basadas en medidas y fotos.
+- :class:`~ai_agents.body_metrics_agent.BodyMetricsAgent` para
+  evaluaciones corporales basadas en medidas.
+- :class:`~ai_agents.photo_assessment_agent.PhotoAssessmentAgent` para
+  analisis de fotos corporales.
 
 Cada agente puede trabajar con OpenAI (si hay ``OPENAI_API_KEY``) o con un
 backend mock determinístico para pruebas locales.

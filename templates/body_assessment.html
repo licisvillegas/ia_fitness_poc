@@ -1329,21 +1329,33 @@
         document.getElementById('result-container').style.display = 'none';
 
         try {
-          formData.append("payload", JSON.stringify(payload));
-          const response = await fetch("/ai/body_assessment", {
+          const metricsResp = await fetch("/ai/body_assessment/metrics", {
             method: "POST",
-            body: formData,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
           });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "Error al generar la evaluación");
+          const metricsData = await metricsResp.json();
+          if (!metricsResp.ok) {
+            throw new Error(metricsData.error || "Error al generar metricas");
           }
 
-          // Use shared render function
-          renderAssessmentResult(data);
+          let photoData = null;
+          const hasPhotos = payload.photos.length > 0;
+          if (hasPhotos) {
+            formData.append("payload", JSON.stringify(payload));
+            const photoResp = await fetch("/ai/body_assessment/photos", {
+              method: "POST",
+              body: formData,
+            });
+            photoData = await photoResp.json();
+            if (!photoResp.ok) {
+              throw new Error(photoData.error || "Error al analizar fotos");
+            }
+          }
 
+          const combined = mergeAssessmentOutputs(metricsData, photoData);
+          renderAssessmentResult(combined);
+          await persistAssessment(combined);
         } catch (e) {
           console.error(e);
           showAlertModal("Error", e.message, "danger");
@@ -1352,7 +1364,47 @@
           loadingIndicator.classList.remove("d-flex");
           submitBtn.disabled = false;
         }
-      });
+        });
+
+        function mergeAssessmentOutputs(metricsData, photoData) {
+            const combined = {
+                backend: metricsData.backend || "unknown",
+                input: metricsData.input || {},
+                output: Object.assign({}, metricsData.output || {}),
+            };
+
+            if (photoData && photoData.output) {
+                if (photoData.input && photoData.input.photos) {
+                    combined.input.photos = photoData.input.photos;
+                }
+                if (photoData.output.photo_feedback !== undefined) {
+                    combined.output.photo_feedback = photoData.output.photo_feedback;
+                }
+                if (photoData.output.proportions && photoData.output.proportions.symmetry_notes) {
+                    combined.output.proportions = combined.output.proportions || {};
+                    combined.output.proportions.symmetry_notes = photoData.output.proportions.symmetry_notes;
+                    combined.output.body_proportions = combined.output.body_proportions || {};
+                    combined.output.body_proportions.symmetry_analysis = photoData.output.proportions.symmetry_notes;
+                }
+                if (photoData.backend) {
+                    combined.backend = combined.backend + "+" + photoData.backend;
+                }
+            } else if (combined.output.photo_feedback === undefined) {
+                combined.output.photo_feedback = [];
+            }
+
+            return combined;
+        }
+
+        function persistAssessment(combined) {
+            return fetch("/ai/body_assessment/record", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(combined),
+            }).catch((err) => {
+                console.warn("No se pudo guardar la evaluacion:", err);
+            });
+        }
 
       // --- Rendering Logic ---
       function renderAssessmentResult(data) {

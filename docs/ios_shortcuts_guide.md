@@ -37,15 +37,34 @@ Agrega las siguientes acciones buscándolas en el menú inferior:
 3.  Filtro: Fecha es hoy.
 4.  Límite: Obtener último (Get 1 sample), Ordenar por: Fecha (Newest First).
 
-## Paso 3: Construir el JSON
+## Paso 3: Construir el JSON (Detallado)
 
+Aquí crearemos la estructura de datos para enviar. iOS Shortcuts maneja esto usando acciones de "Diccionario". Necesitamos crear un diccionario dentro de otro para la estructura `metrics`.
+
+### 3.1. Crear el Diccionario de Métricas (Interno)
 1.  Busca la acción **"Diccionario"** (Dictionary).
-2.  Agrega las siguientes claves:
-    *   **Clave:** `user_id` -> **Texto:** `TU_ID_DE_USUARIO_AQUI` (Ej: 65a...)
-    *   **Clave:** `metrics` -> **Diccionario** (Nested Dictionary).
-        *   Dentro de `metrics`, agrega:
-            *   `steps`: Selecciona la **Variable Mágica** del resultado de la suma de pasos.
-            *   `heart_rate`: Selecciona la **Variable Mágica** del valor de ritmo cardíaco.
+2.  Agrega un nuevo ítem (+):
+    *   **Clave (Key):** `steps` (texto exacto).
+    *   **Valor (Value):** Toca el campo de valor y selecciona la **Variable Mágica** (varita mágica) que corresponde al *Resultado del cálculo* de los pasos (del Paso 2).
+3.  Agrega otro ítem (+):
+    *   **Clave (Key):** `heart_rate` (texto exacto).
+    *   **Valor (Value):** Selecciona la **Variable Mágica** de la muestra de ritmo cardíaco.
+4.  *(Opcional)* Agrega `active_energy` si recolectaste calorías.
+
+### 3.2. Crear el Diccionario Principal (Externo)
+1.  Agrega **OTRA** acción **"Diccionario"** debajo de la anterior.
+2.  Agrega un nuevo ítem (+):
+    *   **Clave:** `user_id`
+    *   **Valor (Texto):** Pega aquí tu ID de usuario de Synapse Fit (ej: `65a...`).
+3.  Agrega otro ítem (+):
+    *   **Clave:** `metrics`
+    *   **Valor:** Toca el campo, selecciona **Variable Mágica** y elige el **"Diccionario"** que creaste en el paso 3.1 (el primero).
+4.  Agrega otro ítem (+):
+    *   **Clave:** `source`
+    *   **Valor (Texto):** `apple_health_shortcut`
+
+**Resultado Visual en Atajos:**
+Deberías tener dos bloques de diccionario. El segundo bloque hace referencia al primero.
 
 ## Paso 4: Enviar al Servidor
 

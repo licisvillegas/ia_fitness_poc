@@ -4,7 +4,8 @@ from extensions import logger
 from utils.db_helpers import log_agent_execution
 from ai_agents.reasoning_agent import ReasoningAgent
 from ai_agents.reasoning_agent import ReasoningAgent as LegacyReasoningAgent
-from ai_agents.body_assessment_agent import BodyAssessmentAgent
+from ai_agents.body_metrics_agent import BodyMetricsAgent
+from ai_agents.photo_assessment_agent import PhotoAssessmentAgent
 from ai_agents.meal_plan_agent import MealPlanAgent
 
 ai_diagnostics_bp = Blueprint("ai_diagnostics", __name__)
@@ -26,7 +27,8 @@ def ai_agents_diagnostics():
         agents = [
             ("ReasoningAgent", ReasoningAgent(), reasoning_payload),
             ("ReasoningAgentLegacy", LegacyReasoningAgent(), reasoning_payload),
-            ("BodyAssessmentAgent", BodyAssessmentAgent(), body_payload),
+            ("BodyMetricsAgent", BodyMetricsAgent(), body_payload),
+            ("PhotoAssessmentAgent", PhotoAssessmentAgent(), body_payload),
             ("MealPlanAgent", MealPlanAgent(), meal_payload),
         ]
 

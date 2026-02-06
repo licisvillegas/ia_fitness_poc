@@ -1828,3 +1828,103 @@ def admin_notifications_broadcast():
              result_summary["push_error_msg"] = str(e)
 
     return jsonify(result_summary), 200
+
+@admin_bp.post("/api/admin/body_assessments/update")
+def update_body_assessment():
+    """Actualiza una evaluacion corporal (input/output) manualmente."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    
+    try:
+        data = request.get_json() or {}
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        
+        doc_id = data.get("id")
+        if not doc_id:
+            return jsonify({"error": "ID requerido"}), 400
+            
+        try:
+            oid = ObjectId(doc_id)
+        except:
+            return jsonify({"error": "ID invalido"}), 400
+            
+        # Obtenemos el update data
+        new_input = data.get("input")
+        new_output = data.get("output")
+        new_backend = data.get("backend")
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else None
+        
+        setter = {"updated_at": datetime.utcnow()}
+        if new_input and isinstance(new_input, dict):
+            setter["input"] = new_input
+        if new_output and isinstance(new_output, dict):
+            setter["output"] = new_output
+        if new_backend is not None:
+            setter["backend"] = new_backend
+
+        if meta:
+            def _parse_dt(val):
+                if not val:
+                    return None
+                if isinstance(val, datetime):
+                    return val
+                try:
+                    text = str(val).strip()
+                    if text.endswith("Z"):
+                        text = text[:-1] + "+00:00"
+                    return datetime.fromisoformat(text)
+                except Exception:
+                    return None
+
+            created_at = _parse_dt(meta.get("created_at"))
+            updated_at = _parse_dt(meta.get("updated_at"))
+            if meta.get("created_at") is not None and not created_at:
+                return jsonify({"error": "created_at invalido (ISO 8601)"}), 400
+            if meta.get("updated_at") is not None and not updated_at:
+                return jsonify({"error": "updated_at invalido (ISO 8601)"}), 400
+            if created_at:
+                setter["created_at"] = created_at
+            if updated_at:
+                setter["updated_at"] = updated_at
+            
+        res = extensions.db.body_assessments.update_one(
+            {"_id": oid},
+            {"$set": setter}
+        )
+        
+        if res.matched_count == 0:
+            return jsonify({"error": "Evaluacion no encontrada"}), 404
+            
+        return jsonify({"message": "Evaluacion actualizada"}), 200
+    except Exception as e:
+        logger.error(f"Error updating body assessment: {e}")
+        return jsonify({"error": "Error interno"}), 500
+
+@admin_bp.post("/api/admin/body_assessments/delete")
+def delete_body_assessment():
+    """Elimina una evaluacion corporal permanentemente."""
+    ok, err = check_admin_access()
+    if not ok: return err
+    
+    try:
+        data = request.get_json() or {}
+        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        
+        doc_id = data.get("id")
+        if not doc_id:
+            return jsonify({"error": "ID requerido"}), 400
+            
+        try:
+            oid = ObjectId(doc_id)
+        except:
+            return jsonify({"error": "ID invalido"}), 400
+            
+        res = extensions.db.body_assessments.delete_one({"_id": oid})
+        
+        if res.deleted_count == 0:
+            return jsonify({"error": "Evaluacion no encontrada"}), 404
+            
+        return jsonify({"message": "Evaluacion eliminada"}), 200
+    except Exception as e:
+        logger.error(f"Error deleting body assessment: {e}")
+        return jsonify({"error": "Error interno"}), 500

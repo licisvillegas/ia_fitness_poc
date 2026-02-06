@@ -996,4 +996,32 @@
   // Defensive cleanup on load in case a backdrop gets stuck.
   setTimeout(cleanupStaleBackdrops, 300);
 
+  // Tools Carousel Toggle Logic
+  const toolsCollapse = document.getElementById("toolsCollapse");
+  const toolsCarousel = document.getElementById("toolsCarousel");
+  const toolsChevron = document.getElementById("toolsChevron");
+
+  if (toolsCollapse && toolsCarousel) {
+    toolsCollapse.addEventListener("show.bs.collapse", () => {
+      // Hide carousel when expanding
+      toolsCarousel.style.display = "none";
+      if (toolsChevron) toolsChevron.style.transform = "rotate(0deg)";
+    });
+
+    toolsCollapse.addEventListener("hide.bs.collapse", () => {
+      // Show carousel when collapsing
+      toolsCarousel.style.display = "block";
+      if (toolsChevron) toolsChevron.style.transform = "rotate(-90deg)";
+    });
+
+    // Initial state check
+    if (!toolsCollapse.classList.contains("show")) {
+      toolsCarousel.style.display = "block";
+      if (toolsChevron) toolsChevron.style.transform = "rotate(-90deg)";
+    } else {
+      toolsCarousel.style.display = "none";
+      if (toolsChevron) toolsChevron.style.transform = "rotate(0deg)";
+    }
+  }
+
 })();

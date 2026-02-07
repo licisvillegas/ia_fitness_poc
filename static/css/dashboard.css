@@ -38,11 +38,15 @@ body {
 }
 
 /* Stats Cards */
-#stats .row {
+#stats .row,
+#stats-summary .row {
   align-items: stretch;
 }
 
-#stats .col-md-3 {
+#stats .col-md-3,
+#stats-summary .col-md-3,
+#stats .col-6,
+#stats-summary .col-6 {
   display: flex;
 }
 
@@ -59,6 +63,7 @@ body {
   align-items: center;
   flex: 1;
   min-height: 160px;
+  width: 100%;
 }
 
 .stat-card:hover {

@@ -79,8 +79,8 @@
       const collapseEl = document.getElementById('assignedRoutinesCollapse');
       const isCollapsed = collapseEl && !collapseEl.classList.contains('show');
 
-      // Auto-expand if switching to Grid or Today
-      if (isCollapsed && (view === 'grid' || view === 'today')) {
+      // Auto-expand on ANY view selection (Grid, Today, or Weekly)
+      if (isCollapsed) {
         new bootstrap.Collapse(collapseEl, { show: true });
 
         // Force render for the new view
@@ -111,9 +111,8 @@
 
     if (collapseEl && summaryEl) {
       collapseEl.addEventListener('hide.bs.collapse', () => {
-        if (window.currentRoutineView === 'weekly') {
-          window.renderWeeklyCollapsedView();
-        }
+        // Always render summary on collapse for consistent UX
+        window.renderWeeklyCollapsedView();
       });
       collapseEl.addEventListener('show.bs.collapse', () => {
         summaryEl.style.display = 'none';

@@ -31,11 +31,11 @@
             const collapseEl = document.getElementById('createdRoutinesCollapse');
             const isCollapsed = collapseEl && !collapseEl.classList.contains('show');
 
-            // Auto-expand if switching to Grid or Today
-            if (isCollapsed && (view === 'grid' || view === 'today')) {
+            // Auto-expand on ANY view selection
+            if (isCollapsed) {
                 new bootstrap.Collapse(collapseEl, { show: true });
 
-                // Force render for the new view
+                // Force render
                 const summaryEl = document.getElementById('created-weekly-collapsed-summary');
                 if (summaryEl) summaryEl.style.display = 'none';
                 window.renderCreatedRoutines();
@@ -62,9 +62,10 @@
 
         if (collapseEl && summaryEl) {
             collapseEl.addEventListener('hide.bs.collapse', () => {
-                if (window.currentCreatedView === 'weekly') {
-                    window.renderCreatedWeeklyCollapsedView();
-                }
+                // When collapsing, ALWAYS show the weekly summary row so the user sees the days.
+                // This provides a consistent "Collapsed State" regardless of whether they were in Grid or Today view.
+                window.renderCreatedWeeklyCollapsedView();
+
                 // Icon toggle
                 const icon = document.querySelector('[data-bs-target="#createdRoutinesCollapse"] .active-icon');
                 if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }

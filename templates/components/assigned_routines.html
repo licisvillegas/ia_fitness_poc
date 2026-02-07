@@ -1,12 +1,31 @@
 <section id="my-routines" class="mt-5" style="display:none;">
   <div class="card bg-panel border-0 shadow">
-    <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center"
-      role="button" data-bs-toggle="collapse" data-bs-target="#assignedRoutinesCollapse" aria-expanded="true"
-      aria-controls="assignedRoutinesCollapse" style="cursor: pointer;">
-      <div><i class="fas fa-calendar-check text-cyber-green me-2"></i>Mis Rutinas Asignadas</div>
-      <i class="fas fa-chevron-up text-secondary"></i>
+    <div class="card-header border-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+      <div role="button" data-bs-toggle="collapse" data-bs-target="#assignedRoutinesCollapse" aria-expanded="false"
+        aria-controls="assignedRoutinesCollapse" style="cursor: pointer;">
+        <i class="fas fa-calendar-check text-cyber-green me-2"></i>Mis Rutinas Asignadas
+      </div>
+      <div class="d-flex gap-2">
+        <div class="btn-group btn-group-sm bg-dark border border-secondary rounded" role="group"
+          aria-label="View Switcher">
+          <button type="button" class="btn btn-outline-secondary" id="btnViewGrid" title="Vista Tarjetas">
+            <i class="fas fa-th-large"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary active" id="btnViewWeekly" title="Vista Semanal">
+            <i class="fas fa-calendar-week"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="btnViewToday" title="Solo Hoy">
+            <i class="fas fa-calendar-day"></i>
+          </button>
+        </div>
+        <i class="fas fa-chevron-down text-secondary ms-2" role="button" data-bs-toggle="collapse"
+          data-bs-target="#assignedRoutinesCollapse"></i>
+      </div>
     </div>
-    <div id="assignedRoutinesCollapse" class="collapse show">
+    <div id="weekly-collapsed-summary" class="border-secondary border-bottom p-3" style="display: none;">
+      <!-- Initials and Quick View Injected Here -->
+    </div>
+    <div id="assignedRoutinesCollapse" class="collapse">
       <div class="card-body">
         <div id="routines-list" class="row g-3">
           <!-- Rutinas inyectadas aqui -->

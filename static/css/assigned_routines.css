@@ -41,3 +41,143 @@
 .border-cyber {
   border: 1px solid var(--accent-cyan-border);
 }
+
+/* View Switcher Styles */
+#btnViewGrid.active,
+#btnViewWeekly.active,
+#btnViewToday.active {
+  background-color: var(--accent-cyan);
+  color: #000;
+  border-color: var(--accent-cyan);
+}
+
+/* Weekly View Styles */
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .weekly-grid {
+    grid-template-columns: 1fr;
+    /* Stack on mobile */
+  }
+}
+
+.weekly-day-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: default;
+  position: relative;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.weekly-day-card.has-routine {
+  border-color: var(--accent-green);
+  cursor: pointer;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.weekly-day-card.has-routine:hover {
+  background: rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+}
+
+.weekly-day-card.is-today {
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.2);
+}
+
+.weekly-day-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.weekly-day-card.has-routine .weekly-day-label {
+  color: #fff;
+  /* Better contrast for active days */
+}
+
+.weekly-day-card.is-today .weekly-day-label {
+  color: var(--accent-orange);
+}
+
+.weekly-routine-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  /* Force white text */
+  line-height: 1.2;
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  /* Standard property */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Weekly Collapsed View */
+.day-initial-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.day-initial-circle.has-routine {
+  border-color: var(--accent-green);
+  color: #fff;
+  cursor: pointer;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.day-initial-circle.has-routine:hover,
+.day-initial-circle.active {
+  background: var(--accent-green);
+  color: #000;
+  transform: scale(1.1);
+}
+
+.day-initial-circle.is-today {
+  box-shadow: 0 0 8px var(--accent-orange);
+  border-color: var(--accent-orange);
+}
+
+.weekly-routine-btn {
+  margin-top: auto;
+  width: 100%;
+  font-size: 0.75rem;
+  padding: 2px 0;
+}
+
+.unassigned-section-title {
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

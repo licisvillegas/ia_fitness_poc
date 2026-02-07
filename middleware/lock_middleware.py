@@ -10,6 +10,7 @@ EXEMPT_ROUTES = [
     'auth.auth_register', 
     'user.landing_page',
     'user.index', # Login Page
+    'integrations', # API integrations (e.g., Apple Health) should be public
 ]
 
 EXEMPT_PREFIXES = [

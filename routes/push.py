@@ -396,9 +396,10 @@ def cancel_scheduled_push():
         timer.cancel()
         logger.info(f"Cancelled push task {task_id} for user {user_id}")
         return jsonify({"success": True}), 200
-    else:
         # It might have already executed or doesn't exist
-        return jsonify({"error": "Task not found or already executed"}), 404
+        # Gracefully handle as success (idempotent)
+        logger.info(f"Cancel push task {task_id} skipped: not found or already done")
+        return jsonify({"success": True, "status": "not_found_or_done"}), 200
 
 
 def cancel_user_pushes(user_id):

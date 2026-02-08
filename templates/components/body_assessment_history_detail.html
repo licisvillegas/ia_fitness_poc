@@ -1,0 +1,115 @@
+<div class="row g-4">
+    <!-- Columna Izquierda: Datos Input -->
+    <div class="col-lg-5">
+        <!-- Fotos -->
+        <section class="mb-4">
+            <h5 class="section-title h6 mb-3">Fotografías</h5>
+            <div class="photo-grid" id="det-photos">
+                <!-- Miniaturas inyectadas aqui -->
+            </div>
+            <p id="no-photos-msg" class="text-muted small mt-2 d-none">Sin fotos registradas.</p>
+        </section>
+
+        <!-- Datos Generales -->
+        <section class="mb-4">
+            <h5 class="section-title h6 mb-3">Información General</h5>
+            <ul class="list-group list-group-flush bg-transparent small" id="det-general">
+                <!-- Inyectado -->
+            </ul>
+        </section>
+
+        <!-- Medidas -->
+        <section class="mb-4">
+            <h5 class="section-title h6 mb-3">Medidas Corporales</h5>
+            <div class="row g-2 small" id="det-measurements">
+                <!-- Inyectado -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Columna Derecha: Resultados AI -->
+    <div class="col-lg-7 print-break-before">
+        <section class="mb-4">
+            <h5 class="section-title h6 mb-3">Resultados del Análisis</h5>
+
+            <!-- Resumen -->
+            <div class="alert alert-dark border-secondary mb-3">
+                <p class="mb-0 small" id="det-summary"></p>
+            </div>
+
+            <!-- Métricas Clave -->
+            <div class="row g-2 mb-4" id="det-metrics">
+                <!-- Metricas inyectadas aqui -->
+            </div>
+
+            <!-- Accordion Detalle -->
+            <div class="accordion" id="accordionDetail">
+                <!-- Gasto Energetico -->
+                <div class="accordion-item bg-dark border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseEnergy">
+                            <i class="fas fa-fire me-2 text-warning"></i> Gasto Energético
+                        </button>
+                    </h2>
+                    <div id="collapseEnergy" class="accordion-collapse collapse" data-bs-parent="#accordionDetail">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>TMB (Basal)</span>
+                                <strong class="text-warning" id="det-tmb">-- kcal</strong>
+                            </div>
+                            <hr class="border-secondary my-1">
+                            <ul class="list-unstyled small mb-0" id="det-tdee"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proporciones -->
+                <div class="accordion-item bg-dark border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseProps">
+                            <i class="fas fa-ruler-combined me-2 text-info"></i>
+                            Proporciones
+                        </button>
+                    </h2>
+                    <div id="collapseProps" class="accordion-collapse collapse" data-bs-parent="#accordionDetail">
+                        <div class="accordion-body small" id="det-props">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recomendaciones -->
+                <div class="accordion-item bg-dark border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseRecs">
+                            <i class="fas fa-clipboard-list me-2 text-success"></i>
+                            Recomendaciones
+                        </button>
+                    </h2>
+                    <div id="collapseRecs" class="accordion-collapse collapse" data-bs-parent="#accordionDetail">
+                        <div class="accordion-body p-0">
+                            <ul id="det-recs" class="list-group list-group-flush bg-transparent"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Fotos -->
+                <div class="accordion-item bg-dark border-secondary">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white shadow-none" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapsePhotoFeedback">
+                            <i class="fas fa-camera-retro me-2 text-warning"></i> Feedback Fotos
+                        </button>
+                    </h2>
+                    <div id="collapsePhotoFeedback" class="accordion-collapse collapse"
+                        data-bs-parent="#accordionDetail">
+                        <div class="accordion-body small text-secondary" id="det-photo-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</div>

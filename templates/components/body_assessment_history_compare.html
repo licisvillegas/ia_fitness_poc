@@ -1,0 +1,148 @@
+<div class="compare-controls">
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="control-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase small text-secondary">Comparación A</span>
+                    <span class="badge bg-secondary">A</span>
+                </div>
+                <label class="form-label mt-2">Historial</label>
+                <select id="compareHistoryA"
+                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                <label class="form-label mt-2">Foto</label>
+                <select id="compareImageA"
+                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="control-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase small text-secondary">Comparación B</span>
+                    <span class="badge bg-secondary">B</span>
+                </div>
+                <label class="form-label mt-2">Historial</label>
+                <select id="compareHistoryB"
+                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                <label class="form-label mt-2">Foto</label>
+                <select id="compareImageB"
+                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="control-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase small text-secondary">Vista</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active"
+                            id="compareViewSide">Lado a lado</button>
+                        <button type="button" class="btn btn-outline-secondary" id="compareViewSlider">Slider</button>
+                    </div>
+                </div>
+                <div class="btn-group btn-group-sm w-100 mt-2 d-none compare-mode-toggle" role="group"
+                    id="compareModeControls">
+                    <button type="button" class="btn btn-outline-secondary active compare-mode-btn"
+                        id="compareModeBlend" title="Mezcla">
+                        <i class="fas fa-adjust"></i>
+                        <span class="visually-hidden">Mezcla</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary compare-mode-btn" id="compareModeWipe"
+                        title="Corte">
+                        <i class="fas fa-columns"></i>
+                        <span class="visually-hidden">Corte</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="compare-preview mt-3">
+    <div id="compareSideBySide" class="compare-side-by-side">
+        <div class="compare-frame">
+            <img id="compareImgA" src="" alt="Imagen A">
+            <div class="compare-floating-controls side">
+                <button id="compareAdjustToggleSideA" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <div id="compareAdjustPanelSideA" class="compare-floating-panel d-none">
+                    <div class="range-row">
+                        <i class="fas fa-search-plus"></i>
+                        <input type="range" id="compareScaleA_side" min="80" max="140" value="100">
+                    </div>
+                    <div class="range-row">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        <input type="range" id="compareXA_side" min="-120" max="120" value="0">
+                    </div>
+                    <div class="range-row">
+                        <i class="fas fa-arrows-alt-v"></i>
+                        <input type="range" id="compareYA_side" min="-120" max="120" value="0">
+                    </div>
+                    <button id="compareResetSideA" class="btn btn-outline-light btn-sm w-100">Reiniciar</button>
+                </div>
+            </div>
+        </div>
+        <div class="compare-frame">
+            <img id="compareImgB" src="" alt="Imagen B">
+            <div class="compare-floating-controls side">
+                <button id="compareAdjustToggleSideB" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <div id="compareAdjustPanelSideB" class="compare-floating-panel d-none">
+                    <div class="range-row">
+                        <i class="fas fa-search-plus"></i>
+                        <input type="range" id="compareScaleB_side" min="80" max="140" value="100">
+                    </div>
+                    <div class="range-row">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        <input type="range" id="compareXB_side" min="-120" max="120" value="0">
+                    </div>
+                    <div class="range-row">
+                        <i class="fas fa-arrows-alt-v"></i>
+                        <input type="range" id="compareYB_side" min="-120" max="120" value="0">
+                    </div>
+                    <button id="compareResetSideB" class="btn btn-outline-light btn-sm w-100">Reiniciar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="compareSliderWrap" class="compare-slider d-none">
+        <div class="compare-base">
+            <img id="compareBaseImg" src="" alt="Imagen base">
+        </div>
+        <div id="compareOverlay" class="compare-overlay">
+            <img id="compareOverlayImg" src="" alt="Imagen superpuesta">
+        </div>
+        <div id="compareSliderHandle" class="compare-slider-handle"></div>
+        <div class="compare-floating-controls">
+            <button id="compareAdjustToggle" class="btn btn-sm btn-outline-light">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+            <div id="compareAdjustPanel" class="compare-floating-panel d-none">
+                <div class="adjust-toggle">
+                    <button type="button" class="btn btn-outline-light btn-sm active" id="compareAdjustA">A</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" id="compareAdjustB">B</button>
+                </div>
+                <div class="range-row">
+                    <i class="fas fa-search-plus"></i>
+                    <input type="range" id="compareScaleA" min="80" max="140" value="100">
+                </div>
+                <div class="range-row">
+                    <i class="fas fa-arrows-alt-h"></i>
+                    <input type="range" id="compareXA" min="-120" max="120" value="0">
+                </div>
+                <div class="range-row">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    <input type="range" id="compareYA" min="-120" max="120" value="0">
+                </div>
+                <button id="compareResetSlider" class="btn btn-outline-light btn-sm w-100">Reiniciar</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="range" class="form-range compare-slider-range mt-3 d-none" id="compareSliderRange" min="0" max="100"
+        value="50">
+    <div id="compareEmptyMsg" class="text-muted small mt-2 d-none">
+        Se requieren al menos 2 fotos para comparar.
+    </div>
+</div>

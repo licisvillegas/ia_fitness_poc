@@ -69,6 +69,9 @@
 
     const setView = (view) => {
       window.currentRoutineView = view;
+      if (view === 'today') {
+        window.currentTodayStyle = 'compact';
+      }
       // Update UI buttons
       [btnGrid, btnWeekly, btnToday].forEach(btn => btn?.classList.remove('active'));
       if (view === 'grid') btnGrid?.classList.add('active');
@@ -244,7 +247,7 @@
     if (unassigned.length > 0) {
       const title = document.createElement('div');
       title.className = 'col-12 unassigned-section-title';
-      title.innerText = 'Rutinas sin día asignado';
+      title.innerText = 'Rutinas libres para hoy';
       container.appendChild(title);
 
       const unassignedGrid = document.createElement('div');
@@ -329,11 +332,16 @@
       { key: 'Saturday', label: 'S' }
     ];
 
-    const todayEng = new Date().toLocaleDateString("en-US", { weekday: "long" });
-    const routineByDay = {};
-    window.loadedRoutinesCache.forEach(r => {
-      if (r.routine_day) routineByDay[r.routine_day] = r;
-    });
+      const todayEng = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      const routineByDay = {};
+      const unassigned = [];
+      window.loadedRoutinesCache.forEach(r => {
+        if (r.routine_day) {
+          routineByDay[r.routine_day] = r;
+        } else {
+          unassigned.push(r);
+        }
+      });
 
     // Card Container (Hidden initially)
     const cardContainer = document.createElement('div');
@@ -360,15 +368,28 @@
             window.activeCollapsedRoutineId = null;
           } else {
             // Open
-            circle.classList.add('active');
-            cardContainer.style.display = 'block';
-            cardContainer.innerHTML = '';
-            const card = window.createCompactRoutineCard(r, window.translateDay(r.routine_day), isToday);
-            cardContainer.appendChild(card);
-            window.activeCollapsedRoutineId = r._id;
-          }
-        };
-      }
+              circle.classList.add('active');
+              cardContainer.style.display = 'block';
+              cardContainer.innerHTML = '';
+              const card = window.createCompactRoutineCard(r, window.translateDay(r.routine_day), isToday);
+              cardContainer.appendChild(card);
+              if (unassigned.length > 0) {
+                const title = document.createElement('div');
+                title.className = 'col-12 unassigned-section-title mt-3';
+                title.innerText = 'Rutinas libres para hoy';
+                cardContainer.appendChild(title);
+
+                const unassignedGrid = document.createElement('div');
+                unassignedGrid.className = 'col-12 weekly-grid';
+                unassigned.forEach(u => {
+                  unassignedGrid.appendChild(window.createCompactRoutineCard(u, 'General', false));
+                });
+                cardContainer.appendChild(unassignedGrid);
+              }
+              window.activeCollapsedRoutineId = r._id;
+            }
+          };
+        }
 
       row.appendChild(circle);
     });

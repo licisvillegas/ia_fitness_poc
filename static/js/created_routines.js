@@ -22,6 +22,9 @@
 
         const setView = (view) => {
             window.currentCreatedView = view;
+            if (view === 'today') {
+                window.currentCreatedTodayStyle = 'compact';
+            }
             [btnGrid, btnWeekly, btnToday].forEach(btn => btn?.classList.remove('active'));
             if (view === 'grid') btnGrid?.classList.add('active');
             if (view === 'weekly') btnWeekly?.classList.add('active');
@@ -172,7 +175,7 @@
         if (unassigned.length > 0) {
             const title = document.createElement('div');
             title.className = 'col-12 unassigned-section-title';
-            title.innerText = 'Rutinas sin día asignado';
+              title.innerText = 'Rutinas libres para hoy';
             container.appendChild(title);
 
             const unassignedGrid = document.createElement('div');
@@ -333,10 +336,10 @@
             content += `
                 <div class="weekly-routine-name" title="${r.name}">${r.name}</div>
                 <div class="text-secondary small mb-1" style="font-size:0.7rem">${exCount} Ejercicios</div>
-                <div class="d-flex gap-1 justify-content-center mt-auto w-100">
-                    <a href="/workout/run/${r._id}?return_to=/dashboard" class="btn btn-sm btn-primary py-0" style="font-size:0.7rem; flex:1;" title="Iniciar"><i class="fas fa-play"></i></a>
-                    <a href="/workout/routines/builder-guided?id=${r._id}" class="btn btn-sm btn-outline-info py-0" style="font-size:0.7rem;" title="Editar"><i class="fas fa-edit"></i></a>
-                </div>
+                  <div class="d-flex gap-1 justify-content-center mt-auto w-100">
+                      <a href="/workout/run/${r._id}?return_to=/dashboard" class="btn btn-sm btn-primary weekly-routine-btn-compact" style="flex:1;" title="Iniciar"><i class="fas fa-play"></i></a>
+                      <a href="/workout/routines/builder-guided?id=${r._id}" class="btn btn-sm btn-outline-info weekly-routine-btn-compact weekly-routine-btn-icon" title="Editar"><i class="fas fa-edit"></i></a>
+                  </div>
             `;
             // Add click handler to open modal
             card.onclick = (e) => {

@@ -446,28 +446,25 @@
                 // ENTRANDO EN DESCANSO: Programar Push
                 const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
 
-                if (document.visibilityState !== 'visible') {
-                    if (duration > 0 && window.Runner.utils.schedulePush) {
-                        // Cancelar cualquiera existente
-                        if (scheduledPushTaskIdsRef.current.length > 0) {
-                            scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
-                            scheduledPushTaskIdsRef.current = [];
-                        }
-                        // Programar nuevo
-                        // Programar nuevo
-                        const { pushTitle, pushBody } = NOTIFICATIONS.REST_START;
-                        window.Runner.utils.schedulePush(
-                            duration + 1,
-                            pushTitle,
-                            pushBody,
-                            "rest_timer",
-                            {
-                                visibility: document.visibilityState,
-                                displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
-                            }
-                        )
-                            .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
+                if (duration > 0 && window.Runner.utils.schedulePush) {
+                    // Cancelar cualquiera existente
+                    if (scheduledPushTaskIdsRef.current.length > 0) {
+                        scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                        scheduledPushTaskIdsRef.current = [];
                     }
+                    // Programar nuevo
+                    const { pushTitle, pushBody } = NOTIFICATIONS.REST_START;
+                    window.Runner.utils.schedulePush(
+                        duration + 1,
+                        pushTitle,
+                        pushBody,
+                        "rest_timer",
+                        {
+                            visibility: document.visibilityState,
+                            displayMode: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'
+                        }
+                    )
+                        .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                 }
             }
 

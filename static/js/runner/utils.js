@@ -35,8 +35,8 @@
 
     utils.playAlert = (type = 'beep_short') => {
         try {
-            /* 
-            // Web Audio API melody disabled for reliability. Falling back to beep_strong.wav
+
+            // Web Audio API melody restored
             if (type === 'victory') {
                 const ctx = initAudio();
                 if (ctx) {
@@ -62,7 +62,6 @@
                     return;
                 }
             }
-            */
 
             const audio = utils.getAudio(type);
             audio.play().catch(e => console.warn("Audio play failed", e));

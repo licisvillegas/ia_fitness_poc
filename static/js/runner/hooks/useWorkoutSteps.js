@@ -34,7 +34,9 @@
             globalTimeRef,
             currentStepElapsedRef,
             setGlobalTime,
-            completeStepTimerRef
+
+            completeStepTimerRef,
+            showAlert
         } = options;
 
         const processingCompletionRef = useRef(false);
@@ -272,7 +274,7 @@
                                 } catch (retryErr) {
                                     console.error("Retry failed:", retryErr);
                                     window.hideLoader();
-                                    alert("Error final: " + retryErr.message + ". Se saldrá y cancelará la sesión.");
+                                    showAlert("Error Final", retryErr.message + ". Se saldrá de la sesión.", null, "danger");
 
                                     // CANCELACIÓN FORZADA
                                     try {
@@ -283,18 +285,24 @@
                                     window.location.href = getReturnUrl();
                                 }
                             },
-                            onCancel: async () => {
-                                // Salir sin guardar
-                                if (confirm("¿Seguro que deseas perder los datos de esta sesión?")) {
-                                    // CANCELACIÓN FORZADA para desbloquear servidor
-                                    try {
-                                        localStorage.removeItem("workout_running_state");
-                                        localStorage.removeItem("offline_pending_session");
-                                        window.showLoader("Cancelando...");
-                                        await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
-                                    } catch (e) { console.error("Cancel err", e); }
-                                    window.location.href = getReturnUrl();
-                                }
+                            onCancel: () => {
+                                // Salir sin guardar - Usar showConfirm para reemplazar confirm() nativo
+                                // Notar que esto reemplaza el modal actual, lo cual es el comportamiento deseado
+                                showConfirm(
+                                    "¿Estás seguro?",
+                                    "Perderás los datos de esta sesión permanentemente.",
+                                    async () => {
+                                        // CANCELACIÓN FORZADA para desbloquear servidor
+                                        try {
+                                            localStorage.removeItem("workout_running_state");
+                                            localStorage.removeItem("offline_pending_session");
+                                            window.showLoader("Cancelando...");
+                                            await fetch("/workout/api/session/cancel", { method: "POST", credentials: "include" });
+                                        } catch (e) { console.error("Cancel err", e); }
+                                        window.location.href = getReturnUrl();
+                                    },
+                                    "danger"
+                                );
                             }
                         });
                     } finally {

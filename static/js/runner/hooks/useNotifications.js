@@ -2,7 +2,7 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     window.Runner.hooks.useNotifications = (options = {}) => {
-        const { logSource = "useNotifications" } = options;
+        const { logSource = "useNotifications", showAlert } = options;
         const [notificationPermission, setNotificationPermission] = useState('default');
         const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
         const hasLoggedMissingRef = useRef(false);
@@ -70,7 +70,11 @@
             } else if (notificationPermission === 'granted') {
                 setIsNotificationsEnabled(prev => !prev);
             } else {
-                alert("Las notificaciones estan bloqueadas por el navegador. Habilitalas en la configuracion del sitio.");
+                if (showAlert) {
+                    showAlert("Notificaciones Bloqueadas", "Las notificaciones estan bloqueadas por el navegador. Habilitalas en la configuracion del sitio.", null, "warning");
+                } else {
+                    alert("Las notificaciones estan bloqueadas por el navegador. Habilitalas en la configuracion del sitio.");
+                }
             }
         }, [notificationPermission, ensurePushSubscriptionSafe]);
 

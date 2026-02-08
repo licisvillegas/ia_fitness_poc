@@ -16,7 +16,9 @@
                         <h4 className={`fw-bold mb-3 ${colorClass}`}>{title}</h4>
                         <p className="text-white mb-4 fs-5">{message}</p>
                         <div className="d-flex gap-3 justify-content-center">
-                            <button className="btn btn-secondary flex-grow-1" onClick={closeConfirm}>{cancelText || "Cancelar"}</button>
+                            {!confirmModal.isAlert && (
+                                <button className="btn btn-secondary flex-grow-1" onClick={closeConfirm}>{cancelText || "Cancelar"}</button>
+                            )}
                             <button className={`btn ${btnClass} flex-grow-1 fw-bold`} onClick={handleConfirmAction}>{confirmText || "Confirmar"}</button>
                         </div>
                     </div>

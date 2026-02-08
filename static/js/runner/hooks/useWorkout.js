@@ -2,7 +2,7 @@
     const { createContext, useState, useEffect, useRef, useMemo, useContext } = React;
     const { useWorkoutTimer, useWorkoutNotifications, useWorkoutPersistence, useWorkoutSync, useWorkoutQueue, useWorkoutSteps, useWorkoutLog, useWorkoutModals, useWorkoutSubstitutions, useWorkoutPending, useWorkoutTimeTargets } = window.Runner.hooks;
     const { formatTime, getAudio, triggerHaptic, getReturnUrl, schedulePush, cancelPush } = window.Runner.utils;
-    const { BODY_PART_MAP } = window.Runner.constants;
+    const { BODY_PART_MAP, NOTIFICATIONS } = window.Runner.constants;
     const { getExerciseId, mergeExerciseForSwap, getRestSeconds, buildQueue } = window.Runner.logic;
 
     const WorkoutContext = createContext();
@@ -12,6 +12,22 @@
         const [cursor, setCursor] = useState(0); // Índice en la cola
         const [status, setStatus] = useState('LOADING'); // LOADING | IDLE | WORK | REST | FINISHED
         console.log("WorkoutProvider Initialized. Initial Status:", status);
+        const {
+            confirmModal,
+            setConfirmModal,
+            showConfirm,
+            showAlert,
+            closeConfirm,
+            handleConfirmAction,
+            substituteModal,
+            setSubstituteModal,
+            openSubstituteModal: openSubstituteModalRaw,
+            closeSubstituteModal,
+            showRmModal,
+            openRmModal,
+            closeRmModal
+        } = useWorkoutModals();
+
         const [sessionLog, setSessionLog] = useState([]);
         const [historyMaxByExercise, setHistoryMaxByExercise] = useState({});
         const [exerciseLookup, setExerciseLookup] = useState({});
@@ -28,7 +44,7 @@
             toggleNotifications,
             ensureNotificationPermission,
             sendNotification
-        } = useWorkoutNotifications({ logSource: "useWorkout" });
+        } = useWorkoutNotifications({ logSource: "useWorkout", showAlert });
         const [showPending, setShowPending] = useState(false); // Nuevo estado elevado desde App.js
 
         const [currentInput, setCurrentInput] = useState({
@@ -126,8 +142,10 @@
             setExerciseLookup,
             setHistoryMaxByExercise,
             lastHistoryRoutineIdRef,
+
             BODY_PART_MAP,
-            getReturnUrl
+            getReturnUrl,
+            showAlert
         });
 
         const showMessage = (text, tone = "info") => {
@@ -148,20 +166,7 @@
             setIsTimerRunning
         });
 
-        const {
-            confirmModal,
-            setConfirmModal,
-            showConfirm,
-            closeConfirm,
-            handleConfirmAction,
-            substituteModal,
-            setSubstituteModal,
-            openSubstituteModal: openSubstituteModalRaw,
-            closeSubstituteModal,
-            showRmModal,
-            openRmModal,
-            closeRmModal
-        } = useWorkoutModals();
+
 
         const isStepLoggedLocal = (stepId, log) => {
             const currentLog = log || ((sessionLogRef && sessionLogRef.current) ? sessionLogRef.current : sessionLog);
@@ -415,10 +420,12 @@
                 if (scheduledPushTaskIdsRef.current.length > 0) return;
                 const duration = stepTimerRef.current || 0;
                 if (duration <= 0 || !window.Runner.utils.schedulePush) return;
+                if (duration <= 0 || !window.Runner.utils.schedulePush) return;
+                const { pushTitle, pushBody } = NOTIFICATIONS.REST_START;
                 window.Runner.utils.schedulePush(
                     duration + 1,
-                    "Tiempo Completado",
-                    "Tu descanso ha terminado. ¡A trabajar!",
+                    pushTitle,
+                    pushBody,
                     "rest_timer",
                     {
                         visibility: document.visibilityState,
@@ -447,10 +454,12 @@
                             scheduledPushTaskIdsRef.current = [];
                         }
                         // Programar nuevo
+                        // Programar nuevo
+                        const { pushTitle, pushBody } = NOTIFICATIONS.REST_START;
                         window.Runner.utils.schedulePush(
                             duration + 1,
-                            "Tiempo Completado",
-                            "Tu descanso ha terminado. ¡A trabajar!",
+                            pushTitle,
+                            pushBody,
                             "rest_timer",
                             {
                                 visibility: document.visibilityState,
@@ -480,24 +489,28 @@
                         if (totalTime >= 20) {
                             const halfTime = Math.floor(totalTime / 2);
                             const delayHalf = totalTime - halfTime;
-                            window.Runner.utils.schedulePush(delayHalf, "Motivacion", `Vas a la mitad de ${meta.exName || "tu ejercicio"}. Sigue asi.`, "workout_half", { visibility: document.visibilityState })
+                            const { pushTitle, pushBody } = NOTIFICATIONS.MOTIVATION_HALF;
+                            window.Runner.utils.schedulePush(delayHalf, pushTitle, pushBody(meta.exName), "workout_half", { visibility: document.visibilityState })
                                 .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                         }
 
                         // Programar Aviso de 2 MIN
                         if (totalTime > 140) {
                             const delay2Min = totalTime - 120;
-                            window.Runner.utils.schedulePush(delay2Min, "Casi terminas", "Lo estas logrando. Te faltan 2 minutos.", "workout_2min", { visibility: document.visibilityState })
+                            const { pushTitle, pushBody } = NOTIFICATIONS.MOTIVATION_2MIN;
+                            window.Runner.utils.schedulePush(delay2Min, pushTitle, pushBody, "workout_2min", { visibility: document.visibilityState })
                                 .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                         }
                     }
                 } else if (meta && meta.rawRepsTarget !== 0) {
                     // BASADO EN REPS: Programar Avisos de Inactividad (3m, 5m)
                     if (window.Runner.utils.schedulePush) {
-                        window.Runner.utils.schedulePush(180, "Motivacion", `Vamos, sigue con ${meta.exName || "tu ejercicio"}.`, "workout_idle_3m", { visibility: document.visibilityState })
+                        const note3 = NOTIFICATIONS.IDLE_3MIN;
+                        window.Runner.utils.schedulePush(180, note3.pushTitle, note3.pushBody(meta.exName), "workout_idle_3m", { visibility: document.visibilityState })
                             .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
 
-                        window.Runner.utils.schedulePush(300, "Retoma la rutina", `Sigue con ${meta.exName || "tu ejercicio"} cuando puedas.`, "workout_idle_5m", { visibility: document.visibilityState })
+                        const note5 = NOTIFICATIONS.IDLE_5MIN;
+                        window.Runner.utils.schedulePush(300, note5.pushTitle, note5.pushBody(meta.exName), "workout_idle_5m", { visibility: document.visibilityState })
                             .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
                     }
                 }
@@ -559,7 +572,9 @@
             globalTimeRef,
             currentStepElapsedRef,
             setGlobalTime,
-            completeStepTimerRef
+            setGlobalTime,
+            completeStepTimerRef,
+            showAlert
         });
         useEffect(() => {
             finishWorkoutRef.current = finishWorkout;
@@ -574,7 +589,7 @@
 
             if (status === 'REST' && currentStep.type === 'rest') {
                 if (lastAnnouncementRef.current.status !== 'REST' || lastAnnouncementRef.current.stepId !== currentStep.id) {
-                    showMessage("Inicia Descanso", "info");
+                    showMessage(NOTIFICATIONS.REST_START.title, "info");
                 }
                 lastAnnouncementRef.current = { status: 'REST', stepId: currentStep.id };
             }
@@ -590,23 +605,25 @@
                         scheduledPushTaskIdsRef.current = [];
                     }
 
-                    showMessage(`Finalizo Descanso. Inicia ejercicio ${exName}`, "success");
+                    const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.REST_END;
+                    showMessage(`${titleSuccess} ${exName}`, "success");
 
                     if (sendNotification) {
-                        sendNotification("Descanso terminado", "Tu descanso ha terminado. ¡A trabajar!");
+                        sendNotification(pushTitle, pushBody);
                     }
 
                     triggerHaptic([200, 100, 200]);
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {
-                    showMessage(`Inicia ejercicio ${exName}`, "info");
+                    showMessage(`${NOTIFICATIONS.WORK_START.titleInfo} ${exName}`, "info");
                 }
                 lastAnnouncementRef.current = { status: 'WORK', stepId: currentStep.id };
             }
 
             if (status === 'FINISHED' && prevStatus !== 'FINISHED') {
-                showMessage("Fin de la Rutina", "success");
+                const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.WORKOUT_FINISHED;
+                showMessage(titleSuccess, "success");
                 if (sendNotification) {
-                    sendNotification("Rutina finalizada", "Buen trabajo. Tu entrenamiento ha terminado.");
+                    sendNotification(pushTitle, pushBody);
                 }
 
                 // Victory sound moved to interaction handler in useWorkoutSteps.js for better mobile support
@@ -617,8 +634,8 @@
                 if (window.Runner.utils.schedulePush) {
                     window.Runner.utils.schedulePush(
                         1,
-                        "Rutina finalizada",
-                        "Buen trabajo. Tu entrenamiento ha terminado.",
+                        pushTitle,
+                        pushBody,
                         "workout_finished",
                         {
                             visibility: document.visibilityState,

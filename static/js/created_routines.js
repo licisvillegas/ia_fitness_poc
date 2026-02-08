@@ -312,7 +312,7 @@
                             <input class="form-check-input" type="checkbox" id="toggle-${r._id}" ${r.is_active ? 'checked' : ''} onchange="window.toggleRoutineVisibility('${r._id}')">
                             <label class="form-check-label small text-muted" for="toggle-${r._id}">Activa</label>
                         </div>
-                        <a href="/workout/run/${r._id}?return_to=/workout/dashboard" class="btn btn-sm btn-outline-primary"><i class="fas fa-play me-1"></i> Iniciar</a>
+                        <a href="/workout/run/${r._id}?return_to=/dashboard" class="btn btn-sm btn-outline-primary"><i class="fas fa-play me-1"></i> Iniciar</a>
                     </div>
                 </div>
             </div>
@@ -334,7 +334,7 @@
                 <div class="weekly-routine-name" title="${r.name}">${r.name}</div>
                 <div class="text-secondary small mb-1" style="font-size:0.7rem">${exCount} Ejercicios</div>
                 <div class="d-flex gap-1 justify-content-center mt-auto w-100">
-                    <a href="/workout/run/${r._id}?return_to=/workout/dashboard" class="btn btn-sm btn-primary py-0" style="font-size:0.7rem; flex:1;" title="Iniciar"><i class="fas fa-play"></i></a>
+                    <a href="/workout/run/${r._id}?return_to=/dashboard" class="btn btn-sm btn-primary py-0" style="font-size:0.7rem; flex:1;" title="Iniciar"><i class="fas fa-play"></i></a>
                     <a href="/workout/routines/builder-guided?id=${r._id}" class="btn btn-sm btn-outline-info py-0" style="font-size:0.7rem;" title="Editar"><i class="fas fa-edit"></i></a>
                 </div>
             `;

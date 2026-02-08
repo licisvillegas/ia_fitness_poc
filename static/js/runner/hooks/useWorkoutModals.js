@@ -16,11 +16,17 @@
         const onConfirmRef = useRef(null);
         const onCancelRef = useRef(null);
 
-        const showConfirm = (title, message, onConfirm, type = "danger", onCancel = null) => {
+        const showConfirm = (title, message, onConfirm, type = "danger", onCancel = null, confirmText = null, cancelText = null) => {
             console.log("DEBUG: showConfirm called", { title });
             onConfirmRef.current = onConfirm;
             onCancelRef.current = onCancel;
-            setConfirmModal({ isOpen: true, title, message, onConfirm, onCancel, type });
+            setConfirmModal({ isOpen: true, title, message, onConfirm, onCancel, type, isAlert: false, confirmText, cancelText });
+        };
+
+        const showAlert = (title, message, onConfirm = null, type = "info", confirmText = "Aceptar") => {
+            onConfirmRef.current = onConfirm;
+            onCancelRef.current = null;
+            setConfirmModal({ isOpen: true, title, message, onConfirm, onCancel: null, type, isAlert: true, confirmText, cancelText: null });
         };
 
         const closeConfirm = () => {
@@ -53,7 +59,9 @@
         return {
             confirmModal,
             setConfirmModal,
+            setConfirmModal,
             showConfirm,
+            showAlert,
             closeConfirm,
             handleConfirmAction,
             substituteModal,

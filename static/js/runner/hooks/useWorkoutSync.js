@@ -8,7 +8,8 @@
             setHistoryMaxByExercise,
             lastHistoryRoutineIdRef,
             BODY_PART_MAP,
-            getReturnUrl
+            getReturnUrl,
+            showAlert
         } = options;
 
         // Inicializacion de ejercicios y partes del cuerpo
@@ -123,7 +124,14 @@
                 } catch (e) { }
 
                 const targetUrl = pending.return_url || (getReturnUrl ? getReturnUrl() : "/");
-                if (window.showAlertModal) {
+                if (showAlert) {
+                    showAlert(
+                        "Sesion sincronizada",
+                        "La rutina se cerro y regresaremos al dashboard.",
+                        null,
+                        "success"
+                    );
+                } else if (window.showAlertModal) {
                     window.showAlertModal(
                         "Sesion sincronizada",
                         "La rutina se cerro y regresaremos al dashboard.",

@@ -396,7 +396,15 @@ main {
 
 .compare-slider.wipe-mode .compare-base,
 .compare-slider.wipe-mode .compare-overlay {
-    justify-content: flex-start;
+    justify-content: center;
+}
+
+.compare-slider.wipe-mode .compare-overlay {
+    border-right: 0;
+}
+
+.compare-slider.wipe-mode #compareOverlayImg {
+    clip-path: inset(0 0 0 50%);
 }
 
 .compare-slider-handle {

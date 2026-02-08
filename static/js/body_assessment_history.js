@@ -803,17 +803,22 @@ let compareState = {
 
 function updateOverlayWidth() {
     const overlay = document.getElementById('compareOverlay');
+    const overlayImg = document.getElementById('compareOverlayImg');
     const handle = document.getElementById('compareSliderHandle');
     const sliderWrap = document.getElementById('compareSliderWrap');
     if (!overlay) return;
     if (compareState.sliderMode === 'wipe') {
-        overlay.style.width = `${100 - compareState.slider}%`;
-        overlay.style.borderRight = '2px solid rgba(255, 255, 255, 0.6)';
+        overlay.style.width = `100%`;
+        overlay.style.borderRight = '0';
         sliderWrap?.classList.add('wipe-mode');
+        if (overlayImg) {
+            overlayImg.style.clipPath = `inset(0 0 0 ${compareState.slider}%)`;
+        }
     } else {
         overlay.style.width = `100%`;
         overlay.style.borderRight = '0';
         sliderWrap?.classList.remove('wipe-mode');
+        if (overlayImg) overlayImg.style.clipPath = '';
     }
     if (handle) {
         handle.style.left = `${compareState.slider}%`;
@@ -834,13 +839,8 @@ function updateCompareImages() {
 
             if (imgA && photoA) imgA.src = photoA.url;
             if (imgB && photoB) imgB.src = photoB.url;
-    if (compareState.sliderMode === 'wipe') {
-        if (base && photoB) base.src = photoB.url;
-        if (overlay && photoA) overlay.src = photoA.url;
-    } else {
-        if (base && photoA) base.src = photoA.url;
-        if (overlay && photoB) overlay.src = photoB.url;
-    }
+    if (base && photoA) base.src = photoA.url;
+    if (overlay && photoB) overlay.src = photoB.url;
 
     applyMorphOpacity();
     applyCompareTransforms();
@@ -872,13 +872,8 @@ function applyCompareTransforms() {
 
             if (imgA) imgA.style.transform = tA;
             if (imgB) imgB.style.transform = tB;
-    if (compareState.sliderMode === 'wipe') {
-        if (base) base.style.transform = tB;
-        if (overlay) overlay.style.transform = tA;
-    } else {
-        if (base) base.style.transform = tA;
-        if (overlay) overlay.style.transform = tB;
-    }
+    if (base) base.style.transform = tA;
+    if (overlay) overlay.style.transform = tB;
 }
 
         const zoomModal = new bootstrap.Modal(document.getElementById('imageZoomModal'));

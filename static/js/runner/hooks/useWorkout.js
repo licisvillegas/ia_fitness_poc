@@ -608,9 +608,11 @@
                     const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.REST_END;
                     showMessage(`${titleSuccess} ${exName}`, "success");
 
+                    /* 
                     if (sendNotification) {
                         sendNotification(pushTitle, pushBody);
                     }
+                    */
 
                     triggerHaptic([200, 100, 200]);
                 } else if (lastAnnouncementRef.current.status !== 'WORK' || lastAnnouncementRef.current.stepId !== currentStep.id) {

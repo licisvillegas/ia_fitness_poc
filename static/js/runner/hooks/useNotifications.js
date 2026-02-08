@@ -7,6 +7,8 @@
         const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
         const hasLoggedMissingRef = useRef(false);
         const hasEnsuredOnMountRef = useRef(false);
+        const hasLoadedPrefRef = useRef(false);
+        const PREF_KEY = "runner_notifications_enabled";
 
         const logClient = useCallback((message) => {
             if (!message) return;
@@ -53,6 +55,32 @@
             }
         }, [ensurePushSubscriptionSafe]);
 
+        useEffect(() => {
+            if (hasLoadedPrefRef.current) return;
+            hasLoadedPrefRef.current = true;
+            try {
+                const raw = localStorage.getItem(PREF_KEY);
+                if (raw === null) return;
+                const desired = raw === "true";
+                if (desired && notificationPermission === 'granted') {
+                    setIsNotificationsEnabled(true);
+                }
+                if (!desired && notificationPermission === 'granted') {
+                    setIsNotificationsEnabled(false);
+                }
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        }, [notificationPermission]);
+
+        useEffect(() => {
+            try {
+                localStorage.setItem(PREF_KEY, String(Boolean(isNotificationsEnabled)));
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        }, [isNotificationsEnabled]);
+
         const toggleNotifications = useCallback(async () => {
             if (!("Notification" in window)) return;
 
@@ -98,9 +126,10 @@
             }
         }, [notificationPermission, ensurePushSubscriptionSafe]);
 
-        const sendNotification = useCallback((title, body) => {
+        const sendNotification = useCallback((title, body, options = {}) => {
+            const tag = options && options.tag ? options.tag : undefined;
             logClient(`[useNotifications] sendNotification called: ${title}`);
-            console.log("[useNotifications] sendNotification called:", title, body, "Enabled:", isNotificationsEnabled, "Permission:", notificationPermission);
+            console.log("[useNotifications] sendNotification called:", title, body, "Enabled:", isNotificationsEnabled, "Permission:", notificationPermission, "Tag:", tag);
 
             if (isNotificationsEnabled && notificationPermission === 'granted') {
                 if ('serviceWorker' in navigator) {
@@ -110,7 +139,7 @@
                             icon: '/static/images/icon/synapse_fit_192.png',
                             badge: '/static/images/icon/synapse_fit_192.png',
                             vibrate: [200, 100, 200],
-                            tag: 'rest-finished',
+                            tag: tag,
                             renotify: true,
                             requireInteraction: true,
                             data: { url: window.location.href }
@@ -126,7 +155,7 @@
                         console.error("[useNotifications] SW registration error", e);
                         // Fallback
                         try {
-                            const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png' });
+                            const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png', tag: tag });
                             n.onclick = () => { window.focus(); n.close(); };
                             logClient(`[useNotifications] Fallback Notification created`);
                         } catch (err) {
@@ -136,7 +165,7 @@
                     });
                 } else {
                     try {
-                        const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png' });
+                        const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png', tag: tag });
                         logClient(`[useNotifications] Standard Notification created`);
                         console.log("[useNotifications] Standard Notification created:", n);
                         n.onclick = () => { window.focus(); n.close(); };

@@ -1,5 +1,15 @@
 (function () {
     const utils = window.Runner.utils;
+    const scheduledByContext = {};
+
+    const forgetScheduledTask = (taskId) => {
+        if (!taskId) return;
+        Object.keys(scheduledByContext).forEach(context => {
+            if (scheduledByContext[context] === taskId) {
+                delete scheduledByContext[context];
+            }
+        });
+    };
 
     utils.formatTime = (seconds) => {
         const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -116,6 +126,9 @@
     utils.schedulePush = async (delaySeconds, title, body, context, clientState = {}) => {
         if (!delaySeconds || delaySeconds <= 0) return null;
         try {
+            if (context && scheduledByContext[context] && utils.cancelPush) {
+                await utils.cancelPush(scheduledByContext[context]);
+            }
             const res = await fetch("/api/push/schedule", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -131,6 +144,9 @@
             });
             if (res.ok) {
                 const data = await res.json();
+                if (context && data && data.task_id) {
+                    scheduledByContext[context] = data.task_id;
+                }
                 return data.task_id;
             }
         } catch (e) {
@@ -149,6 +165,7 @@
                 body: JSON.stringify({ task_id: taskId }),
                 keepalive: true
             });
+            forgetScheduledTask(taskId);
         } catch (e) {
             console.warn("Cancel push failed", e);
         }

@@ -1,99 +1,153 @@
-# Sistema de Notificaciones de Synapse Fit
+﻿# Reporte de notificaciones del runner
 
-Este documento describe la arquitectura y funcionamiento del sistema de notificaciones híbrido implementado en la aplicación, combinando notificaciones dentro de la aplicación (In-App) y notificaciones push del servidor (Web Push).
+Este documento consolida las notificaciones definidas por los scripts cargados desde `templates/workout_runner.html`, incluyendo notificaciones in-app, notificaciones del sistema (push/navegador) y alertas/modales.
 
-## 1. Visión General
+## Alcance
+`templates/workout_runner.html` solo monta el contenedor y carga `templates/partials/runner/scripts.html`. La lógica real vive en los módulos de `static/js/runner/`.
 
-El sistema utiliza dos mecanismos complementarios:
-1.  **Notificaciones In-App (Persistentes):** Para historial, mensajes del sistema y feedback de acciones. Se almacenan en base de datos.
-2.  **Server Push / Web Push (Efímeras/Críticas):** Para alertas en tiempo real, especialmente cuando la aplicación está en segundo plano o el dispositivo está bloqueado (ej. finalización de cronómetros).
+## Notificaciones in-app (MessageBar, ~3s)
+Mensajes visibles dentro de la UI, gestionados por `MessageBar` y `showMessage`.
 
----
+1. **“Inicia Descanso”**
+   - Condición: `status === 'REST'` y `currentStep.type === 'rest'` con cambio de paso/estado.
+   - Se ejecuta: `showMessage(NOTIFICATIONS.REST_START.title, "info")`.
+   - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/constants.js`, `static/js/runner/components/MessageBar.js`.
 
-## 2. Notificaciones In-App
+2. **“Finalizó Descanso. Inicia ejercicio {exName}”**
+   - Condición: `status === 'WORK'` y `prevStatus === 'REST'`.
+   - Se ejecuta: `showMessage(`${titleSuccess} ${exName}`, "success")`, sonido `playAlert('rest_end')`, vibración.
+   - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/constants.js`, `static/js/runner/utils.js`.
 
-Estas notificaciones son persistentes y se muestran dentro de la interfaz de usuario.
+3. **“Inicia ejercicio {exName}”**
+   - Condición: `status === 'WORK'` y no viene de REST (o primer trabajo).
+   - Se ejecuta: `showMessage(`${NOTIFICATIONS.WORK_START.titleInfo} ${exName}`, "info")`.
+   - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/constants.js`.
 
-### Arquitectura
-*   **Backend:**
-    *   **Almacenamiento:** MongoDB, colección `notifications`.
-    *   **API:** `routes/notifications.py`
-        *   `GET /api/notifications/pending`: Obtiene notificaciones no leídas.
-        *   `POST /api/notifications/mark-read`: Marca notificaciones como leídas.
-*   **Frontend:**
-    *   **Lógica:** `static/js/notifications_ui.js`
-    *   **Mecanismo:** "Polling" (sondeo) cada 60 segundos para verificar nuevos mensajes.
-    *   **UI:** `templates/components/sidebar.html` y `static/css/notifications.css`.
+4. **“Fin de la Rutina”**
+   - Condición: `status === 'FINISHED'` y cambio desde otro estado.
+   - Se ejecuta: `showMessage(titleSuccess, "success")`.
+   - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/constants.js`.
 
-### Indicadores Visuales
-El sistema adapta los indicadores visuales según el estado del menú de usuario:
-*   **Menú Abierto:** Badge numérico rojo sobre el ítem "Notificaciones" en la lista.
-*   **Menú Cerrado:** Borde rojo pulsante alrededor de la foto de perfil y un pequeño badge numérico en la esquina de la foto.
+5. **“Rutina finalizada”**
+   - Condición: cuando `finishWorkout()` se invoca.
+   - Se ejecuta: `showMessage("Rutina finalizada", "success")`.
+   - Archivos: `static/js/runner/hooks/useWorkoutSteps.js`.
 
-### Tipos y Estilos
-Cada notificación tiene un `type` que define su apariencia visual (borde izquierdo e icono):
+6. **“Rutina cancelada”**
+   - Condición: cancelación cuando no hay overlay “glitch” (fallback).
+   - Se ejecuta: `showMessage("Rutina cancelada", "error")`.
+   - Archivos: `static/js/runner/hooks/useWorkoutSteps.js`.
 
-| Tipo | Color | Icono | Uso Recomendado |
-| :--- | :--- | :--- | :--- |
-| **info** | Azul (`primary`) | ℹ️ Info | Información general, consejos, actualizaciones. |
-| **success** | Verde (`success`) | ✅ Check | Acciones completadas correctamente, logros. |
-| **warning** | Amarillo (`warning`) | ⚠️ Alerta | Advertencias no críticas, recordatorios importantes. |
-| **error** | Rojo (`danger`) | ❌ Cruz | Fallos en procesos, errores de validación crítica. |
+7. **“Descanso omitido”**
+   - Condición: usuario pulsa “SALTAR DESCANSO”.
+   - Se ejecuta: `showMessage("Descanso omitido", "info")`, cancela pushes programados.
+   - Archivos: `static/js/runner/hooks/useWorkoutQueue.js`.
 
----
+8. **“Set omitido”**
+   - Condición: usuario confirma “Saltar Serie”.
+   - Se ejecuta: `showMessage("Set omitido", "info")`.
+   - Archivos: `static/js/runner/components/NavigationWrapper.js`.
 
-## 4. Notificaciones Implementadas y Condiciones
+9. **“No hay ejercicios pendientes”**
+   - Condición: `openPendingConfirm` y no hay pendientes.
+   - Se ejecuta: `showMessage("No hay ejercicios pendientes", "info")`.
+   - Archivos: `static/js/runner/hooks/useWorkoutPending.js`.
 
-A continuación se detallan las notificaciones automáticas configuradas actualmente en el "Workout Runner".
+10. **“Realiza los ejercicios pendientes”**
+    - Condición: `openPendingConfirm` con pendientes.
+    - Se ejecuta: `showMessage("Realiza los ejercicios pendientes", "info")`.
+    - Archivos: `static/js/runner/hooks/useWorkoutPending.js`.
 
-| Evento | Condición Lógica | Tipo | Mensaje (Ejemplo) | Efecto Adicional |
-| :--- | :--- | :--- | :--- | :--- |
-| **Fin de Descanso** | `status == 'REST'` y `timer == 0` | **Push** (Tag: `rest_timer`) | "Tu descanso ha terminado. ¡A trabajar!" | Audio Beep, Vibración `[200, 100, 200]` |
-| **Mitad de Ejercicio** | Ejercicio por Tiempo/Cardio (>20s) y `tiempo_restante == mitad` | **Push** (Tag: `workout_half`) | "Vas a la mitad de Sentadillas. Sigue así." | Animación Visual (Pulse) |
-| **Aviso 2 Minutos** | Ejercicio largo (>140s) y `tiempo_restante == 120s` | **Push** (Tag: `workout_2min`) | "Lo estás logrando. Te faltan 2 minutos." | Animación Visual (Pulse) |
-| **Inactividad (3m)** | Ejercicio por Repeticiones, sin loggear set por 3 min | **Push** (Tag: `workout_idle_3m`) | "Vamos, sigue con Press de Banca." | - |
-| **Inactividad (5m)** | Ejercicio por Repeticiones, sin loggear set por 5 min | **Push** (Tag: `workout_idle_5m`) | "Retoma la rutina cuando puedas." | - |
-| **Fin de Rutina** | Todos los ejercicios completados | **In-App** (UI Modal) | "Rutina finalizada" | Confeti, Vibración de Celebración |
+11. **“Ejercicios pendientes”**
+    - Condición: `checkPendingAndFinish` detecta pendientes antes de finalizar.
+    - Se ejecuta: `showMessage("Ejercicios pendientes", "info")`.
+    - Archivos: `static/js/runner/hooks/useWorkoutPending.js`.
 
-### Notas sobre "Server Push"
-Las notificaciones de **Mitad de Ejercicio**, **Aviso 2 Min**, etc., se programan (`schedulePush`) en el servidor al iniciar el paso (Step) correspondiente.
-*   Si el usuario completa el paso o salta al siguiente *antes* de que ocurra la condición, la notificación programada se **cancela** automáticamente.
-*   Esto asegura que no recibas un aviso de "Mitad de ejercicio" si ya terminaste.
+12. **“Sustituto aplicado”**
+    - Condición: se aplica un sustituto de ejercicio.
+    - Se ejecuta: `showMessage("Sustituto aplicado", "success")`.
+    - Archivos: `static/js/runner/hooks/useWorkoutSubstitutions.js`.
 
+## Notificaciones del sistema (push / navegador)
+Notificaciones fuera de la app (Service Worker o Notification API), y/o push programados en servidor.
 
----
+13. **Push programado de descanso: “Tiempo Completado / Tu descanso ha terminado…”**
+    - Condición: entrar a REST con `duration > 0` y `schedulePush` disponible; también si la página se oculta durante REST o al modificar tiempo con `addRestTime` (si la pestaña no está visible).
+    - Se ejecuta: `schedulePush(delay, title, body, "rest_timer", …)` → `POST /api/push/schedule`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/hooks/useWorkoutQueue.js`, `static/js/runner/utils.js`.
 
-## 3. Server Push aka Web Push
+14. **Push motivacional mitad del tiempo**
+    - Condición: paso de trabajo basado en tiempo y `totalTime >= 20`.
+    - Se ejecuta: `schedulePush(delayHalf, "Motivación", pushBody(exName), "workout_half")`.
+    - Señal local adicional: `pulseEffect()` cuando `remaining === halfTime`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/hooks/useWorkoutTimer.js`, `static/js/runner/constants.js`.
 
-Este sistema permite enviar notificaciones al dispositivo del usuario incluso si la pestaña está cerrada o el móvil bloqueado. Es crucial para la funcionalidad del **Cronómetro de Descanso**.
+15. **Push “Casi terminas” (2 minutos restantes)**
+    - Condición: trabajo basado en tiempo y `totalTime > 140`.
+    - Se ejecuta: `schedulePush(delay2Min, "Casi terminas", …, "workout_2min")`.
+    - Señal local adicional: `pulseEffect()` cuando `remaining === 120`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/hooks/useWorkoutTimer.js`.
 
-### Arquitectura Técnica
-*   **Protocolo:** Web Push estándar utilizando claves VAPID.
-*   **Backend:** `routes/push.py`
-    *   Librería: `pywebpush`
-    *   **Endpoints:**
-        *   `/subscribe`: Registra la suscripción del navegador.
-        *   `/send`: Envío inmediato.
-        *   `/schedule`: Programa un envío futuro (usado por timers).
-    *   **Scheduling:** Utiliza `threading.Timer` en memoria. **Nota Importante:** Las notificaciones programadas se pierden si el servidor se reinicia antes de enviarse.
-*   **Frontend:**
-    *   **Service Worker:** `static/service-worker.js`. Recibe el evento `push` y muestra la notificación del sistema.
-    *   **Manager:** `static/js/push_manager.js`. Gestiona permisos y suscripción.
-    *   **Utilidades:** `static/js/runner/utils.js`. `schedulePush()` y `cancelPush()`.
+16. **Push inactividad 3 min**
+    - Condición: paso basado en reps (`rawRepsTarget !== 0`).
+    - Se ejecuta: `schedulePush(180, "Motivación", pushBody(exName), "workout_idle_3m")`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`.
 
-### Flujo de Notificación de Timer
-1.  Frontend llama a `utils.schedulePush(delay, ...)` con el tiempo restante.
-2.  Backend crea un `threading.Timer`.
-3.  Al finalizar el tiempo, Backend envía el payload push a los servidores de FCM/Mozilla.
-4.  Service Worker recibe el evento `push`.
-5.  Service Worker muestra la notificación con alta prioridad (`Urgency: high`).
+17. **Push inactividad 5 min**
+    - Condición: paso basado en reps (`rawRepsTarget !== 0`).
+    - Se ejecuta: `schedulePush(300, "Retoma la rutina", pushBody(exName), "workout_idle_5m")`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`.
 
-### Reglas de Implementación
-1.  **Urgencia:** Todas las notificaciones de timer deben enviarse con header `Urgency: high` para atravesar modos de ahorro de batería en Android/iOS.
-2.  **Interacción:** Se configura `requireInteraction: true` para que la notificación no desaparezca sola.
-3.  **Vibración:** El patrón de vibración se define en el Service Worker (`[200, 100, 200...]`) para asegurar que el usuario sienta la alerta.
-4.  **Sonido:** El navegador gestiona el sonido basado en la configuración del sistema operativo. El Service Worker usa `renotify: true` para permitir sonido en notificaciones consecutivas.
+18. **Notificación del sistema al finalizar rutina**
+    - Condición: `status === 'FINISHED'` y `sendNotification` disponible con permisos y `isNotificationsEnabled`.
+    - Se ejecuta: `sendNotification(pushTitle, pushBody)` → `ServiceWorker.showNotification` (o `new Notification` fallback).
+    - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/hooks/useNotifications.js`.
 
-### Limitaciones Conocidas
-*   **Persistencia:** El agendamiento actual es en memoria RAM del servidor. Un reinicio del servidor elimina los timers pendientes.
-*   **iOS:** Requiere que la PWA esté instalada en la pantalla de inicio (Add to Home Screen) y tenga interacción previa del usuario para funcionar fiablemente en segundo plano.
+## Alertas y confirmaciones (modales)
+Notificaciones tipo modal (bloqueantes), gestionadas por `useWorkoutModals`.
+
+19. **“Notificaciones Bloqueadas”**
+    - Condición: el usuario intenta activar notificaciones y el permiso está `denied`.
+    - Se ejecuta: `showAlert("Notificaciones Bloqueadas", …)` o `alert()` fallback.
+    - Archivos: `static/js/runner/hooks/useNotifications.js`, `static/js/runner/hooks/useWorkoutModals.js`.
+
+20. **“Sesion sincronizada”**
+    - Condición: evento `offline-session-synced` y rutina coincide.
+    - Se ejecuta: `showAlert("Sesion sincronizada", …)` o `window.showAlertModal`.
+    - Archivos: `static/js/runner/hooks/useWorkoutSync.js`.
+
+21. **Errores de guardado al finalizar**
+    - Condición: falla guardado online y falla guardado offline.
+    - Se ejecuta: `showAlert("Error Final", …)` y/o confirmación adicional.
+    - Archivos: `static/js/runner/hooks/useWorkoutSteps.js`, `static/js/runner/hooks/useWorkoutModals.js`.
+
+## Señales visuales/sonoras relacionadas
+No son mensajes de texto, pero informan eventos relevantes.
+
+22. **Pulso visual a mitad y a 2 minutos**
+    - Condición: trabajo basado en tiempo; `remaining === halfTime` o `remaining === 120`.
+    - Se ejecuta: `WorkoutAnimations.pulseEffect()`.
+    - Archivos: `static/js/runner/hooks/useWorkoutTimer.js`.
+
+23. **Efecto “endurance” al llegar a 10s en descanso**
+    - Condición: `status === 'REST'` y `stepTimer === 10`.
+    - Se ejecuta: `WorkoutAnimations.enduranceTimerEffect(10)` y se limpia si cambia.
+    - Archivos: `static/js/runner/hooks/useWorkoutTimer.js`.
+
+24. **Sonido/vibración en fin de descanso y fin de rutina**
+    - Condición: transiciones `REST -> WORK` y `finishWorkout`.
+    - Se ejecuta: `playAlert('rest_end')`, `playAlert('victory')`, `triggerHaptic(...)`.
+    - Archivos: `static/js/runner/hooks/useWorkout.js`, `static/js/runner/hooks/useWorkoutSteps.js`, `static/js/runner/utils.js`.
+
+## Puntos de mejora principales
+1. **`requestNotificationPermission` no existe** en el contexto de `useWorkout`. Se usa en `Header`, `RestOverlay` y `TimerControls`. Debe mapearse a `ensureNotificationPermission` o exportarse con el nombre esperado.
+2. **Duplicidad al finalizar**: se muestran dos mensajes (`"Rutina finalizada"` y `"Fin de la Rutina"`). Unificar para evitar ruido.
+3. **`sendNotification` usa `tag: 'rest-finished'` fijo** incluso para otros contextos, causando reemplazos. Debe usar tags por evento.
+4. **Push se programa aunque el usuario silencie notificaciones** (`isNotificationsEnabled` no se respeta en `schedulePush`).
+5. **`checkRepMotivation` no dispara nada visible**; lógica muerta o incompleta. Decidir si se elimina o se conecta con notificación real.
+
+## Otras recomendaciones
+1. **Persistir preferencia de notificaciones** (`isNotificationsEnabled`) en `localStorage`.
+2. **Deduplicación por `context` en `schedulePush`** para evitar dobles notificaciones cuando cambia el tiempo.
+3. **Corregir cadenas mal codificadas** (se ven “Â¿”, “Ã³”). Revisar encoding de archivos JS.
+4. **Cola de mensajes en `MessageBar`** si se disparan varios en poco tiempo.

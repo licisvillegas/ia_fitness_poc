@@ -33,6 +33,8 @@
         const [exerciseLookup, setExerciseLookup] = useState({});
         const [isPaused, setIsPaused] = useState(false);
         const [message, setMessage] = useState(null);
+        const [messageQueue, setMessageQueue] = useState([]);
+        const messageTimerRef = useRef(null);
         const [showCompletionIcon, setShowCompletionIcon] = useState(false);
         const [showCountdown, setShowCountdown] = useState(false);
         const [countdownValue, setCountdownValue] = useState(3);
@@ -45,6 +47,7 @@
             ensureNotificationPermission,
             sendNotification
         } = useWorkoutNotifications({ logSource: "useWorkout", showAlert });
+        const canSchedulePush = isNotificationsEnabled;
         const [showPending, setShowPending] = useState(false); // Nuevo estado elevado desde App.js
 
         const [currentInput, setCurrentInput] = useState({
@@ -94,17 +97,7 @@
             );
             const isCardioOrTime = stepType === 'cardio' || stepType === 'time';
             return { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime };
-        }, []);
-
-        const checkRepMotivation = React.useCallback((elapsed, flags, exName) => {
-            // Lógica de notificación local migrada a Server Push al inicio del paso
-            if (elapsed === 180 && !flags.min3) {
-                flags.min3 = true;
-            }
-            if (elapsed === 300 && !flags.min5) {
-                flags.min5 = true;
-            }
-        }, []);
+        }, [canSchedulePush]);
 
         const currentStep = useMemo(() => queue[cursor], [queue, cursor]);
         const nextStep = useMemo(() => queue[cursor + 1], [queue, cursor]);
@@ -129,7 +122,6 @@
             currentStep,
             currentStepRef,
             getStepExerciseMeta,
-            checkRepMotivation,
             triggerHaptic,
             getAudio,
             onTimerComplete: () => {
@@ -149,9 +141,32 @@
         });
 
         const showMessage = (text, tone = "info") => {
-            setMessage({ text, tone });
-            setTimeout(() => setMessage(null), 3000);
+            setMessageQueue(prev => [...prev, { text, tone }]);
         };
+
+        useEffect(() => {
+            if (message) return;
+            if (messageQueue.length === 0) return;
+            const nextMsg = messageQueue[0];
+            setMessage(nextMsg);
+            setMessageQueue(prev => prev.slice(1));
+            if (messageTimerRef.current) {
+                clearTimeout(messageTimerRef.current);
+            }
+            messageTimerRef.current = setTimeout(() => {
+                setMessage(null);
+                messageTimerRef.current = null;
+            }, 3000);
+        }, [message, messageQueue]);
+
+        useEffect(() => {
+            return () => {
+                if (messageTimerRef.current) {
+                    clearTimeout(messageTimerRef.current);
+                    messageTimerRef.current = null;
+                }
+            };
+        }, []);
 
 
         const { restoreFromLocalStorage } = useWorkoutPersistence({
@@ -271,7 +286,7 @@
             logSet,
             syncProgress,
             checkPendingAndFinish,
-            schedulePush,
+            schedulePush: canSchedulePush ? schedulePush : null,
             cancelPush,
             enduranceCleanupRef,
             scheduledPushTaskIdsRef,
@@ -418,6 +433,7 @@
                 if (document.visibilityState !== "hidden") return;
                 if (statusRef.current !== "REST") return;
                 if (scheduledPushTaskIdsRef.current.length > 0) return;
+                if (!canSchedulePush) return;
                 const duration = stepTimerRef.current || 0;
                 if (duration <= 0 || !window.Runner.utils.schedulePush) return;
                 if (duration <= 0 || !window.Runner.utils.schedulePush) return;
@@ -446,7 +462,7 @@
                 // ENTRANDO EN DESCANSO: Programar Push
                 const duration = stepTimerRef.current > 0 ? stepTimerRef.current : stepTimer;
 
-                if (duration > 0 && window.Runner.utils.schedulePush) {
+                if (canSchedulePush && duration > 0 && window.Runner.utils.schedulePush) {
                     // Cancelar cualquiera existente
                     if (scheduledPushTaskIdsRef.current.length > 0) {
                         scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
@@ -481,7 +497,7 @@
                 if (meta && (meta.isCardioOrTime || (meta.rawRepsTarget === 0 && meta.rawTimeTarget > 0))) {
                     const totalTime = meta.rawTimeTarget || Number(currentStep.target?.time || 60);
 
-                    if (window.Runner.utils.schedulePush) {
+                    if (canSchedulePush && window.Runner.utils.schedulePush) {
                         // Programar MITAD
                         if (totalTime >= 20) {
                             const halfTime = Math.floor(totalTime / 2);
@@ -501,7 +517,7 @@
                     }
                 } else if (meta && meta.rawRepsTarget !== 0) {
                     // BASADO EN REPS: Programar Avisos de Inactividad (3m, 5m)
-                    if (window.Runner.utils.schedulePush) {
+                    if (canSchedulePush && window.Runner.utils.schedulePush) {
                         const note3 = NOTIFICATIONS.IDLE_3MIN;
                         window.Runner.utils.schedulePush(180, note3.pushTitle, note3.pushBody(meta.exName), "workout_idle_3m", { visibility: document.visibilityState })
                             .then(id => { if (id) scheduledPushTaskIdsRef.current.push(id); });
@@ -526,7 +542,7 @@
                     enduranceCleanupRef.current = null;
                 }
             }
-        }, [status, currentStep?.id]); // Depende del Estado Y del ID del Paso (para pasos de trabajo consecutivos)
+        }, [status, currentStep?.id, canSchedulePush]); // Depende del Estado Y del ID del Paso (para pasos de trabajo consecutivos)
         useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
         useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
 
@@ -605,6 +621,10 @@
                     const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.REST_END;
                     showMessage(`${titleSuccess} ${exName}`, "success");
 
+                    // Si la app no está visible, intentar notificación del sistema como respaldo inmediato
+                    if (document.visibilityState !== 'visible' && sendNotification) {
+                        sendNotification(pushTitle, pushBody, { tag: "rest_end" });
+                    }
 
                     // Reproducir sonido explícitamente (ya que sendNotification no lo hace si la app está abierta)
                     if (window.Runner.utils.playAlert) {
@@ -626,9 +646,8 @@
 
             if (status === 'FINISHED' && prevStatus !== 'FINISHED') {
                 const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.WORKOUT_FINISHED;
-                showMessage(titleSuccess, "success");
                 if (sendNotification) {
-                    sendNotification(pushTitle, pushBody);
+                    sendNotification(pushTitle, pushBody, { tag: "workout_finished" });
                 }
 
                 // Victory sound moved to interaction handler in useWorkoutSteps.js for better mobile support
@@ -636,7 +655,7 @@
                     if (getAudio) getAudio().play().catch(() => { });
                 } catch (e) { console.warn("Fallback sound failed", e); }
 
-                if (window.Runner.utils.schedulePush) {
+                if (canSchedulePush && window.Runner.utils.schedulePush) {
                     window.Runner.utils.schedulePush(
                         1,
                         pushTitle,
@@ -728,6 +747,7 @@
             notificationPermission,
             isNotificationsEnabled,
             toggleNotifications,
+            requestNotificationPermission: ensureNotificationPermission,
             showPending,
             setShowPending,
             checkPendingAndFinish,

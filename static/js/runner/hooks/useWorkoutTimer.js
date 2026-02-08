@@ -8,7 +8,6 @@
             currentStep,
             currentStepRef,
             getStepExerciseMeta,
-            checkRepMotivation,
             triggerHaptic,
             getAudio,
             onTimerComplete
@@ -36,19 +35,6 @@
             notificationFlagsRef.current = {};
         }, [currentStep?.id]);
 
-        useEffect(() => {
-            if (status !== 'WORK' || isPaused) return;
-            const step = currentStep;
-            const meta = getStepExerciseMeta ? getStepExerciseMeta(step) : null;
-            if (!meta) return;
-            const { exName, rawTimeTarget, rawRepsTarget, isCardioOrTime } = meta;
-            if (!isCardioOrTime && rawTimeTarget === 0 && rawRepsTarget !== 0) {
-                if (checkRepMotivation) {
-                    checkRepMotivation(currentStepElapsedRef.current, notificationFlagsRef.current, exName);
-                }
-            }
-        }, [currentStep?.id, status, isPaused, getStepExerciseMeta, checkRepMotivation]);
-
         // Temporizador global y comprobador de notificaciones
         useEffect(() => {
             if ((status !== 'WORK' && status !== 'REST') || isPaused) return;
@@ -66,9 +52,7 @@
                     const flags = notificationFlagsRef.current;
 
                     if (!isCardioOrTime && rawTimeTarget === 0 && rawRepsTarget !== 0) {
-                        if (checkRepMotivation) {
-                            checkRepMotivation(elapsed, flags, exName);
-                        }
+                        // Motivación por reps se maneja vía push en useWorkout.js
                     }
 
                     if (isCardioOrTime || (rawRepsTarget === 0 && rawTimeTarget > 0)) {
@@ -90,7 +74,7 @@
 
             }, 1000);
             return () => clearInterval(int);
-        }, [status, isPaused, getStepExerciseMeta, checkRepMotivation, currentStepRef]);
+        }, [status, isPaused, getStepExerciseMeta, currentStepRef]);
 
         // Lógica del temporizador de paso (Cuenta regresiva)
         useEffect(() => {

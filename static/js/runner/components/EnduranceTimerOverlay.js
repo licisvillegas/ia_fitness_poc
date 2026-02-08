@@ -1,6 +1,7 @@
 (function () {
     const { useEffect, useRef, useState } = React;
     const { useOverlayRegistration } = window.Runner.hooks;
+    const { playTimerBeep } = window.Runner.utils;
 
     window.Runner.components.EnduranceTimerOverlay = () => {
         const [isActive, setIsActive] = useState(false);
@@ -60,6 +61,7 @@
                     if (elapsed >= durationMs) {
                         clearInterval(intervalId);
                         textEl.innerText = "OK";
+                        if (playTimerBeep) playTimerBeep('finish');
                         setTimeout(() => {
                             setIsActive(false);
                             if (onCompleteRef.current) onCompleteRef.current();
@@ -83,6 +85,7 @@
                 },
                 complete: () => {
                     textEl.innerText = "OK";
+                    if (playTimerBeep) playTimerBeep('finish');
                     anime({
                         targets: containerEl,
                         scale: [1, 1.2, 0],

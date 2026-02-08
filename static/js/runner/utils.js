@@ -170,4 +170,50 @@
             console.warn("Cancel push failed", e);
         }
     };
+
+    utils.playTimerBeep = (type = 'go') => {
+        const ctx = initAudio();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'go') {
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+            return;
+        }
+
+        if (type === 'rest') {
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+            return;
+        }
+
+        if (type === 'finish') {
+            const now = ctx.currentTime;
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.frequency.value = freq;
+                gain2.gain.setValueAtTime(0.1, now + i * 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.4);
+                osc2.start(now + i * 0.15);
+                osc2.stop(now + i * 0.15 + 0.4);
+            });
+        }
+    };
 })();

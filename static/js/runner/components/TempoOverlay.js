@@ -1,7 +1,7 @@
 (function () {
     const { useEffect, useRef, useState } = React;
     const { useOverlayRegistration } = window.Runner.hooks;
-    const { getAudio } = window.Runner.utils;
+    const { playTimerBeep, resumeAudio } = window.Runner.utils;
 
     window.Runner.components.TempoOverlay = () => {
         const [isActive, setIsActive] = useState(false);
@@ -34,14 +34,13 @@
             setIsActive(false);
         };
 
-        const playBeep = () => {
+        const playBeep = (phaseKey) => {
             if (!beepEnabled) return;
             try {
-                const audio = getAudio();
-                if (audio && audio.play) {
-                    audio.currentTime = 0;
-                    audio.play();
-                }
+                if (resumeAudio) resumeAudio();
+                if (!playTimerBeep) return;
+                const isHold = String(phaseKey || '').includes('hold');
+                playTimerBeep(isHold ? 'rest' : 'go');
             } catch (e) {
                 // ignore
             }
@@ -51,7 +50,7 @@
             setPhaseLabel(phase.label);
             setPhaseColor(phase.color);
             setRemaining(phase.duration);
-            playBeep();
+            playBeep(phase.key);
         };
 
         const advancePhase = () => {

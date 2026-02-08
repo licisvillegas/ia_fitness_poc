@@ -124,6 +124,7 @@
         const handleStart = () => {
             const overlays = window.Runner?.overlays;
             if (!overlays) return;
+            if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
 
             if (mode === 'tempo') {
                 const ecc = clampNumber(tempoEccentric);

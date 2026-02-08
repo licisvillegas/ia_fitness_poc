@@ -43,15 +43,17 @@
                     if (ctx.state === 'suspended') ctx.resume().catch(() => { });
                     const now = ctx.currentTime;
                     // Melodía tipo 'Final Fantasy' corta: Do-Mi-Sol-Do(octava)
+                    // Matched to dashboard_tools.js success tune parameters
                     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         osc.connect(gain);
                         gain.connect(ctx.destination);
                         osc.frequency.value = freq;
-                        gain.type = "triangle"; // Sonido más suave
-                        gain.gain.setValueAtTime(0.5, now + i * 0.15);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
+                        // Reduce gain to 0.1 to match working dashboard implementation
+                        // Removed invalid gain.type assignment
+                        gain.gain.setValueAtTime(0.1, now + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.4);
                         osc.start(now + i * 0.15);
                         osc.stop(now + i * 0.15 + 0.4);
                     });

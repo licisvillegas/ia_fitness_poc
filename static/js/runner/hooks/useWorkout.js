@@ -673,6 +673,11 @@
             }
         };
 
+        const wrapWithAudioResume = (fn) => (...args) => {
+            if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
+            return fn(...args);
+        };
+
         const value = {
             routine: routineState,
             queue,
@@ -684,12 +689,12 @@
             stepTimer,
             isTimerRunning,
             setIsTimerRunning,
-            next,
-            prev,
-            skipToNextWork,
-            deferExercise,
-            skipRest,
-            addRestTime,
+            next: wrapWithAudioResume(next),
+            prev: wrapWithAudioResume(prev),
+            skipToNextWork: wrapWithAudioResume(skipToNextWork),
+            deferExercise: wrapWithAudioResume(deferExercise),
+            skipRest: wrapWithAudioResume(skipRest),
+            addRestTime: wrapWithAudioResume(addRestTime),
             logSet,
             logSpecificStep,
             updateLoggedStep,
@@ -736,7 +741,7 @@
             handleCancelAction: closeConfirm
         };
 
-        return <WorkoutContext.Provider value={value}>{children}</WorkoutContext.Provider>;
+        return <WorkoutContext.Provider value={value} > {children}</WorkoutContext.Provider >;
     };
 
     window.Runner.hooks.useWorkout = () => useContext(WorkoutContext);

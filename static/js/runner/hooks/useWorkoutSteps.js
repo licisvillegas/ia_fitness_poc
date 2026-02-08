@@ -145,9 +145,33 @@
             try {
                 // Ensure audio is ready/resumed if possible
                 if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
-                if (window.Runner.utils.playAlert) window.Runner.utils.playAlert('victory');
+                if (window.Runner.utils.playAlert) {
+                    const res = window.Runner.utils.playAlert('victory');
+                    if (res && typeof res.then === 'function') {
+                        res.catch(() => {
+                            // Fallback: play on next user interaction if autoplay blocked
+                            const onInteract = () => {
+                                if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
+                                window.Runner.utils.playAlert('victory');
+                                document.removeEventListener('pointerdown', onInteract, true);
+                                document.removeEventListener('click', onInteract, true);
+                            };
+                            document.addEventListener('pointerdown', onInteract, true);
+                            document.addEventListener('click', onInteract, true);
+                        });
+                    }
+                }
             } catch (e) {
                 console.warn("Victory sound trigger failed", e);
+                // Fallback: play on next user interaction if autoplay blocked
+                const onInteract = () => {
+                    if (window.Runner.utils.resumeAudio) window.Runner.utils.resumeAudio();
+                    window.Runner.utils.playAlert('victory');
+                    document.removeEventListener('pointerdown', onInteract, true);
+                    document.removeEventListener('click', onInteract, true);
+                };
+                document.addEventListener('pointerdown', onInteract, true);
+                document.addEventListener('click', onInteract, true);
             }
 
             // Disparador de Celebración

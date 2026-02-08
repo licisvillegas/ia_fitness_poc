@@ -608,7 +608,8 @@
 
                     // Reproducir sonido explícitamente (ya que sendNotification no lo hace si la app está abierta)
                     if (window.Runner.utils.playAlert) {
-                        window.Runner.utils.playAlert('beep_strong');
+                        // Usar nuevo sonido oscilador 'rest_end' (Start Work)
+                        window.Runner.utils.playAlert('rest_end');
                     }
                     /* 
                     if (sendNotification) {

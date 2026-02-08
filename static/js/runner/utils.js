@@ -63,6 +63,27 @@
                     // pero si ctx existe, asumimos que intenta sonar.
                     return;
                 }
+            } else if (type === 'rest_end') {
+                const ctx = initAudio();
+                if (ctx) {
+                    if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    // High pitch for GO/Start Work (Matched to dashboard_tools.js)
+                    osc.frequency.setValueAtTime(880, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+
+                    // Reduce gain to 0.1 to match dashboard levels
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                    return;
+                }
             }
 
             const audio = utils.getAudio(type);

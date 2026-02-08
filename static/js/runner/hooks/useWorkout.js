@@ -608,6 +608,11 @@
                     const { titleSuccess, pushTitle, pushBody } = NOTIFICATIONS.REST_END;
                     showMessage(`${titleSuccess} ${exName}`, "success");
 
+
+                    // Reproducir sonido explícitamente (ya que sendNotification no lo hace si la app está abierta)
+                    if (window.Runner.utils.playAlert) {
+                        window.Runner.utils.playAlert('beep_strong');
+                    }
                     /* 
                     if (sendNotification) {
                         sendNotification(pushTitle, pushBody);

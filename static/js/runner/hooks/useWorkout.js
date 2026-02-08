@@ -609,6 +609,7 @@
 
             if (status === 'WORK' && currentStep.type === 'work') {
                 const exName = currentStep.exercise?.exercise_name || currentStep.exercise?.name || "Ejercicio";
+                const hasRemainingWork = Array.isArray(queue) && queue.slice(cursor + 1).some(s => s.type === 'work');
                 if (prevStatus === 'REST') {
                     // Prioridad: Cancelar Push programado para evitar duplicados si ya estamos aquí
                     if (scheduledPushTaskIdsRef.current.length > 0) {
@@ -627,7 +628,7 @@
                     }
 
                     // Reproducir sonido explícitamente (ya que sendNotification no lo hace si la app está abierta)
-                    if (window.Runner.utils.playAlert) {
+                    if (window.Runner.utils.playAlert && hasRemainingWork) {
                         // Usar nuevo sonido oscilador 'rest_end' (Start Work)
                         window.Runner.utils.playAlert('rest_end');
                     }

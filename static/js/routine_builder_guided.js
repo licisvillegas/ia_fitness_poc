@@ -1101,10 +1101,17 @@
     const partsLabel = getRoutineBodyPartsLabel(routine);
     const exercises = getExerciseCount(routine);
     const day = routine.routine_day || "-";
-    const previewHtml = buildRoutinePreviewHtml(routine);
+
+    // Use RoutineRenderer
+    let previewHtml = '';
+    if (typeof RoutineRenderer !== 'undefined') {
+      previewHtml = RoutineRenderer.buildPreviewHtml(routine);
+    } else {
+      previewHtml = '<div class="text-danger p-3">Error: RoutineRenderer not loaded.</div>';
+    }
 
     list.innerHTML = `
-      <div class="routine-preview-card">
+      <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
         <div class="text-center mb-3">
           <div class="h3 fw-bold text-cyber-green mb-1">${routine.name || "Rutina"}</div>
           <div class="text-secondary">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
@@ -1115,7 +1122,7 @@
             <div class="text-white">${partsLabel}</div>
           </div>
           <div class="col-6">
-            <div class="text-secondary small">Dia</div>
+            <div class="text-secondary small">Día</div>
             <div class="text-white">${day}</div>
           </div>
           <div class="col-6">
@@ -1151,6 +1158,7 @@
     return items.filter((item) => item && item.item_type === "exercise").length;
   };
 
+  // getRestSeconds retained for Step 2 config
   const getRestSeconds = (item) => {
     if (!item) return 60;
     if (item.rest_seconds != null) return item.rest_seconds;
@@ -1158,11 +1166,12 @@
     return 60;
   };
 
+  // getEquipmentMeta retained for Step 2 config
   const getEquipmentMeta = (equipmentKey) => {
     const map = {
       barbell: { label: "Barra", icon: "fas fa-grip-lines" },
       dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
-      machine: { label: "Maquina", icon: "fas fa-cogs" },
+      machine: { label: "Máquina", icon: "fas fa-cogs" },
       cable: { label: "Polea", icon: "fas fa-wave-square" },
       bodyweight: { label: "Corporal", icon: "fas fa-running" },
       other: { label: "Otro", icon: "fas fa-toolbox" },
@@ -1214,193 +1223,6 @@
     modalEl.addEventListener("hidden.bs.modal", () => {
       iframe.src = "";
     }, { once: true });
-  };
-
-  const buildRoutinePreviewHtml = (routine) => {
-    const items = Array.isArray(routine.items) ? routine.items : [];
-    const isRestItem = (item) => item && (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null));
-    const isExerciseItem = (item) => item && item.item_type === "exercise";
-    const isGroupHeader = (item) => item && item.item_type === "group";
-
-    const groupMetaMap = new Map();
-    items.forEach((item) => {
-      if (isGroupHeader(item)) {
-        groupMetaMap.set(item._id || item.id, {
-          name: item.group_name || item.name || "Circuito",
-          note: item.note || item.description || "",
-        });
-      }
-    });
-
-    const blocks = [];
-    const blockIds = new Set();
-    const groupEntries = new Map();
-
-    const ensureGroupBlock = (groupId) => {
-      if (!groupId || blockIds.has(groupId)) return;
-      blockIds.add(groupId);
-      blocks.push({ type: "group", id: groupId });
-    };
-
-    items.forEach((item) => {
-      if (item.item_type === "group" || Array.isArray(item.items)) {
-        if (Array.isArray(item.items) && item.items.length > 0) {
-          blocks.push({ type: "inline_group", item });
-          return;
-        }
-        ensureGroupBlock(item._id || item.id);
-        return;
-      }
-
-      if (isExerciseItem(item) || isRestItem(item)) {
-        const gid = item.group_id;
-        if (gid) {
-          ensureGroupBlock(gid);
-          if (!groupEntries.has(gid)) groupEntries.set(gid, []);
-          groupEntries.get(gid).push(item);
-        } else {
-          blocks.push({ type: "ungrouped", entry: item });
-        }
-      }
-    });
-
-    const renderEntry = (item) => {
-      if (isRestItem(item)) {
-        const restLabel = item.note || "Descanso";
-        const restSeconds = getRestSeconds(item);
-        return `
-          <div class="routine-preview-item d-flex justify-content-between align-items-center">
-            <div>
-              <div class="text-white fw-bold">${restLabel}</div>
-              <div class="text-secondary small">Pausa</div>
-            </div>
-            <div class="text-end text-secondary small">${restSeconds}s</div>
-          </div>
-        `;
-      }
-
-      const name = item.exercise_name || item.name || "Ejercicio";
-      const bodyPartLabel = translateBodyPart(item.body_part);
-      const sets = item.target_sets || item.sets || 1;
-      const reps = item.target_reps || item.reps || "-";
-      const time = item.target_time_seconds || item.time_seconds || 60;
-      const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
-      const rest = getRestSeconds(item);
-      const equipmentMeta = getEquipmentMeta(item.equipment);
-      const hasVideo = item.video_url && item.video_url.trim() !== "";
-      const substitutes = resolveSubstitutes(item.substitutes || []);
-      const subsId = `subs_${safeId(routine._id)}_${safeId(item._id)}`;
-
-      return `
-        <div class="routine-preview-item d-flex justify-content-between align-items-start">
-          <div>
-            <div class="d-flex align-items-center gap-2">
-              <div class="text-white fw-bold">${name}</div>
-              ${hasVideo ? `
-                <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')">
-                  <i class="fab fa-youtube"></i>
-                </button>
-              ` : ""}
-            </div>
-            <div class="d-flex flex-wrap gap-2 mt-1">
-              <span class="badge bg-secondary">${bodyPartLabel}</span>
-              <span class="badge bg-dark border border-secondary text-info">
-                <i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}
-              </span>
-            </div>
-            ${substitutes.length ? `
-              <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
-                Sustitutos (${substitutes.length})
-              </button>
-              <div class="collapse mt-2" id="${subsId}">
-                <div class="d-flex flex-column gap-2">
-                  ${substitutes.map((sub) => `
-                    <div class="routine-preview-item d-flex align-items-center justify-content-between">
-                      <div>
-                        <div class="fw-bold text-white">${sub.name || "Ejercicio"}</div>
-                        <div class="text-secondary small">
-                          <i class="${getEquipmentMeta(sub.equipment).icon} me-1"></i>${getEquipmentMeta(sub.equipment).label}
-                        </div>
-                      </div>
-                      ${sub.video_url ? `
-                        <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')">
-                          <i class="fab fa-youtube"></i>
-                        </button>
-                      ` : ""}
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-            ` : ""}
-          </div>
-          <div class="text-end text-secondary small">
-            <div>${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}</div>
-            <div>Descanso ${rest}s</div>
-          </div>
-        </div>
-      `;
-    };
-
-    const htmlParts = [];
-    let lastBlockWasUngrouped = false;
-
-    blocks.forEach((block) => {
-      if (block.type === "ungrouped") {
-        if (!lastBlockWasUngrouped) {
-          htmlParts.push(`
-            <div class="routine-preview-group">
-              <div class="text-cyber-blue fw-bold">Sin grupo</div>
-            </div>
-          `);
-          lastBlockWasUngrouped = true;
-        }
-        htmlParts.push(renderEntry(block.entry));
-        return;
-      }
-
-      if (block.type === "group") {
-        lastBlockWasUngrouped = false;
-        const entries = groupEntries.get(block.id) || [];
-        const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
-        if (entries.length) {
-          htmlParts.push(`
-            <div class="routine-preview-group">
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="text-cyber-orange fw-bold">${meta.name}</div>
-                <div class="text-secondary small">${entries.length} items</div>
-              </div>
-              ${meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""}
-            </div>
-          `);
-          entries.forEach((entry) => {
-            htmlParts.push(renderEntry(entry));
-          });
-        }
-        return;
-      }
-
-      if (block.type === "inline_group") {
-        lastBlockWasUngrouped = false;
-        const item = block.item;
-        const entries = (item.items || []).filter((sub) => isExerciseItem(sub) || isRestItem(sub));
-        if (entries.length) {
-          htmlParts.push(`
-            <div class="routine-preview-group">
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="text-cyber-orange fw-bold">${item.group_name || item.name || "Circuito"}</div>
-                <div class="text-secondary small">${entries.length} items</div>
-              </div>
-              ${(item.note || item.description) ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""}
-            </div>
-          `);
-          entries.forEach((entry) => {
-            htmlParts.push(renderEntry(entry));
-          });
-        }
-      }
-    });
-
-    return htmlParts.join("") || '<div class="text-secondary small">Sin ejercicios.</div>';
   };
 
   const loadBodyParts = async () => {

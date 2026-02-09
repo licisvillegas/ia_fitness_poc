@@ -332,16 +332,16 @@
       { key: 'Saturday', label: 'S' }
     ];
 
-      const todayEng = new Date().toLocaleDateString("en-US", { weekday: "long" });
-      const routineByDay = {};
-      const unassigned = [];
-      window.loadedRoutinesCache.forEach(r => {
-        if (r.routine_day) {
-          routineByDay[r.routine_day] = r;
-        } else {
-          unassigned.push(r);
-        }
-      });
+    const todayEng = new Date().toLocaleDateString("en-US", { weekday: "long" });
+    const routineByDay = {};
+    const unassigned = [];
+    window.loadedRoutinesCache.forEach(r => {
+      if (r.routine_day) {
+        routineByDay[r.routine_day] = r;
+      } else {
+        unassigned.push(r);
+      }
+    });
 
     // Card Container (Hidden initially)
     const cardContainer = document.createElement('div');
@@ -368,28 +368,28 @@
             window.activeCollapsedRoutineId = null;
           } else {
             // Open
-              circle.classList.add('active');
-              cardContainer.style.display = 'block';
-              cardContainer.innerHTML = '';
-              const card = window.createCompactRoutineCard(r, window.translateDay(r.routine_day), isToday);
-              cardContainer.appendChild(card);
-              if (unassigned.length > 0) {
-                const title = document.createElement('div');
-                title.className = 'col-12 unassigned-section-title mt-3';
-                title.innerText = 'Rutinas libres para hoy';
-                cardContainer.appendChild(title);
+            circle.classList.add('active');
+            cardContainer.style.display = 'block';
+            cardContainer.innerHTML = '';
+            const card = window.createCompactRoutineCard(r, window.translateDay(r.routine_day), isToday);
+            cardContainer.appendChild(card);
+            if (unassigned.length > 0) {
+              const title = document.createElement('div');
+              title.className = 'col-12 unassigned-section-title mt-3';
+              title.innerText = 'Rutinas libres para hoy';
+              cardContainer.appendChild(title);
 
-                const unassignedGrid = document.createElement('div');
-                unassignedGrid.className = 'col-12 weekly-grid';
-                unassigned.forEach(u => {
-                  unassignedGrid.appendChild(window.createCompactRoutineCard(u, 'General', false));
-                });
-                cardContainer.appendChild(unassignedGrid);
-              }
-              window.activeCollapsedRoutineId = r._id;
+              const unassignedGrid = document.createElement('div');
+              unassignedGrid.className = 'col-12 weekly-grid';
+              unassigned.forEach(u => {
+                unassignedGrid.appendChild(window.createCompactRoutineCard(u, 'General', false));
+              });
+              cardContainer.appendChild(unassignedGrid);
             }
-          };
-        }
+            window.activeCollapsedRoutineId = r._id;
+          }
+        };
+      }
 
       row.appendChild(circle);
     });
@@ -484,327 +484,71 @@
     const modalBody = document.getElementById("routineModalBody");
     if (!modalTitle || !modalBody) return;
 
-    const partsLabel = window.getRoutineBodyPartsLabel(routine);
+    // Use RoutineRenderer for building the preview HTML
+    if (typeof RoutineRenderer === 'undefined') {
+      console.error("RoutineRenderer not found. Make sure routine_renderer.js is included.");
+      modalBody.innerHTML = '<div class="text-danger p-3">Error: no se pudo cargar el renderizador de rutinas.</div>';
+      return;
+    }
+
+    const previewHtml = RoutineRenderer.buildPreviewHtml(routine);
+
+    const partsLabel = getRoutineBodyPartsLabel(routine);
     const exercises = window.countExercises(routine);
-    const day = routine.routine_day ? window.translateDay(routine.routine_day) : "-";
-    const validity = routine.assigned_expires_at ? window.formatDate(routine.assigned_expires_at) : "";
+    const estDuration = (routine.estimated_duration_minutes || 45) + " min";
 
-    modalTitle.innerText = routine.name || "Detalle de Rutina";
-
-    // Build Rich Preview HTML
-    const previewHtml = buildRoutinePreviewHtml(routine);
+    // Calculate validity if assigned
+    const assignedInfo = routine.assigned_info;
+    let validityHtml = '';
+    if (assignedInfo && assignedInfo.expires_at) {
+      const exp = new Date(assignedInfo.expires_at);
+      const now = new Date();
+      const diffTime = exp - now;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) {
+        validityHtml = `<div class="text-danger small">Vencida hace ${Math.abs(diffDays)} días</div>`;
+      } else {
+        validityHtml = `<div class="text-success small">Vence en ${diffDays} días (${exp.toLocaleDateString()})</div>`;
+      }
+    }
 
     modalBody.innerHTML = `
         <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
             <div class="text-center mb-3">
-                <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
-                <div class="text-secondary small">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
+                <h2 class="display-6 fw-bold text-white mb-2">${routine.name || "Rutina"}</h2>
+                <p class="text-secondary m-0">${exercises} ejercicios - ${estDuration}</p>
+                 ${validityHtml}
             </div>
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <div class="text-secondary small">Grupos</div>
-                    <div class="text-info small">${partsLabel}</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-secondary small">Día</div>
-                    <div class="text-warning small">${day}</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-secondary small">Ejercicios</div>
-                    <div class="text-white small">${exercises}</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-secondary small">Estado</div>
-                    <div class="text-white small">${validity || (routine.is_active !== false ? "Activa" : "Oculta")}</div>
-                </div>
+            
+            <div class="row g-2 mb-3 border-bottom border-secondary pb-3">
+               <div class="col-4 text-center border-end border-secondary">
+                  <div class="text-secondary small text-uppercase">Grupos</div>
+                  <div class="text-white small">${partsLabel}</div>
+               </div>
+               <div class="col-4 text-center border-end border-secondary">
+                  <div class="text-secondary small text-uppercase">Día</div>
+                  <div class="text-white small">${routine.routine_day || 'N/A'}</div>
+               </div>
+                <div class="col-4 text-center">
+                  <div class="text-secondary small text-uppercase">Nivel</div>
+                  <div class="text-white small">${routine.difficulty_level || 'N/A'}</div>
+               </div>
             </div>
-            <hr class="border-secondary">
+
             <div class="routine-preview-scroll d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">
                 ${previewHtml}
             </div>
+
             <div class="d-grid mt-3">
-               <a href="/workout/run/${routine._id}?return_to=${encodeURIComponent(window.currentReturnTo)}" class="btn btn-primary">
+               <a href="/workout/run/${routine._id}?return_to=${encodeURIComponent(window.currentReturnTo)}" class="btn btn-primary btn-lg">
                  <i class="fas fa-play me-2"></i> Iniciar Rutina
                </a>
             </div>
         </div>
       `;
 
-    // Initialize Video Buttons
-    // Note: buildRoutinePreviewHtml uses onclick="openVideoModal('url')" so we don't need manual listeners here if we expose openVideoModal to window or ensure it's in scope. 
-    // The previous implementation added listeners. The new one uses onclick attributes. 
-    // We need to make sure openVideoModal is available globally or we attach listeners.
-    // The ported code uses onclick="openVideoModal(...)". We will expose openVideoModal to window.
-
     const modal = new bootstrap.Modal(document.getElementById("routineModal"));
     modal.show();
-
-    // Ensure video modal cleanup
-    const videoModalEl = document.getElementById("videoModal");
-    if (videoModalEl) {
-      videoModalEl.addEventListener('hidden.bs.modal', () => {
-        const frame = document.getElementById("videoFrame");
-        if (frame) frame.src = "";
-      }, { once: true });
-    }
   };
-
-
-  // --- Rich Rendering Helpers (Ported from routines_catalog_user.html) ---
-
-  function buildRoutinePreviewHtml(routine) {
-    // Handle both older 'groups' structure and newer/flat 'items' structure
-    // If 'groups' exists and 'items' is empty/flat, we might need to favor groups or flatten groups into items for the renderer.
-    // The robust catalog renderer works on a flat list of items that are tagged with item_type='group' or 'exercise'
-    // OR it handles a 'groups' array if we adapt it.
-    // Let's adapt routine.groups into a flat list if routine.items is empty/incompatible, 
-    // OR just rely on routine.items if the backend provides it normalized (which api_my_routine_detail does).
-    // However, 'Assigned Routines' might still rely on 'groups'.
-
-    let items = [];
-    if (routine.items && routine.items.length > 0) {
-      items = routine.items;
-    } else if (routine.groups && routine.groups.length > 0) {
-      // Convert legacy groups to flattened items for the renderer
-      routine.groups.forEach(g => {
-        items.push({ item_type: 'group', name: g.name, _id: g._id || 'g_' + Math.random() });
-        if (g.items) items.push(...g.items.map(i => ({ ...i, group_id: g._id })));
-      });
-    }
-
-    const isRestItem = (item) => item && (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null));
-    const isExerciseItem = (item) => item && (item.item_type === "exercise" || !item.item_type); // Default to exercise
-    const isGroupHeader = (item) => item && item.item_type === "group";
-    const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
-
-    // 1. Pre-scan for Group Metadata
-    const groupMetaMap = new Map();
-    items.forEach(item => {
-      if (isGroupHeader(item)) {
-        groupMetaMap.set(item._id || item.id, {
-          name: item.group_name || item.name || "Circuito",
-          note: item.note || item.description || ""
-        });
-      }
-    });
-
-    // 2. Cluster items
-    const blocks = [];
-    const blockIds = new Set();
-    const groupEntries = new Map();
-
-    const ensureGroupBlock = (groupId) => {
-      if (!groupId || blockIds.has(groupId)) return;
-      blockIds.add(groupId);
-      blocks.push({ type: 'group', id: groupId });
-    };
-
-    items.forEach((item, idx) => {
-      // Inline groups
-      if (item.item_type === "group" && item.items && Array.isArray(item.items)) {
-        blocks.push({ type: 'inline_group', item: item });
-        return;
-      }
-      if (item.item_type === "group") {
-        ensureGroupBlock(item._id || item.id);
-        return;
-      }
-
-      if (isExerciseItem(item) || isRestItem(item)) {
-        const gid = item.group_id;
-        if (gid) {
-          ensureGroupBlock(gid);
-          if (!groupEntries.has(gid)) groupEntries.set(gid, []);
-          groupEntries.get(gid).push(item);
-        } else {
-          blocks.push({ type: 'ungrouped', entry: item });
-        }
-      }
-    });
-
-    // 3. Render Blocks
-    const htmlParts = [];
-    let lastBlockWasUngrouped = false;
-
-    const renderEntry = (item, idxKey) => {
-      if (isRestItem(item)) {
-        const restLabel = item.note || "Descanso";
-        const restSeconds = getRestSeconds(item);
-        return `
-                    <div class="routine-preview-item d-flex justify-content-between align-items-center mb-1" style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
-                        <div>
-                            <div class="text-white small fw-bold"><i class="fas fa-hourglass-half me-2 text-secondary"></i>${restLabel}</div>
-                        </div>
-                        <div class="text-end text-secondary small">${restSeconds}s</div>
-                    </div>
-                `;
-      }
-
-      const name = item.exercise_name || item.name || "Ejercicio";
-      const bodyPartLabel = translateBodyPart(item.body_part);
-      const sets = item.target_sets || item.sets || 1;
-      const reps = item.target_reps || item.reps || "-";
-      const time = item.target_time_seconds || item.time_seconds || 60;
-      const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
-      // Check for series (legacy structure from assigned routines)
-      let setsRepText = `${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}`;
-      if (item.series && Array.isArray(item.series) && item.series.length > 0) {
-        setsRepText = `${item.series.length} series: ` + item.series.map(s => s.reps).join('/');
-      }
-
-      const rest = getRestSeconds(item);
-      const equipmentMeta = getEquipmentMeta(item.equipment);
-      const hasVideo = item.video_url && item.video_url.trim() !== "";
-      // Simplified subs for now
-      const substitutes = resolveSubstitutes(item.substitutes || []);
-      const subsId = `subs_${safeId(routine._id)}_${idxKey}`;
-
-      return `
-                <div class="routine-preview-item d-flex justify-content-between align-items-start mb-2" style="background: rgba(40,40,45,0.8); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center gap-2">
-                             <span class="badge bg-dark text-secondary border border-secondary" style="font-size: 0.6rem; min-width: 20px;">${idxKey.split('_').pop() * 1 + 1}</span>
-                            <div class="text-white fw-bold" style="font-size: 0.9rem;">${name}</div>
-                            ${hasVideo ? `
-                                <button class="btn btn-sm btn-link p-0 text-danger" onclick="window.openVideoModal('${item.video_url}')">
-                                    <i class="fab fa-youtube"></i>
-                                </button>
-                            ` : ""}
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-1">
-                            <span class="badge bg-secondary" style="font-size: 0.65rem;">${bodyPartLabel}</span>
-                            <span class="badge bg-dark border border-secondary text-info" style="font-size: 0.65rem;">
-                                <i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}
-                            </span>
-                        </div>
-                         ${substitutes.length ? `
-                            <button class="btn btn-sm btn-link text-info p-0 mt-1" style="font-size: 0.7rem; text-decoration: none;" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
-                                <i class="fas fa-exchange-alt me-1"></i> Sustitutos (${substitutes.length})
-                            </button>
-                            <div class="collapse mt-1" id="${subsId}">
-                                <div class="d-flex flex-column gap-1 ps-2 border-start border-info">
-                                    ${substitutes.map(sub => `
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="text-secondary small" style="font-size: 0.8rem;">${sub.name || "Ejercicio"}</div>
-                                            ${sub.video_url ? `
-                                                <button class="btn btn-sm btn-link p-0 text-danger" onclick="window.openVideoModal('${sub.video_url}')"><i class="fab fa-youtube" style="font-size: 0.8rem;"></i></button>
-                                            ` : ""}
-                                        </div>
-                                    `).join("")}
-                                </div>
-                            </div>
-                        ` : ""}
-                    </div>
-                    <div class="text-end text-secondary small ms-2" style="min-width: 80px;">
-                        <div class="fw-bold text-light">${setsRepText}</div>
-                        <div>Descanso ${rest}s</div>
-                    </div>
-                </div>
-            `;
-    };
-
-    blocks.forEach((block, bIdx) => {
-      if (block.type === 'ungrouped') {
-        if (!lastBlockWasUngrouped) {
-          htmlParts.push(`<h6 class="text-cyber-blue small fw-bold text-uppercase mt-3 mb-2">Ejercicios</h6>`);
-          lastBlockWasUngrouped = true;
-        }
-        htmlParts.push(renderEntry(block.entry, `u_${bIdx}`));
-      } else if (block.type === 'group') {
-        lastBlockWasUngrouped = false;
-        const entries = groupEntries.get(block.id) || [];
-        const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
-
-        if (entries.length > 0) {
-          htmlParts.push(`
-                        <div class="mt-3 mb-2 p-2 rounded" style="background: rgba(0, 210, 255, 0.05); border: 1px dashed rgba(0, 210, 255, 0.2);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="text-info fw-bold small text-uppercase">${meta.name}</div>
-                                <div class="text-secondary small" style="font-size: 0.7rem;">${entries.length} items</div>
-                            </div>
-                            ${meta.note ? `<div class="text-secondary small fst-italic mb-2">"${meta.note}"</div>` : ""}
-                            ${entries.map((entry, eIdx) => renderEntry(entry, `g_${block.id}_${eIdx}`)).join("")}
-                        </div>
-                    `);
-        }
-      } else if (block.type === 'inline_group') {
-        lastBlockWasUngrouped = false;
-        const item = block.item;
-        // Handle legacy inline group internal items which might define their own structure
-        const entries = (item.items || []).filter(sub => isExerciseItem(sub) || isRestItem(sub));
-        if (entries.length > 0) {
-          htmlParts.push(`
-                        <div class="mt-3 mb-2 p-2 rounded" style="background: rgba(255, 165, 0, 0.05); border: 1px dashed rgba(255, 165, 0, 0.2);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="text-warning fw-bold small text-uppercase">${item.group_name || item.name || "Circuito"}</div>
-                                <div class="text-secondary small" style="font-size: 0.7rem;">${entries.length} items</div>
-                            </div>
-                            ${(item.note || item.description) ? `<div class="text-secondary small fst-italic mb-2">"${item.note || item.description}"</div>` : ""}
-                             ${entries.map((entry, eIdx) => renderEntry(entry, `ig_${bIdx}_${eIdx}`)).join("")}
-                        </div>
-                    `);
-        }
-      }
-    });
-
-    if (htmlParts.length === 0) return '<div class="text-muted text-center py-3">No hay ejercicios en esta rutina.</div>';
-    return htmlParts.join("");
-  }
-
-  function getRestSeconds(item) {
-    if (!item) return 60;
-    if (item.rest_seconds != null) return item.rest_seconds;
-    if (item.rest != null && item.rest !== item.target_time_seconds) return item.rest;
-    return 60;
-  }
-
-  function getEquipmentMeta(equipmentKey) {
-    const raw = Array.isArray(equipmentKey) ? (equipmentKey[0] || "") : equipmentKey;
-    const map = {
-      barbell: { label: "Barra", icon: "fas fa-grip-lines" },
-      dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
-      machine: { label: "Máquina", icon: "fas fa-cogs" },
-      cable: { label: "Polea", icon: "fas fa-wave-square" },
-      band: { label: "Banda", icon: "fas fa-link" },
-      bench: { label: "Banco", icon: "fas fa-chair" },
-      bodyweight: { label: "Corporal", icon: "fas fa-running" },
-      other: { label: "Otro", icon: "fas fa-toolbox" }
-    };
-    return map[raw] || { label: "Gral", icon: "fas fa-dumbbell" };
-  }
-
-  function translateBodyPart(bp) {
-    const map = {
-      'chest': 'Pecho', 'back': 'Espalda', 'legs': 'Pierna',
-      'shoulders': 'Hombros', 'arms': 'Brazos', 'abs': 'Abdomen',
-      'cardio': 'Cardio', 'fullbody': 'Full Body'
-    };
-    return map[bp] || bp || "Gral";
-  }
-
-  function resolveSubstitutes(substitutes) {
-    if (!Array.isArray(substitutes) || substitutes.length === 0) return [];
-    return substitutes.filter(s => s && typeof s === 'object');
-  }
-
-  window.openVideoModal = function (url) {
-    const frame = document.getElementById("videoFrame");
-    if (frame) {
-      // transform watch URL to embed if needed
-      let embedUrl = url;
-      if (embedUrl.includes("youtube.com/watch")) {
-        const match = embedUrl.match(/[?&]v=([^&]+)/);
-        if (match && match[1]) embedUrl = `https://www.youtube.com/embed/${match[1]}`;
-      } else if (embedUrl.includes("youtu.be/")) {
-        const match = embedUrl.match(/youtu\.be\/([^?&]+)/);
-        if (match && match[1]) embedUrl = `https://www.youtube.com/embed/${match[1]}`;
-      }
-
-      frame.src = embedUrl;
-      const modal = new bootstrap.Modal(document.getElementById("videoModal"));
-      modal.show();
-      // Cleanup handled in openRoutineModal event listener to avoid duplicate listeners
-    }
-  }
 
 })();

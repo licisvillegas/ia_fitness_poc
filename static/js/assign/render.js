@@ -46,9 +46,14 @@
 
             // Plantilla HTML de tarjeta de rutina
             card.innerHTML = `
-                <div class="routine-header">
-                    <h5 class="mb-0 text-truncate fw-bold" title="${routine.name}">${routine.name}</h5>
-                    <small class="text-muted" style="font-size: 0.75rem;">ID: ${routine._id}</small>
+                <div class="routine-header d-flex justify-content-between align-items-start">
+                    <div style="max-width: 85%;">
+                        <h5 class="mb-0 text-truncate fw-bold" title="${routine.name}">${routine.name}</h5>
+                        <small class="text-muted" style="font-size: 0.75rem;">ID: ${routine._id}</small>
+                    </div>
+                    <button class="btn btn-sm btn-icon text-info" onclick="window.AssignRender.openRoutineModal('${routine._id}')" title="Ver detalle">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
                 <div class="routine-body">
                     <div class="d-flex flex-wrap gap-2">
@@ -100,8 +105,74 @@
         });
     }
 
+    function openRoutineModal(id) {
+        // We need to look up the routine. assign/state.js has routines list usually?
+        // Or we can find it in the data passed to renderRoutines if we store it.
+        // But AssignState usually holds loaded routines. Let's assume window.AssignState.routines populated.
+        // If not, we might need to pass it or look it up.
+        // assign/state.js: window.AssignState = { routines: [], ... }
+
+        const routine = window.AssignState.allRoutines.find(r => r._id === id);
+        if (!routine) return;
+
+        const modalTitle = document.getElementById("routineModalTitle");
+        const modalBody = document.getElementById("routineModalBody");
+
+        if (!modalTitle || !modalBody) return;
+
+        // Use RoutineRenderer
+        if (typeof RoutineRenderer === 'undefined') {
+            console.error("RoutineRenderer not found");
+            return;
+        }
+
+        const previewHtml = RoutineRenderer.buildPreviewHtml(routine);
+
+        // Helper for parts array
+        const parts = Array.isArray(routine.routine_body_parts) ? routine.routine_body_parts : [];
+        const partsLabel = parts.map(p => RoutineRenderer.translateBodyPart(p)).join(", ");
+
+        const exercises = (routine.items || []).filter(i => i.item_type === 'exercise').length;
+        const day = routine.routine_day || "-";
+        const updated = routine.updated_at ? new Date(routine.updated_at).toLocaleDateString() : "-"; // created_at fallback?
+
+        modalTitle.textContent = routine.name || "Rutina";
+
+        modalBody.innerHTML = `
+            <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
+                <div class="text-center mb-3">
+                    <h2 class="display-6 fw-bold text-white mb-2">${routine.name || "Rutina"}</h2>
+                    <p class="text-secondary m-0">${exercises} ejercicios - Detalles de rutina</p>
+                </div>
+                
+                <div class="row g-2 mb-3 border-bottom border-secondary pb-3">
+                   <div class="col-4 text-center border-end border-secondary">
+                      <div class="text-secondary small text-uppercase">Grupos</div>
+                      <div class="text-white small">${partsLabel || "N/A"}</div>
+                   </div>
+                   <div class="col-4 text-center border-end border-secondary">
+                      <div class="text-secondary small text-uppercase">Día</div>
+                      <div class="text-white small">${day}</div>
+                   </div>
+                    <div class="col-4 text-center">
+                      <div class="text-secondary small text-uppercase">Actualizado</div>
+                      <div class="text-white small">${updated}</div>
+                   </div>
+                </div>
+
+                <div class="routine-preview-scroll d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">
+                    ${previewHtml}
+                </div>
+            </div>
+        `;
+
+        const modalEl = document.getElementById("routineModal");
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
     window.AssignRender = {
         renderRoutines,
-        updateCounts
+        updateCounts,
+        openRoutineModal
     };
 })();

@@ -8,6 +8,7 @@
 
 {% block head %}
 <link href="/static/css/assign/assign_v2.css" rel="stylesheet">
+<link href="/static/css/assigned_routines.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -20,6 +21,40 @@
     </div>
 
     {% include 'partials/assign_v2/toast.html' %}
+
+    <!-- Routine Detail Modal -->
+    <div class="modal fade" id="routineModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="routineModalTitle">Detalle de Rutina</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body custom-scrollbar" id="routineModalBody">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <!-- Optional: Add Assign button here if valuable, but actions are usually on the card -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-black">
+                <div class="modal-body p-0">
+                    <div class="ratio ratio-16x9">
+                        <iframe id="videoFrame" src="" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 

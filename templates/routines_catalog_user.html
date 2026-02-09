@@ -6,6 +6,10 @@
 {% include 'components/sidebar.html' %}
 {% endblock %}
 
+{% block head %}
+<link href="/static/css/assigned_routines.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
@@ -788,49 +792,81 @@
         });
     }
 
+
     async function openRoutineModal(id) {
+        // Find routine in global list
+        // Note: 'routines' is global in this template scope.
+        // It might be filtered, but the main list has them all logic-wise if we didn't overwrite it with filtered.
+        // In this file, 'routines' holds the currently displayed list. 
+        // We should check if we can find it there.
         const routine = routines.find(r => r._id === id);
         if (!routine) return;
 
         const modalTitle = document.getElementById("routineModalTitle");
         const modalBody = document.getElementById("routineModalBody");
 
-        const partsLabel = getRoutineBodyPartsLabel(routine);
-        const exercises = getExerciseCount(routine);
+        // Use RoutineRenderer
+        if (typeof RoutineRenderer === 'undefined') {
+            console.error("RoutineRenderer not found");
+            return;
+        }
+
+        const previewHtml = RoutineRenderer.buildPreviewHtml(routine);
+        // ... (rest of logic using routine properties)
+        // Re-construct the modal body as per new design
+
+        const partsLabel = RoutineRenderer.translateBodyPart(routine.routine_body_parts ? routine.routine_body_parts[0] : ""); // Simplified or use helper
+        // Actually we need a helper for array of body parts if we want to match exact output
+        // let's define local helper or use renderer if available (Renderer has translateBodyPart but not array joiner, we do it here)
+        const parts = Array.isArray(routine.routine_body_parts) ? routine.routine_body_parts : [];
+        const partsStr = parts.map(p => RoutineRenderer.translateBodyPart(p)).join(", ");
+
+        const exercises = (routine.items || []).filter(i => i.item_type === 'exercise').length; // simple count
         const day = routine.routine_day || "-";
-        const validity = routine.assigned_expires_at ? formatDate(routine.assigned_expires_at) : "";
+        const updated = routine.updated_at ? new Date(routine.updated_at).toLocaleDateString() : "-";
 
         modalTitle.textContent = routine.name || "Rutina";
-        const previewHtml = buildRoutinePreviewHtml(routine);
+
         modalBody.innerHTML = `
-            <div class="routine-preview-card">
+            <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
                 <div class="text-center mb-3">
-                    <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
-                    <div class="text-secondary">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
+                    <h2 class="display-6 fw-bold text-white mb-2">${routine.name || "Rutina"}</h2>
+                    <p class="text-secondary m-0">${exercises} ejercicios - Revisa los detalles</p>
                 </div>
-                <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <div class="text-secondary small">Grupos</div>
-                        <div class="text-white">${partsLabel}</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-secondary small">Día</div>
-                        <div class="text-white">${day}</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-secondary small">Ejercicios</div>
-                        <div class="text-white">${exercises}</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-secondary small">Estado</div>
-                        <div class="text-white">${validity || (routine.is_active !== false ? "Activa" : "Oculta")}</div>
-                    </div>
+                
+                <div class="row g-2 mb-3 border-bottom border-secondary pb-3">
+                   <div class="col-4 text-center border-end border-secondary">
+                      <div class="text-secondary small text-uppercase">Grupos</div>
+                      <div class="text-white small">${partsStr || "N/A"}</div>
+                   </div>
+                   <div class="col-4 text-center border-end border-secondary">
+                      <div class="text-secondary small text-uppercase">Día</div>
+                      <div class="text-white small">${day}</div>
+                   </div>
+                    <div class="col-4 text-center">
+                      <div class="text-secondary small text-uppercase">Actualizado</div>
+                      <div class="text-white small">${updated}</div>
+                   </div>
                 </div>
-                <div class="routine-preview-scroll d-flex flex-column gap-2">${previewHtml}</div>
+
+                <div class="routine-preview-scroll d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">
+                    ${previewHtml}
+                </div>
+                
+                 <div class="d-grid mt-3">
+                   <a href="#" onclick="startRoutine('${routine._id}'); return false;" class="btn btn-primary btn-lg">
+                     <i class="fas fa-play me-2"></i> Iniciar Rutina
+                   </a>
+                </div>
             </div>
         `;
 
         new bootstrap.Modal(document.getElementById("routineModal")).show();
+    }
+
+    // Helper to redirect to runner
+    function startRoutine(id) {
+        window.location.href = `/workout/run/${id}`;
     }
 
     async function toggleRoutineDash(id) {
@@ -850,248 +886,6 @@
             console.error(e);
             alert("Error de conexión");
         }
-    }
-
-    function buildRoutinePreviewHtml(routine) {
-        const items = Array.isArray(routine.items) ? routine.items : [];
-        const isRestItem = (item) => item && (item.item_type === "rest" || (!item.exercise_id && item.rest_seconds != null));
-        const isExerciseItem = (item) => item && item.item_type === "exercise";
-        const isGroupHeader = (item) => item && item.item_type === "group";
-        const safeId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
-
-        // 1. Pre-scan for Group Metadata
-        const groupMetaMap = new Map();
-        items.forEach(item => {
-            if (isGroupHeader(item)) {
-                groupMetaMap.set(item._id || item.id, {
-                    name: item.group_name || item.name || "Circuito",
-                    note: item.note || item.description || ""
-                });
-            }
-        });
-
-        // 2. Cluster items (Match buildQueue logic)
-        const blocks = [];
-        const blockIds = new Set();
-        const groupEntries = new Map();
-
-        const ensureGroupBlock = (groupId) => {
-            if (!groupId || blockIds.has(groupId)) return;
-            blockIds.add(groupId);
-            blocks.push({ type: 'group', id: groupId });
-        };
-
-        items.forEach((item, idx) => {
-            // Inline groups (legacy/recursive structure handling)
-            if (item.item_type === "group" || Array.isArray(item.items)) {
-                if (Array.isArray(item.items) && item.items.length > 0) {
-                    // It's a fully contained group. Treat as atomic block.
-                    blocks.push({ type: 'inline_group', item: item });
-                    return;
-                }
-                // Just a header
-                ensureGroupBlock(item._id || item.id);
-                return;
-            }
-
-            if (isExerciseItem(item) || isRestItem(item)) {
-                const gid = item.group_id;
-                if (gid) {
-                    ensureGroupBlock(gid);
-                    if (!groupEntries.has(gid)) groupEntries.set(gid, []);
-                    groupEntries.get(gid).push(item);
-                } else {
-                    blocks.push({ type: 'ungrouped', entry: item });
-                }
-            }
-        });
-
-        // 3. Render Blocks
-        const htmlParts = [];
-
-        const renderEntry = (item, idxKey) => {
-            if (isRestItem(item)) {
-                const restLabel = item.note || "Descanso";
-                const restSeconds = getRestSeconds(item);
-                return `
-                    <div class="routine-preview-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white fw-bold">${restLabel}</div>
-                            <div class="text-secondary small">Pausa</div>
-                        </div>
-                        <div class="text-end text-secondary small">${restSeconds}s</div>
-                    </div>
-                `;
-            }
-
-            const name = item.exercise_name || item.name || "Ejercicio";
-            const bodyPartLabel = translateBodyPart(item.body_part);
-            const sets = item.target_sets || item.sets || 1;
-            const reps = item.target_reps || item.reps || "-";
-            const time = item.target_time_seconds || item.time_seconds || 60;
-            const isTime = (item.exercise_type || item.type) === "time" || (item.exercise_type || item.type) === "cardio";
-            const rest = getRestSeconds(item);
-            const equipmentMeta = getEquipmentMeta(item.equipment);
-            const hasVideo = item.video_url && item.video_url.trim() !== "";
-            const substitutes = resolveSubstitutes(item.substitutes || []);
-            const subsId = `subs_${safeId(routine._id)}_${idxKey}`;
-
-            return `
-                <div class="routine-preview-item d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="text-white fw-bold">${name}</div>
-                            ${hasVideo ? `
-                                <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${item.video_url}')">
-                                    <i class="fab fa-youtube"></i>
-                                </button>
-                            ` : ""}
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-1">
-                            <span class="badge bg-secondary">${bodyPartLabel}</span>
-                            <span class="badge bg-dark border border-secondary text-info">
-                                <i class="${equipmentMeta.icon} me-1"></i>${equipmentMeta.label}
-                            </span>
-                        </div>
-                         ${substitutes.length ? `
-                            <button class="btn btn-sm btn-outline-info mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#${subsId}">
-                                Sustitutos (${substitutes.length})
-                            </button>
-                            <div class="collapse mt-2" id="${subsId}">
-                                <div class="d-flex flex-column gap-2">
-                                    ${substitutes.map(sub => `
-                                        <div class="routine-preview-item d-flex align-items-center justify-content-between">
-                                            <div>
-                                                <div class="fw-bold text-white">${sub.name || "Ejercicio"}</div>
-                                                <div class="text-secondary small">
-                                                    <i class="${getEquipmentMeta(sub.equipment).icon} me-1"></i>${getEquipmentMeta(sub.equipment).label}
-                                                </div>
-                                            </div>
-                                            ${sub.video_url ? `
-                                                <button class="btn btn-sm btn-outline-danger" onclick="openVideoModal('${sub.video_url}')">
-                                                    <i class="fab fa-youtube"></i>
-                                                </button>
-                                            ` : ""}
-                                        </div>
-                                    `).join("")}
-                                </div>
-                            </div>
-                        ` : ""}
-                    </div>
-                    <div class="text-end text-secondary small">
-                        <div>${sets} sets ${isTime ? `x ${time}s` : `x ${reps}`}</div>
-                        <div>Descanso ${rest}s</div>
-                    </div>
-                </div>
-            `;
-        };
-
-        let lastBlockWasUngrouped = false;
-
-        blocks.forEach((block, bIdx) => {
-            if (block.type === 'ungrouped') {
-                if (!lastBlockWasUngrouped) {
-                    htmlParts.push(`
-                        <div class="routine-preview-group">
-                            <div class="text-cyber-blue fw-bold">Sin grupo</div>
-                        </div>
-                    `);
-                    lastBlockWasUngrouped = true;
-                }
-                htmlParts.push(renderEntry(block.entry, `u_${bIdx}`));
-            } else if (block.type === 'group') {
-                lastBlockWasUngrouped = false;
-                const entries = groupEntries.get(block.id) || [];
-                const meta = groupMetaMap.get(block.id) || { name: "Circuito", note: "" };
-
-                if (entries.length > 0) {
-                    htmlParts.push(`
-                        <div class="routine-preview-group">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-cyber-orange fw-bold">${meta.name}</div>
-                                <div class="text-secondary small">${entries.length} items</div>
-                            </div>
-                            ${meta.note ? `<div class="text-secondary small mt-1">"${meta.note}"</div>` : ""}
-                        </div>
-                    `);
-                    entries.forEach((entry, eIdx) => {
-                        htmlParts.push(renderEntry(entry, `g_${block.id}_${eIdx}`));
-                    });
-                }
-            } else if (block.type === 'inline_group') {
-                // Legacy inline group structure
-                lastBlockWasUngrouped = false;
-                const item = block.item;
-                const entries = (item.items || []).filter(sub => isExerciseItem(sub) || isRestItem(sub));
-                if (entries.length > 0) {
-                    htmlParts.push(`
-                        <div class="routine-preview-group">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-cyber-orange fw-bold">${item.group_name || item.name || "Circuito"}</div>
-                                <div class="text-secondary small">${entries.length} items</div>
-                            </div>
-                            ${(item.note || item.description) ? `<div class="text-secondary small mt-1">"${item.note || item.description}"</div>` : ""}
-                        </div>
-                    `);
-                    entries.forEach((entry, eIdx) => {
-                        htmlParts.push(renderEntry(entry, `ig_${bIdx}_${eIdx}`));
-                    });
-                }
-            }
-        });
-
-        return htmlParts.join("");
-    }
-
-    function resolveSubstitutes(substitutes) {
-        if (!Array.isArray(substitutes) || substitutes.length === 0) return [];
-        return substitutes.map(sub => {
-            if (typeof sub === "string") return exerciseLookup[sub];
-            if (sub && typeof sub === "object") return sub;
-            return null;
-        }).filter(Boolean);
-    }
-
-    function getEquipmentMeta(equipmentKey) {
-        const raw = Array.isArray(equipmentKey) ? (equipmentKey[0] || "") : equipmentKey;
-        const map = {
-            barbell: { label: "Barra", icon: "fas fa-grip-lines" },
-            dumbbell: { label: "Mancuernas", icon: "fas fa-dumbbell" },
-            machine: { label: "Máquina", icon: "fas fa-cogs" },
-            cable: { label: "Polea", icon: "fas fa-wave-square" },
-            band: { label: "Banda", icon: "fas fa-link" },
-            bench: { label: "Banco", icon: "fas fa-chair" },
-            bodyweight: { label: "Corporal", icon: "fas fa-running" },
-            other: { label: "Otro", icon: "fas fa-toolbox" }
-        };
-        return map[raw] || { label: raw || "N/A", icon: "fas fa-dumbbell" };
-    }
-
-    function toEmbedUrl(url) {
-        const trimmed = (url || "").trim();
-        if (!trimmed) return "";
-        if (trimmed.includes("youtube.com/watch")) {
-            const match = trimmed.match(/[?&]v=([^&]+)/);
-            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
-        }
-        if (trimmed.includes("youtu.be/")) {
-            const match = trimmed.match(/youtu\.be\/([^?&]+)/);
-            if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
-        }
-        return trimmed;
-    }
-
-    function openVideoModal(url) {
-        const modalEl = document.getElementById("videoModal");
-        const iframe = document.getElementById("videoFrame");
-        const embedUrl = toEmbedUrl(url);
-        if (!embedUrl) return;
-        iframe.src = embedUrl;
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-        modalEl.addEventListener("hidden.bs.modal", () => {
-            iframe.src = "";
-        }, { once: true });
     }
 
     function openPrintPreview() {
@@ -1123,7 +917,7 @@
                 const routineId = `previewRoutine${idx}`;
 
                 // Generate rich details using the same function as the Detail Modal
-                const detailsHtml = buildRoutinePreviewHtml(r);
+                const detailsHtml = RoutineRenderer.buildPreviewHtml(r);
 
                 html += `
                 <div class="accordion-item border mb-2">
@@ -1163,5 +957,6 @@
         window.location.href = "/workout/routines/builder-guided";
     }
 </script>
+<script src="/static/js/utils/routine_renderer.js"></script>
 <script src="/static/js/loader.js"></script>
 {% endblock %}

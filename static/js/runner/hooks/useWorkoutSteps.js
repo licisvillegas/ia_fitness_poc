@@ -36,7 +36,8 @@
             setGlobalTime,
 
             completeStepTimerRef,
-            showAlert
+            showAlert,
+            isCancellingRef
         } = options;
 
         const processingCompletionRef = useRef(false);

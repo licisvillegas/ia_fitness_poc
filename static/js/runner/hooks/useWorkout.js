@@ -168,6 +168,7 @@
             };
         }, []);
 
+        const isCancellingRef = useRef(false);
 
         const { restoreFromLocalStorage } = useWorkoutPersistence({
             routineState,
@@ -177,7 +178,6 @@
             isTimerRunning,
             setCursor,
             setStatus,
-            setStepTimer,
             setStepTimer,
             setIsTimerRunning,
             isCancellingRef // Passed ref
@@ -589,7 +589,8 @@
             setGlobalTime,
             setGlobalTime,
             completeStepTimerRef,
-            showAlert
+            showAlert,
+            isCancellingRef
         });
         useEffect(() => {
             finishWorkoutRef.current = finishWorkout;

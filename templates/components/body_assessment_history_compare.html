@@ -1,104 +1,118 @@
 <div class="compare-controls">
-    <div class="row g-3">
-        <div class="col-lg-6">
-            <div class="control-card h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-uppercase small text-secondary">Comparación A</span>
-                    <span class="badge bg-secondary">A</span>
+    <!-- Sección de Selección de Evaluaciones -->
+    <button class="btn btn-outline-secondary w-100 mb-2" type="button" data-bs-toggle="collapse"
+        data-bs-target="#compareHistoryImagesCollapse" aria-expanded="true"
+        aria-controls="compareHistoryImagesCollapse">
+        <i class="fas fa-images me-2"></i> Selección de Evaluaciones
+    </button>
+    <div class="collapse show mb-3" id="compareHistoryImagesCollapse">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="control-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-uppercase small text-secondary">Comparación A</span>
+                        <span class="badge bg-secondary">A</span>
+                    </div>
+                    <label class="form-label mt-2">Historial</label>
+                    <select id="compareHistoryA"
+                        class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                    <label class="form-label mt-2">Foto</label>
+                    <select id="compareImageA"
+                        class="form-select form-select-sm bg-dark text-white border-secondary"></select>
                 </div>
-                <label class="form-label mt-2">Historial</label>
-                <select id="compareHistoryA"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
-                <label class="form-label mt-2">Foto</label>
-                <select id="compareImageA"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+            </div>
+            <div class="col-lg-6">
+                <div class="control-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-uppercase small text-secondary">Comparación B</span>
+                        <span class="badge bg-secondary">B</span>
+                    </div>
+                    <label class="form-label mt-2">Historial</label>
+                    <select id="compareHistoryB"
+                        class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                    <label class="form-label mt-2">Foto</label>
+                    <select id="compareImageB"
+                        class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                </div>
             </div>
         </div>
-        <div class="col-lg-6">
-            <div class="control-card h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-uppercase small text-secondary">Comparación B</span>
-                    <span class="badge bg-secondary">B</span>
+    </div>
+
+    <!-- Sección de Configuración de Exportación -->
+    <button class="btn btn-outline-secondary w-100 mb-2" type="button" data-bs-toggle="collapse"
+        data-bs-target="#compareHistoryExportCollapse" aria-expanded="true"
+        aria-controls="compareHistoryExportCollapse">
+        <i class="fas fa-cog me-2"></i> Configuración de Exportación
+    </button>
+    <div class="collapse show" id="compareHistoryExportCollapse">
+        <div class="control-card">
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Formato</label>
+                    <select id="compareExportRatio"
+                        class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="1:1">1:1</option>
+                        <option value="4:5" selected>4:5</option>
+                        <option value="9:16">9:16</option>
+                    </select>
                 </div>
-                <label class="form-label mt-2">Historial</label>
-                <select id="compareHistoryB"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
-                <label class="form-label mt-2">Foto</label>
-                <select id="compareImageB"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Layout</label>
+                    <select id="compareCollageLayout"
+                        class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="vertical">Vertical</option>
+                        <option value="horizontal">Horizontal</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Ajuste</label>
+                    <select id="compareCollageFit"
+                        class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="contain">Completo</option>
+                        <option value="cover">Recortar</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Separación</label>
+                    <select id="compareCollagePadding"
+                        class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="0">0</option>
+                        <option value="8">8</option>
+                        <option value="16" selected>16</option>
+                        <option value="24">24</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex flex-wrap gap-2 justify-content-end">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="compareExportBtn">
+                            <i class="fas fa-download me-1"></i> Exportar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="compareCollageExportBtn">
+                            <i class="fas fa-th-large me-1"></i> Exportar collage
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group btn-group-sm w-100 mt-2 d-none compare-mode-toggle" role="group"
+                id="compareModeControls">
+                <button type="button" class="btn btn-outline-secondary active compare-mode-btn" id="compareModeBlend"
+                    title="Mezcla">
+                    <i class="fas fa-adjust"></i>
+                    <span class="visually-hidden">Mezcla</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary compare-mode-btn" id="compareModeWipe"
+                    title="Corte">
+                    <i class="fas fa-columns"></i>
+                    <span class="visually-hidden">Corte</span>
+                </button>
             </div>
         </div>
-        <div class="col-12">
-            <div class="control-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-uppercase small text-secondary">Vista</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-secondary active"
-                            id="compareViewSide">Lado a lado</button>
-                        <button type="button" class="btn btn-outline-secondary" id="compareViewSlider">Slider</button>
-                    </div>
-                </div>
-                <div class="row g-2 align-items-end">
-                    <div class="col-6 col-md-3">
-                        <label class="form-label">Formato</label>
-                        <select id="compareExportRatio"
-                            class="form-select form-select-sm bg-dark text-white border-secondary">
-                            <option value="1:1">1:1</option>
-                            <option value="4:5" selected>4:5</option>
-                            <option value="9:16">9:16</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <label class="form-label">Layout</label>
-                        <select id="compareCollageLayout"
-                            class="form-select form-select-sm bg-dark text-white border-secondary">
-                            <option value="vertical">Vertical</option>
-                            <option value="horizontal">Horizontal</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <label class="form-label">Ajuste</label>
-                        <select id="compareCollageFit"
-                            class="form-select form-select-sm bg-dark text-white border-secondary">
-                            <option value="contain">Completo</option>
-                            <option value="cover">Recortar</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <label class="form-label">Separación</label>
-                        <select id="compareCollagePadding"
-                            class="form-select form-select-sm bg-dark text-white border-secondary">
-                            <option value="0">0</option>
-                            <option value="8">8</option>
-                            <option value="16" selected>16</option>
-                            <option value="24">24</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <div class="d-flex flex-wrap gap-2 justify-content-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="compareExportBtn">
-                                <i class="fas fa-download me-1"></i> Exportar
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="compareCollageExportBtn">
-                                <i class="fas fa-th-large me-1"></i> Exportar collage
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="btn-group btn-group-sm w-100 mt-2 d-none compare-mode-toggle" role="group"
-                    id="compareModeControls">
-                    <button type="button" class="btn btn-outline-secondary active compare-mode-btn"
-                        id="compareModeBlend" title="Mezcla">
-                        <i class="fas fa-adjust"></i>
-                        <span class="visually-hidden">Mezcla</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary compare-mode-btn" id="compareModeWipe"
-                        title="Corte">
-                        <i class="fas fa-columns"></i>
-                        <span class="visually-hidden">Corte</span>
-                    </button>
-                </div>
-            </div>
+    </div>
+
+    <div class="d-flex justify-content-center mt-3">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="compareViewSide">Lado a lado</button>
+            <button type="button" class="btn btn-outline-secondary" id="compareViewSlider">Slider</button>
         </div>
     </div>
 </div>

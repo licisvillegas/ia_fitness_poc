@@ -19,6 +19,7 @@ const compareState = {
 
 document.addEventListener('DOMContentLoaded', () => {
     initCompareTool();
+    initDraggableSlider();
 });
 
 function initCompareTool() {
@@ -579,4 +580,60 @@ function downloadBlob(blob, filename) {
 
 function stampNow() {
     return new Date().toISOString().replace(/[:.]/g, '-');
+}
+
+function initDraggableSlider() {
+    const sliderWrap = document.getElementById('compareSliderWrap');
+    const handle = document.getElementById('compareSliderHandle');
+    const rangeInput = document.getElementById('compareSliderRange');
+
+    if (!sliderWrap || !handle) return;
+
+    let isDragging = false;
+
+    const onPointerDown = (e) => {
+        // Ignorar si el click viene de los controles
+        if (e.target.closest('.compare-floating-controls') || e.target.closest('.compare-slider-reset')) {
+            return;
+        }
+        isDragging = true;
+        updateSliderFromPointer(e);
+        e.preventDefault(); // Evita scroll en touch
+    };
+
+    const onPointerMove = (e) => {
+        if (!isDragging) return;
+        updateSliderFromPointer(e);
+    };
+
+    const onPointerUp = () => {
+        isDragging = false;
+    };
+
+    const updateSliderFromPointer = (e) => {
+        const rect = sliderWrap.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let x = clientX - rect.left;
+        let percent = (x / rect.width) * 100;
+
+        percent = Math.max(0, Math.min(100, percent));
+        compareState.slider = Math.round(percent);
+
+        if (rangeInput) {
+            rangeInput.value = compareState.slider;
+        }
+
+        applyMorphOpacity();
+        updateOverlayWidth();
+    };
+
+    // Mouse events
+    sliderWrap.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('mousemove', onPointerMove);
+    document.addEventListener('mouseup', onPointerUp);
+
+    // Touch events
+    sliderWrap.addEventListener('touchstart', onPointerDown, { passive: false });
+    document.addEventListener('touchmove', onPointerMove, { passive: false });
+    document.addEventListener('touchend', onPointerUp);
 }

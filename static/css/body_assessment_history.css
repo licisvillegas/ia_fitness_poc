@@ -348,6 +348,9 @@ main {
     align-items: center;
     justify-content: center;
 }
+.compare-tool-embed .compare-side-by-side .compare-frame {
+    overflow: visible;
+}
 
 .compare-side-by-side img {
     max-width: 100%;
@@ -442,6 +445,11 @@ main {
 .compare-slider-range {
     width: 100%;
     cursor: ew-resize;
+}
+.compare-slider-reset {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.35rem;
 }
 
 .compare-controls .control-card {

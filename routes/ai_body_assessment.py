@@ -4,7 +4,7 @@ import base64
 import io
 from datetime import datetime
 from typing import Any, Dict, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote_to_bytes
 from bson import ObjectId
 import cloudinary
 import cloudinary.uploader
@@ -98,10 +98,24 @@ def _scale_offset(value: int, source: int, target: int) -> int:
 
 
 def _fetch_image(url: str) -> Image.Image:
-    resp = requests.get(url, timeout=(5, 15))
-    if resp.status_code != 200:
-        raise _PayloadError("No se pudo descargar una imagen para exportar.", 400)
-    img = Image.open(io.BytesIO(resp.content))
+    if url.startswith("data:"):
+        try:
+            header, data = url.split(",", 1)
+        except ValueError:
+            raise _PayloadError("Formato de imagen embebida inválido.", 400)
+        if ";base64" in header:
+            try:
+                raw = base64.b64decode(data)
+            except Exception:
+                raise _PayloadError("No se pudo decodificar la imagen embebida.", 400)
+        else:
+            raw = unquote_to_bytes(data)
+        img = Image.open(io.BytesIO(raw))
+    else:
+        resp = requests.get(url, timeout=(5, 15))
+        if resp.status_code != 200:
+            raise _PayloadError("No se pudo descargar una imagen para exportar.", 400)
+        img = Image.open(io.BytesIO(resp.content))
     img = ImageOps.exif_transpose(img)
     return img.convert("RGBA")
 
@@ -567,6 +581,12 @@ def body_assessment_history_view(user_id):
         logger.error(f"Error fetching user name: {e}")
         pass
     return render_template("body_assessment_history.html", user_id=user_id, user_name=user_name)
+
+
+@ai_body_assessment_bp.get("/ai/body_assessment/compare/tool")
+def body_assessment_compare_tool():
+    embed = request.args.get("embed") == "1"
+    return render_template("body_assessment_compare_tool.html", embed=embed)
 
 
 @ai_body_assessment_bp.get("/ai/body_assessment/history/<user_id>")

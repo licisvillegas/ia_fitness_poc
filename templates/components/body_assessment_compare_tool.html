@@ -6,12 +6,13 @@
                     <span class="text-uppercase small text-secondary">Comparación A</span>
                     <span class="badge bg-secondary">A</span>
                 </div>
-                <label class="form-label mt-2">Historial</label>
-                <select id="compareHistoryA"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
-                <label class="form-label mt-2">Foto</label>
-                <select id="compareImageA"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                <label class="form-label mt-2">Imagen desde dispositivo</label>
+                <input id="compareFileA" type="file" accept="image/*"
+                    class="form-control form-control-sm bg-dark text-white border-secondary">
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small id="compareFileNameA" class="text-secondary">Sin archivo</small>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="compareClearA">Limpiar</button>
+                </div>
             </div>
         </div>
         <div class="col-lg-6">
@@ -20,12 +21,13 @@
                     <span class="text-uppercase small text-secondary">Comparación B</span>
                     <span class="badge bg-secondary">B</span>
                 </div>
-                <label class="form-label mt-2">Historial</label>
-                <select id="compareHistoryB"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
-                <label class="form-label mt-2">Foto</label>
-                <select id="compareImageB"
-                    class="form-select form-select-sm bg-dark text-white border-secondary"></select>
+                <label class="form-label mt-2">Imagen desde dispositivo</label>
+                <input id="compareFileB" type="file" accept="image/*"
+                    class="form-control form-control-sm bg-dark text-white border-secondary">
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small id="compareFileNameB" class="text-secondary">Sin archivo</small>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="compareClearB">Limpiar</button>
+                </div>
             </div>
         </div>
         <div class="col-12">
@@ -194,7 +196,7 @@
             <i class="fas fa-undo-alt"></i>
         </button>
     </div>
-    <div id="compareEmptyMsg" class="text-muted small mt-2 d-none">
-        Se requieren al menos 2 fotos para comparar.
+    <div id="compareEmptyMsg" class="text-muted small mt-2">
+        Selecciona dos imágenes para comparar.
     </div>
 </div>

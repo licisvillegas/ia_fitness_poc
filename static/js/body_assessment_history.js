@@ -20,7 +20,7 @@ let compareState = {
     transformA: { scale: 1, x: 0, y: 0 },
     transformB: { scale: 1, x: 0, y: 0 },
     activeAdjust: 'A',
-    sliderMode: 'blend',
+    sliderMode: 'wipe',
     initialized: false
 };
 
@@ -546,6 +546,7 @@ let compareState = {
             const resetSideA = document.getElementById('compareResetSideA');
             const resetSideB = document.getElementById('compareResetSideB');
             const resetSlider = document.getElementById('compareResetSlider');
+            const sliderResetBtn = document.getElementById('compareSliderReset');
             const btnAdjustA = document.getElementById('compareAdjustA');
             const btnAdjustB = document.getElementById('compareAdjustB');
             const exportBtn = document.getElementById('compareExportBtn');
@@ -691,6 +692,14 @@ let compareState = {
                 }
                 syncCompareControls();
                 applyCompareTransforms();
+            });
+
+            sliderResetBtn?.addEventListener('click', () => {
+                compareState.slider = 50;
+                const sliderInput = document.getElementById('compareSliderRange');
+                if (sliderInput) sliderInput.value = '50';
+                applyMorphOpacity();
+                updateOverlayWidth();
             });
 
             btnAdjustA?.addEventListener('click', () => {
@@ -988,6 +997,7 @@ let compareState = {
             const side = document.getElementById('compareSideBySide');
             const sliderWrap = document.getElementById('compareSliderWrap');
             const slider = document.getElementById('compareSliderRange');
+            const sliderResetWrap = document.getElementById('compareSliderResetWrap');
             const btnSide = document.getElementById('compareViewSide');
             const btnSlider = document.getElementById('compareViewSlider');
             const modeControls = document.getElementById('compareModeControls');
@@ -996,6 +1006,7 @@ let compareState = {
                 side?.classList.add('d-none');
                 sliderWrap?.classList.remove('d-none');
                 slider?.classList.remove('d-none');
+                sliderResetWrap?.classList.remove('d-none');
                 btnSide?.classList.remove('active');
                 btnSlider?.classList.add('active');
                 compareState.activeAdjust = 'A';
@@ -1004,12 +1015,20 @@ let compareState = {
                     modeControls.classList.remove('d-none');
                 }
                 syncCompareControls();
+                if (compareState.sliderMode === 'wipe') {
+                    document.getElementById('compareModeWipe')?.classList.add('active');
+                    document.getElementById('compareModeBlend')?.classList.remove('active');
+                } else {
+                    document.getElementById('compareModeBlend')?.classList.add('active');
+                    document.getElementById('compareModeWipe')?.classList.remove('active');
+                }
                 applyMorphOpacity();
                 updateOverlayWidth();
             } else {
                 side?.classList.remove('d-none');
                 sliderWrap?.classList.add('d-none');
                 slider?.classList.add('d-none');
+                sliderResetWrap?.classList.add('d-none');
                 btnSlider?.classList.remove('active');
                 btnSide?.classList.add('active');
                 if (modeControls) {

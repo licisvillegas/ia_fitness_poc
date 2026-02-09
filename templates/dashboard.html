@@ -188,6 +188,10 @@
               title="Tabata Timer">
               <div class="tool-icon tool-icon--timer"><i class="fas fa-stopwatch-20"></i></div>
             </button>
+            <button class="tool-carousel-item" type="button" data-bs-toggle="modal" data-bs-target="#toolCompareModal"
+              title="Comparar imágenes">
+              <div class="tool-icon tool-icon--compare"><i class="fas fa-images"></i></div>
+            </button>
           </div>
         </div>
 
@@ -257,6 +261,17 @@
                   <div class="tool-text">
                     <div class="tool-title">Tabata Timer</div>
                     <div class="tool-subtitle">Intervalos HIIT</div>
+                  </div>
+                </button>
+              </div>
+              <div class="col-12 col-md-4">
+                <button class="tool-card" type="button" data-bs-toggle="modal" data-bs-target="#toolCompareModal">
+                  <div class="tool-icon tool-icon--compare">
+                    <i class="fas fa-images"></i>
+                  </div>
+                  <div class="tool-text">
+                    <div class="tool-title">Comparar imágenes</div>
+                    <div class="tool-subtitle">Carga fotos y exporta</div>
                   </div>
                 </button>
               </div>
@@ -669,6 +684,22 @@
                 <button id="btnResetTabata" class="btn btn-outline-danger">Detener</button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="toolCompareModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-panel border-secondary text-white">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title"><i class="fas fa-images me-2"></i>Comparar imágenes</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+              aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body p-0">
+            <iframe title="Comparador de imágenes" src="/ai/body_assessment/compare/tool?embed=1"
+              style="width:100%; height:80vh; border:0;"></iframe>
           </div>
         </div>
       </div>

@@ -28,6 +28,14 @@ def index():
 def landing_page():
     return render_template("landing.html")
 
+@user_bp.route("/watch_dashboard")
+def watch_dashboard_page():
+    """Vista simplificada para 'Watch' (Admin feature)"""
+    user_id = request.cookies.get("user_session")
+    if not user_id:
+        return redirect("/login")
+    return render_template("user_watch_dashboard.html", user_id=user_id)
+
 @user_bp.route("/dashboard")
 def dashboard_page():
     # Redirige al dashboard directamente

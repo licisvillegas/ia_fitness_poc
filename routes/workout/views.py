@@ -86,6 +86,8 @@ def adherence_dashboard_page():
     user_id = request.cookies.get("user_session")
     return render_template("adherence_dashboard.html", current_user_id=user_id)
 
+
+
 def run_routine(routine_id):
     """
     Renders the workout runner for a specific routine.
@@ -137,4 +139,57 @@ def run_routine(routine_id):
                                restored_state=restored_state)
     except Exception as e:
         logger.error(f"Error running routine: {e}")
+        return f"Error interno: {e}", 500
+
+def watch_routine(routine_id):
+    """
+    Renders the watch runner for a specific routine (Admin/Watch View).
+    """
+    try:
+        db = get_db()
+        if not ObjectId.is_valid(routine_id):
+            return render_template("404.html", message="ID de rutina inválido"), 400
+            
+        routine = db.routines.find_one({"_id": ObjectId(routine_id)})
+        if not routine:
+            return render_template("404.html", message="Rutina no encontrada"), 404
+            
+        routine["_id"] = str(routine["_id"])
+        routine["id"] = str(routine["_id"])
+        
+        if "items" not in routine:
+            routine["items"] = []
+            
+        hydrate_routines_with_substitutes([routine], db)
+
+        user_id = request.cookies.get("user_session")
+        user_name = ""
+        user_age = None
+        restored_state = None
+        
+        if user_id:
+             u = db.users.find_one({"user_id": user_id})
+             if u:
+                 user_name = u.get("name") or u.get("username")
+             profile = db.user_profiles.find_one({"user_id": user_id}) if db is not None else None
+             if profile:
+                 user_age = compute_age(profile.get("birth_date"))
+             
+             active_session = db.active_workout_sessions.find_one({
+                 "user_id": user_id, 
+                 "routine_id": str(routine_id)
+             })
+             
+             if active_session:
+                 if "_id" in active_session: active_session["_id"] = str(active_session["_id"])
+                 restored_state = active_session
+
+        return render_template("workout_runner_watch.html", 
+                               routine=routine,
+                               current_user_id=user_id,
+                               current_user_name=user_name,
+                               current_user_age=user_age,
+                               restored_state=restored_state)
+    except Exception as e:
+        logger.error(f"Error watching routine: {e}")
         return f"Error interno: {e}", 500

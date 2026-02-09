@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse Fit | Watch Dashboard</title>
+    <!-- CDNs -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <!-- App Styles -->
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <link href="/static/css/assigned_routines.css" rel="stylesheet">
+    <link href="/static/css/loader.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: var(--bg-body, #0f172a);
+            color: var(--text-main, #f8fafc);
+            font-family: 'Poppins', sans-serif;
+            padding-bottom: 80px;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            /* Force full width since we might not need sidebar or it handles itself */
+            padding: 20px;
+        }
+
+        /* Adjust for sidebar if included */
+        @media (min-width: 768px) {
+            .main-content {
+                margin-left: 250px !important;
+            }
+
+            body.sidebar-collapsed .main-content {
+                margin-left: 70px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    {% include 'components/sidebar.html' %}
+
+    <div class="main-content">
+        <div class="container mt-4">
+            <h2 class="mb-4 text-theme"> <i class="fas fa-eye me-2"></i>Vista de Seguimiento</h2>
+
+            <!-- Assigned Routines Section -->
+            {% include 'components/assigned_routines.html' %}
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/loader.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
+
+    <!-- Assigned Routines Logic -->
+    <script src="/static/js/assigned_routines_watch.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Force show the assigned routines section
+            const section = document.getElementById('my-routines');
+            if (section) section.style.display = 'block';
+
+            // Auto-expand the collapse
+            const collapseEl = document.getElementById('assignedRoutinesCollapse');
+            if (collapseEl) {
+                new bootstrap.Collapse(collapseEl, { show: true });
+            }
+
+            // Load routines for the current user
+            // The user_id is injected effectively by the backend into the template context 
+            // or we use the logged-in user's session if target_user_id is not passed.
+            // But for this specific view, we might want to view the LOGGED IN user's routines?
+            // "mis rutinas asignadas" implies the user viewing it.
+            // If the admin is "Watching", are they watching THEIR OWN routines or SOMEONE ELSE'S?
+            // The request says: "redirige a un nuevo template este nuevo template debe mostrar sola la seccion mis rutinas asignadas"
+            // It implies the Admin is viewing their own "assigned routines" or using this view to see routines.
+            // Let's assume it loads the current user's routines.
+
+            const userId = "{{ user_id }}"; // Injected from route
+
+            if (userId && window.loadRoutines) {
+                await window.loadRoutines(userId);
+            } else {
+                console.warn("No User ID or loadRoutines function available");
+            }
+        });
+    </script>
+</body>
+
+</html>

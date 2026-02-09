@@ -169,7 +169,8 @@ def inject_user_role():
         current_user_role=user_role,
         user_data=user_data,
         is_impersonating=is_impersonating,
-        has_admin_token=has_admin_token
+        has_admin_token=has_admin_token,
+        is_admin=(user_role == 'admin' or has_admin_token)
     )
     if user_id and extensions.db is not None:
         cache_set(cache_key, payload, _USER_CTX_TTL_SEC)

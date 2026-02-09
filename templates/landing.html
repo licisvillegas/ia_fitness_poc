@@ -286,6 +286,27 @@
                             </div>
                         </a>
                     </div>
+
+                    <!-- 8. Watch (Admin Only) -->
+                    {% if is_admin %}
+                    <div class="col-md-6 col-lg-3">
+                        <a href="/watch_dashboard" class="text-decoration-none">
+                            <div class="card card-premium border-0 shadow-sm transition-all"
+                                style="background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);">
+                                <div class="card-body text-center p-4">
+                                    <div class="icon-box mb-3 mx-auto bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width: 64px; height: 64px;">
+                                        <i class="fas fa-eye fs-3"></i>
+                                    </div>
+                                    <h4 class="card-title fw-bold mb-2 text-white">Watch</h4>
+                                    <p class="card-text text-white-50 small">
+                                        Seguimiento exclusivo para administradores.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

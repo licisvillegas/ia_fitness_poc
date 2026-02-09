@@ -37,6 +37,7 @@ workout_bp.add_url_rule('/routines/builder-guided', view_func=views.user_routine
 workout_bp.add_url_rule('/routines', view_func=views.user_routines_catalog_page)
 workout_bp.add_url_rule('/adherence', view_func=views.adherence_dashboard_page)
 workout_bp.add_url_rule('/run/<routine_id>', view_func=views.run_routine)
+workout_bp.add_url_rule('/watch/<routine_id>', view_func=views.watch_routine)
 
 # Registrando rutas de API Ejercicios
 workout_bp.add_url_rule('/api/exercises', view_func=api_exercises.list_public_exercises)

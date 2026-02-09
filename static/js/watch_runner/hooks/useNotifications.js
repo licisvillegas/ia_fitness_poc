@@ -1,0 +1,192 @@
+(function () {
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    window.Runner.hooks.useNotifications = (options = {}) => {
+        const { logSource = "useNotifications", showAlert } = options;
+        const [notificationPermission, setNotificationPermission] = useState('default');
+        const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
+        const hasLoggedMissingRef = useRef(false);
+        const hasEnsuredOnMountRef = useRef(false);
+        const hasLoadedPrefRef = useRef(false);
+        const PREF_KEY = "runner_notifications_enabled";
+
+        const logClient = useCallback((message) => {
+            if (!message) return;
+            fetch('/api/push/client-log', {
+                method: 'POST',
+                body: JSON.stringify({ message }),
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(() => { });
+        }, []);
+
+        const ensurePushSubscriptionSafe = useCallback(async (reason) => {
+            if (typeof window.ensurePushSubscription !== "function") {
+                if (!hasLoggedMissingRef.current) {
+                    logClient(`${logSource}: window.ensurePushSubscription missing`);
+                    hasLoggedMissingRef.current = true;
+                }
+                return false;
+            }
+
+            if (reason) {
+                logClient(`${logSource}: ${reason}`);
+            }
+
+            try {
+                return await window.ensurePushSubscription();
+            } catch (e) {
+                console.warn("Push subscription error", e);
+                return false;
+            }
+        }, [logClient, logSource]);
+
+        useEffect(() => {
+            if ("Notification" in window) {
+                const perm = Notification.permission;
+                setNotificationPermission(perm);
+                setIsNotificationsEnabled(perm === 'granted');
+            }
+
+            if (!hasEnsuredOnMountRef.current) {
+                hasEnsuredOnMountRef.current = true;
+                setTimeout(() => {
+                    ensurePushSubscriptionSafe("ensurePushSubscription on mount");
+                }, 2000);
+            }
+        }, [ensurePushSubscriptionSafe]);
+
+        useEffect(() => {
+            if (hasLoadedPrefRef.current) return;
+            hasLoadedPrefRef.current = true;
+            try {
+                const raw = localStorage.getItem(PREF_KEY);
+                if (raw === null) return;
+                const desired = raw === "true";
+                if (desired && notificationPermission === 'granted') {
+                    setIsNotificationsEnabled(true);
+                }
+                if (!desired && notificationPermission === 'granted') {
+                    setIsNotificationsEnabled(false);
+                }
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        }, [notificationPermission]);
+
+        useEffect(() => {
+            try {
+                localStorage.setItem(PREF_KEY, String(Boolean(isNotificationsEnabled)));
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        }, [isNotificationsEnabled]);
+
+        const toggleNotifications = useCallback(async () => {
+            if (!("Notification" in window)) return;
+
+            if (notificationPermission === 'default') {
+                try {
+                    const permission = await Notification.requestPermission();
+                    setNotificationPermission(permission);
+                    setIsNotificationsEnabled(permission === 'granted');
+                    if (permission === 'granted') {
+                        ensurePushSubscriptionSafe("ensurePushSubscription after toggle");
+                    }
+                } catch (e) {
+                    console.error("Notification permission error", e);
+                }
+            } else if (notificationPermission === 'granted') {
+                setIsNotificationsEnabled(prev => !prev);
+            } else {
+                if (showAlert) {
+                    showAlert("Notificaciones Bloqueadas", "Las notificaciones estan bloqueadas por el navegador. Habilitalas en la configuracion del sitio.", null, "warning");
+                } else {
+                    alert("Las notificaciones estan bloqueadas por el navegador. Habilitalas en la configuracion del sitio.");
+                }
+            }
+        }, [notificationPermission, ensurePushSubscriptionSafe]);
+
+        const ensureNotificationPermission = useCallback(async () => {
+            if (!("Notification" in window)) return;
+            if (notificationPermission === 'granted') {
+                setIsNotificationsEnabled(true);
+                ensurePushSubscriptionSafe("ensurePushSubscription after permission check");
+                return;
+            }
+            if (notificationPermission !== 'default') return;
+            try {
+                const permission = await Notification.requestPermission();
+                setNotificationPermission(permission);
+                setIsNotificationsEnabled(permission === 'granted');
+                if (permission === 'granted') {
+                    ensurePushSubscriptionSafe("ensurePushSubscription after permission request");
+                }
+            } catch (e) {
+                console.error("Notification permission error", e);
+            }
+        }, [notificationPermission, ensurePushSubscriptionSafe]);
+
+        const sendNotification = useCallback((title, body, options = {}) => {
+            const tag = options && options.tag ? options.tag : undefined;
+            logClient(`[useNotifications] sendNotification called: ${title}`);
+            console.log("[useNotifications] sendNotification called:", title, body, "Enabled:", isNotificationsEnabled, "Permission:", notificationPermission, "Tag:", tag);
+
+            if (isNotificationsEnabled && notificationPermission === 'granted') {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(title, {
+                            body: body,
+                            icon: '/static/images/icon/synapse_fit_192.png',
+                            badge: '/static/images/icon/synapse_fit_192.png',
+                            vibrate: [200, 100, 200],
+                            tag: tag,
+                            renotify: true,
+                            requireInteraction: true,
+                            data: { url: window.location.href }
+                        }).then(() => {
+                            logClient(`[useNotifications] SW showNotification resolved: ${title}`);
+                            console.log("[useNotifications] SW Notification scheduled");
+                        }).catch(err => {
+                            logClient(`[useNotifications] SW showNotification failed: ${err.message}`);
+                            console.error("SW showNotification error", err);
+                        });
+                    }).catch(e => {
+                        logClient(`[useNotifications] SW registration error: ${e.message}`);
+                        console.error("[useNotifications] SW registration error", e);
+                        // Fallback
+                        try {
+                            const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png', tag: tag });
+                            n.onclick = () => { window.focus(); n.close(); };
+                            logClient(`[useNotifications] Fallback Notification created`);
+                        } catch (err) {
+                            logClient(`[useNotifications] Fallback error: ${err.message}`);
+                            console.error("Notification fallback error", err);
+                        }
+                    });
+                } else {
+                    try {
+                        const n = new Notification(title, { body, icon: '/static/images/icon/synapse_fit_192.png', tag: tag });
+                        logClient(`[useNotifications] Standard Notification created`);
+                        console.log("[useNotifications] Standard Notification created:", n);
+                        n.onclick = () => { window.focus(); n.close(); };
+                    } catch (e) {
+                        logClient(`[useNotifications] Standard error: ${e.message}`);
+                        console.error("[useNotifications] Notification error", e);
+                    }
+                }
+            } else {
+                logClient(`[useNotifications] Skipped. Enabled: ${isNotificationsEnabled}, Permission: ${notificationPermission}`);
+                console.warn("[useNotifications] Notification skipped. Enabled:", isNotificationsEnabled, "Permission:", notificationPermission);
+            }
+        }, [isNotificationsEnabled, notificationPermission, logClient]);
+
+        return {
+            notificationPermission,
+            isNotificationsEnabled,
+            toggleNotifications,
+            ensureNotificationPermission,
+            sendNotification,
+            ensurePushSubscriptionSafe
+        };
+    };
+})();

@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+
+{% block title %}Smart Runner - Synapse Fit{% endblock %}
+
+{% block head %}
+<link href="/static/css/runner/base.css" rel="stylesheet">
+<link href="/static/css/runner/components.css" rel="stylesheet">
+<link href="/static/css/runner/modals.css" rel="stylesheet">
+<link href="/static/css/runner/overlays.css" rel="stylesheet">
+<link href="/static/css/runner/responsive.css" rel="stylesheet">
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+<div id="react-root" class="h-100"></div>
+{% endblock %}
+
+{% block page_scripts %}
+{% include 'partials/watch_runner/scripts.html' %}
+{% endblock %}

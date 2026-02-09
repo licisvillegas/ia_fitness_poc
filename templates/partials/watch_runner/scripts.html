@@ -1,0 +1,116 @@
+﻿<!-- DEPENDENCIAS (CDN) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/static/js/workout_animations.js"></script>
+
+<script>
+    window.__RUNNER__ = {};
+
+    // Safer injection pattern
+    try {
+        window.__RUNNER__.routine = {{ routine | tojson }};
+    } catch (e) {
+        console.error("Error formatting routine JSON:", e);
+        window.__RUNNER__.routine = null;
+    }
+
+    try {
+        window.__RUNNER__.currentUserName = {{ current_user_name | default ('', true) | tojson }};
+    } catch (e) { window.__RUNNER__.currentUserName = ""; }
+
+    try {
+        window.__RUNNER__.currentUserId = {{ current_user_id | default ('', true) | tojson }};
+    } catch (e) { window.__RUNNER__.currentUserId = ""; }
+
+    try {
+        window.__RUNNER__.currentUserAge = {{ current_user_age | default (none, true) | tojson }};
+    } catch (e) { window.__RUNNER__.currentUserAge = null; }
+
+    try {
+        window.__RUNNER__.restoredState = {{ restored_state | tojson }};
+    } catch (e) { window.__RUNNER__.restoredState = null; }
+
+    // Legacy support
+    window.initialRoutine = window.__RUNNER__.routine;
+    window.currentUserName = window.__RUNNER__.currentUserName;
+    window.currentUserId = window.__RUNNER__.currentUserId;
+    window.currentUserAge = window.__RUNNER__.currentUserAge;
+    window.restoredState = window.__RUNNER__.restoredState;
+
+    console.log("Runner Context Loaded:", window.__RUNNER__);
+</script>
+
+<script src="/static/js/watch_runner/bootstrap.js"></script>
+
+<!-- Arquitectura modular -->
+<script src="/static/js/watch_runner/namespace.js"></script>
+<script src="/static/js/watch_runner/utils.js"></script>
+<script src="/static/js/watch_runner/constants.js"></script>
+<script src="/static/js/watch_runner/logic.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useOverlayBus.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useNotifications.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutNotifications.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutTimer.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutPersistence.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutSync.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutQueue.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutSteps.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutLog.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutModals.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutSubstitutions.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutPending.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkoutTimeTargets.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/hooks/useWorkout.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/MessageBar.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/ConfirmModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RPEHelpModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PlateCalculatorModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/SubstitutesModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RMCalculatorModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/HeartRateModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RoutineDetails.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PreStart.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/TimerControls.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/InputControls.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RestOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/CountdownTimer.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/ActiveExercise.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/NextUpBar.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/Header.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PendingPanel.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/NavigationWrapper.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/GlitchOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PauseOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/TextRevealOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/CountdownOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/BreathingOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/EnduranceTimerOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/TempoOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PulseOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/FlexOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/ThunderOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/VictoryOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/ImpactOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/FireOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/GoalOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/ZenOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/NutritionOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RoutinePreparationOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/SadOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/SnowOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/StarsOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/EmojiRainOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/RealisticOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/BasicConfettiOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/PrideOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/SchoolPrideOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/FireworksOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/MegaBurstOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/FountainOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/SvgSuccessOverlay.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/VideoModal.js"></script>
+<script type="text/babel" src="/static/js/watch_runner/components/App.js"></script>
+<script src="/static/js/watch_runner/entry.js"></script>

@@ -397,6 +397,7 @@ function initExportButtons() {
                 return;
             }
 
+            syncTransformsFromInputs();
             const ratioValue = exportRatio?.value || "4:5";
             const size = COLLAGE_SIZES[ratioValue] || { width: EXPORT_FALLBACK_WIDTH, height: EXPORT_FALLBACK_HEIGHT };
             const { width, height, sourceWidth, sourceHeight } = getExportSourceSize(size.width, size.height);
@@ -454,6 +455,7 @@ function initExportButtons() {
                 return;
             }
 
+            syncTransformsFromInputs();
             const ratioValue = exportRatio?.value || "4:5";
             const size = COLLAGE_SIZES[ratioValue] || COLLAGE_SIZES["4:5"];
             const layoutValue = collageLayout?.value || "vertical";
@@ -502,6 +504,31 @@ function initExportButtons() {
             }
         }
     });
+}
+
+function syncTransformsFromInputs() {
+    const scaleA_side = document.getElementById('compareScaleA_side');
+    const xA_side = document.getElementById('compareXA_side');
+    const yA_side = document.getElementById('compareYA_side');
+    const scaleB_side = document.getElementById('compareScaleB_side');
+    const xB_side = document.getElementById('compareXB_side');
+    const yB_side = document.getElementById('compareYB_side');
+    if (scaleA_side) compareState.transformA.scale = (parseInt(scaleA_side.value, 10) || 100) / 100;
+    if (xA_side) compareState.transformA.x = parseInt(xA_side.value, 10) || 0;
+    if (yA_side) compareState.transformA.y = parseInt(yA_side.value, 10) || 0;
+    if (scaleB_side) compareState.transformB.scale = (parseInt(scaleB_side.value, 10) || 100) / 100;
+    if (xB_side) compareState.transformB.x = parseInt(xB_side.value, 10) || 0;
+    if (yB_side) compareState.transformB.y = parseInt(yB_side.value, 10) || 0;
+
+    const scale = document.getElementById('compareScaleA');
+    const x = document.getElementById('compareXA');
+    const y = document.getElementById('compareYA');
+    if (scale && x && y) {
+        const target = compareState.activeAdjust === 'B' ? compareState.transformB : compareState.transformA;
+        target.scale = (parseInt(scale.value, 10) || 100) / 100;
+        target.x = parseInt(x.value, 10) || 0;
+        target.y = parseInt(y.value, 10) || 0;
+    }
 }
 
 function getExportSourceSize(defaultWidth, defaultHeight) {

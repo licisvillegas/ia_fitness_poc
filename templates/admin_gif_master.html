@@ -1,0 +1,520 @@
+{% extends "layout.html" %}
+
+{% block title %}Synapse Fit | GIF Master{% endblock %}
+
+{% block content %}
+<div class="row mb-4 animate-fade-in-up">
+    <div class="col-12">
+        <h2 class="text-theme fw-bold"><i class="fas fa-film me-2"></i>GIF Master</h2>
+        <p class="text-secondary">Herramienta para descomponer y crear GIFs personalizados.</p>
+    </div>
+</div>
+
+<div class="row g-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+    <!-- UPLOAD SECTION -->
+    <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-lg bg-dark">
+            <div class="card-header bg-transparent border-0 pt-3 px-3 pb-0">
+                <ul class="nav nav-tabs border-secondary card-header-tabs" id="uploadTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active text-secondary" id="gif-tab" data-bs-toggle="tab"
+                            data-bs-target="#gif-pane" type="button" role="tab"><i
+                                class="fas fa-file-video me-2"></i>GIF</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link text-secondary" id="images-tab" data-bs-toggle="tab"
+                            data-bs-target="#images-pane" type="button" role="tab"><i
+                                class="fas fa-images me-2"></i>Imágenes</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body tab-content">
+                <!-- GIF PANE -->
+                <div class="tab-pane fade show active" id="gif-pane" role="tabpanel">
+                    <h5 class="card-title text-white mb-3">Descomponer GIF</h5>
+                    <div class="mb-3">
+                        <label for="gifInput" class="form-label text-secondary small">Selecciona un archivo GIF</label>
+                        <input class="form-control bg-black text-white border-secondary" type="file" id="gifInput"
+                            accept=".gif">
+                    </div>
+                    <button id="btnDecompose" class="btn btn-primary w-100" disabled>
+                        <i class="fas fa-magic me-2"></i>Descomponer
+                    </button>
+                </div>
+
+                <!-- IMAGES PANE -->
+                <div class="tab-pane fade" id="images-pane" role="tabpanel">
+                    <h5 class="card-title text-white mb-3">Crear desde Imágenes</h5>
+                    <div class="mb-3">
+                        <label for="imagesInput" class="form-label text-secondary small">Selecciona imágenes (PNG,
+                            JPG)</label>
+                        <input class="form-control bg-black text-white border-secondary" type="file" id="imagesInput"
+                            multiple accept="image/*">
+                        <div class="form-text text-muted small">Puedes seleccionar varios archivos.</div>
+                    </div>
+                    <button id="btnUploadImages" class="btn btn-info w-100" disabled>
+                        <i class="fas fa-upload me-2"></i>Subir Imágenes
+                    </button>
+                </div>
+
+                <div id="uploadStatus" class="mt-3 text-center small text-muted"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS SECTION -->
+    <div class="col-lg-8">
+        <div class="card h-100 border-0 shadow-lg bg-dark">
+            <div class="card-body">
+                <h5 class="card-title text-white mb-3">2. Configurar Nuevo GIF</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small">Duración por cuadro (ms)</label>
+                        <input type="number" id="durationInput"
+                            class="form-control bg-black text-white border-secondary" value="100" min="10" step="10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small">Repeticiones (Loop)</label>
+                        <input type="number" id="loopInput" class="form-control bg-black text-white border-secondary"
+                            value="0" min="0">
+                        <div class="form-text text-muted small">0 para infinito.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small">Tamaño Final (Auto: Original)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-secondary">W</span>
+                            <input type="number" id="widthInput"
+                                class="form-control bg-black text-white border-secondary" placeholder="Ancho">
+                            <span class="input-group-text bg-dark border-secondary text-secondary">H</span>
+                            <input type="number" id="heightInput"
+                                class="form-control bg-black text-white border-secondary" placeholder="Alto">
+                        </div>
+                        <div class="form-check mt-1">
+                            <input class="form-check-input" type="checkbox" id="autoSizeCheck" checked>
+                            <label class="form-check-label text-muted small" for="autoSizeCheck">
+                                Usar tamaño original
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <hr class="border-secondary my-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-secondary small">
+                        <span id="selectedCount">0</span> cuadros seleccionados
+                    </div>
+                    <button id="btnCreate" class="btn btn-success" disabled>
+                        <i class="fas fa-save me-2"></i>Crear GIF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FRAMES SECTION -->
+<div id="framesSection" class="row mt-4 d-none animate-fade-in-up" style="animation-delay: 0.2s;">
+    <div class="col-12">
+        <div class="card border-0 shadow-lg bg-dark">
+            <div class="card-header bg-transparent border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="text-white mb-0">3. Seleccionar Cuadros</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="selectAllFrames()">Todos</button>
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="selectEvenFrames()">Pares</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllFrames()">Ninguno</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="framesContainer" class="d-flex flex-wrap gap-2 justify-content-start">
+                    <!-- Frames will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">¡GIF Creado!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="resultGif" src="" class="img-fluid rounded mb-3"
+                    style="max-height: 400px; object-fit: contain;">
+                <p class="small text-success"><i class="fas fa-check-circle me-1"></i>GIF generado exitosamente</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <a id="downloadLink" href="#" download="nuevo_gif.gif" class="btn btn-primary">
+                    <i class="fas fa-download me-2"></i>Descargar
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TEMPLATE FOR FRAME ITEM -->
+<template id="frameTemplate">
+    <div class="frame-item position-relative" style="width: 100px; cursor: pointer;">
+        <img src="" class="img-fluid rounded border border-secondary"
+            style="width: 100px; height: 100px; object-fit: cover;">
+        <div class="position-absolute top-0 end-0 p-1">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" style="cursor: pointer;">
+            </div>
+        </div>
+        <div class="position-absolute bottom-0 start-0 p-1 w-100 bg-black bg-opacity-50 text-center rounded-bottom">
+            <small class="text-white" style="font-size: 0.7rem;">#<span class="frame-idx"></span></small>
+        </div>
+    </div>
+</template>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script>
+    const state = {
+        sessionId: null,
+        frames: []
+    };
+
+    const gifInput = document.getElementById('gifInput');
+    const imagesInput = document.getElementById('imagesInput');
+    const btnDecompose = document.getElementById('btnDecompose');
+    const btnUploadImages = document.getElementById('btnUploadImages');
+    const btnCreate = document.getElementById('btnCreate');
+    const framesSection = document.getElementById('framesSection');
+    const framesContainer = document.getElementById('framesContainer');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    // Resize inputs
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const autoSizeCheck = document.getElementById('autoSizeCheck');
+
+    // Init Sortable
+    new Sortable(framesContainer, {
+        animation: 150,
+        ghostClass: 'bg-secondary'
+    });
+
+    // GIF Handling
+    gifInput.addEventListener('change', () => {
+        btnDecompose.disabled = !gifInput.files[0];
+    });
+
+    // Images Handling
+    imagesInput.addEventListener('change', () => {
+        btnUploadImages.disabled = !imagesInput.files.length;
+    });
+
+    // Resize logic
+    autoSizeCheck.addEventListener('change', () => {
+        widthInput.disabled = autoSizeCheck.checked;
+        heightInput.disabled = autoSizeCheck.checked;
+        if (autoSizeCheck.checked) {
+            widthInput.value = '';
+            heightInput.value = '';
+        }
+    });
+    // Init state
+    widthInput.disabled = autoSizeCheck.checked;
+    heightInput.disabled = autoSizeCheck.checked;
+
+
+    // Helper to reset UI state (only for full replaces like GIF decompose)
+    function resetSelectionState() {
+        framesSection.classList.add('d-none');
+        framesContainer.innerHTML = '';
+        state.frames = [];
+        state.sessionId = null;
+        updateSelectionCount();
+    }
+
+    // Tab switch handling for active class
+    const tabs = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            // Remove active/text-white from all tabs
+            document.querySelectorAll('.nav-link').forEach(t => {
+                t.classList.remove('active', 'text-white');
+                t.classList.add('text-secondary'); // Ensure secondary color for inactive
+            });
+            // Add active/text-white to the newly active tab
+            e.target.classList.add('active', 'text-white');
+            e.target.classList.remove('text-secondary');
+            uploadStatus.textContent = '';
+        });
+    });
+
+    btnUploadImages.addEventListener('click', async () => {
+        if (!imagesInput.files.length) return;
+
+        const formData = new FormData();
+        Array.from(imagesInput.files).forEach(file => {
+            formData.append('files[]', file);
+        });
+
+        btnUploadImages.disabled = true;
+        btnUploadImages.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Subiendo...';
+        uploadStatus.textContent = 'Subiendo imágenes...';
+
+        if (state.sessionId) {
+            formData.append('session_id', state.sessionId);
+        }
+
+        try {
+            const resp = await fetch('/api/admin/tools/gif-master/upload-images', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!resp.ok) throw new Error('Error al subir imágenes');
+
+            const data = await resp.json();
+
+            if (!state.sessionId) state.sessionId = data.session_id;
+
+            state.frames = state.frames.concat(data.frames);
+            state.frames = [...new Set(state.frames)]; // Dedup just in case
+
+            renderFrames(data.frames); // Render only the newly uploaded frames
+            framesSection.classList.remove('d-none');
+            uploadStatus.textContent = '¡Imágenes agregadas!';
+            uploadStatus.className = 'mt-3 text-center small text-success';
+        } catch (e) {
+            console.error(e);
+            uploadStatus.textContent = 'Error: ' + e.message;
+            uploadStatus.className = 'mt-3 text-center small text-danger';
+        } finally {
+            btnUploadImages.disabled = false;
+            btnUploadImages.innerHTML = '<i class="fas fa-upload me-2"></i>Subir Imágenes';
+            imagesInput.value = ''; // Clear input
+        }
+    });
+
+    btnDecompose.addEventListener('click', async () => {
+        if (!gifInput.files[0]) return;
+
+        const formData = new FormData();
+        formData.append('file', gifInput.files[0]);
+
+        btnDecompose.disabled = true;
+        btnDecompose.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+        uploadStatus.textContent = 'Subiendo y descomponiendo...';
+
+        resetSelectionState(); // Decompose replaces everything always
+
+        try {
+            const resp = await fetch('/api/admin/tools/gif-master/decompose', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!resp.ok) throw new Error('Error al procesar el GIF');
+
+            const data = await resp.json();
+            state.sessionId = data.session_id;
+            state.frames = data.frames;
+
+            renderFrames(state.frames); // Render all frames for decompose
+            framesSection.classList.remove('d-none');
+            uploadStatus.textContent = '¡Listo! Selecciona los cuadros.';
+            uploadStatus.className = 'mt-3 text-center small text-success';
+        } catch (e) {
+            console.error(e);
+            uploadStatus.textContent = 'Error: ' + e.message;
+            uploadStatus.className = 'mt-3 text-center small text-danger';
+        } finally {
+            btnDecompose.disabled = false;
+            btnDecompose.innerHTML = '<i class="fas fa-magic me-2"></i>Descomponer';
+        }
+    });
+
+    // REDEFINING renderFrames to be robust
+    function renderFrames(framesToRender) {
+        const tpl = document.getElementById('frameTemplate');
+        const currentCount = framesContainer.children.length;
+
+        framesToRender.forEach((url, idx) => {
+            const clone = tpl.content.cloneNode(true);
+            const div = clone.querySelector('.frame-item');
+            const img = clone.querySelector('img');
+            const checkbox = clone.querySelector('input');
+            const idxSpan = clone.querySelector('.frame-idx');
+
+            img.src = url;
+            checkbox.value = url;
+            checkbox.checked = true;
+            idxSpan.textContent = currentCount + idx + 1; // Visual index
+
+            // Improved toggle: click on image toggles checkbox.
+            img.addEventListener('click', () => {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+
+            checkbox.addEventListener('change', () => {
+                updateSelectionCount();
+                updateVisualSelection(div, checkbox.checked);
+            });
+
+            updateVisualSelection(div, true);
+            framesContainer.appendChild(clone);
+        });
+        updateSelectionCount();
+    }
+
+
+    function updateVisualSelection(div, isChecked) {
+        const img = div.querySelector('img');
+        if (isChecked) {
+            img.classList.add('border-primary');
+            img.classList.remove('border-secondary');
+            img.style.opacity = '1';
+        } else {
+            img.classList.remove('border-primary');
+            img.classList.add('border-secondary');
+            img.style.opacity = '0.5';
+        }
+    }
+
+    function updateSelectionCount() {
+        // Renumber visual indices because of reordering
+        framesContainer.querySelectorAll('.frame-item').forEach((div, idx) => {
+            div.querySelector('.frame-idx').textContent = idx + 1;
+        });
+
+        const checkboxes = framesContainer.querySelectorAll('input[type="checkbox"]:checked');
+        const count = checkboxes.length;
+        selectedCountEl.textContent = count;
+        btnCreate.disabled = count === 0;
+    }
+
+    // Global selects
+    window.selectAllFrames = () => {
+        framesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+            cb.dispatchEvent(new Event('change'));
+        });
+    }
+
+    window.deselectAllFrames = () => {
+        framesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.dispatchEvent(new Event('change'));
+        });
+    }
+
+    window.selectEvenFrames = () => {
+        framesContainer.querySelectorAll('.frame-item').forEach((div, idx) => {
+            const cb = div.querySelector('input');
+            // User expects 2, 4, 6. These are 1-based indices.
+            // In 0-based array, these are indices 1, 3, 5.
+            // So, (idx % 2 !== 0) selects frames at 0-based indices 1, 3, 5...
+            cb.checked = (idx % 2 !== 0);
+            cb.dispatchEvent(new Event('change'));
+        });
+    }
+
+    btnCreate.addEventListener('click', async () => {
+        // Collect frames IN VISUAL ORDER
+        const selectedFrames = [];
+        framesContainer.querySelectorAll('.frame-item').forEach(div => {
+            const cb = div.querySelector('input[type="checkbox"]');
+            if (cb.checked) {
+                selectedFrames.push(cb.value);
+            }
+        });
+
+        const duration = parseInt(document.getElementById('durationInput').value) || 100;
+        const loop = parseInt(document.getElementById('loopInput').value) || 0;
+
+        // Resize params
+        let width = null;
+        let height = null;
+        if (!autoSizeCheck.checked) {
+            width = parseInt(widthInput.value);
+            height = parseInt(heightInput.value);
+        }
+
+        btnCreate.disabled = true;
+        btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
+
+        try {
+            const resp = await fetch('/api/admin/tools/gif-master/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: state.sessionId,
+                    frames: selectedFrames,
+                    duration: duration,
+                    loop: loop,
+                    width: width,
+                    height: height
+                })
+            });
+
+            if (!resp.ok) throw new Error('Error al crear el GIF');
+
+            const data = await resp.json();
+
+            // Show result
+            document.getElementById('resultGif').src = data.gif_url;
+            document.getElementById('downloadLink').href = data.gif_url;
+
+            const modal = new bootstrap.Modal(document.getElementById('resultModal'));
+            modal.show();
+
+        } catch (e) {
+            console.error(e);
+            alert('Error: ' + e.message);
+        } finally {
+            btnCreate.disabled = false;
+            btnCreate.innerHTML = '<i class="fas fa-save me-2"></i>Crear GIF';
+        }
+    });
+
+
+</script>
+<style>
+    .frame-item {
+        transition: transform 0.2s;
+    }
+
+    .frame-item:hover {
+        transform: scale(1.05);
+        z-index: 10;
+    }
+
+    .frame-item img {
+        transition: all 0.2s;
+    }
+
+    /* Dark Theme Tabs Override */
+    .nav-tabs .nav-link {
+        color: var(--bs-secondary);
+        border: 1px solid transparent;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: var(--bs-light);
+        border-color: var(--bs-secondary) var(--bs-secondary) var(--bs-dark);
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #fff !important;
+        background-color: var(--bs-dark) !important;
+        border-color: var(--bs-secondary) var(--bs-secondary) var(--bs-dark) !important;
+    }
+
+    .nav-tabs {
+        border-bottom: 1px solid var(--bs-secondary);
+    }
+</style>
+{% endblock %}

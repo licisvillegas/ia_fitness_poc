@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, send_file
 import os
 import base64
+import io
 from datetime import datetime
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -8,6 +9,8 @@ from bson import ObjectId
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import requests
+from PIL import Image, ImageOps
 
 import extensions
 from extensions import logger
@@ -32,6 +35,14 @@ ai_body_assessment_bp = Blueprint("ai_body_assessment", __name__)
 MAX_PHOTOS_PER_ASSESSMENT = 6
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_TOTAL_PHOTO_BYTES = 20 * 1024 * 1024
+MAX_EXPORT_DIM = 2048
+DEFAULT_EXPORT_WIDTH = 900
+DEFAULT_EXPORT_HEIGHT = 1200
+EXPORT_RATIO_SIZES = {
+    "1:1": (1080, 1080),
+    "4:5": (1080, 1350),
+    "9:16": (1080, 1920),
+}
 
 
 def _cloudinary_public_id_from_url(url: str):
@@ -61,6 +72,86 @@ def _cloudinary_public_id_from_url(url: str):
         parts[-1] = last.rsplit(".", 1)[0]
     public_id = "/".join([p for p in parts if p])
     return public_id or None
+
+
+def _coerce_scale(value: Any) -> float:
+    try:
+        scale = float(value)
+    except (TypeError, ValueError):
+        return 1.0
+    if scale > 4:
+        scale = scale / 100.0
+    return max(0.1, min(scale, 5.0))
+
+
+def _coerce_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _scale_offset(value: int, source: int, target: int) -> int:
+    if source <= 0 or target <= 0:
+        return value
+    return int(round(value * (target / source)))
+
+
+def _fetch_image(url: str) -> Image.Image:
+    resp = requests.get(url, timeout=(5, 15))
+    if resp.status_code != 200:
+        raise _PayloadError("No se pudo descargar una imagen para exportar.", 400)
+    img = Image.open(io.BytesIO(resp.content))
+    img = ImageOps.exif_transpose(img)
+    return img.convert("RGBA")
+
+
+def _fit_transform_image(img: Image.Image, canvas_w: int, canvas_h: int, scale: float, x: int, y: int) -> Image.Image:
+    if canvas_w <= 0 or canvas_h <= 0:
+        raise _PayloadError("Dimensiones de exportación inválidas.", 400)
+    img_w, img_h = img.size
+    if img_w <= 0 or img_h <= 0:
+        raise _PayloadError("Imagen inválida para exportación.", 400)
+    fit_scale = min(canvas_w / img_w, canvas_h / img_h)
+    final_scale = fit_scale * scale
+    new_w = max(1, int(round(img_w * final_scale)))
+    new_h = max(1, int(round(img_h * final_scale)))
+    resized = img.resize((new_w, new_h), Image.LANCZOS)
+    layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    left = int(round((canvas_w - new_w) / 2 + x))
+    top = int(round((canvas_h - new_h) / 2 + y))
+    layer.paste(resized, (left, top), resized)
+    return layer
+
+
+def _apply_opacity(img: Image.Image, alpha: float) -> Image.Image:
+    alpha = max(0.0, min(alpha, 1.0))
+    if alpha >= 1.0:
+        return img
+    r, g, b, a = img.split()
+    a = a.point(lambda p: int(p * alpha))
+    return Image.merge("RGBA", (r, g, b, a))
+
+
+def _place_image_in_frame(img: Image.Image, frame_w: int, frame_h: int, fit: str, scale: float, x: int, y: int) -> Image.Image:
+    if frame_w <= 0 or frame_h <= 0:
+        raise _PayloadError("Dimensiones de exportación inválidas.", 400)
+    img_w, img_h = img.size
+    if img_w <= 0 or img_h <= 0:
+        raise _PayloadError("Imagen inválida para exportación.", 400)
+    if fit == "cover":
+        base_scale = max(frame_w / img_w, frame_h / img_h)
+    else:
+        base_scale = min(frame_w / img_w, frame_h / img_h)
+    final_scale = base_scale * scale
+    new_w = max(1, int(round(img_w * final_scale)))
+    new_h = max(1, int(round(img_h * final_scale)))
+    resized = img.resize((new_w, new_h), Image.LANCZOS)
+    layer = Image.new("RGBA", (frame_w, frame_h), (0, 0, 0, 0))
+    left = int(round((frame_w - new_w) / 2 + x))
+    top = int(round((frame_h - new_h) / 2 + y))
+    layer.paste(resized, (left, top), resized)
+    return layer
 
 
 class _PayloadError(Exception):
@@ -593,3 +684,169 @@ def delete_body_assessment_history(assessment_id):
     except Exception as e:
         logger.error(f"Error eliminando evaluacion corporal: {e}", exc_info=True)
         return jsonify({"error": "Error interno al eliminar"}), 500
+
+
+@ai_body_assessment_bp.post("/ai/body_assessment/compare/export")
+def export_body_assessment_compare():
+    try:
+        payload = request.get_json(silent=True) or {}
+        image_a = payload.get("imageAUrl")
+        image_b = payload.get("imageBUrl")
+        if not image_a or not image_b:
+            raise _PayloadError("Faltan URLs de imágenes para exportar.", 400)
+
+        mode = (payload.get("mode") or "wipe").lower()
+        if mode not in {"wipe", "blend"}:
+            raise _PayloadError("Modo de exportación inválido.", 400)
+
+        slider = _coerce_int(payload.get("slider", 50), 50)
+        slider = max(0, min(100, slider))
+
+        ratio = payload.get("ratio")
+        if ratio in EXPORT_RATIO_SIZES:
+            req_w, req_h = EXPORT_RATIO_SIZES[ratio]
+        else:
+            req_w = _coerce_int(payload.get("width", DEFAULT_EXPORT_WIDTH), DEFAULT_EXPORT_WIDTH)
+            req_h = _coerce_int(payload.get("height", DEFAULT_EXPORT_HEIGHT), DEFAULT_EXPORT_HEIGHT)
+
+        img_a = _fetch_image(image_a)
+        img_b = _fetch_image(image_b)
+
+        if req_w <= 0 or req_h <= 0:
+            max_w = max(img_a.width, img_b.width, DEFAULT_EXPORT_WIDTH)
+            max_h = max(img_a.height, img_b.height, DEFAULT_EXPORT_HEIGHT)
+            scale = min(MAX_EXPORT_DIM / max(max_w, max_h, 1), 1.0)
+            req_w = max(1, int(round(max_w * scale)))
+            req_h = max(1, int(round(max_h * scale)))
+
+        req_w = max(1, min(req_w, MAX_EXPORT_DIM))
+        req_h = max(1, min(req_h, MAX_EXPORT_DIM))
+
+        transform_a = payload.get("transformA") or {}
+        transform_b = payload.get("transformB") or {}
+        scale_a = _coerce_scale(transform_a.get("scale", 1))
+        scale_b = _coerce_scale(transform_b.get("scale", 1))
+        x_a = _coerce_int(transform_a.get("x", 0), 0)
+        y_a = _coerce_int(transform_a.get("y", 0), 0)
+        x_b = _coerce_int(transform_b.get("x", 0), 0)
+        y_b = _coerce_int(transform_b.get("y", 0), 0)
+
+        source_w = _coerce_int(payload.get("sourceWidth", 0), 0)
+        source_h = _coerce_int(payload.get("sourceHeight", 0), 0)
+        if source_w > 0 and source_h > 0:
+            x_a = _scale_offset(x_a, source_w, req_w)
+            y_a = _scale_offset(y_a, source_h, req_h)
+            x_b = _scale_offset(x_b, source_w, req_w)
+            y_b = _scale_offset(y_b, source_h, req_h)
+
+        layer_a = _fit_transform_image(img_a, req_w, req_h, scale_a, x_a, y_a)
+        layer_b = _fit_transform_image(img_b, req_w, req_h, scale_b, x_b, y_b)
+
+        canvas = Image.new("RGBA", (req_w, req_h), (0, 0, 0, 0))
+        if mode == "blend":
+            ratio = slider / 100.0
+            base_alpha = 1.0 - ratio
+            overlay_alpha = ratio
+            canvas = Image.alpha_composite(canvas, _apply_opacity(layer_a, base_alpha))
+            canvas = Image.alpha_composite(canvas, _apply_opacity(layer_b, overlay_alpha))
+        else:
+            canvas = Image.alpha_composite(canvas, layer_a)
+            cutoff = int(round((slider / 100.0) * req_w))
+            mask = Image.new("L", (req_w, req_h), 0)
+            if cutoff < req_w:
+                mask.paste(255, (cutoff, 0, req_w, req_h))
+            masked_b = Image.new("RGBA", (req_w, req_h), (0, 0, 0, 0))
+            masked_b.paste(layer_b, (0, 0), mask)
+            canvas = Image.alpha_composite(canvas, masked_b)
+
+        out = io.BytesIO()
+        canvas.save(out, format="PNG")
+        out.seek(0)
+        return send_file(out, mimetype="image/png", as_attachment=False)
+    except _PayloadError as exc:
+        return jsonify({"error": str(exc)}), exc.status_code
+    except Exception as exc:
+        logger.error(f"Error exporting compare image: {exc}", exc_info=True)
+        return jsonify({"error": "No se pudo exportar la comparación."}), 500
+
+
+@ai_body_assessment_bp.post("/ai/body_assessment/compare/collage")
+def export_body_assessment_collage():
+    try:
+        payload = request.get_json(silent=True) or {}
+        image_a = payload.get("imageAUrl")
+        image_b = payload.get("imageBUrl")
+        if not image_a or not image_b:
+            raise _PayloadError("Faltan URLs de imágenes para exportar.", 400)
+
+        layout = (payload.get("layout") or "vertical").lower()
+        if layout not in {"vertical", "horizontal"}:
+            raise _PayloadError("Layout inválido.", 400)
+
+        fit = (payload.get("fit") or "contain").lower()
+        if fit not in {"contain", "cover"}:
+            raise _PayloadError("Ajuste inválido.", 400)
+
+        padding = _coerce_int(payload.get("padding", 16), 16)
+        padding = max(0, min(padding, 200))
+
+        req_w = _coerce_int(payload.get("width", DEFAULT_EXPORT_WIDTH), DEFAULT_EXPORT_WIDTH)
+        req_h = _coerce_int(payload.get("height", DEFAULT_EXPORT_HEIGHT), DEFAULT_EXPORT_HEIGHT)
+        req_w = max(1, min(req_w, MAX_EXPORT_DIM))
+        req_h = max(1, min(req_h, MAX_EXPORT_DIM))
+
+        img_a = _fetch_image(image_a)
+        img_b = _fetch_image(image_b)
+
+        transform_a = payload.get("transformA") or {}
+        transform_b = payload.get("transformB") or {}
+        scale_a = _coerce_scale(transform_a.get("scale", 1))
+        scale_b = _coerce_scale(transform_b.get("scale", 1))
+        x_a = _coerce_int(transform_a.get("x", 0), 0)
+        y_a = _coerce_int(transform_a.get("y", 0), 0)
+        x_b = _coerce_int(transform_b.get("x", 0), 0)
+        y_b = _coerce_int(transform_b.get("y", 0), 0)
+
+        source_w = _coerce_int(payload.get("sourceWidth", 0), 0)
+        source_h = _coerce_int(payload.get("sourceHeight", 0), 0)
+
+        canvas = Image.new("RGBA", (req_w, req_h), (0, 0, 0, 0))
+
+        if layout == "vertical":
+            frame_w = max(1, (req_w - padding) // 2)
+            frame_h = req_h
+            left_x = 0
+            right_x = frame_w + padding
+            if source_w > 0 and source_h > 0:
+                x_a = _scale_offset(x_a, source_w, frame_w)
+                y_a = _scale_offset(y_a, source_h, frame_h)
+                x_b = _scale_offset(x_b, source_w, frame_w)
+                y_b = _scale_offset(y_b, source_h, frame_h)
+            layer_a = _place_image_in_frame(img_a, frame_w, frame_h, fit, scale_a, x_a, y_a)
+            layer_b = _place_image_in_frame(img_b, frame_w, frame_h, fit, scale_b, x_b, y_b)
+            canvas.paste(layer_a, (left_x, 0), layer_a)
+            canvas.paste(layer_b, (right_x, 0), layer_b)
+        else:
+            frame_w = req_w
+            frame_h = max(1, (req_h - padding) // 2)
+            top_y = 0
+            bottom_y = frame_h + padding
+            if source_w > 0 and source_h > 0:
+                x_a = _scale_offset(x_a, source_w, frame_w)
+                y_a = _scale_offset(y_a, source_h, frame_h)
+                x_b = _scale_offset(x_b, source_w, frame_w)
+                y_b = _scale_offset(y_b, source_h, frame_h)
+            layer_a = _place_image_in_frame(img_a, frame_w, frame_h, fit, scale_a, x_a, y_a)
+            layer_b = _place_image_in_frame(img_b, frame_w, frame_h, fit, scale_b, x_b, y_b)
+            canvas.paste(layer_a, (0, top_y), layer_a)
+            canvas.paste(layer_b, (0, bottom_y), layer_b)
+
+        out = io.BytesIO()
+        canvas.save(out, format="PNG")
+        out.seek(0)
+        return send_file(out, mimetype="image/png", as_attachment=False)
+    except _PayloadError as exc:
+        return jsonify({"error": str(exc)}), exc.status_code
+    except Exception as exc:
+        logger.error(f"Error exporting collage image: {exc}", exc_info=True)
+        return jsonify({"error": "No se pudo exportar el collage."}), 500

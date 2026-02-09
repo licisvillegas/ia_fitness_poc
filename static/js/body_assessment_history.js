@@ -1,5 +1,12 @@
 const bodyAssessmentHistoryConfig = window.bodyAssessmentHistoryConfig || {};
 const userId = bodyAssessmentHistoryConfig.userId || "";
+const EXPORT_FALLBACK_WIDTH = 900;
+const EXPORT_FALLBACK_HEIGHT = 1200;
+const COLLAGE_SIZES = {
+    "1:1": { width: 1080, height: 1080 },
+    "4:5": { width: 1080, height: 1350 },
+    "9:16": { width: 1080, height: 1920 }
+};
 let historyData = [];
 let selectedAssessmentId = null;
 let compareState = {
@@ -541,6 +548,12 @@ let compareState = {
             const resetSlider = document.getElementById('compareResetSlider');
             const btnAdjustA = document.getElementById('compareAdjustA');
             const btnAdjustB = document.getElementById('compareAdjustB');
+            const exportBtn = document.getElementById('compareExportBtn');
+            const exportRatio = document.getElementById('compareExportRatio');
+            const collageExportBtn = document.getElementById('compareCollageExportBtn');
+            const collageLayout = document.getElementById('compareCollageLayout');
+            const collageFit = document.getElementById('compareCollageFit');
+            const collagePadding = document.getElementById('compareCollagePadding');
 
             selectHistoryA?.addEventListener('change', (e) => {
                 compareState.aAssessmentIndex = parseInt(e.target.value, 10) || 0;
@@ -691,6 +704,211 @@ let compareState = {
                 btnAdjustB.classList.add('active');
                 btnAdjustA?.classList.remove('active');
                 syncCompareControls();
+            });
+
+            exportBtn?.addEventListener('click', async () => {
+                try {
+                    const assessA = compareState.assessments[compareState.aAssessmentIndex] || {};
+                    const assessB = compareState.assessments[compareState.bAssessmentIndex] || {};
+                    const photosA = Array.isArray(assessA?.input?.photos) ? assessA.input.photos.filter(p => p && p.url) : [];
+                    const photosB = Array.isArray(assessB?.input?.photos) ? assessB.input.photos.filter(p => p && p.url) : [];
+                    const photoA = photosA[compareState.aPhotoIndex];
+                    const photoB = photosB[compareState.bPhotoIndex];
+
+                    if (!photoA?.url || !photoB?.url) {
+                        if (window.showAlertModal) {
+                            window.showAlertModal("Aviso", "Selecciona dos imágenes válidas para exportar.", "warning");
+                        } else {
+                            window.alert("Selecciona dos imágenes válidas para exportar.");
+                        }
+                        return;
+                    }
+
+                    let width = EXPORT_FALLBACK_WIDTH;
+                    let height = EXPORT_FALLBACK_HEIGHT;
+                    let sourceWidth = 0;
+                    let sourceHeight = 0;
+                    const ratioValue = exportRatio?.value || "4:5";
+                    const size = COLLAGE_SIZES[ratioValue];
+                    if (size) {
+                        width = size.width;
+                        height = size.height;
+                    } else {
+                        const sliderWrap = document.getElementById('compareSliderWrap');
+                        const sideWrap = document.getElementById('compareSideBySide');
+                        if (compareState.mode === 'slider' && sliderWrap) {
+                            const rect = sliderWrap.getBoundingClientRect();
+                            width = Math.round(rect.width) || width;
+                            height = Math.round(rect.height) || height;
+                            sourceWidth = width;
+                            sourceHeight = height;
+                        } else if (sideWrap) {
+                            const frame = sideWrap.querySelector('.compare-frame');
+                            if (frame) {
+                                const rect = frame.getBoundingClientRect();
+                                width = Math.round(rect.width) || width;
+                                height = Math.round(rect.height) || height;
+                                sourceWidth = width;
+                                sourceHeight = height;
+                            }
+                        }
+                    }
+                    if (!sourceWidth || !sourceHeight) {
+                        const sliderWrap = document.getElementById('compareSliderWrap');
+                        const sideWrap = document.getElementById('compareSideBySide');
+                        if (compareState.mode === 'slider' && sliderWrap) {
+                            const rect = sliderWrap.getBoundingClientRect();
+                            sourceWidth = Math.round(rect.width) || width;
+                            sourceHeight = Math.round(rect.height) || height;
+                        } else if (sideWrap) {
+                            const frame = sideWrap.querySelector('.compare-frame');
+                            if (frame) {
+                                const rect = frame.getBoundingClientRect();
+                                sourceWidth = Math.round(rect.width) || width;
+                                sourceHeight = Math.round(rect.height) || height;
+                            }
+                        }
+                    }
+
+                    const payload = {
+                        ratio: ratioValue,
+                        mode: compareState.sliderMode,
+                        slider: compareState.slider,
+                        width,
+                        height,
+                        sourceWidth,
+                        sourceHeight,
+                        imageAUrl: photoA.url,
+                        imageBUrl: photoB.url,
+                        transformA: { ...compareState.transformA },
+                        transformB: { ...compareState.transformB }
+                    };
+
+                    if (typeof showLoader === 'function') {
+                        showLoader("Exportando comparación...");
+                    }
+                    const resp = await fetch('/ai/body_assessment/compare/export', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({}));
+                        throw new Error(err.error || "No se pudo exportar la comparación.");
+                    }
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    a.href = url;
+                    a.download = `comparacion_${stamp}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    const message = err?.message || "Error exportando la comparación.";
+                    if (window.showAlertModal) {
+                        window.showAlertModal("Error", message, "danger");
+                    } else {
+                        window.alert(message);
+                    }
+                } finally {
+                    if (typeof hideLoader === 'function') {
+                        hideLoader();
+                    }
+                }
+            });
+
+            collageExportBtn?.addEventListener('click', async () => {
+                try {
+                    const assessA = compareState.assessments[compareState.aAssessmentIndex] || {};
+                    const assessB = compareState.assessments[compareState.bAssessmentIndex] || {};
+                    const photosA = Array.isArray(assessA?.input?.photos) ? assessA.input.photos.filter(p => p && p.url) : [];
+                    const photosB = Array.isArray(assessB?.input?.photos) ? assessB.input.photos.filter(p => p && p.url) : [];
+                    const photoA = photosA[compareState.aPhotoIndex];
+                    const photoB = photosB[compareState.bPhotoIndex];
+
+                    if (!photoA?.url || !photoB?.url) {
+                        if (window.showAlertModal) {
+                            window.showAlertModal("Aviso", "Selecciona dos imágenes válidas para exportar.", "warning");
+                        } else {
+                            window.alert("Selecciona dos imágenes válidas para exportar.");
+                        }
+                        return;
+                    }
+
+                    const ratioValue = exportRatio?.value || "4:5";
+                    const size = COLLAGE_SIZES[ratioValue] || COLLAGE_SIZES["4:5"];
+                    const layoutValue = collageLayout?.value || "vertical";
+                    const fitValue = collageFit?.value || "contain";
+                    const paddingValue = parseInt(collagePadding?.value || "16", 10) || 0;
+
+                    let sourceWidth = 0;
+                    let sourceHeight = 0;
+                    const sliderWrap = document.getElementById('compareSliderWrap');
+                    const sideWrap = document.getElementById('compareSideBySide');
+                    if (compareState.mode === 'slider' && sliderWrap) {
+                        const rect = sliderWrap.getBoundingClientRect();
+                        sourceWidth = Math.round(rect.width) || sourceWidth;
+                        sourceHeight = Math.round(rect.height) || sourceHeight;
+                    } else if (sideWrap) {
+                        const frame = sideWrap.querySelector('.compare-frame');
+                        if (frame) {
+                            const rect = frame.getBoundingClientRect();
+                            sourceWidth = Math.round(rect.width) || sourceWidth;
+                            sourceHeight = Math.round(rect.height) || sourceHeight;
+                        }
+                    }
+
+                    const payload = {
+                        width: size.width,
+                        height: size.height,
+                        layout: layoutValue,
+                        fit: fitValue,
+                        padding: paddingValue,
+                        sourceWidth,
+                        sourceHeight,
+                        imageAUrl: photoA.url,
+                        imageBUrl: photoB.url,
+                        transformA: { ...compareState.transformA },
+                        transformB: { ...compareState.transformB }
+                    };
+
+                    if (typeof showLoader === 'function') {
+                        showLoader("Exportando collage...");
+                    }
+                    const resp = await fetch('/ai/body_assessment/compare/collage', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({}));
+                        throw new Error(err.error || "No se pudo exportar el collage.");
+                    }
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    a.href = url;
+                    a.download = `collage_${ratioValue.replace(':', 'x')}_${stamp}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    const message = err?.message || "Error exportando el collage.";
+                    if (window.showAlertModal) {
+                        window.showAlertModal("Error", message, "danger");
+                    } else {
+                        window.alert(message);
+                    }
+                } finally {
+                    if (typeof hideLoader === 'function') {
+                        hideLoader();
+                    }
+                }
             });
 
             document.addEventListener('click', (event) => {

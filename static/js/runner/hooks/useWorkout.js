@@ -178,7 +178,9 @@
             setCursor,
             setStatus,
             setStepTimer,
-            setIsTimerRunning
+            setStepTimer,
+            setIsTimerRunning,
+            isCancellingRef // Passed ref
         });
 
 
@@ -487,10 +489,10 @@
             if (status === 'WORK') {
                 // ENTRANDO EN TRABAJO: Programar Push de Motivación (si es basado en tiempo)
                 if (scheduledPushTaskIdsRef.current.length > 0) {
-                    if (document.visibilityState === 'visible') {
-                        scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
-                        scheduledPushTaskIdsRef.current = [];
-                    }
+                    /* if (document.visibilityState === 'visible') { */
+                    scheduledPushTaskIdsRef.current.forEach(id => window.Runner.utils.cancelPush(id));
+                    scheduledPushTaskIdsRef.current = [];
+                    /* } */
                 }
 
                 const meta = getStepExerciseMeta(currentStep);

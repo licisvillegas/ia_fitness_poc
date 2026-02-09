@@ -331,13 +331,18 @@
                         });
                     } finally {
                         if (window.hideLoader && !confirmModal.isOpen) window.hideLoader();
+                        // The window.location.href here was causing issues, it should only happen after user interaction
+                        // or successful save/cancel flow.
                     }
-                }, "success");
-            }, 2000);
+                }, "success"); // This closes the showConfirm for "Finalizar Rutina"
+            }, 2000); // This closes the setTimeout for showing the completion modal
         };
 
         const cancelWorkout = () => {
             const doCancel = async () => {
+                // LOCK PERSISTENCE
+                if (isCancellingRef) isCancellingRef.current = true;
+
                 try {
                     localStorage.removeItem("workout_running_state");
                     localStorage.removeItem("offline_pending_session");

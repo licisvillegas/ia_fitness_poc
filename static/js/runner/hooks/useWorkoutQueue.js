@@ -287,11 +287,14 @@
             setStepTimer(t => {
                 const nextValue = Math.max(0, t + seconds);
                 // Reprogramar Push
-                if (schedulePush && document.visibilityState !== 'visible') {
+                // Reprogramar Push
+                /* if (schedulePush && document.visibilityState !== 'visible') { */
+                if (schedulePush) {
+                    const { pushTitle, pushBody } = window.Runner.constants.NOTIFICATIONS.REST_START;
                     schedulePush(
                         nextValue,
-                        "Tiempo Completado",
-                        "Tu descanso ha terminado. ¡A trabajar!",
+                        pushTitle,
+                        pushBody,
                         "rest_timer",
                         {
                             visibility: document.visibilityState,

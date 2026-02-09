@@ -11,7 +11,8 @@
             setCursor,
             setStatus,
             setStepTimer,
-            setIsTimerRunning
+            setIsTimerRunning,
+            isCancellingRef
         } = options;
 
         const restoreFromLocalStorage = useCallback(() => {
@@ -50,6 +51,9 @@
 
         useEffect(() => {
             if (!routineState || status === 'LOADING') return;
+            // Prevent saving if cancelling
+            if (isCancellingRef && isCancellingRef.current) return;
+
             const state = {
                 routineId: routineState.id || routineState._id,
                 cursor,
@@ -61,7 +65,7 @@
             try {
                 localStorage.setItem("workout_running_state", JSON.stringify(state));
             } catch (e) { }
-        }, [routineState, status, cursor, stepTimer, isTimerRunning]);
+        }, [routineState, status, cursor, stepTimer, isTimerRunning, isCancellingRef]);
 
         return { restoreFromLocalStorage };
     };

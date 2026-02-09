@@ -60,6 +60,16 @@ function initCompareTool() {
     initAdjustControls();
     initExportButtons();
 
+    // Cargar imágenes por defecto si no hay selección previa
+    if (!compareState.imageAUrl) {
+        compareState.imageAUrl = '/static/images/body/male/fh03.png';
+        updateFileName('A', 'Default (fh03.png)');
+    }
+    if (!compareState.imageBUrl) {
+        compareState.imageBUrl = '/static/images/body/male/fh02.png';
+        updateFileName('B', 'Default (fh02.png)');
+    }
+
     setCompareView('side');
     updateCompareImages();
 }

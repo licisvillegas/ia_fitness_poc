@@ -6,21 +6,10 @@
 
     window.Runner.components.RoutineDetails = ({ routine }) => {
         const { exerciseLookup, applySubstitute, showConfirm, queue, updateTimeTargetForItem } = useWorkout();
-        const [expandedGroups, setExpandedGroups] = useState(new Set());
         const [blocks, setBlocks] = useState([]);
         const [manualTimeEnabled, setManualTimeEnabled] = useState({});
         const [manualTimeMinutes, setManualTimeMinutes] = useState({});
         const timeOptions = [600, 900, 1200, 1800, 3600];
-
-        const toggleGroup = (groupId) => {
-            const next = new Set(expandedGroups);
-            if (next.has(groupId)) {
-                next.delete(groupId);
-            } else {
-                next.add(groupId);
-            }
-            setExpandedGroups(next);
-        };
 
         useEffect(() => {
             if (!routine || !routine.items) {
@@ -135,14 +124,11 @@
                 const restSeconds = getRestSeconds(entry.data);
                 const restLabel = entry.data.note || "Descanso";
                 return (
-                    <div key={key} className="d-flex justify-content-between align-items-center border border-secondary rounded px-2 py-2 bg-black-trans">
+                    <div key={key} className="routine-preview-item d-flex justify-content-between align-items-center mb-1" style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>
                         <div>
-                            <div className="text-white fw-bold">{restLabel}</div>
-                            <div className="text-secondary small">Pausa</div>
+                            <div className="text-white small fw-bold"><i className="fas fa-hourglass-half me-2 text-secondary"></i>{restLabel}</div>
                         </div>
-                        <div className="text-end text-secondary small">
-                            <div>{restSeconds}s</div>
-                        </div>
+                        <div className="text-end text-secondary small">{restSeconds}s</div>
                     </div>
                 );
             }
@@ -175,25 +161,31 @@
             const defaultMinutes = Math.max(1, Math.round(timeSelectValue / 60));
             const manualMinutesValue = manualTimeMinutes[routineItemId] ?? defaultMinutes;
 
+            let setsRepText = `${sets} sets ${isTime ? `x ${time || 60}s` : `x ${reps || '-'}`}`;
+            if (item.series && Array.isArray(item.series) && item.series.length > 0) {
+                setsRepText = `${item.series.length} series: ` + item.series.map(s => s.reps).join('/');
+            }
+
+
             return (
-                <div key={key} className="d-flex justify-content-between align-items-start gap-3">
-                    <div>
+                <div key={key} className="routine-preview-item d-flex justify-content-between align-items-start mb-2" style={{ background: 'rgba(40,40,45,0.8)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="flex-grow-1">
                         <div className="d-flex align-items-center gap-2">
-                            <div className="text-white fw-bold">{name}</div>
+                            <span className="badge bg-dark text-secondary border border-secondary" style={{ fontSize: '0.6rem', minWidth: '20px' }}>{(key.split('_').pop() * 1) + 1}</span>
+                            <div className="text-white fw-bold" style={{ fontSize: '0.9rem' }}>{name}</div>
                             {hasVideo && (
                                 <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger"
-                                    title="Ver video"
+                                    className="btn btn-sm btn-link p-0 text-danger"
                                     onClick={() => openVideoModal(mergedEx.video_url)}
                                 >
                                     <i className="fab fa-youtube"></i>
                                 </button>
                             )}
                         </div>
-                        <div className="text-secondary small d-flex flex-wrap gap-2 mt-1">
-                            <span className="badge bg-secondary">{bodyPartLabel}</span>
-                            <span className="badge bg-dark border border-secondary text-info">
+                        <div className="d-flex flex-wrap gap-2 mt-1">
+                            <span className="badge bg-secondary" style={{ fontSize: '0.65rem' }}>{bodyPartLabel}</span>
+                            <span className="badge bg-dark border border-secondary text-info" style={{ fontSize: '0.65rem' }}>
                                 <i className={`${equipmentMeta.icon} me-1`}></i>{equipmentMeta.label}
                             </span>
                         </div>
@@ -208,7 +200,7 @@
                                 {!manualEnabled ? (
                                     <select
                                         className="form-select form-select-sm bg-dark text-white border-secondary"
-                                        style={{ width: "140px" }}
+                                        style={{ width: "110px", fontSize: '0.75rem', padding: '2px 4px' }}
                                         value={timeSelectValue}
                                         onChange={(e) => {
                                             const seconds = Number(e.target.value);
@@ -224,15 +216,14 @@
                                         ))}
                                     </select>
                                 ) : (
-                                    <div className="input-group input-group-sm" style={{ width: "120px" }}>
-                                        <span className="input-group-text bg-dark text-white border-secondary">min</span>
+                                    <div className="input-group input-group-sm" style={{ width: "100px" }}>
                                         <input
                                             type="number"
                                             min="1"
                                             max="240"
                                             inputMode="numeric"
                                             pattern="[0-9]*"
-                                            className="form-control bg-dark text-white border-secondary"
+                                            className="form-control bg-dark text-white border-secondary text-center p-1"
                                             value={manualMinutesValue}
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => {
@@ -243,11 +234,12 @@
                                                 updateTimeTargetForItem(routineItemId, clamped * 60);
                                             }}
                                         />
+                                        <span className="input-group-text bg-dark text-white border-secondary p-1">m</span>
                                     </div>
                                 )}
                                 <button
                                     type="button"
-                                    className={`btn btn-sm ${manualEnabled ? 'btn-info text-dark' : 'btn-outline-secondary'}`}
+                                    className={`btn btn-sm ${manualEnabled ? 'btn-info text-dark' : 'btn-outline-secondary'} p-1`}
                                     title={manualEnabled ? "Usar lista" : "Editar minutos"}
                                     onClick={() => {
                                         setManualTimeEnabled(prev => {
@@ -262,67 +254,58 @@
                                         });
                                     }}
                                 >
-                                    <i className="fas fa-pen"></i>
+                                    <i className="fas fa-pen" style={{ fontSize: '0.7rem' }}></i>
                                 </button>
                             </div>
                         )}
                         {substitutes.length > 0 && (
                             <div className="mt-2">
                                 <button
-                                    className="btn btn-sm btn-outline-info"
+                                    className="btn btn-sm btn-link text-info p-0"
+                                    style={{ fontSize: '0.7rem', textDecoration: 'none' }}
                                     type="button"
                                     data-bs-toggle="collapse"
                                     data-bs-target={`#${subsId}`}
                                     aria-expanded="false"
                                     aria-controls={subsId}
                                 >
-                                    Sustitutos ({substitutes.length})
+                                    <i className="fas fa-exchange-alt me-1"></i> Sustitutos ({substitutes.length})
                                 </button>
-                                <div className="collapse mt-2" id={subsId}>
-                                    <div className="d-flex flex-column gap-2">
+                                <div className="collapse mt-1" id={subsId}>
+                                    <div className="d-flex flex-column gap-1 ps-2 border-start border-info">
                                         {substitutes.map((sub, sIdx) => {
                                             const subEquipment = getEquipmentMeta(sub.equipment);
                                             const subHasVideo = sub.video_url && sub.video_url.trim() !== "";
                                             return (
-                                                <div key={`${key}_sub_${sIdx}`} className="d-flex align-items-center justify-content-between border border-secondary rounded px-2 py-2">
-                                                    <div>
-                                                        <div className="fw-bold text-white">{sub.name || "Ejercicio"}</div>
-                                                        <div className="small text-secondary">
-                                                            <i className={`${subEquipment.icon} me-1`}></i>{subEquipment.label}
-                                                        </div>
-                                                    </div>
+                                                <div key={`${key}_sub_${sIdx}`} className="d-flex align-items-center justify-content-between">
                                                     <div className="d-flex align-items-center gap-2">
+                                                        <div className="text-secondary small" style={{ fontSize: '0.8rem' }}>{sub.name || "Ejercicio"}</div>
                                                         {subHasVideo && (
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-sm btn-outline-danger"
-                                                                title="Ver video"
-                                                                onClick={() => openVideoModal(sub.video_url)}
-                                                            >
-                                                                <i className="fab fa-youtube"></i>
-                                                            </button>
-                                                        )}
-                                                        {stepIdx !== -1 && (
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-sm btn-outline-success"
-                                                                title="Usar este ejercicio"
-                                                                onClick={() => {
-                                                                    const subName = sub.exercise_name || sub.name || "Ejercicio";
-                                                                    const subEquip = getEquipmentMeta(sub.equipment).label;
-                                                                    const origEquip = getEquipmentMeta(mergedEx.equipment).label;
-                                                                    showConfirm(
-                                                                        "Confirmar sustituto",
-                                                                        `¿Aplicar "${subName}" (${subEquip}) en lugar de "${name}" (${origEquip}) a todas las series?`,
-                                                                        () => applySubstitute(sub, "remaining", stepIdx),
-                                                                        "warning"
-                                                                    );
-                                                                }}
-                                                            >
-                                                                Usar
+                                                            <button className="btn btn-sm btn-link p-0 text-danger" onClick={() => openVideoModal(sub.video_url)}>
+                                                                <i className="fab fa-youtube" style={{ fontSize: '0.8rem' }}></i>
                                                             </button>
                                                         )}
                                                     </div>
+                                                    {stepIdx !== -1 && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-link text-success p-0 ms-4"
+                                                            style={{ fontSize: '0.7rem' }}
+                                                            onClick={() => {
+                                                                const subName = sub.exercise_name || sub.name || "Ejercicio";
+                                                                const subEquip = getEquipmentMeta(sub.equipment).label;
+                                                                const origEquip = getEquipmentMeta(mergedEx.equipment).label;
+                                                                showConfirm(
+                                                                    "Confirmar sustituto",
+                                                                    `¿Aplicar "${subName}" (${subEquip}) en lugar de "${name}" (${origEquip}) a todas las series?`,
+                                                                    () => applySubstitute(sub, "remaining", stepIdx),
+                                                                    "warning"
+                                                                );
+                                                            }}
+                                                        >
+                                                            Usar
+                                                        </button>
+                                                    )}
                                                 </div>
                                             );
                                         })}
@@ -331,8 +314,8 @@
                             </div>
                         )}
                     </div>
-                    <div className="text-end text-secondary small">
-                        <div>{sets} sets {isTime ? `x ${time || 60}s` : `x ${reps || '-'}`}</div>
+                    <div className="text-end text-secondary small ms-2" style={{ minWidth: '80px' }}>
+                        <div className="fw-bold text-light">{setsRepText}</div>
                         <div>Descanso {restSeconds}s</div>
                     </div>
                 </div>
@@ -341,56 +324,67 @@
 
         if (!routine) return <div className="text-white text-center">No routine data</div>;
 
+        const partsLabel = routine.body_parts && routine.body_parts.length > 0
+            ? routine.body_parts.map(bp => bp.name).join(", ")
+            : "General";
+        const dayLabel = (routine.routine_day && window.translateDay) ? window.translateDay(routine.routine_day) : (routine.routine_day || "Flexible");
+        const validity = routine.assigned_expires_at && window.formatDate ? window.formatDate(routine.assigned_expires_at) : (routine.is_active !== false ? "Activa" : "Oculta");
+
         return (
-            <div className="card mx-3" style={{ background: 'rgba(30,30,30,0.95)', border: '1px solid var(--border-color)', borderRadius: '20px', minHeight: '300px', opacity: 1 }}>
-                <div className="card-body">
-                    <div className="text-center mb-4">
-                        <h2 className="display-6 fw-bold text-white mb-2">{routine.name || "Rutina"}</h2>
-                        <p className="text-secondary m-0">{totalExercises} ejercicios -  Revisa los detalles antes de iniciar</p>
+            <div className="routine-preview-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '16px' }}>
+                <div className="text-center mb-3">
+                    <div className="h3 fw-bold text-white mb-1">{routine.name || "Rutina"}</div>
+                    <div className="text-secondary small">{totalExercises} ejercicios - Revisa los detalles antes de iniciar</div>
+                </div>
+                <div className="row g-2 mb-3">
+                    <div className="col-6">
+                        <div className="text-secondary small">Grupos</div>
+                        <div className="text-info small">{partsLabel}</div>
                     </div>
-
-                    <div className="d-flex flex-column gap-3 overflow-auto custom-scroll" style={{ maxHeight: '240px' }}>
-                        {blocks.map((block, idx) => {
-                            if (block.type === 'group' || block.type === 'inline_group') {
-                                const blockId = block.id || (block.item && (block.item._id || block.item.id)) || `grp_${idx}`;
-                                const blockName = block.name || (block.item && (block.item.group_name || block.item.name)) || "Circuito";
-                                const blockNote = block.note || (block.item && (block.item.note || block.item.description)) || "";
-                                const isExpanded = expandedGroups.has(blockId);
-
-                                return (
-                                    <div key={`routine_group_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
-                                        <div
-                                            className="d-flex justify-content-between align-items-center cursor-pointer"
-                                            onClick={() => toggleGroup(blockId)}
-                                        >
-                                            <div>
-                                                <div className="text-cyber-orange text-uppercase small fw-bold">
-                                                    {blockName} ({block.entries.length} items)
-                                                </div>
-                                                {blockNote && <div className="text-white small mt-1 fst-italic">"{blockNote}"</div>}
-                                            </div>
-                                            <i className={`fas fa-chevron-down text-secondary transition-icon ${isExpanded ? 'rotate-180' : ''}`}></i>
-                                        </div>
-                                        {isExpanded && (
-                                            <div className="d-flex flex-column gap-2 mt-3 animate-fade-in">
-                                                {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            } else if (block.type === 'ungrouped_chunk') {
-                                return (
-                                    <div key={`routine_block_${idx}`} className="p-3 border border-secondary rounded-3 bg-black-trans">
-                                        <div className="text-cyber-blue fw-bold mb-2">Sin grupo</div>
-                                        <div className="d-flex flex-column gap-2">
-                                            {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
-                                        </div>
-                                    </div>
-                                );
-                            }
-                            return null;
-                        })}
+                    <div className="col-6">
+                        <div className="text-secondary small">Día</div>
+                        <div className="text-warning small">{dayLabel}</div>
                     </div>
+                    <div className="col-6">
+                        <div className="text-secondary small">Ejercicios</div>
+                        <div className="text-white small">{totalExercises}</div>
+                    </div>
+                    <div className="col-6">
+                        <div className="text-secondary small">Estado</div>
+                        <div className="text-white small">{validity}</div>
+                    </div>
+                </div>
+                <hr className="border-secondary" />
+
+                <div className="routine-preview-scroll d-flex flex-column gap-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {blocks.map((block, idx) => {
+                        if (block.type === 'group' || block.type === 'inline_group') {
+                            const blockName = block.name || (block.item && (block.item.group_name || block.item.name)) || "Circuito";
+                            const blockNote = block.note || (block.item && (block.item.note || block.item.description)) || "";
+
+                            return (
+                                <div key={`routine_group_${idx}`} className="mt-3 mb-2 p-2 rounded" style={{ background: 'rgba(0, 210, 255, 0.05)', border: '1px dashed rgba(0, 210, 255, 0.2)' }}>
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <div className="text-info fw-bold small text-uppercase">{blockName}</div>
+                                        <div className="text-secondary small" style={{ fontSize: '0.7rem' }}>{block.entries.length} items</div>
+                                    </div>
+                                    {blockNote && <div className="text-secondary small fst-italic mb-2">"{blockNote}"</div>}
+                                    {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
+                                </div>
+                            );
+                        } else if (block.type === 'ungrouped_chunk') {
+                            return (
+                                <div key={`routine_block_${idx}`}>
+                                    <h6 className="text-cyber-blue small fw-bold text-uppercase mt-3 mb-2">Ejercicios</h6>
+                                    <div className="d-flex flex-column gap-2">
+                                        {block.entries.map((entry, entryIdx) => renderEntry(entry, `b${idx}_${entryIdx}`))}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })}
+                    {blocks.length === 0 && <div className="text-muted text-center py-3">No hay ejercicios en esta rutina.</div>}
                 </div>
             </div>
         );

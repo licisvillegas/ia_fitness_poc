@@ -4,8 +4,15 @@ import shutil
 import uuid
 import glob
 from werkzeug.utils import secure_filename
+import platform
+import time
+import psutil
+from datetime import datetime
 from utils.auth_helpers import check_admin_access
 from utils.gif_master import GifMaster
+from extensions import db, logger, openai_key
+import requests
+
 
 admin_tools_bp = Blueprint('admin_tools', __name__)
 
@@ -198,3 +205,89 @@ def upload_images():
         "session_id": unique_id, 
         "frames": frame_urls
     })
+
+
+# ======================================================
+# SYSTEM HEALTH DASHBOARD
+# ======================================================
+
+@admin_tools_bp.route("/admin/system-health")
+def system_health_page():
+    ok, err = check_admin_access()
+    if not ok: return err
+    return render_template("admin_system_health.html")
+
+@admin_tools_bp.route("/api/admin/system-health/status")
+def system_health_status():
+    ok, err = check_admin_access()
+    if not ok: return err
+
+    status = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "services": {},
+        "server": {}
+    }
+
+    # 1. MongoDB Check
+    mongo_status = {"status": "unknown", "ping_ms": 0}
+    try:
+        if db is not None:
+            start_time = time.time()
+            # Execute a lightweight command
+            db.command('ping')
+            latency = (time.time() - start_time) * 1000
+            mongo_status = {
+                "status": "connected", 
+                "ping_ms": round(latency, 2),
+                "message": "Conexión estable"
+            }
+        else:
+             mongo_status = {"status": "disconnected", "message": "DB instance is None"}
+    except Exception as e:
+        mongo_status = {"status": "error", "message": str(e)}
+    status["services"]["mongodb"] = mongo_status
+
+    # 2. Redis Check
+    from utils.cache import _get_redis_client
+    redis_status = {"status": "unknown"}
+    try:
+        r_client = _get_redis_client()
+        if r_client:
+            if r_client.ping():
+                redis_status = {"status": "connected", "message": "Redis activo"}
+            else:
+                redis_status = {"status": "error", "message": "Ping fallido"}
+        else:
+            redis_status = {"status": "disabled", "message": "No configurado (Memoria local)"}
+    except Exception as e:
+        redis_status = {"status": "error", "message": str(e)}
+    status["services"]["redis"] = redis_status
+
+    # 3. OpenAI Check
+    openai_status = {"status": "unknown"}
+    if openai_key:
+        openai_status = {"status": "configured", "message": "API Key cargada"}
+        # Optional: Make a tiny request to verify validity
+    else:
+        openai_status = {"status": "missing", "message": "API Key no encontrada"}
+    status["services"]["openai"] = openai_status
+
+    # 4. Server Metrics (psutil)
+    try:
+        cpu_usage = psutil.cpu_percent(interval=None)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        status["server"] = {
+            "cpu_percent": cpu_usage,
+            "memory_percent": memory.percent,
+            "memory_used_gb": round(memory.used / (1024**3), 2),
+            "memory_total_gb": round(memory.total / (1024**3), 2),
+            "disk_percent": disk.percent,
+            "platform": platform.system(),
+            "uptime_seconds": int(time.time() - psutil.boot_time())
+        }
+    except Exception as e:
+        status["server"] = {"error": str(e)}
+
+    return jsonify(status)

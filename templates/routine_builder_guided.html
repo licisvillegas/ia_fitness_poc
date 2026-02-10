@@ -42,60 +42,108 @@
                 <div class="row g-4">
                     <div class="col-lg-7">
                         <section id="guidedStep1" class="guided-step-section">
-                            <h6 class="text-cyber-green mb-3">Detalles de la rutina</h6>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Mis rutinas</label>
-                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <input type="text" id="guidedRoutineSearch"
-                                        class="form-control bg-dark text-white border-secondary"
-                                        placeholder="Buscar rutina..." style="max-width: 320px;">
-                                    <button class="btn btn-outline-secondary" type="button"
-                                        id="guidedRoutineReset">Restablecer</button>
-                                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#guidedRoutineCollapse" aria-expanded="false"
-                                        aria-controls="guidedRoutineCollapse">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </button>
+                            <div class="row">
+                                <!-- Columna A: Editar/Duplicar (Buscador) -->
+                                <div class="col-lg-6 mb-4 mb-lg-0">
+                                    <div class="card bg-dark-elem border-secondary h-100">
+                                        <div class="card-header border-secondary d-flex justify-content-between align-items-center"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseEditDup"
+                                            aria-expanded="false" aria-controls="collapseEditDup"
+                                            style="cursor: pointer;">
+                                            <h6 class="text-cyber-blue mb-0"><i class="fas fa-search me-2"></i>Editar /
+                                                Duplicar</h6>
+                                            <i class="fas fa-chevron-down text-secondary"></i>
+                                        </div>
+                                        <div id="collapseEditDup" class="collapse">
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="text-secondary small mb-2">Buscar rutina
+                                                        existente</label>
+                                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                                        <input type="text" id="guidedRoutineSearch"
+                                                            class="form-control bg-dark text-white border-secondary"
+                                                            placeholder="Buscar rutina..." style="max-width: 280px;">
+                                                        <button class="btn btn-outline-secondary" type="button"
+                                                            id="guidedRoutineReset" title="Limpiar busqueda">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-secondary" type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#guidedRoutineCollapse"
+                                                            aria-expanded="false" aria-controls="guidedRoutineCollapse"
+                                                            title="Mostrar/Ocultar lista">
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div id="guidedRoutineCollapse" class="collapse">
+                                                        <div id="guidedRoutineListWrapper" class="mt-3">
+                                                            <div id="guidedRoutineList"
+                                                                class="list-group list-group-flush custom-scroll"
+                                                                style="max-height: 400px; overflow-y: auto;"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="guidedRoutineCollapse" class="collapse">
-                                    <div id="guidedRoutineList" class="list-group list-group-flush"></div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Nombre</label>
-                                <input type="text" id="guidedName"
-                                    class="form-control bg-dark text-white border-secondary"
-                                    placeholder="Ej. Fuerza tren superior">
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Descripcion</label>
-                                <input type="text" id="guidedDesc"
-                                    class="form-control bg-dark text-white border-secondary"
-                                    placeholder="Ej. Pecho, espalda, biceps" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Dia sugerido</label>
-                                <select id="guidedDay" class="form-select bg-dark text-white border-secondary">
-                                    <option value="">Seleccionar</option>
-                                    <option value="Monday">Lunes</option>
-                                    <option value="Tuesday">Martes</option>
-                                    <option value="Wednesday">Miercoles</option>
-                                    <option value="Thursday">Jueves</option>
-                                    <option value="Friday">Viernes</option>
-                                    <option value="Saturday">Sabado</option>
-                                    <option value="Sunday">Domingo</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Grupos musculares</label>
-                                <div id="guidedBodyParts" class="d-flex flex-wrap gap-2"></div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-secondary small">Estado</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="guidedActive" checked>
-                                    <label class="form-check-label text-secondary" for="guidedActive">Mostrar en Rutinas
-                                        creadas</label>
+
+                                <!-- Columna B: Nueva Rutina / Detalles -->
+                                <div class="col-lg-6">
+                                    <div class="card bg-dark-elem border-secondary h-100">
+                                        <div class="card-header border-secondary">
+                                            <h6 class="text-cyber-green mb-0"><i class="fas fa-edit me-2"></i>Detalles
+                                                de la rutina</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label class="text-secondary small">Nombre</label>
+                                                <input type="text" id="guidedName"
+                                                    class="form-control bg-dark text-white border-secondary"
+                                                    placeholder="Ej. Fuerza tren superior">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="text-secondary small">Descripcion</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="guidedDesc"
+                                                        class="form-control bg-dark text-white border-secondary"
+                                                        placeholder="Ej. Pecho, espalda, biceps" readonly
+                                                        style="cursor: pointer;">
+                                                    <span
+                                                        class="input-group-text bg-dark border-secondary text-secondary">
+                                                        <i class="fas fa-pen"></i>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="text-secondary small">Dia sugerido</label>
+                                                <select id="guidedDay"
+                                                    class="form-select bg-dark text-white border-secondary">
+                                                    <option value="">Seleccionar</option>
+                                                    <option value="Monday">Lunes</option>
+                                                    <option value="Tuesday">Martes</option>
+                                                    <option value="Wednesday">Miercoles</option>
+                                                    <option value="Thursday">Jueves</option>
+                                                    <option value="Friday">Viernes</option>
+                                                    <option value="Saturday">Sabado</option>
+                                                    <option value="Sunday">Domingo</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="text-secondary small">Grupos musculares</label>
+                                                <div id="guidedBodyParts" class="d-flex flex-wrap gap-2 mt-1"></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="text-secondary small">Estado</label>
+                                                <div class="form-check form-switch mt-1">
+                                                    <input class="form-check-input" type="checkbox" id="guidedActive"
+                                                        checked>
+                                                    <label class="form-check-label text-secondary"
+                                                        for="guidedActive">Activa</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>

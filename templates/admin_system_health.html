@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse Fit | Salud del Sistema</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="/static/css/theme.css" rel="stylesheet">
+    <link href="/static/css/sidebar.css" rel="stylesheet">
+    <style>
+        .status-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-ok {
+            background-color: #28a745;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+        }
+
+        .status-warning {
+            background-color: #ffc107;
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
+        }
+
+        .status-error {
+            background-color: #dc3545;
+            box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
+        }
+
+        .status-disabled {
+            background-color: #6c757d;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        #last-updated {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'components/sidebar_admin.html' %}
+
+    <div class="main-content">
+        <main class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-theme mb-1">Salud del Sistema</h2>
+                    <p class="text-secondary mb-0">Monitoreo en tiempo real de infraestructura y servicios.</p>
+                </div>
+                <div class="text-end">
+                    <button id="refresh-btn" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-sync-alt me-1"></i> Actualizar
+                    </button>
+                    <div id="last-updated" class="mt-1"></div>
+                </div>
+            </div>
+
+            <!-- Servicios Principales -->
+            <div class="row g-4 mb-4">
+                <!-- MongoDB -->
+                <div class="col-md-4">
+                    <div class="status-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-0"><i class="fas fa-database me-2 text-success"></i> MongoDB
+                                </h5>
+                                <small class="text-secondary">Base de Datos Principal</small>
+                            </div>
+                            <span id="mongo-status-ind" class="status-indicator status-disabled"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <div class="metric-value" id="mongo-ping">-- ms</div>
+                                <div class="metric-label">Latencia</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-dark-subtle text-light border border-secondary"
+                                    id="mongo-state">Conectando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Redis -->
+                <div class="col-md-4">
+                    <div class="status-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-0"><i class="fas fa-memory me-2 text-danger"></i> Redis</h5>
+                                <small class="text-secondary">Caché & Session Store</small>
+                            </div>
+                            <span id="redis-status-ind" class="status-indicator status-disabled"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <div class="metric-value" id="redis-message">--</div>
+                                <div class="metric-label">Estado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OpenAI -->
+                <div class="col-md-4">
+                    <div class="status-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-0"><i class="fas fa-robot me-2 text-info"></i> OpenAI</h5>
+                                <small class="text-secondary">Motor de IA (GPT-4o)</small>
+                            </div>
+                            <span id="openai-status-ind" class="status-indicator status-disabled"></span>
+                        </div>
+                        <div class="metric-value" id="openai-state" style="font-size: 1.2rem;">Verificando...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recursos del Servidor -->
+            <h4 class="text-theme mb-3 h5">Recursos del Servidor</h4>
+            <div class="row g-4">
+                <div class="col-md-3 col-6">
+                    <div class="status-card text-center py-4">
+                        <i class="fas fa-microchip fa-2x mb-3 text-warning"></i>
+                        <h3 class="metric-value mb-0" id="cpu-usage">--%</h3>
+                        <small class="text-secondary">Uso de CPU</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="status-card text-center py-4">
+                        <i class="fas fa-hdd fa-2x mb-3 text-secondary"></i>
+                        <h3 class="metric-value mb-0" id="ram-usage">--%</h3>
+                        <small class="text-secondary" id="ram-details">-- / -- GB</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="status-card text-center py-4">
+                        <i class="fas fa-server fa-2x mb-3 text-primary"></i>
+                        <h3 class="metric-value mb-0" id="disk-usage">--%</h3>
+                        <small class="text-secondary">Disco (Root)</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="status-card text-center py-4">
+                        <i class="fas fa-clock fa-2x mb-3 text-success"></i>
+                        <h3 class="metric-value mb-0" id="uptime">--h --m</h3>
+                        <small class="text-secondary">Tiempo Activo</small>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/lang.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script>
+        // System Health Dashboard Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshBtn = document.getElementById('refresh-btn');
+
+            function formatUptime(seconds) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                return `${h}h ${m}m`;
+            }
+
+            function updateIndicator(id, status) {
+                const el = document.getElementById(id);
+                el.className = 'status-indicator'; // reset
+                if (status === 'connected' || status === 'configured') el.classList.add('status-ok');
+                else if (status === 'disabled') el.classList.add('status-disabled');
+                else el.classList.add('status-error');
+            }
+
+            async function fetchStatus() {
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cargando...';
+
+                try {
+                    const res = await fetch('/api/admin/system-health/status');
+                    if (!res.ok) throw new Error('Error de red');
+                    const data = await res.json();
+
+                    // MongoDB
+                    const mongo = data.services.mongodb;
+                    updateIndicator('mongo-status-ind', mongo.status);
+                    document.getElementById('mongo-ping').textContent = mongo.status === 'connected' ? mongo.ping_ms + ' ms' : '--';
+                    document.getElementById('mongo-state').textContent = mongo.message;
+
+                    // Redis
+                    const redis = data.services.redis;
+                    updateIndicator('redis-status-ind', redis.status);
+                    document.getElementById('redis-message').textContent = redis.message;
+
+                    // OpenAI
+                    const openai = data.services.openai;
+                    updateIndicator('openai-status-ind', openai.status);
+                    document.getElementById('openai-state').textContent = openai.message;
+
+                    // Server
+                    const srv = data.server;
+                    if (!srv.error) {
+                        document.getElementById('cpu-usage').textContent = srv.cpu_percent + '%';
+                        document.getElementById('ram-usage').textContent = srv.memory_percent + '%';
+                        document.getElementById('ram-details').textContent = `${srv.memory_used_gb} / ${srv.memory_total_gb} GB`;
+                        document.getElementById('disk-usage').textContent = srv.disk_percent + '%';
+                        document.getElementById('uptime').textContent = formatUptime(srv.uptime_seconds);
+                    }
+
+                    document.getElementById('last-updated').textContent = 'Actualizado: ' + data.timestamp;
+
+                } catch (err) {
+                    console.error('Health Check Failed:', err);
+                    document.getElementById('last-updated').textContent = 'Error al actualizar';
+                } finally {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Actualizar';
+                }
+            }
+
+            refreshBtn.addEventListener('click', fetchStatus);
+
+            // Auto-refresh every 30s
+            fetchStatus();
+            setInterval(fetchStatus, 30000);
+        });
+    </script>
+</body>
+
+</html>

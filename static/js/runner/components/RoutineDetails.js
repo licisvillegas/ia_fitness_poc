@@ -336,7 +336,7 @@
                     <div className="h3 fw-bold text-white mb-1">{routine.name || "Rutina"}</div>
                     <div className="text-secondary small">{totalExercises} ejercicios - Revisa los detalles antes de iniciar</div>
                 </div>
-                <div className="row g-2 mb-3">
+                <div className="row g-2 mb-3 routine-preview-stats">
                     <div className="col-6">
                         <div className="text-secondary small">Grupos</div>
                         <div className="text-info small">{partsLabel}</div>
@@ -356,7 +356,7 @@
                 </div>
                 <hr className="border-secondary" />
 
-                <div className="routine-preview-scroll d-flex flex-column gap-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <div className="routine-preview-scroll d-flex flex-column gap-2">
                     {blocks.map((block, idx) => {
                         if (block.type === 'group' || block.type === 'inline_group') {
                             const blockName = block.name || (block.item && (block.item.group_name || block.item.name)) || "Circuito";

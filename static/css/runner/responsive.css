@@ -407,3 +407,9 @@
         display: block;
     }
 }
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .routine-preview-stats {
+        display: none !important;
+    }
+}

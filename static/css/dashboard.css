@@ -507,7 +507,7 @@ footer {
   justify-content: center;
 }
 
-#toolTimerModal .input-group > .btn {
+#toolTimerModal .input-group>.btn {
   min-width: 24px;
   height: 20px;
   border-radius: 8px;
@@ -519,7 +519,7 @@ footer {
   gap: 2px;
 }
 
-#toolTimerModal .input-group > input {
+#toolTimerModal .input-group>input {
   min-width: 40px;
   height: 16px;
   border-radius: 999px;
@@ -529,13 +529,13 @@ footer {
   line-height: 16px;
 }
 
-#toolTimerModal .input-group > input[type="number"]::-webkit-outer-spin-button,
-#toolTimerModal .input-group > input[type="number"]::-webkit-inner-spin-button {
+#toolTimerModal .input-group>input[type="number"]::-webkit-outer-spin-button,
+#toolTimerModal .input-group>input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-#toolTimerModal .input-group > input[type="number"] {
+#toolTimerModal .input-group>input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
@@ -614,7 +614,7 @@ footer {
     position: relative;
   }
 
-  #toolTimerModal .modal-body > .d-flex.flex-wrap {
+  #toolTimerModal .modal-body>.d-flex.flex-wrap {
     grid-column: 1;
     grid-row: 3;
     flex-wrap: nowrap !important;
@@ -656,7 +656,7 @@ footer {
     margin-bottom: 4px;
   }
 
-  #toolTimerModal .modal-body > .d-flex.justify-content-center.gap-2.mt-3 {
+  #toolTimerModal .modal-body>.d-flex.justify-content-center.gap-2.mt-3 {
     grid-column: 1;
     grid-row: 4;
     justify-content: center;
@@ -669,12 +669,12 @@ footer {
     min-width: 68px;
   }
 
-  #toolTimerModal .input-group > .btn {
+  #toolTimerModal .input-group>.btn {
     min-width: 44px;
     height: 38px;
   }
 
-  #toolTimerModal .input-group > input {
+  #toolTimerModal .input-group>input {
     min-width: 72px;
     height: 38px;
   }
@@ -714,7 +714,7 @@ footer {
     order: 2;
   }
 
-  #toolTimerModal .modal-body > .d-flex.flex-wrap {
+  #toolTimerModal .modal-body>.d-flex.flex-wrap {
     order: 3;
     flex-wrap: nowrap !important;
     justify-content: center;
@@ -722,7 +722,7 @@ footer {
     margin: 8px 0 12px;
   }
 
-  #toolTimerModal .modal-body > .d-flex.justify-content-center.gap-2.mt-3 {
+  #toolTimerModal .modal-body>.d-flex.justify-content-center.gap-2.mt-3 {
     order: 4;
     justify-content: center;
   }
@@ -884,12 +884,18 @@ footer {
   overflow-x: auto;
   padding: 12px 16px;
   gap: 12px;
-  justify-content: center;
+  justify-content: flex-start;
   /* Center items */
   scrollbar-width: none;
   /* Firefox */
   -ms-overflow-style: none;
   /* IE 10+ */
+}
+
+@media (min-width: 768px) {
+  .tools-carousel-track {
+    justify-content: center;
+  }
 }
 
 .tools-carousel-track::-webkit-scrollbar {

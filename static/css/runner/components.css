@@ -398,7 +398,30 @@
     font-weight: bold;
 }
 
-.plate-total {
-    font-size: 1.1rem;
-    font-weight: 700;
+
+/* Default behavior for routine preview scroll (portrait/desktop) */
+.routine-preview-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Landscape adjustments for routine preview */
+@media (orientation: landscape) and (max-height: 600px) {
+    .routine-preview-card {
+        display: flex;
+        flex-direction: column;
+        height: 85vh;
+        /* Occupy most of the screen height */
+        max-height: none;
+        /* Remove any max-height constraints */
+    }
+
+    .routine-preview-scroll {
+        max-height: none;
+        /* Remove fixed height */
+        flex: 1;
+        /* Allow it to grow and fill remaining space */
+        overflow-y: auto;
+        /* Enable scrolling */
+    }
 }

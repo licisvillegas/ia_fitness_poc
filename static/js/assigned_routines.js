@@ -526,7 +526,6 @@
         <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
             <div class="text-center mb-3">
                  <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
-                 <div class="text-secondary small">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
             </div>
             
             <div class="row g-2 mb-3">
@@ -543,7 +542,7 @@
                   <div class="text-white small">${exercises}</div>
                </div>
                <div class="col-6 text-center">
-                  <div class="text-secondary small">Estado</div>
+                  <div class="text-secondary small">Vigente</div>
                   <div class="text-white small">${statusLabel}</div>
                </div>
             </div>

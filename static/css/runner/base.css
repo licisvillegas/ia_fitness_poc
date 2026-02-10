@@ -29,7 +29,7 @@ body {
     padding-top: 0 !important;
 }
 
-.main-content > main.container {
+.main-content>main.container {
     max-width: 100% !important;
     padding: 0 !important;
 }
@@ -67,6 +67,8 @@ body {
     overflow-x: hidden;
     perspective: 1000px;
     padding: 1rem;
+    min-height: 0;
+    /* Permite scroll en flex column */
 }
 
 .controls-section {

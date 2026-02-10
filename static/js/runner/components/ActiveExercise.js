@@ -73,15 +73,27 @@
             return (
                 <div className={cardClassName}>
 
-                    {/* Botón de posponer - Discreto arriba a la derecha */}
-                    <button
-                        className="btn btn-sm text-secondary position-absolute top-0 end-0 m-2"
-                        onClick={deferExercise}
-                        title="Dejar Pendiente"
-                        style={{ zIndex: 10, opacity: 0.6 }}
-                    >
-                        <i className="fas fa-history fa-lg"></i>
-                    </button>
+                    {/* Controles superiores derecha: Video y Posponer */}
+                    <div className="position-absolute top-0 end-0 m-2 d-flex gap-1" style={{ zIndex: 10 }}>
+                        {hasVideo && (
+                            <button
+                                className="btn btn-sm text-danger"
+                                onClick={() => openVideoModal(ex.video_url)}
+                                title="Ver Video"
+                                style={{ opacity: 0.8 }}
+                            >
+                                <i className="fab fa-youtube fa-lg"></i>
+                            </button>
+                        )}
+                        <button
+                            className="btn btn-sm text-secondary"
+                            onClick={deferExercise}
+                            title="Dejar Pendiente"
+                            style={{ opacity: 0.6 }}
+                        >
+                            <i className="fas fa-history fa-lg"></i>
+                        </button>
+                    </div>
 
                     <div className={contentClassName}>
                         <div className="text-center mb-2 pt-2">
@@ -101,7 +113,7 @@
                                     </button>
                                 )}
                             </div>
-                            <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
+                            <h2 className="fw-bold text-white m-0 heading-wrap" style={name.length > 20 ? { fontSize: '1.2rem' } : {}}>{name}</h2>
                             {currentStep.isTimeBased && (
                                 <div className="text-secondary small mt-1">Tiempo objetivo: {Math.round((currentStep.target?.time || 0) / 60)} min</div>
                             )}
@@ -147,7 +159,7 @@
                         <span className="text-secondary text-uppercase small tracking-widest d-block mb-1" style={{ fontSize: '0.7rem' }}>{bodyPart}</span>
 
                         <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                            <h2 className="fw-bold text-white m-0 heading-wrap">{name}</h2>
+                            <h2 className="fw-bold text-white m-0 heading-wrap" style={name.length > 20 ? { fontSize: '1.2rem' } : {}}>{name}</h2>
                             <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
                                 {hasVideo && (
                                     <button

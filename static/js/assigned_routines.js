@@ -512,28 +512,43 @@
       }
     }
 
+    // Match RoutineDetails.js header style
+    const dayLabel = (routine.routine_day && window.translateDay) ? window.translateDay(routine.routine_day) : "Flexible";
+    const statusLabel = (routine.assigned_expires_at) ? window.formatDate(routine.assigned_expires_at) : "Activa";
+
+    // Si ya calculamos validityHtml (días restantes), podemos usarlo o simplificarlo para que coincida con la imagen.
+    // La imagen muestra "Estado: Activa". Vamos a mostrar statusLabel que es más genérico o "Activa".
+    // Para ser fieles al screenshot:
+    // Status text logic from RoutineDetails.js:
+    // const validity = routine.assigned_expires_at ? formatDate... : (isActive ? "Activa" : "Oculta");
+
     modalBody.innerHTML = `
         <div class="routine-preview-card" style="background: transparent; border: none; padding: 0;">
             <div class="text-center mb-3">
-                <h2 class="display-6 fw-bold text-white mb-2">${routine.name || "Rutina"}</h2>
-                <p class="text-secondary m-0">${exercises} ejercicios - ${estDuration}</p>
-                 ${validityHtml}
+                 <div class="h3 fw-bold text-white mb-1">${routine.name || "Rutina"}</div>
+                 <div class="text-secondary small">${exercises} ejercicios - Revisa los detalles antes de iniciar</div>
             </div>
             
-            <div class="row g-2 mb-3 border-bottom border-secondary pb-3">
-               <div class="col-4 text-center border-end border-secondary">
-                  <div class="text-secondary small text-uppercase">Grupos</div>
-                  <div class="text-white small">${partsLabel}</div>
+            <div class="row g-2 mb-3">
+               <div class="col-6 text-center">
+                  <div class="text-secondary small">Grupos</div>
+                  <div class="text-info small text-truncate">${partsLabel}</div>
                </div>
-               <div class="col-4 text-center border-end border-secondary">
-                  <div class="text-secondary small text-uppercase">Día</div>
-                  <div class="text-white small">${routine.routine_day || 'N/A'}</div>
+               <div class="col-6 text-center">
+                  <div class="text-secondary small">Día</div>
+                  <div class="text-warning small">${dayLabel}</div>
                </div>
-                <div class="col-4 text-center">
-                  <div class="text-secondary small text-uppercase">Nivel</div>
-                  <div class="text-white small">${routine.difficulty_level || 'N/A'}</div>
+                <div class="col-6 text-center">
+                  <div class="text-secondary small">Ejercicios</div>
+                  <div class="text-white small">${exercises}</div>
+               </div>
+               <div class="col-6 text-center">
+                  <div class="text-secondary small">Estado</div>
+                  <div class="text-white small">${statusLabel}</div>
                </div>
             </div>
+            
+            <hr class="border-secondary" />
 
             <div class="routine-preview-scroll d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">
                 ${previewHtml}

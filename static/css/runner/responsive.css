@@ -4,6 +4,8 @@
         padding: 0.5rem;
         justify-content: flex-start;
         padding-top: 1rem;
+        padding-bottom: 120px;
+        /* Espacio para el botón fijo */
     }
 
     .active-card {
@@ -51,8 +53,16 @@
     }
 
     .controls-section {
-        padding: 10px;
-        padding-bottom: calc(50px + env(safe-area-inset-bottom));
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        background: var(--bg-body);
+        border-top: 1px solid var(--border-color);
+        z-index: 1000;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     }
 }
 

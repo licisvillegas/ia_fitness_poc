@@ -104,9 +104,10 @@
         if (!container) return;
         container.innerHTML = muscleIcons.map(m => `
             <div class="d-flex flex-column align-items-center muscle-item" onclick="filterByIcon('${m.key}')" style="cursor: pointer; min-width: 70px;">
-                <div class="muscle-icon" id="icon-${m.key}">
+                <div class="muscle-icon skeleton-pulse" id="icon-${m.key}">
                     <img src="/static/images/muscles/male/${m.img}" alt="${m.label}" 
-                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                         onload="this.parentElement.classList.remove('skeleton-pulse')"
+                         onerror="this.style.display='none'; this.parentElement.classList.remove('skeleton-pulse'); this.nextElementSibling.classList.remove('d-none');">
                     <div class="muscle-fallback d-none">${m.label.charAt(0)}</div>
                 </div>
                 <span class="muscle-label">${m.label}</span>
@@ -227,6 +228,21 @@
         window.ExercisesApi.loadExercisesPage(1);
     }
 
+    function jumpToPage(page) {
+        const state = window.ExercisesState;
+        const totalPages = Math.max(1, Math.ceil(state.totalItems / pageSize));
+        let target = parseInt(page);
+
+        if (isNaN(target)) target = 1;
+        if (target < 1) target = 1;
+        if (target > totalPages) target = totalPages;
+
+        const input = document.getElementById('pageInput');
+        if (input) input.value = target;
+
+        window.ExercisesApi.loadExercisesPage(target);
+    }
+
     window.ExercisesFilters = {
         switchView,
         updateGroupOptions,
@@ -236,11 +252,10 @@
         resetFilters,
         renderMuscleIcons,
         updateIconSelectionFromDropdown,
-        renderMuscleIcons,
-        updateIconSelectionFromDropdown,
         filterByIcon,
         setSort,
-        toggleIncompleteFilter
+        toggleIncompleteFilter,
+        jumpToPage
     };
 
     window.switchView = switchView;
@@ -248,4 +263,5 @@
     window.filterByIcon = filterByIcon;
     window.setSort = setSort;
     window.toggleIncompleteFilter = toggleIncompleteFilter;
+    window.jumpToPage = jumpToPage;
 })();

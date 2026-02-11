@@ -26,10 +26,19 @@
     function updatePagination() {
         const state = window.ExercisesState;
         const totalPages = Math.max(1, Math.ceil(state.totalItems / pageSize));
-        const pageInfo = document.getElementById('pageInfo');
-        if (pageInfo) {
-            pageInfo.textContent = `Página ${state.currentPage} de ${totalPages} (${state.totalItems})`;
+
+        const pageInput = document.getElementById('pageInput');
+        const totalPagesLabel = document.getElementById('totalPagesLabel');
+
+        if (pageInput) {
+            pageInput.value = state.currentPage;
+            pageInput.max = totalPages;
         }
+
+        if (totalPagesLabel) {
+            totalPagesLabel.textContent = `de ${totalPages}`;
+        }
+
         const prevBtn = document.getElementById('prevPageBtn');
         const nextBtn = document.getElementById('nextPageBtn');
         if (prevBtn) prevBtn.disabled = state.currentPage <= 1;

@@ -36,6 +36,14 @@
         document.getElementById('prevPageBtn')?.addEventListener('click', () => window.ExercisesApi.loadExercisesPage(state.currentPage - 1));
         document.getElementById('nextPageBtn')?.addEventListener('click', () => window.ExercisesApi.loadExercisesPage(state.currentPage + 1));
 
+        const pageInput = document.getElementById('pageInput');
+        if (pageInput) {
+            pageInput.addEventListener('change', (e) => window.ExercisesFilters.jumpToPage(e.target.value));
+            pageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') window.ExercisesFilters.jumpToPage(e.target.value);
+            });
+        }
+
         const subSearch = document.getElementById('subSearch');
         if (subSearch) {
             subSearch.addEventListener('input', () => {

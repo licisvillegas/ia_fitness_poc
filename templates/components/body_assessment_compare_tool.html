@@ -41,80 +41,24 @@
         </div>
     </div>
 
-    <!-- Sección de Configuración de Exportación -->
-    <button class="btn btn-outline-secondary w-100 mb-2" type="button" data-bs-toggle="collapse"
-        data-bs-target="#compareExportCollapse" aria-expanded="true" aria-controls="compareExportCollapse">
-        <i class="fas fa-cog me-2"></i> Configuración de Exportación
-    </button>
-    <div class="collapse show" id="compareExportCollapse">
-        <div class="control-card">
-            <div class="row g-2 align-items-end">
-                <div class="col-6 col-md-3">
-                    <label class="form-label">Formato</label>
-                    <select id="compareExportRatio"
-                        class="form-select form-select-sm bg-dark text-white border-secondary">
-                        <option value="1:1">1:1</option>
-                        <option value="4:5" selected>4:5</option>
-                        <option value="9:16">9:16</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-3">
-                    <label class="form-label">Layout</label>
-                    <select id="compareCollageLayout"
-                        class="form-select form-select-sm bg-dark text-white border-secondary">
-                        <option value="vertical">Vertical</option>
-                        <option value="horizontal">Horizontal</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-3">
-                    <label class="form-label">Ajuste</label>
-                    <select id="compareCollageFit"
-                        class="form-select form-select-sm bg-dark text-white border-secondary">
-                        <option value="contain">Completo</option>
-                        <option value="cover">Recortar</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-3">
-                    <label class="form-label">Separación</label>
-                    <select id="compareCollagePadding"
-                        class="form-select form-select-sm bg-dark text-white border-secondary">
-                        <option value="0">0</option>
-                        <option value="8">8</option>
-                        <option value="16" selected>16</option>
-                        <option value="24">24</option>
-                    </select>
-                </div>
-                <div class="col-12">
-                    <div class="d-flex flex-wrap gap-2 justify-content-end">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="compareExportBtn">
-                            <i class="fas fa-download me-1"></i> Exportar
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="compareCollageExportBtn">
-                            <i class="fas fa-th-large me-1"></i> Exportar collage
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="btn-group btn-group-sm w-100 mt-2 d-none compare-mode-toggle" role="group"
-                id="compareModeControls">
-                <button type="button" class="btn btn-outline-secondary active compare-mode-btn" id="compareModeBlend"
-                    title="Mezcla">
-                    <i class="fas fa-adjust"></i>
-                    <span class="visually-hidden">Mezcla</span>
-                </button>
-                <button type="button" class="btn btn-outline-secondary compare-mode-btn" id="compareModeWipe"
-                    title="Corte">
-                    <i class="fas fa-columns"></i>
-                    <span class="visually-hidden">Corte</span>
-                </button>
-            </div>
-        </div>
-    </div>
 
-    <div class="d-flex justify-content-center mt-3">
+
+    <div class="d-flex flex-column align-items-center mt-3 gap-2">
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-outline-secondary active" id="compareViewSide">Lado a lado</button>
-            <button type="button" class="btn btn-outline-secondary" id="compareViewSlider">Slider</button>
+            <button type="button" class="btn btn-outline-secondary" id="compareViewSlider">Dividido</button>
+        </div>
+
+        <div class="btn-group btn-group-sm d-none compare-mode-toggle" role="group" id="compareModeControls">
+            <button type="button" class="btn btn-outline-secondary active compare-mode-btn" id="compareModeBlend"
+                title="Mezcla">
+                <i class="fas fa-adjust"></i>
+                <span class="visually-hidden">Mezcla</span>
+            </button>
+            <button type="button" class="btn btn-outline-secondary compare-mode-btn" id="compareModeWipe" title="Corte">
+                <i class="fas fa-columns"></i>
+                <span class="visually-hidden">Corte</span>
+            </button>
         </div>
     </div>
 </div>
@@ -212,5 +156,64 @@
     </div>
     <div id="compareEmptyMsg" class="text-muted small mt-2">
         Selecciona dos imágenes para comparar.
+    </div>
+
+    <!-- Sección de Configuración de Exportación (Movida al final) -->
+    <div class="mt-4">
+        <button class="btn btn-outline-secondary w-100 mb-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#compareExportCollapse" aria-expanded="true" aria-controls="compareExportCollapse">
+            <i class="fas fa-cog me-2"></i> Configuración de Exportación
+        </button>
+        <div class="collapse" id="compareExportCollapse">
+            <div class="control-card">
+                <div class="row g-2 align-items-end">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Formato</label>
+                        <select id="compareExportRatio"
+                            class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="1:1">1:1</option>
+                            <option value="4:5" selected>4:5</option>
+                            <option value="9:16">9:16</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Layout</label>
+                        <select id="compareCollageLayout"
+                            class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="vertical">Vertical</option>
+                            <option value="horizontal">Horizontal</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Ajuste</label>
+                        <select id="compareCollageFit"
+                            class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="contain">Completo</option>
+                            <option value="cover">Recortar</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Separación</label>
+                        <select id="compareCollagePadding"
+                            class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="0">0</option>
+                            <option value="8">8</option>
+                            <option value="16" selected>16</option>
+                            <option value="24">24</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="compareExportBtn">
+                                <i class="fas fa-download me-1"></i> Exportar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="compareCollageExportBtn">
+                                <i class="fas fa-th-large me-1"></i> Exportar collage
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

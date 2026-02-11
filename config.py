@@ -13,8 +13,29 @@ class Config:
     
     # Flask
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    # === CONFIGURACIÓN DE SEGURIDAD Y ENTORNO ===
+    # SECRET_KEY: Clave crítica para firmar sesiones y cookies.
+    # PRODUCCIÓN: Generar una clave segura con `python scripts/generate_secret_key.py` y agregarla al .env.
+    # DESARROLLO: Puede usarse la clave por defecto, pero la app fallará en modo producción si no se cambia.
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
-    DEBUG = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+
+    # DEBUG: Controla el modo de depuración y recarga automática.
+    # PRODUCCIÓN: Debe ser False.
+    # DESARROLLO: Establecer FLASK_DEBUG=True en .env para ver errores y hot-reloading.
+    # Por defecto es False (seguro por defecto).
+    DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    
+    @staticmethod
+    def init_app(app):
+        """Inicializa configuración específica de la app"""
+        # Validación de seguridad para producción
+        if not app.config.get('DEBUG'):
+            default_key = "dev-secret-key-change-in-production"
+            if app.config.get('SECRET_KEY') == default_key:
+                raise ValueError(
+                    "🔴 CRÍTICO: SECRET_KEY debe configurarse en producción!\n"
+                    "Genera una con: python scripts/generate_secret_key.py"
+                )
     
     # MongoDB
     MONGO_URI = os.getenv("MONGO_URI")

@@ -25,3 +25,4 @@ playwright==1.49.0
 pypdf==4.2.0
 Pillow==10.4.0
 psutil==7.1.1
+Flask-Limiter==3.5.0

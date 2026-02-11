@@ -26,6 +26,17 @@ else:
 mongo_client = None
 db = None
 
+# Rate Limiter
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import os
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=os.getenv("REDIS_URL", "memory://"),
+    default_limits=["200 per day", "50 per hour"]
+)
+
 
 def init_db(app):
     """Inicializa la conexión a MongoDB"""

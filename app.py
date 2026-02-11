@@ -14,7 +14,7 @@ print("--- [DEBUG] INICIANDO APP.PY ---", file=sys.stdout, flush=True)
 
 from config import Config
 import extensions
-from extensions import logger, init_db, create_indexes, db
+from extensions import logger, init_db, create_indexes, db, limiter
 from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock, check_onboarding_status
 
 # Blueprints
@@ -42,10 +42,12 @@ def create_app():
     print("--- [DEBUG] Entrando a create_app ---", file=sys.stdout, flush=True)
     app = Flask(__name__)
     app.config.from_object(Config)
+    Config.init_app(app)
 
     # Inicializar base de datos
     print("--- [DEBUG] Inicializando BD ---", file=sys.stdout, flush=True)
     init_db(app)
+    limiter.init_app(app)
 
     # Registrar middleware
     print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)

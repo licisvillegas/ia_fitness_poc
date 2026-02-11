@@ -6,7 +6,7 @@ import re
 import os
 
 import extensions
-from extensions import logger
+from extensions import logger, limiter
 from utils.auth_helpers import ensure_user_status, get_admin_token, generate_admin_csrf, USER_STATUS_DEFAULT
 from utils.cache import cache_delete
 from utils.audit import log_audit_event
@@ -14,6 +14,7 @@ from utils.audit import log_audit_event
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.post("/register")
+@limiter.limit("3 per 10 minutes")
 def auth_register():
     try:
         if extensions.db is None:
@@ -133,6 +134,7 @@ def auth_register():
 
 
 @auth_bp.post("/login")
+@limiter.limit("5 per minute")
 def auth_login_api():
     try:
         if extensions.db is None:

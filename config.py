@@ -25,6 +25,9 @@ class Config:
     # Por defecto es False (seguro por defecto).
     DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
     
+    # Celery / Redis
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    
     @staticmethod
     def init_app(app):
         """Inicializa configuración específica de la app"""
@@ -57,6 +60,9 @@ class Config:
     # Server
     HOST = "0.0.0.0"
     PORT = int(os.getenv("PORT", "5000"))
+    
+    # CORS
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000,http://127.0.0.1:5000").split(",")
 
     # Web Push (VAPID)
     VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")

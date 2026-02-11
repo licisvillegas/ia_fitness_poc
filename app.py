@@ -2,7 +2,7 @@
 # Synapse Fit - BACKEND FLASK FINAL (Refactorizado)
 # ======================================================
 
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, url_for
 import os
 import traceback
 import sys
@@ -14,7 +14,7 @@ print("--- [DEBUG] INICIANDO APP.PY ---", file=sys.stdout, flush=True)
 
 from config import Config
 import extensions
-from extensions import logger, init_db, create_indexes, db, limiter
+from extensions import logger, init_db, create_indexes, db, limiter, cors, csrf
 from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock, check_onboarding_status
 
 # Blueprints
@@ -48,10 +48,15 @@ def create_app():
     print("--- [DEBUG] Inicializando BD ---", file=sys.stdout, flush=True)
     init_db(app)
     limiter.init_app(app)
+    
+    # Seguridad
+    cors.init_app(app, resources={r"/api/*": {"origins": app.config.get('ALLOWED_ORIGINS')}})
+    csrf.init_app(app)
 
     # Registrar middleware
     print("--- [DEBUG] Registrando Middleware ---", file=sys.stdout, flush=True)
     
+
     # 0. Global Account Lock (Highest Priority Security Check)
     from middleware.lock_middleware import check_account_lock
     app.before_request(check_account_lock)
@@ -94,6 +99,7 @@ def create_app():
     @app.get("/health")
     def healthcheck():
         return {"status": "ok"}, 200
+
 
     @app.after_request
     def refresh_user_session_cookie(response):

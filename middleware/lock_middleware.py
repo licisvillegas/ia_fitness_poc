@@ -20,7 +20,8 @@ EXEMPT_PREFIXES = [
     '/auth',
     '/landing',
     '/payment',
-    '/api/integrations'
+    '/api/integrations',
+    '/health'
 ]
 
 def check_account_lock():

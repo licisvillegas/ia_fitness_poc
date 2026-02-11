@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 import extensions
-from extensions import logger
+from extensions import logger, csrf
 from utils.auth_helpers import (
     check_admin_access, 
     check_role_access,
@@ -42,6 +42,7 @@ def admin_login_page():
     return render_template("admin_auth.html")
 
 @admin_bp.post("/admin/login")
+@csrf.exempt
 def admin_login_action():
     from utils.auth_helpers import get_admin_token
     from config import Config

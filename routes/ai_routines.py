@@ -86,6 +86,77 @@ def api_generate_routine_mongo():
         return jsonify({"error": "Error interno generando rutina"}), 500
 
 
+@ai_routines_bp.post("/api/generate_routine_async")
+def api_generate_routine_async():
+    """Iniciar generación asíncrona"""
+    try:
+        data = request.get_json() or {}
+        # Parametros identicos a la version sincrona
+        level = data.get("level", "Intermedio")
+        goal = data.get("goal", "Hipertrofia")
+        frequency_raw = data.get("frequency", 4)
+        equipment = data.get("equipment", "")
+        body_parts = data.get("body_parts")
+        include_cardio = bool(data.get("include_cardio", False))
+
+        frequency = 4
+        if isinstance(frequency_raw, str):
+            digits = "".join(ch for ch in frequency_raw if ch.isdigit())
+            frequency = int(digits) if digits else 4
+        else:
+            frequency = int(frequency_raw) if frequency_raw is not None else 4
+            
+        if body_parts is not None and isinstance(body_parts, list):
+            body_parts = [str(p).strip() for p in body_parts if str(p).strip()]
+
+        # Trigger Celery Task
+        from celery_app.tasks.ai_tasks import generate_routine_async
+        task = generate_routine_async.delay(
+            level=level,
+            goal=goal,
+            frequency=frequency,
+            equipment=equipment,
+            body_parts=body_parts,
+            include_cardio=include_cardio
+        )
+        
+        return jsonify({
+            "task_id": task.id,
+            "status": "processing",
+            "poll_url": f"/api/tasks/{task.id}"
+        }), 202
+
+    except Exception as e:
+        logger.error(f"Error iniciando tarea asincrona: {e}", exc_info=True)
+        return jsonify({"error": "Error interno iniciando tarea"}), 500
+
+
+@ai_routines_bp.get("/api/tasks/<task_id>")
+def api_get_task_status(task_id):
+    """Verificar estado de tarea"""
+    try:
+        from celery_app.tasks.ai_tasks import generate_routine_async
+        task = generate_routine_async.AsyncResult(task_id)
+        
+        response = {
+            "task_id": task_id,
+            "state": task.state,
+        }
+        
+        if task.state == 'SUCCESS':
+            response['result'] = task.result
+        elif task.state == 'FAILURE':
+            response['error'] = str(task.info)
+        elif task.state == 'PENDING':
+            # Celery PENDING can mean unknown or waiting.
+            response['state'] = 'PENDING'
+        
+        return jsonify(response), 200
+    except Exception as e:
+        logger.error(f"Error consultando tarea {task_id}: {e}", exc_info=True)
+        return jsonify({"error": "Error consultando tarea"}), 500
+
+
 @ai_routines_bp.post("/api/save_demo_routine")
 def api_save_demo_routine():
     try:

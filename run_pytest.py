@@ -9,8 +9,12 @@ sys.path.insert(0, os.getcwd())
 print(f"Running pytest from {os.getcwd()}...")
 
 try:
+    args = sys.argv[1:] if len(sys.argv) > 1 else []
+    base_cmd = [sys.executable, "-m", "pytest"]
+    cmd = base_cmd + args
+    
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/test_rate_limiting.py"],
+        cmd,
         capture_output=True,
         text=True,
         encoding='utf-8',

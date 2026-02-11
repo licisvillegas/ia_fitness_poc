@@ -28,6 +28,7 @@
     <link rel="apple-touch-icon" sizes="167x167" href="/static/images/icon/synapse_fit_180.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/static/images/icon/synapse_fit_180.png">
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     {% block head %}{% endblock %}
 
     <style>
@@ -439,8 +440,21 @@
 
             const originalFetch = window.fetch;
             if (originalFetch) {
-                window.fetch = async (...args) => {
-                    const res = await originalFetch(...args);
+                window.fetch = async (input, init) => {
+                    init = init || {};
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (csrfToken && init.method && !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(init.method.toUpperCase())) {
+                        init.headers = init.headers || {};
+                        if (init.headers instanceof Headers) {
+                            init.headers.append('X-CSRFToken', csrfToken);
+                        } else if (Array.isArray(init.headers)) {
+                            init.headers.push(['X-CSRFToken', csrfToken]);
+                        } else {
+                            init.headers['X-CSRFToken'] = csrfToken;
+                        }
+                    }
+
+                    const res = await originalFetch(input, init);
                     if (res && (res.status === 401 || res.status === 403)) {
                         handleSessionLoss("Respuesta sin autorizacion");
                     }

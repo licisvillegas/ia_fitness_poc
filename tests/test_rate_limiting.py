@@ -1,17 +1,6 @@
 import pytest
-from app import create_app
 from extensions import limiter
-
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['RATELIMIT_ENABLED'] = True
-    # Ensure fresh limits for tests
-    limiter.reset()
-    
-    with app.test_client() as client:
-        yield client
+# client fixture is provided by conftest.py
 
 def test_login_rate_limit(client):
     """Test that login endpoint is rate limited to 5 per minute"""

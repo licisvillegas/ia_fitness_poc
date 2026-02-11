@@ -6,7 +6,7 @@ import re
 import os
 
 import extensions
-from extensions import logger, limiter
+from extensions import logger, limiter, csrf
 from utils.auth_helpers import ensure_user_status, get_admin_token, generate_admin_csrf, USER_STATUS_DEFAULT
 from utils.cache import cache_delete
 from utils.audit import log_audit_event
@@ -198,6 +198,7 @@ def auth_login_api():
         return jsonify({"error": "Error interno en inicio de sesión"}), 500
 
 @auth_bp.post("/admin/login")
+@csrf.exempt
 def admin_login():
     """Valida el token de administrador enviado por POST y establece cookie.
 
@@ -255,15 +256,17 @@ def admin_validate():
     except Exception:
         return jsonify({"error": "Error validando acceso admin"}), 500
 
+from extensions import csrf
+
 @auth_bp.post("/verify_admin_token")
+@csrf.exempt
 def verify_admin_token_endpoint():
     """Valida token para funciones avanzadas de admin (frontend)."""
     try:
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         token = data.get("token")
         
         expected = get_admin_token()
-        logger.info(f"DEBUG: Token check. Received: '{token}', Expected: '{expected}'")
 
         if not expected:
             return jsonify({"ok": False, "error": "Token no configurado"}), 503

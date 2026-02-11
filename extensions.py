@@ -30,12 +30,17 @@ db = None
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
+from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect
 
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri=os.getenv("REDIS_URL", "memory://"),
     default_limits=["200 per day", "50 per hour"]
 )
+
+cors = CORS()
+csrf = CSRFProtect()
 
 
 def init_db(app):
@@ -60,6 +65,9 @@ def init_db(app):
             mongo_uri,
             tls=True,
             tlsCAFile=certifi.where(),
+            maxPoolSize=100,
+            minPoolSize=10,
+            maxIdleTimeMS=45000,
             serverSelectionTimeoutMS=30000,
             connectTimeoutMS=20000,
             socketTimeoutMS=20000,

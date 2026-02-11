@@ -6,7 +6,8 @@
 <div class="row mb-4">
     <div class="col-12">
         <h2 class="text-theme fw-bold">Generador de Rutinas AI (Mongo)</h2>
-        <p class="text-secondary">Genera rutinas usando ejercicios de MongoDB con estructura compatible con routines.</p>
+        <p class="text-secondary">Genera rutinas usando ejercicios de MongoDB con estructura compatible con routines.
+        </p>
     </div>
 </div>
 
@@ -77,7 +78,7 @@
                     <div class="spinner-border text-danger" role="status">
                         <span class="visually-hidden">Generando...</span>
                     </div>
-                    <p class="mt-3 text-secondary">Construyendo tu rutina...</p>
+                    <p class="mt-3 text-secondary" id="loadingStatusText">Construyendo tu rutina...</p>
                 </div>
 
                 <div id="resultState" class="d-none">
@@ -129,6 +130,7 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/routine_generator_async.js') }}"></script>
 <script>
     let currentRoutineData = null;
 
@@ -147,26 +149,16 @@
         };
 
         try {
-            const response = await fetch('/api/generate_routine_mongo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            // Async Generation
+            const result = await generateRoutineAsync(data);
 
-            const result = await response.json();
+            currentRoutineData = result;
+            renderRoutine(result);
+            toggleSaveButton(true);
 
-            if (response.ok) {
-                currentRoutineData = result;
-                renderRoutine(result);
-                toggleSaveButton(true);
-            } else {
-                showAlertModal("Error", result.error || "Unknown error", "danger");
-                currentRoutineData = null;
-                toggleSaveButton(false);
-            }
         } catch (err) {
             console.error(err);
-            showAlertModal("Error", "Error conectando con el servidor", "danger");
+            showAlertModal("Error", err.message || "Error conectando con el servidor", "danger");
             currentRoutineData = null;
             toggleSaveButton(false);
         } finally {
@@ -271,7 +263,7 @@
         }
 
         const reps = item.target_reps || (item.exercise_type === 'time' ? `${Math.round((item.target_time_seconds || 0) / 60)}m` : '-');
-        const videoBtn = item.video_url ? 
+        const videoBtn = item.video_url ?
             `<a href="${item.video_url}" target="_blank" class="btn btn-sm btn-outline-danger ms-2 p-0 px-1" title="Ver Video" style="line-height: 1.2;">
                 <i class="fas fa-play-circle small"></i>
              </a>` : '';

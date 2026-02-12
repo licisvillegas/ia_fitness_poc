@@ -55,15 +55,20 @@ def api_generate_routine_mongo():
 
 @ai_routines_bp.post("/api/generate_routine_async")
 def api_generate_routine_async():
-    """Iniciar generación asíncrona"""
+    """Iniciar generación asíncrona (fallback síncrono si Celery no disponible)"""
     try:
         data = request.get_json() or {}
-        task_id = routine_service.start_async_generation(data)
+        result = routine_service.start_async_generation(data)
         
+        # Fallback síncrono: Celery no disponible
+        if isinstance(result, dict) and result.get("sync"):
+            return jsonify(result["result"]), 200
+
+        # Celery disponible: devolver task_id para polling
         return jsonify({
-            "task_id": task_id,
+            "task_id": result,
             "status": "processing",
-            "poll_url": f"/api/tasks/{task_id}"
+            "poll_url": f"/api/tasks/{result}"
         }), 202
 
     except Exception as e:
@@ -76,6 +81,10 @@ def api_get_task_status(task_id):
     """Verificar estado de tarea"""
     try:
         from celery_app.tasks.ai_tasks import generate_routine_async
+    except (ImportError, ModuleNotFoundError):
+        return jsonify({"error": "Celery no disponible en este entorno"}), 503
+
+    try:
         task = generate_routine_async.AsyncResult(task_id)
         
         response = {

@@ -18,10 +18,17 @@ async function generateRoutineAsync(data) {
             throw new Error(err.error || 'Error iniciando generacion');
         }
 
-        const { task_id, poll_url } = await response.json();
-        updateLoadingStatus('Iniciando tarea...', 0);
+        const result = await response.json();
 
-        // Start Polling
+        // Fallback síncrono: Celery no disponible, resultado directo
+        if (response.status === 200) {
+            updateLoadingStatus('Completado!', 100);
+            return result;
+        }
+
+        // Async: polling para Celery task
+        const { poll_url } = result;
+        updateLoadingStatus('Iniciando tarea...', 0);
         return await pollTask(poll_url);
 
     } catch (error) {

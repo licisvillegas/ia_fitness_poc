@@ -49,7 +49,16 @@ class RoutineService(BaseService):
         return result
 
     def start_async_generation(self, data):
-        """Inicia tarea de Celery para generación asíncrona."""
+        """Inicia tarea de Celery para generación asíncrona.
+        Si Celery no está disponible, ejecuta de forma síncrona como fallback.
+        """
+        try:
+            from celery_app.tasks.ai_tasks import generate_routine_async
+        except (ImportError, ModuleNotFoundError):
+            self.logger.warning("Celery no disponible, ejecutando generación síncrona")
+            result = self.generate_routine_mongo_sync(data)
+            return {"sync": True, "result": result}
+
         level = data.get("level", "Intermedio")
         goal = data.get("goal", "Hipertrofia")
         frequency_raw = data.get("frequency", 4)
@@ -62,7 +71,6 @@ class RoutineService(BaseService):
         if body_parts is not None and isinstance(body_parts, list):
             body_parts = [str(p).strip() for p in body_parts if str(p).strip()]
 
-        from celery_app.tasks.ai_tasks import generate_routine_async
         task = generate_routine_async.delay(
             level=level,
             goal=goal,

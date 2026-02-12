@@ -2,7 +2,10 @@ from flask import request, jsonify
 from datetime import datetime, timedelta
 from extensions import logger
 from .utils import get_db
+from utils.validation_decorator import validate_request
+from schemas.stats_schemas import SaveRMRecordRequest, SaveAdherenceConfigRequest
 
+@validate_request(SaveRMRecordRequest)
 def api_save_rm_record():
     """Guarda un registro de 1RM para el usuario autenticado."""
     try:
@@ -10,17 +13,14 @@ def api_save_rm_record():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.get_json() or {}
-        weight = data.get("weight")
-        reps = data.get("reps")
-        exercise = (data.get("exercise") or "").strip()
-        date = data.get("date")
-        one_rm = data.get("one_rm")
-        unit = (data.get("unit") or "").strip()
-        formulas = data.get("formulas", [])
-
-        if not weight or not reps or not exercise or not date:
-            return jsonify({"error": "Missing required fields"}), 400
+        data = request.validated_data
+        weight = data.weight
+        reps = data.reps
+        exercise = data.exercise.strip()
+        date = data.date
+        one_rm = data.one_rm
+        unit = data.unit.strip()
+        formulas = data.formulas
 
         db = get_db()
         if db is None:
@@ -88,6 +88,7 @@ def api_get_adherence_config():
         logger.error(f"Error loading adherence config: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
+@validate_request(SaveAdherenceConfigRequest)
 def api_save_adherence_config():
     """Guarda la configuración de adherencia del usuario (frecuencia objetivo)."""
     try:
@@ -95,10 +96,8 @@ def api_save_adherence_config():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.get_json() or {}
-        target_frequency = int(data.get("target_frequency", 3))
-        if target_frequency < 1 or target_frequency > 7:
-            return jsonify({"error": "target_frequency debe estar entre 1 y 7"}), 400
+        data = request.validated_data
+        target_frequency = data.target_frequency
 
         db = get_db()
         if db is None:

@@ -29,6 +29,21 @@ from utils.helpers import (
     normalize_body_part,
 )
 from utils.routine_utils import normalize_routine_items
+from utils.validation_decorator import validate_request
+from schemas.user_schemas import UpdateRoleRequest, ImpersonateRequest, CreateUserRequest, UpdateUserRequest
+from schemas.routine_schemas import RoutineAssignmentRequest, RoutineSaveRequest
+
+from services.user_service import UserService
+from services.routine_service import RoutineService
+from services.auth_service import AuthService
+from services.profile_service import ProfileService
+from services.admin_service import AdminService
+
+user_service = UserService()
+routine_service = RoutineService()
+auth_service = AuthService()
+profile_service = ProfileService()
+admin_service = AdminService()
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -174,26 +189,16 @@ def admin_meal_plans_page():
 def admin_privileges_page():
     return render_template("admin_privileges.html")
 
-@admin_bp.route("/admin/users")
+@admin_bp.get("/admin/users")
 def admin_users_page():
-    # Only admins/coaches can see this page (middleware handles it, but let's be safe/clean)
-    # We want to populate the Coach filter
-    coaches = []
-    if extensions.db is not None:
-        # Fetch users who have role='coach' or 'admin'?? Usually just coach.
-        # Let's get anyone with role 'coach' or 'admin' to be safe as "potential coaches"
-        roles_cursor = extensions.db.user_roles.find(
-            {"role": {"$in": ["coach", "admin"]}}
-        )
-        coach_ids = [r["user_id"] for r in roles_cursor]
-        if coach_ids:
-             users_cursor = extensions.db.users.find(
-                 {"user_id": {"$in": coach_ids}},
-                 {"user_id": 1, "name":1, "username":1}
-             ).sort("name", 1)
-             coaches = list(users_cursor)
-
-    return render_template("admin_users.html", coaches=coaches)
+    ok, err = check_admin_access()
+    if not ok: return err
+    try:
+        coaches = user_service.get_coach_list()
+        return render_template("admin_users.html", coaches_list=coaches)
+    except Exception as e:
+        logger.error(f"Error in admin_users_page: {e}")
+        return render_template("admin_users.html", coaches_list=[])
 
 @admin_bp.route("/admin/profiles")
 def admin_profiles_page():
@@ -221,7 +226,7 @@ def admin_routine_builder_page():
 
 @admin_bp.get("/api/admin/users_paginated")
 def list_users_paginated():
-    """Endpoint paginado para usuarios."""
+    """Endpoint paginado para usuarios utilizando UserService."""
     ok, err, user_role = check_role_access(["admin", "coach"])
     if not ok: return err
 
@@ -229,212 +234,71 @@ def list_users_paginated():
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 20))
         search = request.args.get("search", "").strip()
-        
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-
-        query = {}
-        if user_role == "coach":
-            current_uid = request.cookies.get("user_session")
-            query["coach_id"] = current_uid
-        else:
-            # Admin can filter by specific coach
-            filter_coach = request.args.get("filter_coach_id")
-            if filter_coach:
-                query["coach_id"] = filter_coach
-
-        # FILTER BY STATUS (Separate Collection)
         filter_status = request.args.get("status")
-        if filter_status:
-            # Get user_ids with this status
-            status_matches = extensions.db.user_status.find({"status": filter_status}, {"user_id": 1})
-            status_user_ids = [s["user_id"] for s in status_matches]
-            # Add to query (AND logic)
-            if "user_id" in query:
-                # If we already have a user_id filter (e.g. from search), we need an intersection
-                # But search 'user_id' is usually a regex or exact match on _id/user_id string.
-                # Complex intersection. For simplicity, let's use $in with existing logic 
-                # or just add to query if it's safe.
-                # The search logic below uses "$or", so we need to be careful.
-                # Let's add it as a top level $and if needed, or just modify query user_id.
-                existing_uid_filter = query.get("user_id")
-                if existing_uid_filter:
-                     # This effectively intersects. But "user_id" in query might be from ... wait, 
-                     # we haven't set "user_id" in query yet except for search below.
-                     # Search logic overwrites or appends?
-                     pass
-            
-            # Use $in for user_id. 
-            # CAUTION: If status_user_ids is empty, we should find nothing.
-            if not status_user_ids:
-                 # No users with this status found -> force empty result
-                 query["user_id"] = "NO_MATCH_IMPOSSIBLE_ID" 
-            else:
-                 # If we have other filters that might affect user_id (none yet other than search), we combine.
-                 query["user_id"] = {"$in": status_user_ids}
-
-        if search:
-            # Safe regex search
-            regex = {"$regex": search, "$options": "i"}
-            search_or = [
-                {"name": regex},
-                {"email": regex},
-                {"username": regex},
-                {"user_id": search}
-            ]
-            
-            # Combine with existing filters (like status/coach)
-            if "$or" in query:
-                 # Should not happen with current logic, but good practice
-                 query["$and"] = [query.pop("$or"), {"$or": search_or}]
-            elif "user_id" in query:
-                 # If we have a status filter on user_id, we must AND it with the search OR
-                 # But wait, search OR contains user_id match too.
-                 # query = { user_id: {$in: [...]}, $or: [...] } is valid.
-                 query["$or"] = search_or
-            else:
-                 query["$or"] = search_or
-
-        total = extensions.db.users.count_documents(query)
-        cursor = extensions.db.users.find(query, {
-            "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1, 
-            "coach_id": 1, "own_referral_code": 1
-        }).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+        filter_coach = request.args.get("filter_coach_id")
         
-        users_list = list(cursor)
+        current_uid = request.cookies.get("user_session")
         
-        # Batch fetch coach names
-        coach_ids = {u.get("coach_id") for u in users_list if u.get("coach_id")}
-        coach_map = {}
-        if coach_ids:
-            # Query users where user_id IN coach_ids
-            coaches_cursor = extensions.db.users.find(
-                {"user_id": {"$in": list(coach_ids)}}, 
-                {"user_id": 1, "name": 1}
-            )
-            for c in coaches_cursor:
-                coach_map[c["user_id"]] = c.get("name")
-
-        data = []
-        for u in users_list:
-            uid = str(u.get("user_id") or u.get("_id"))
-            
-            # Helper lookups (optimize later with aggregation if slow)
-            roles_doc = extensions.db.user_roles.find_one({"user_id": uid})
-            role = roles_doc.get("role") if roles_doc else "user"
-            
-            status_doc = extensions.db.user_status.find_one({"user_id": uid})
-            status = status_doc.get("status", "active") if status_doc else "active"
-            valid_until = status_doc.get("valid_until") if status_doc else None
-            
-            # Format dates
-            created = u.get("created_at")
-            if isinstance(created, datetime):
-                created = created.strftime("%Y-%m-%d %H:%M")
-            if isinstance(valid_until, datetime):
-                valid_until = valid_until.strftime("%Y-%m-%d")
-            
-            c_id = u.get("coach_id")
-            coach_name = coach_map.get(c_id, c_id) if c_id else None
-
-            data.append({
-                "user_id": uid,
-                "name": u.get("name"),
-                "email": u.get("email"),
-                "username": u.get("username"),
-                "created_at": created,
-                "role": role,
-                "status": status,
-                "coach_id": c_id,
-                "coach_name": coach_name,
-                "own_referral_code": u.get("own_referral_code"),
-                "valid_until": valid_until
-            })
+        # El servicio maneja la lógica de filtrado por rol internamente si le pasamos los datos
+        coach_id_to_filter = current_uid if user_role == "coach" else filter_coach
+        
+        users, total = user_service.list_users_paginated(
+            page=page, 
+            limit=limit, 
+            search=search, 
+            filter_status=filter_status, 
+            filter_coach_id=coach_id_to_filter,
+            user_role=user_role
+        )
 
         return jsonify({
-            "items": data,
+            "items": users,
             "total": total,
             "page": page,
+            "limit": limit,
             "pages": (total + limit - 1) // limit
         }), 200
     except Exception as e:
-        logger.error(f"Error listing users paginated: {e}")
+        logger.error(f"Error list_users_paginated: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.get("/api/admin/users")
 def list_users():
-    """Lista usuarios registrados (Legacy/Full List)."""
+    """Lista usuarios registrados (Full List) utilizando UserService."""
     ok, err, user_role = check_role_access(["admin", "coach"])
     if not ok: return err
 
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
+        current_uid = request.cookies.get("user_session")
+        coach_id = current_uid if user_role == "coach" else None
         
-        query = {}
-        if user_role == "coach":
-            current_uid = request.cookies.get("user_session")
-            query["coach_id"] = current_uid
-
-        users_cursor = extensions.db.users.find(query, {
-            "user_id": 1, "name": 1, "email": 1, "username": 1, "created_at": 1
-        }).sort("created_at", -1)
-
-        result = []
-        for u in users_cursor:
-            uid = str(u.get("user_id") or u.get("_id"))
-            
-            # Helper fields
-            roles_doc = extensions.db.user_roles.find_one({"user_id": uid})
-            role = roles_doc.get("role") if roles_doc else "user"
-            
-            status_doc = extensions.db.user_status.find_one({"user_id": uid})
-            status = status_doc.get("status", "active") if status_doc else "active"
-            
-            created = u.get("created_at")
-            if isinstance(created, datetime):
-                created = created.strftime("%Y-%m-%d %H:%M")
-            
-            result.append({
-                "user_id": uid,
-                "name": u.get("name"),
-                "email": u.get("email"),
-                "username": u.get("username"),
-                "created_at": created,
-                "role": role,
-                "status": status
-            })
-        return jsonify(result), 200
+        # Reutilizamos list_users_paginated con un límite alto para emular la lista completa
+        users, _ = user_service.list_users_paginated(limit=1000, filter_coach_id=coach_id, user_role=user_role)
+        return jsonify(users), 200
     except Exception as e:
         logger.error(f"Error listing users: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/admin/api/update_role")
+@validate_request(UpdateRoleRequest)
 def update_user_role():
-    """Actualiza solo el rol de un usuario (Endpoint para admin_privileges.html)."""
+    """Actualiza el rol de un usuario utilizando UserService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        data = request.get_json() or {}
-        user_id = data.get("user_id")
-        new_role = data.get("role")
+        data = request.validated_data
+        user_id = data.user_id
+        new_role = data.role
 
-        if not user_id or not new_role:
-             return jsonify({"error": "Faltan datos (user_id, role)"}), 400
-
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-
-        extensions.db.user_roles.update_one(
-            {"user_id": user_id},
-            {"$set": {"role": new_role}},
-            upsert=True
-        )
-        
+        user_service.update_role(user_id, new_role)
         return jsonify({"message": "Rol actualizado"}), 200
     except Exception as e:
         logger.error(f"Error updating role: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/admin/api/impersonate")
+@validate_request(ImpersonateRequest)
 def impersonate_user():
     """Permite al admin iniciar sesión como otro usuario."""
     ok, err = check_admin_access()
@@ -443,11 +307,8 @@ def impersonate_user():
     if not csrf_ok: return csrf_err
 
     try:
-        data = request.get_json() or {}
-        user_id = data.get("user_id")
-        
-        if not user_id:
-             return jsonify({"error": "User ID requerido"}), 400
+        data = request.validated_data
+        user_id = data.user_id
              
         # Verify user exists
         u = extensions.db.users.find_one({"user_id": user_id}) or extensions.db.users.find_one({"_id": ObjectId(user_id)})
@@ -579,224 +440,61 @@ def list_users_roles_alias():
 
 @admin_bp.get("/admin/api/user_profiles/lookup")
 def lookup_users():
-    """Busca usuarios por nombre/email para autocompletado."""
-    # Permitir si admin logueado
+    """Busca usuarios utilizando UserService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     term = request.args.get("term", "").lower().strip()
     limit = int(request.args.get("limit", 5))
     
-    if not term:
-        return jsonify([]), 200
-        
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
-        # Simple regex or exact check
-        # Buscamos en name, username, email, user_id
-        query = {
-            "$or": [
-                {"name": {"$regex": term, "$options": "i"}},
-                {"username": {"$regex": term, "$options": "i"}},
-                {"email": {"$regex": term, "$options": "i"}},
-                {"user_id": term}
-            ]
-        }
-        
-        cursor = extensions.db.users.find(query, {
-            "user_id": 1, "name": 1, "email": 1, "username": 1
-        }).limit(limit)
-        
-        results = []
-        for u in cursor:
-            uid = u.get("user_id")
-            role_doc = extensions.db.user_roles.find_one({"user_id": uid}) if extensions.db is not None else None
-            role = role_doc.get("role") if role_doc else "user"
-            has_p = extensions.db.user_profiles.find_one({"user_id": uid}) is not None
-            results.append({
-                "user_id": uid,
-                "name": u.get("name"),
-                "email": u.get("email"),
-                "username": u.get("username"),
-                "has_profile": has_p,
-                "role": role
-            })
+        results = user_service.search_users(term, limit=limit)
         return jsonify(results), 200
     except Exception as e:
-        logger.error(f"Error user lookup: {e}")
+        logger.error(f"Error lookup_users: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/admin/users")
+@validate_request(CreateUserRequest)
 def create_user():
-    """Crea un usuario manualmente."""
+    """Crea un usuario manualmente utilizando UserService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        data = request.get_json() or {}
-        name = data.get("name")
-        email = data.get("email")
-        username = data.get("username")
-        password = data.get("password")
-        role = data.get("role", "user")
-        status = data.get("status", "active")
+        data = request.validated_data.model_dump()
+        # Extraer campos de control
+        role = data.pop("role", "user")
+        status = data.pop("status", "active")
+        validity_days = data.pop("validity_days", None)
+        validity_date = data.pop("validity_date", None)
 
-        if not name or not email or not username or not password:
-            return jsonify({"error": "Faltan campos obligatorios"}), 400
-        
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-
-        if extensions.db.users.find_one({"email": email}):
-            return jsonify({"error": "Email ya existe"}), 409
-        if extensions.db.users.find_one({"username": username}):
-            return jsonify({"error": "Username ya existe"}), 409
-
-        if extensions.db.users.find_one({"username": username}):
-            return jsonify({"error": "Username ya existe"}), 409
-
-        pwd_hash = generate_password_hash(password)
-        
-        # Check if generating referral code for new admin/coach
-        own_code = data.get("own_referral_code")
-        if (role in ["admin", "coach"]) and data.get("generate_code"):
-             own_code = generate_referral_code(prefix=username[:3])
-        
-        new_user = {
-            "name": name,
-            "email": email,
-            "username": username,
-            "username_lower": username.lower(),
-            "password_hash": pwd_hash,
-            "created_at": datetime.utcnow(),
-            "own_referral_code": own_code,
-            "coach_id": data.get("coach_id") # Allow manual assignment
-        }
-        res = extensions.db.users.insert_one(new_user)
-        user_id = str(res.inserted_id)
-        
-        # Update user_id inside doc
-        extensions.db.users.update_one({"_id": res.inserted_id}, {"$set": {"user_id": user_id}})
-
-        # Role
-        extensions.db.user_roles.insert_one({"user_id": user_id, "role": role})
-
-        # Status & Validity
-        valid_until = None
-        if "validity_days" in data:
-            try:
-                days = int(data["validity_days"])
-                if days > 0:
-                     valid_until = datetime.utcnow() + timedelta(days=days)
-            except: pass
-        elif "validity_date" in data and data["validity_date"]:
-             try:
-                 valid_until = datetime.strptime(data["validity_date"], "%Y-%m-%d")
-             except: pass
-
-        st_doc = {
-            "user_id": user_id, 
-            "status": status, 
-            "updated_at": datetime.utcnow(),
-            "valid_until": valid_until
-        }
-        extensions.db.user_status.insert_one(st_doc)
-        
+        user_id = user_service.create_user(data, role=role, status=status, validity_days=validity_days, validity_date=validity_date)
         return jsonify({"message": "Usuario creado", "user_id": user_id}), 201
     except Exception as e:
         logger.error(f"Error creating user: {e}")
-        return jsonify({"error": "Error interno"}), 500
+        return jsonify({"error": str(e)}), 400
 
 @admin_bp.put("/api/admin/users/<user_id>")
+@validate_request(UpdateUserRequest)
 def update_user(user_id):
-    """Edita usuario existente."""
+    """Edita usuario utilizando UserService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        data = request.get_json() or {}
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
-        u = extensions.db.users.find_one({"user_id": user_id})
-        if not u:
-            return jsonify({"error": "Usuario no encontrado"}), 404
-
-        # Edit basic info
-        update_fields = {}
-        if "name" in data: update_fields["name"] = data["name"]
-        if "email" in data: update_fields["email"] = data["email"]
-        if "username" in data: 
-            update_fields["username"] = data["username"]
-            update_fields["username_lower"] = data["username"].lower()
-        
-        # Referral Code Management
+        data = request.validated_data.model_dump(exclude_none=True)
+        # Manejo especial de generate_code que es lógico del route/admin
         if data.get("generate_code"):
-            current_role_doc = extensions.db.user_roles.find_one({"user_id": user_id})
-            r_check = current_role_doc.get("role") if current_role_doc else "user"
-            if r_check in ["admin", "coach"]:
-                prefix = (u.get("username") or "FIT")[:3]
-                update_fields["own_referral_code"] = generate_referral_code(prefix=prefix)
+            u = user_service.get_user_by_id(user_id)
+            if u:
+                role = user_service.get_user_role(user_id)
+                if role in ["admin", "coach"]:
+                    from utils.auth_helpers import generate_referral_code
+                    prefix = (u.get("username") or "FIT")[:3]
+                    data["own_referral_code"] = generate_referral_code(prefix=prefix)
 
-        if "own_referral_code" in data and not data.get("generate_code"):
-             # Manual override if needed
-             update_fields["own_referral_code"] = data["own_referral_code"]
-             
-        if "coach_id" in data:
-            update_fields["coach_id"] = data["coach_id"]
-        
-        if update_fields:
-            extensions.db.users.update_one({"user_id": user_id}, {"$set": update_fields})
-
-        # Edit Role
-        if "role" in data:
-            extensions.db.user_roles.update_one(
-                {"user_id": user_id},
-                {"$set": {"role": data["role"]}},
-                upsert=True
-            )
-
-        # Edit Status & Validity
-        if "status" in data or "validity_days" in data or "validity_date" in data:
-            update_st = {}
-            
-            # Status
-            if "status" in data:
-                 st = normalize_user_status(data["status"])
-                 if st: 
-                     update_st["status"] = st
-                     update_st["updated_at"] = datetime.utcnow()
-
-            # Validity
-            if "validity_days" in data:
-                 try:
-                     days = int(data["validity_days"])
-                     if days > 0:
-                         update_st["valid_until"] = datetime.utcnow() + timedelta(days=days)
-                         # Auto-activate if setting validity? Ideally yes if currently expired/inactive
-                         if "status" not in data: # If status manual override not provided
-                             update_st["status"] = "active"
-                 except: pass
-            elif "validity_date" in data:
-                 if data["validity_date"]: # Specific Date
-                     try:
-                         update_st["valid_until"] = datetime.strptime(data["validity_date"], "%Y-%m-%d")
-                     except: pass
-                 else:
-                     # Clear validity (Indefinite)
-                     update_st["valid_until"] = None
-
-            if update_st:
-                extensions.db.user_status.update_one(
-                    {"user_id": user_id},
-                    {"$set": update_st},
-                    upsert=True
-                )
-
-        # Edit Password
-        if "password" in data and data["password"]:
-            new_hash = generate_password_hash(data["password"])
-            extensions.db.users.update_one({"user_id": user_id}, {"$set": {"password_hash": new_hash}})
-
+        user_service.update_user(user_id, data)
         return jsonify({"message": "Usuario actualizado"}), 200
     except Exception as e:
         logger.error(f"Error updating user: {e}")
@@ -804,27 +502,12 @@ def update_user(user_id):
 
 @admin_bp.delete("/api/admin/users/<user_id>")
 def delete_user(user_id):
-    """Elimina usuario y datos relacionados."""
+    """Elimina usuario utilizando UserService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
-        # Delete user
-        extensions.db.users.delete_one({"user_id": user_id})
-        # Delete roles, status
-        extensions.db.user_roles.delete_many({"user_id": user_id})
-        extensions.db.user_status.delete_many({"user_id": user_id})
-        extensions.db.user_profiles.delete_many({"user_id": user_id})
-        
-        # Delete plans, progress? Maybe keep for history, but let's delete for now
-        extensions.db.plans.delete_many({"user_id": user_id})
-        extensions.db.progress.delete_many({"user_id": user_id})
-        extensions.db.meal_plans.delete_many({"user_id": user_id})
-        extensions.db.ai_adjustments.delete_many({"user_id": user_id})
-        extensions.db.body_assessments.delete_many({"user_id": user_id})
-
+        user_service.delete_user(user_id)
         return jsonify({"message": "Usuario eliminado"}), 200
     except Exception as e:
         logger.error(f"Error deleting user: {e}")
@@ -835,104 +518,39 @@ def delete_user(user_id):
 # ======================================================
 @admin_bp.get("/api/admin/profiles_paginated")
 def list_profiles_paginated():
+    """Lista perfiles con paginación usando ProfileService."""
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 20))
         search = request.args.get("search", "").strip()
 
-        query = {}
-        # If searching, we likely search users first unless phone is in profile
-        if search:
-            regex = {"$regex": search, "$options": "i"}
-            # Find users matching name/email/username
-            matching_users = list(extensions.db.users.find({
-                "$or": [
-                    {"name": regex},
-                    {"email": regex},
-                    {"username": regex}
-                ]
-            }, {"user_id": 1}))
-            
-            user_ids = [u["user_id"] for u in matching_users if u.get("user_id")]
-            
-            # Profile query: user_id IN [...] OR phone matches
-            query = {
-                "$or": [
-                    {"user_id": {"$in": user_ids}},
-                    {"phone": regex}
-                ]
-            }
-
-        total = extensions.db.user_profiles.count_documents(query)
-        cursor = extensions.db.user_profiles.find(query).skip((page - 1) * limit).limit(limit)
+        profiles, total = profile_service.list_profiles_paginated(page=page, limit=limit, search=search)
         
-        result = []
-        for p in cursor:
-            user_id = p.get("user_id")
-            # Join user info
-            u_doc = extensions.db.users.find_one({"user_id": user_id}, {"name": 1, "email": 1, "username": 1}) or {}
-            
-            # Basic status implicit check?
-            # The grid expects 'status' key for the badge.
-            status_doc = extensions.db.user_status.find_one({"user_id": user_id})
-            status = status_doc.get("status", "active") if status_doc else "active"
-
-            p_out = {
-                "user_id": user_id,
-                "username": u_doc.get("username"),
-                "name": u_doc.get("name"),
-                "email": u_doc.get("email"),
-                "sex": p.get("sex"),
-                "birth_date": format_birth_date(p.get("birth_date")),
-                "phone": p.get("phone"),
-                "age": compute_age(p.get("birth_date")),
-                "status": status,
-                # 'has_profile' is implied true since we are iterating profiles collection
-            }
-            result.append(p_out)
-
         return jsonify({
-            "items": result,
+            "items": profiles,
             "total": total,
             "page": page,
             "pages": (total + limit - 1) // limit
         }), 200
     except Exception as e:
-        logger.error(f"Error listing profiles paginated: {e}")
+        logger.error(f"Error list_profiles_paginated: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.get("/api/admin/profiles")
 def list_profiles():
+    """Obtiene todos los perfiles utilizando ProfileService (Vista General)."""
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        cursor = extensions.db.user_profiles.find({})
-        result = []
-        for p in cursor:
-            # Join with user table to get name/email
-            user_id = p.get("user_id")
-            u_doc = extensions.db.users.find_one({"user_id": user_id}, {"name": 1, "email": 1, "username": 1}) or {}
-            
-            p_out = {
-                "user_id": user_id,
-                "username": u_doc.get("username"),
-                "name": u_doc.get("name"),
-                "email": u_doc.get("email"),
-                "sex": p.get("sex"),
-                "birth_date": format_birth_date(p.get("birth_date")),
-                "phone": p.get("phone"),
-                "age": compute_age(p.get("birth_date"))
-            }
-            result.append(p_out)
-        return jsonify(result), 200
+        # Nota: Idealmente Profiles paginated es suficiente. Pero list_profiles se usa en algunas vistas estáticas.
+        # Para evitar saturar, usamos un límite razonable si no se especifica.
+        profiles, total = profile_service.list_profiles_paginated(page=1, limit=500)
+        return jsonify(profiles), 200
     except Exception as e:
-        logger.error(f"Error getting profiles: {e}")
-        return jsonify({"error": "Error"}), 500
+        logger.error(f"Error list_profiles: {e}")
+        return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.get("/api/admin/profiles/<user_id>")
 def get_user_profile_detail(user_id):
@@ -1398,23 +1016,24 @@ def delete_routine_detail(routine_id):
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/routines/save")
+@validate_request(RoutineSaveRequest)
 def save_routine_builder():
     """Guarda o actualiza una rutina desde el builder."""
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        data = request.get_json()
+        data_obj = request.validated_data
         if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
 
-        rid = data.get("id")
+        rid = data_obj.id
         
         # Fields to persist
         doc = {
-            "name": data.get("name"),
-            "description": data.get("description"),
-            "routine_day": data.get("routine_day"),
-            "routine_body_parts": data.get("routine_body_parts", []),
-            "items": normalize_routine_items(data.get("items", [])), # The structure from builder
+            "name": data_obj.name,
+            "description": data_obj.description,
+            "routine_day": data_obj.routine_day,
+            "routine_body_parts": data_obj.routine_body_parts,
+            "items": normalize_routine_items(data_obj.items), # The structure from builder
             "updated_at": datetime.utcnow()
         }
 
@@ -1441,58 +1060,19 @@ def admin_assign_routine_page_v2():
     return render_template("assign_routine_v2.html", source=source)
 
 @admin_bp.post("/api/admin/routines/assign")
+@validate_request(RoutineAssignmentRequest)
 def admin_api_assign_routine():
-    """Asigna una rutina a un usuario (tabla de enlace)"""
+    """Asigna una rutina a un usuario utilizando RoutineService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        data = request.json
-        user_id = data.get("user_id")
-        routine_id = data.get("routine_id")
-        valid_days_raw = data.get("valid_days")
+        data = request.validated_data
+        user_id = data.user_id
+        routine_id = data.routine_id
+        valid_days = data.valid_days
 
-        if not user_id or not routine_id:
-            return jsonify({"error": "Faltan datos"}), 400
-
-        try:
-            valid_days = int(valid_days_raw)
-        except (TypeError, ValueError):
-            valid_days = 0
-
-        if valid_days <= 0:
-            return jsonify({"error": "Los dias de vigencia deben ser mayor a 0"}), 400
-
-        # Verificar si ya existe asignacion activa
-        exists = extensions.db.routine_assignments.find_one({
-            "user_id": user_id,
-            "routine_id": routine_id,
-            "active": True
-        })
-
-        if exists:
-            expires_at = exists.get("expires_at")
-            if isinstance(expires_at, datetime) and expires_at <= datetime.utcnow():
-                extensions.db.routine_assignments.update_one(
-                    {"_id": exists["_id"]},
-                    {"$set": {"active": False, "expired_at": datetime.utcnow()}}
-                )
-            else:
-                return jsonify({"message": "Ya esta asignada"}), 200
-
-        # Crear asignacion
-        assigned_at = datetime.utcnow()
-        expires_at = assigned_at + timedelta(days=valid_days)
-        assignment = {
-            "user_id": user_id,
-            "routine_id": routine_id,
-            "assigned_at": assigned_at,
-            "expires_at": expires_at,
-            "valid_days": valid_days,
-            "active": True
-        }
-        extensions.db.routine_assignments.insert_one(assignment)
+        routine_service.assign_routine(user_id, routine_id, valid_days=valid_days)
         return jsonify({"message": "Rutina asignada correctamente"}), 200
     except Exception as e:
         logger.error(f"Error assigning routine: {e}")
@@ -1500,77 +1080,37 @@ def admin_api_assign_routine():
 
 @admin_bp.get("/api/admin/routines/assignments")
 def admin_api_list_assignments():
-    """Lista asignaciones activas por usuario."""
+    """Lista asignaciones activas por usuario utilizando RoutineService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
         user_id = request.args.get("user_id")
         if not user_id:
             return jsonify({"error": "Falta user_id"}), 400
 
-        now = datetime.utcnow()
-        extensions.db.routine_assignments.update_many(
-            {"user_id": user_id, "active": True, "expires_at": {"$lte": now}},
-            {"$set": {"active": False, "expired_at": now}}
-        )
-
-        cursor = extensions.db.routine_assignments.find({
-            "user_id": user_id,
-            "active": True,
-            "$or": [
-                {"expires_at": {"$exists": False}},
-                {"expires_at": None},
-                {"expires_at": {"$gt": now}}
-            ]
-        }, {"routine_id": 1, "expires_at": 1, "valid_days": 1, "assigned_at": 1})
-
-        results = []
-        for doc in cursor:
-            expires_at = doc.get("expires_at")
-            assigned_at = doc.get("assigned_at")
-            routine_id = doc.get("routine_id")
-            if isinstance(expires_at, datetime):
-                expires_at = expires_at.isoformat()
-            if isinstance(assigned_at, datetime):
-                assigned_at = assigned_at.isoformat()
-            if isinstance(routine_id, ObjectId):
-                routine_id = str(routine_id)
-
-            results.append({
-                "assignment_id": str(doc.get("_id")),
-                "routine_id": routine_id,
-                "expires_at": expires_at,
-                "valid_days": doc.get("valid_days"),
-                "assigned_at": assigned_at
-            })
-
-        return jsonify(results), 200
+        assignments = routine_service.list_assignments(user_id, active_only=True)
+        # Adaptar formato si es necesario (ya viene bastante limpio del service)
+        return jsonify(assignments), 200
     except Exception as e:
         logger.error(f"Error listing routine assignments: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/admin/routines/unassign")
 def admin_api_unassign_routine():
-    """Desactiva una asignacion de rutina a un usuario."""
+    """Desactiva una asignacion utilizando RoutineService."""
     ok, err = check_admin_access()
     if not ok: return err
 
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
         data = request.json or {}
         user_id = data.get("user_id")
         routine_id = data.get("routine_id")
         if not user_id or not routine_id:
             return jsonify({"error": "Faltan datos"}), 400
 
-        res = extensions.db.routine_assignments.update_many(
-            {"user_id": user_id, "routine_id": routine_id, "active": True},
-            {"$set": {"active": False, "unassigned_at": datetime.utcnow()}}
-        )
-
-        if res.modified_count == 0:
+        success = routine_service.unassign_routine(user_id, routine_id)
+        if not success:
             return jsonify({"message": "No habia asignacion activa"}), 200
 
         return jsonify({"message": "Rutina removida"}), 200
@@ -1580,16 +1120,13 @@ def admin_api_unassign_routine():
 
 @admin_bp.post("/api/admin/routines/assignments/update")
 def admin_api_update_assignment():
-    """Actualiza vigencia de una asignacion activa."""
+    """Actualiza la vigencia de una asignación utilizando RoutineService."""
     ok, err = check_admin_access()
     if not ok: return err
-
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
         data = request.json or {}
         user_id = data.get("user_id")
         routine_id = data.get("routine_id")
-        assignment_id = data.get("assignment_id")
         valid_days_raw = data.get("valid_days")
 
         if not user_id or not routine_id:
@@ -1603,80 +1140,28 @@ def admin_api_update_assignment():
         if valid_days <= 0:
             return jsonify({"error": "Los dias de vigencia deben ser mayor a 0"}), 400
 
-        assigned_at = datetime.utcnow()
-        expires_at = assigned_at + timedelta(days=valid_days)
-
-        if assignment_id and ObjectId.is_valid(assignment_id):
-            query = {"_id": ObjectId(assignment_id), "user_id": user_id, "active": True}
-        else:
-            routine_match = routine_id
-            if ObjectId.is_valid(routine_id):
-                routine_match = {"$in": [routine_id, ObjectId(routine_id)]}
-            query = {"user_id": user_id, "routine_id": routine_match, "active": True}
-
-        res = extensions.db.routine_assignments.update_one(
-            query,
-            {"$set": {"valid_days": valid_days, "expires_at": expires_at, "updated_at": assigned_at}}
-        )
-
-        if res.matched_count == 0:
+        updated = routine_service.update_assignment_validity(user_id, routine_id, valid_days)
+        
+        if not updated:
             return jsonify({"error": "Asignacion activa no encontrada"}), 404
 
         return jsonify({"message": "Vigencia actualizada"}), 200
     except Exception as e:
-        logger.error(f"Error updating routine assignment: {e}")
+        logger.error(f"Error admin_api_update_assignment: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.get("/admin/api/users/<user_id>/full_profile")
 def get_user_full_profile(user_id):
-    """Retorna perfil completo (User + Profile) para Body Assessment."""
+    """Retorna perfil completo utilizando ProfileService."""
     ok, err = check_admin_access()
     if not ok: return err
     try:
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
-        u = extensions.db.users.find_one({"user_id": user_id})
-        if not u: return jsonify({"error": "Usuario no encontrado"}), 404
-        
-        p = extensions.db.user_profiles.find_one({"user_id": user_id}) or {}
-        
-        # Merge basic info
-        data = {
-            "user_id": u.get("user_id"),
-            "name": u.get("name"),
-            "email": u.get("email"),
-            "username": u.get("username"),
-            "sex": p.get("sex"),
-            "birth_date": format_birth_date(p.get("birth_date")),
-            "age": compute_age(p.get("birth_date")),
-            "height": p.get("height"), # field exists? if not null
-            "weight": p.get("weight"), # field exists?
-            "goals": p.get("goals"),
-            "experience": p.get("experience"),
-            "injuries": p.get("injuries"),
-            "equipment": p.get("equipment"),
-            "equipment": p.get("equipment"),
-            "measurements": p.get("measurements", {})
-        }
-
-        # Try to load latest body assessment for more recent data
-        latest_assessment = extensions.db.body_assessments.find_one(
-            {"user_id": user_id},
-            sort=[("created_at", -1)]
-        )
-        if latest_assessment:
-            inp = latest_assessment.get("input", {})
-            # Prioritize assessment data for measurements and activity if available
-            if inp.get("measurements"):
-                data["measurements"] = inp.get("measurements")
-            if inp.get("activity_level"):
-                data["activity_level"] = inp.get("activity_level") # Inject activity_level
-            if inp.get("goal"):
-                data["goals"] = inp.get("goal") # Override goal if present in assessment
-
+        data = profile_service.get_full_profile(user_id)
+        if not data:
+            return jsonify({"error": "Usuario no encontrado"}), 404
         return jsonify(data), 200
     except Exception as e:
-        logger.error(f"Error full profile: {e}")
+        logger.error(f"Error get_user_full_profile: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 
@@ -1743,189 +1228,75 @@ def admin_audio_tests_page():
 
 @admin_bp.post("/admin/notifications/broadcast")
 def admin_notifications_broadcast():
+    """Realiza un broadcast de notificaciones utilizando AdminService."""
     ok, err = check_admin_access()
     if not ok: return err
 
-    data = request.get_json() or {}
-    title = data.get("title")
-    message = data.get("message")
-    url = data.get("url", "/")
-    notif_type = data.get("type", "info")
-    send_in_app = data.get("sendInApp", False)
-    send_push = data.get("sendPush", False)
-    
-    if not title or not message:
-         return jsonify({"error": "Faltan datos (título o mensaje)"}), 400
+    try:
+        data = request.get_json() or {}
+        title = data.get("title")
+        message = data.get("message")
+        url = data.get("url", "/")
+        notif_type = data.get("type", "info")
+        send_in_app = data.get("sendInApp", False)
+        send_push = data.get("sendPush", False)
+        
+        if not title or not message:
+             return jsonify({"error": "Faltan datos (título o mensaje)"}), 400
 
-    db = extensions.db
-    if db is None: return jsonify({"error": "DB not ready"}), 503
-
-    result_summary = {
-        "in_app_count": 0,
-        "push_count": 0,
-        "push_errors": 0
-    }
-
-    # 1. In-App Broadcast
-    if send_in_app:
-        try:
-            users = list(db.users.find({}, {"_id": 1}))
-            notifications = []
-            now = datetime.utcnow()
-            for u in users:
-                notifications.append({
-                    "user_id": u["_id"], # ObjectId
-                    "title": title,
-                    "message": message,
-                    "type": notif_type,
-                    "link": url,
-                    "read": False,
-                    "created_at": now
-                })
-            
-            if notifications:
-                 res = db.notifications.insert_many(notifications)
-                 result_summary["in_app_count"] = len(res.inserted_ids)
-                 logger.info(f"Admin Broadcast: Inserted {len(res.inserted_ids)} in-app notifications.")
-        except Exception as e:
-            logger.error(f"Admin Broadcast In-App Error: {e}")
-            return jsonify({"error": f"Error In-App: {str(e)}"}), 500
-
-    # 2. Web Push Broadcast
-    if send_push:
-        try:
-            # Import helper from push route
-            from routes.push import _send_push_notification_sync
-            
-            # Get unique users with subscriptions
-            user_ids = db.push_subscriptions.distinct("user_id")
-            count = 0
-            errs = 0
-            
-            for uid in user_ids:
-                try:
-                    # _send_push_notification_sync handles finding subscriptions for the user
-                    _send_push_notification_sync(
-                        user_id=uid,
-                        title=title,
-                        body=message,
-                        url=url,
-                        context="admin_broadcast",
-                        meta={"type": "broadcast", "urgency": "high"}
-                    )
-                    count += 1
-                except Exception as e:
-                    logger.error(f"Push Broadcast Error for {uid}: {e}")
-                    errs += 1
-            
-            result_summary["push_count"] = count
-            result_summary["push_errors"] = errs
-            logger.info(f"Admin Broadcast: Processed {count} push users ({errs} errors).")
-
-        except Exception as e:
-             logger.error(f"Admin Broadcast Push Error: {e}")
-             # Don't fail the whole request if partial success?
-             # But lets return clean
-             result_summary["push_error_msg"] = str(e)
-
-    return jsonify(result_summary), 200
+        result = admin_service.broadcast_notifications(
+            title=title,
+            message=message,
+            url=url,
+            notif_type=notif_type,
+            send_in_app=send_in_app,
+            send_push=send_push
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error admin_notifications_broadcast: {e}")
+        return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/admin/body_assessments/update")
 def update_body_assessment():
-    """Actualiza una evaluacion corporal (input/output) manualmente."""
+    """Actualiza una evaluacion corporal utilizando AdminService."""
     ok, err = check_admin_access()
     if not ok: return err
     
     try:
         data = request.get_json() or {}
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
         doc_id = data.get("id")
         if not doc_id:
             return jsonify({"error": "ID requerido"}), 400
             
-        try:
-            oid = ObjectId(doc_id)
-        except:
-            return jsonify({"error": "ID invalido"}), 400
-            
-        # Obtenemos el update data
-        new_input = data.get("input")
-        new_output = data.get("output")
-        new_backend = data.get("backend")
-        meta = data.get("meta") if isinstance(data.get("meta"), dict) else None
-        
-        setter = {"updated_at": datetime.utcnow()}
-        if new_input and isinstance(new_input, dict):
-            setter["input"] = new_input
-        if new_output and isinstance(new_output, dict):
-            setter["output"] = new_output
-        if new_backend is not None:
-            setter["backend"] = new_backend
-
-        if meta:
-            def _parse_dt(val):
-                if not val:
-                    return None
-                if isinstance(val, datetime):
-                    return val
-                try:
-                    text = str(val).strip()
-                    if text.endswith("Z"):
-                        text = text[:-1] + "+00:00"
-                    return datetime.fromisoformat(text)
-                except Exception:
-                    return None
-
-            created_at = _parse_dt(meta.get("created_at"))
-            updated_at = _parse_dt(meta.get("updated_at"))
-            if meta.get("created_at") is not None and not created_at:
-                return jsonify({"error": "created_at invalido (ISO 8601)"}), 400
-            if meta.get("updated_at") is not None and not updated_at:
-                return jsonify({"error": "updated_at invalido (ISO 8601)"}), 400
-            if created_at:
-                setter["created_at"] = created_at
-            if updated_at:
-                setter["updated_at"] = updated_at
-            
-        res = extensions.db.body_assessments.update_one(
-            {"_id": oid},
-            {"$set": setter}
-        )
-        
-        if res.matched_count == 0:
+        success, error_msg = admin_service.update_body_assessment(doc_id, data)
+        if error_msg:
+            return jsonify({"error": error_msg}), 400
+        if not success:
             return jsonify({"error": "Evaluacion no encontrada"}), 404
             
         return jsonify({"message": "Evaluacion actualizada"}), 200
     except Exception as e:
-        logger.error(f"Error updating body assessment: {e}")
+        logger.error(f"Error update_body_assessment: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 @admin_bp.post("/api/admin/body_assessments/delete")
 def delete_body_assessment():
-    """Elimina una evaluacion corporal permanentemente."""
+    """Elimina una evaluacion corporal utilizando AdminService."""
     ok, err = check_admin_access()
     if not ok: return err
     
     try:
         data = request.get_json() or {}
-        if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
-        
         doc_id = data.get("id")
         if not doc_id:
             return jsonify({"error": "ID requerido"}), 400
             
-        try:
-            oid = ObjectId(doc_id)
-        except:
-            return jsonify({"error": "ID invalido"}), 400
-            
-        res = extensions.db.body_assessments.delete_one({"_id": oid})
-        
-        if res.deleted_count == 0:
+        success = admin_service.delete_body_assessment(doc_id)
+        if not success:
             return jsonify({"error": "Evaluacion no encontrada"}), 404
             
         return jsonify({"message": "Evaluacion eliminada"}), 200
     except Exception as e:
-        logger.error(f"Error deleting body assessment: {e}")
+        logger.error(f"Error delete_body_assessment: {e}")
         return jsonify({"error": "Error interno"}), 500

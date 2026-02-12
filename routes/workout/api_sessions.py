@@ -2,6 +2,8 @@ from flask import request, jsonify
 from bson import ObjectId
 from datetime import datetime
 from extensions import logger
+from utils.validation_decorator import validate_request
+from schemas.workout_schemas import StartSessionRequest, UpdateProgressRequest, SaveSessionRequest
 from .utils import get_db
 
 def api_get_sessions():
@@ -110,6 +112,7 @@ def api_delete_session(session_id):
         logger.error(f"Error deleting session {session_id}: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
+@validate_request(StartSessionRequest)
 def api_start_session_endpoint():
     """
     Explicitly starts a session: Sets the lock and creates a temp record.
@@ -118,9 +121,8 @@ def api_start_session_endpoint():
         user_id = request.cookies.get("user_session")
         if not user_id: return jsonify({"error": "Unauthorized"}), 401
         
-        data = request.json
-        routine_id = data.get("routine_id")
-        if not routine_id: return jsonify({"error": "Missing routine_id"}), 400
+        data = request.validated_data
+        routine_id = data.routine_id
         
         db = get_db()
         
@@ -149,6 +151,7 @@ def api_start_session_endpoint():
         logger.error(f"Error starting session: {e}")
         return jsonify({"error": str(e)}), 500
 
+@validate_request(UpdateProgressRequest)
 def api_update_progress():
     """
     Updates the cursor and session log of the active session.
@@ -157,16 +160,16 @@ def api_update_progress():
         user_id = request.cookies.get("user_session")
         if not user_id: return jsonify({"error": "Unauthorized"}), 401
         
-        data = request.json
+        data = request.validated_data
         # Expect: routine_id, cursor, session_log
         
         db = get_db()
         db.active_workout_sessions.update_one(
             {"user_id": user_id},
             {"$set": {
-                "cursor": data.get("cursor", 0),
-                "session_log": data.get("session_log", []),
-                "unit": data.get("unit", "lb"),
+                "cursor": data.cursor,
+                "session_log": data.session_log,
+                "unit": data.unit,
                 "updated_at": datetime.now()
             }}
         )
@@ -175,6 +178,7 @@ def api_update_progress():
         logger.error(f"Error updating progress: {e}")
         return jsonify({"error": str(e)}), 500
 
+@validate_request(SaveSessionRequest)
 def api_save_session():
     """
     Saves a completed workout session.
@@ -184,14 +188,12 @@ def api_save_session():
         if not user_id:
              return jsonify({"error": "Unauthorized"}), 401
              
-        data = request.json
-        if not data:
-            return jsonify({"error": "No data"}), 400
+        data = request.validated_data
             
         db = get_db()
         
         # Calculate stats
-        sets = data.get("sets", [])
+        sets = data.sets
         total_volume = 0
         for s in sets:
              try:
@@ -201,18 +203,18 @@ def api_save_session():
              except: pass
              
         # Prepare document
-        rid = data.get("routine_id")
+        rid = data.routine_id
         if rid and ObjectId.is_valid(rid):
             rid = ObjectId(rid)
 
-        started_at = data.get("start_time")
+        started_at = data.start_time
         if isinstance(started_at, str):
             try:
                 started_at = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
             except:
                 pass
 
-        completed_at = data.get("end_time")
+        completed_at = data.end_time
         if completed_at and isinstance(completed_at, str):
             try:
                 completed_at = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))

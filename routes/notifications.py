@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from bson import ObjectId
 import extensions
 from extensions import logger
+from utils.validation_decorator import validate_request
+from schemas.notification_schemas import MarkReadRequest
 
 notifications_bp = Blueprint('notifications', __name__, url_prefix='/api/notifications')
 
@@ -52,13 +54,14 @@ def get_pending_notifications():
         return jsonify({"error": "Internal Error"}), 500
 
 @notifications_bp.route('/mark-read', methods=['POST'])
+@validate_request(MarkReadRequest)
 def mark_read():
     """Marks one or all notifications as read."""
     try:
         user_id = g.user_id
-        data = request.json or {}
+        data = request.validated_data
         
-        if data.get("all"):
+        if data.all:
             # Mark all as read
             if extensions.db is None:
                  raise Exception("Database not initialized")
@@ -68,7 +71,7 @@ def mark_read():
             )
             return jsonify({"success": True, "modified": result.modified_count}), 200
             
-        notification_id = data.get("notification_id")
+        notification_id = data.notification_id
         if notification_id:
             # Mark single as read
             if extensions.db is None:

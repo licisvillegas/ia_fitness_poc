@@ -4,6 +4,9 @@ import io
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
+from utils.validation_decorator import validate_request
+from schemas.user_profile_schemas import ChangePasswordRequest, ProfileSaveRequest, SimulatePaymentRequest
+
 import cloudinary.uploader
 import extensions
 from extensions import logger
@@ -311,6 +314,7 @@ def api_contact_comments():
         return jsonify({"error": "Error interno"}), 500
 
 @user_bp.post("/api/user/payments/simulate")
+@validate_request(SimulatePaymentRequest)
 def api_simulate_payment():
     """Simula un pago y activa al usuario con vigencia segun el producto."""
     try:
@@ -320,8 +324,8 @@ def api_simulate_payment():
         if extensions.db is None:
             return jsonify({"error": "DB no disponible"}), 503
 
-        data = request.get_json() or {}
-        product = (data.get("product") or data.get("plan") or "").strip().lower()
+        data = request.validated_data
+        product = (data.product or data.plan or "").strip().lower()
         map_days = {
             "30": 30,
             "90": 90,
@@ -368,6 +372,7 @@ def api_simulate_payment():
         return jsonify({"error": "Error interno"}), 500
 
 @user_bp.post("/api/user/change_password")
+@validate_request(ChangePasswordRequest)
 def api_user_change_password():
     """
     Permite al usuario cambiar su contraseña.
@@ -378,15 +383,9 @@ def api_user_change_password():
         if not user_id:
             return jsonify({"error": "No autenticado"}), 401
             
-        data = request.get_json()
-        current_password = data.get("current_password")
-        new_password = data.get("new_password")
-        
-        if not current_password or not new_password:
-            return jsonify({"error": "Faltan datos (actual y nueva contraseña)"}), 400
-            
-        if len(new_password) < 6:
-            return jsonify({"error": "La nueva contraseña debe tener al menos 6 caracteres"}), 400
+        data = request.validated_data
+        current_password = data.current_password
+        new_password = data.new_password
 
         if extensions.db is None:
              return jsonify({"error": "DB no disponible"}), 503
@@ -412,6 +411,7 @@ def api_user_change_password():
 
 
 @user_bp.post("/api/user/profile/save")
+@validate_request(ProfileSaveRequest)
 def api_user_profile_save():
     """Actualiza perfil del usuario autenticado."""
     try:
@@ -419,14 +419,11 @@ def api_user_profile_save():
         if not user_id:
             return jsonify({"error": "No autenticado"}), 401
         
-        data = request.get_json() or {}
-        name = data.get("name")
-        sex = (data.get("sex") or "").strip().lower() or None
-        birth_date_raw = data.get("birth_date")
-        phone = (data.get("phone") or "").strip() or None
-
-        if sex and sex not in ["male", "female", "other"]:
-            return jsonify({"error": "Sexo invalido"}), 400
+        data = request.validated_data
+        name = data.name
+        sex = (data.sex or "").strip().lower() or None
+        birth_date_raw = data.birth_date
+        phone = (data.phone or "").strip() or None
 
         birth_dt = parse_birth_date(birth_date_raw)
         if birth_date_raw and birth_dt is None:

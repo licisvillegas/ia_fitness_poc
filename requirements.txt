@@ -28,3 +28,4 @@ psutil==7.1.1
 Flask-Limiter==3.5.0
 Flask-CORS==4.0.0
 Flask-WTF==1.2.1
+email-validator==2.2.0

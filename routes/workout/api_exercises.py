@@ -3,23 +3,21 @@ from bson import ObjectId
 import re
 from extensions import logger
 from .utils import get_db, _get_body_parts_map
+from utils.validation_decorator import validate_request
+from schemas.exercise_schemas import ExerciseSearchQuery, ExerciseFilterQuery
 
 # Definimos las funciones pero no el blueprint en este archivo
 # Estas funciones serán importadas y registradas en __init__.py
 
+@validate_request(ExerciseSearchQuery)
 def list_public_exercises():
     """Listado público de ejercicios para el catálogo de usuario."""
     db = get_db()
     if db is None: return jsonify({"error": "DB not ready"}), 503
     try:
-        limit = int(request.args.get("limit", 50))
-        page = int(request.args.get("page", 1))
-        if limit < 1:
-            limit = 50
-        if limit > 5000:
-            limit = 5000
-        if page < 1:
-            page = 1
+        data = request.validated_data
+        limit = data.limit
+        page = data.page
         skip = (page - 1) * limit
 
         docs = list(
@@ -136,31 +134,27 @@ def api_get_exercise_details(exercise_id):
         return jsonify({"error": "Internal Error"}), 500
 
 
+@validate_request(ExerciseSearchQuery)
 def api_search_exercises():
     """Busca ejercicios con paginación para el catálogo de usuario."""
     db = get_db()
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
     try:
-        limit = int(request.args.get("limit", 50))
-        page = int(request.args.get("page", 1))
-        if limit < 1:
-            limit = 50
-        if limit > 1000:
-            limit = 1000
-        if page < 1:
-            page = 1
+        data = request.validated_data
+        limit = data.limit
+        page = data.page
         skip = (page - 1) * limit
 
-        term = (request.args.get("q") or "").strip()
-        body_part = (request.args.get("body_part") or "").strip()
-        equipment = (request.args.get("equipment") or "").strip()
-        ex_type = (request.args.get("type") or "").strip()
+        term = (data.q or "").strip()
+        body_part = (data.body_part or "").strip()
+        equipment = (data.equipment or "").strip()
+        ex_type = (data.type or "").strip()
         
         # New Params
-        sort_by = request.args.get("sort", "name")
-        sort_order = request.args.get("order", "asc")
-        filter_incomplete = request.args.get("incomplete") == "true"
+        sort_by = data.sort or "name"
+        sort_order = data.order or "asc"
+        filter_incomplete = data.incomplete
 
         query = {}
         
@@ -189,9 +183,9 @@ def api_search_exercises():
             query["type"] = {"$regex": f"^{escaped_type}$", "$options": "i"}
             
         # Taxonomy Filters (Hierarchical)
-        section_id = request.args.get("section")
-        group_id = request.args.get("group")
-        muscle_id = request.args.get("muscle")
+        section_id = data.section
+        group_id = data.group
+        muscle_id = data.muscle
         
         if section_id: query["taxonomy.section_id"] = section_id
         if group_id: query["taxonomy.group_id"] = group_id
@@ -253,6 +247,7 @@ def api_search_exercises():
         logger.error(f"Error searching exercises: {e}")
         return jsonify({"error": "Error interno"}), 500
 
+@validate_request(ExerciseFilterQuery)
 def api_filter_exercises():
     """
     API pública para filtrar ejercicios por grupos musculares (separados por coma).
@@ -263,14 +258,11 @@ def api_filter_exercises():
     db = get_db()
     if db is None: return jsonify([]), 503
     
-    muscles_arg = request.args.get("muscles", "")
-    equipment_arg = request.args.get("equipment", "").strip()
-    query_term = request.args.get("q", "").strip()
-    limit = int(request.args.get("limit", 50))
-    if limit < 1:
-        limit = 50
-    if limit > 200:
-        limit = 200
+    data = request.validated_data
+    muscles_arg = data.muscles or ""
+    equipment_arg = (data.equipment or "").strip()
+    query_term = (data.q or "").strip()
+    limit = data.limit or 50
     
     query = {}
     

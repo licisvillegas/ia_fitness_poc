@@ -11,22 +11,17 @@ import re
 
 
 
+from services.routine_service import RoutineService
+
 ai_routines_bp = Blueprint("ai_routines", __name__)
+routine_service = RoutineService()
 
 
 @ai_routines_bp.post("/api/generate_routine")
 def api_generate_routine():
     try:
         data = request.get_json() or {}
-        level = data.get("level", "Intermedio")
-        goal = data.get("goal", "Hipertrofia")
-        frequency = data.get("frequency", "4 d\u00edas")
-        equipment = data.get("equipment", "Gimnasio completo")
-
-        agent = RoutineAgent()
-        log_agent_execution("start", "RoutineAgent", agent, data, {"endpoint": "/api/generate_routine"})
-        result = agent.run(level, goal, frequency, equipment)
-        log_agent_execution("end", "RoutineAgent", agent, data, {"endpoint": "/api/generate_routine"})
+        result = routine_service.generate_routine_sync(data)
         return jsonify(result), 200
     except Exception as e:
         logger.error(f"Error generando rutina: {e}", exc_info=True)
@@ -47,39 +42,11 @@ def ai_routine_generator_mongo_page():
 def api_generate_routine_mongo():
     try:
         data = request.get_json() or {}
-        level = data.get("level", "Intermedio")
-        goal = data.get("goal", "Hipertrofia")
-        frequency_raw = data.get("frequency", 4)
-        equipment = data.get("equipment", "")
-        body_parts = data.get("body_parts")
-        include_cardio = bool(data.get("include_cardio", False))
-
-        frequency = 4
-        if isinstance(frequency_raw, str):
-            digits = "".join(ch for ch in frequency_raw if ch.isdigit())
-            frequency = int(digits) if digits else 4
-        else:
-            frequency = int(frequency_raw) if frequency_raw is not None else 4
-        if frequency < 1 or frequency > 6:
-            return jsonify({"error": "frequency debe estar entre 1 y 6"}), 400
-
-        if body_parts is not None and not isinstance(body_parts, list):
-            return jsonify({"error": "body_parts debe ser una lista"}), 400
-        if isinstance(body_parts, list):
-            body_parts = [str(p).strip() for p in body_parts if str(p).strip()]
-
+        
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503
 
-        agent = MongoRoutineAgent(extensions.db)
-        result = agent.run(
-            level=level,
-            goal=goal,
-            frequency=frequency,
-            equipment=equipment,
-            body_parts=body_parts,
-            include_cardio=include_cardio,
-        )
+        result = routine_service.generate_routine_mongo_sync(data)
         return jsonify(result), 200
     except Exception as e:
         logger.error(f"Error generando rutina mongo: {e}", exc_info=True)
@@ -91,39 +58,12 @@ def api_generate_routine_async():
     """Iniciar generación asíncrona"""
     try:
         data = request.get_json() or {}
-        # Parametros identicos a la version sincrona
-        level = data.get("level", "Intermedio")
-        goal = data.get("goal", "Hipertrofia")
-        frequency_raw = data.get("frequency", 4)
-        equipment = data.get("equipment", "")
-        body_parts = data.get("body_parts")
-        include_cardio = bool(data.get("include_cardio", False))
-
-        frequency = 4
-        if isinstance(frequency_raw, str):
-            digits = "".join(ch for ch in frequency_raw if ch.isdigit())
-            frequency = int(digits) if digits else 4
-        else:
-            frequency = int(frequency_raw) if frequency_raw is not None else 4
-            
-        if body_parts is not None and isinstance(body_parts, list):
-            body_parts = [str(p).strip() for p in body_parts if str(p).strip()]
-
-        # Trigger Celery Task
-        from celery_app.tasks.ai_tasks import generate_routine_async
-        task = generate_routine_async.delay(
-            level=level,
-            goal=goal,
-            frequency=frequency,
-            equipment=equipment,
-            body_parts=body_parts,
-            include_cardio=include_cardio
-        )
+        task_id = routine_service.start_async_generation(data)
         
         return jsonify({
-            "task_id": task.id,
+            "task_id": task_id,
             "status": "processing",
-            "poll_url": f"/api/tasks/{task.id}"
+            "poll_url": f"/api/tasks/{task_id}"
         }), 202
 
     except Exception as e:
@@ -148,7 +88,6 @@ def api_get_task_status(task_id):
         elif task.state == 'FAILURE':
             response['error'] = str(task.info)
         elif task.state == 'PENDING':
-            # Celery PENDING can mean unknown or waiting.
             response['state'] = 'PENDING'
         
         return jsonify(response), 200
@@ -161,19 +100,12 @@ def api_get_task_status(task_id):
 def api_save_demo_routine():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"error": "No hay datos para guardar"}), 400
-
-        if extensions.db is None:
-            return jsonify({"error": "Base de datos no disponible"}), 503
-
-        # Add timestamp
-        data["created_at"] = datetime.utcnow()
+        routine_id, error, status = routine_service.save_routine(data, collection="demo_routines")
         
-        # Insert into demo_routines collection
-        result = extensions.db.demo_routines.insert_one(data)
-        
-        return jsonify({"message": "Demo guardada", "id": str(result.inserted_id)}), 200
+        if error:
+            return jsonify({"error": error}), status
+            
+        return jsonify({"message": "Demo guardada", "id": routine_id}), 200
     except Exception as e:
         logger.error(f"Error guardando demo rutina: {e}", exc_info=True)
         return jsonify({"error": "Error interno guardando rutina"}), 500
@@ -183,85 +115,12 @@ def api_save_demo_routine():
 def api_save_routine_mongo():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"error": "No hay datos para guardar"}), 400
-
-        if extensions.db is None:
-            return jsonify({"error": "Base de datos no disponible"}), 503
-
-        items = data.get("items", [])
-        if not isinstance(items, list) or not items:
-            return jsonify({"error": "La rutina no contiene items"}), 400
-
-        # Validate items structure
-        group_ids = set()
-        group_usage = {}
-        exercise_ids = []
-        exercise_count = 0
-        for item in items:
-            if not isinstance(item, dict):
-                return jsonify({"error": "Items invalidos"}), 400
-            item_type = item.get("item_type")
-            if item_type not in ("group", "exercise", "rest"):
-                return jsonify({"error": "item_type invalido"}), 400
-            if item_type == "group":
-                gid = item.get("_id")
-                if not gid:
-                    return jsonify({"error": "Grupo sin _id"}), 400
-                group_ids.add(gid)
-                group_usage[gid] = 0
-            elif item_type == "exercise":
-                exercise_count += 1
-                ex_id = item.get("exercise_id")
-                if not ex_id:
-                    return jsonify({"error": "Ejercicio sin exercise_id"}), 400
-                exercise_ids.append(str(ex_id))
-                rest_seconds = item.get("rest_seconds")
-                if rest_seconds is not None:
-                    try:
-                        rest_seconds = int(rest_seconds)
-                    except (TypeError, ValueError):
-                        return jsonify({"error": "rest_seconds invalido"}), 400
-                    if rest_seconds < 0 or rest_seconds > 600:
-                        logger.error(f"Validation Error: rest_seconds={rest_seconds} out of range [0-600]")
-                        return jsonify({"error": f"rest_seconds {rest_seconds} fuera de rango [0-600]"}), 400
-                gid = item.get("group_id") or ""
-                if gid:
-                    group_usage[gid] = group_usage.get(gid, 0) + 1
-            elif item_type == "rest":
-                rest_seconds = item.get("rest_seconds")
-                try:
-                    rest_seconds = int(rest_seconds)
-                except (TypeError, ValueError):
-                    return jsonify({"error": "rest_seconds invalido"}), 400
-                if rest_seconds < 0 or rest_seconds > 600:
-                    logger.error(f"Validation Error: rest_seconds={rest_seconds} out of range [0-600]")
-                    return jsonify({"error": f"rest_seconds {rest_seconds} fuera de rango [0-600]"}), 400
-                gid = item.get("group_id") or ""
-                if gid:
-                    group_usage[gid] = group_usage.get(gid, 0) + 1
-
-        if exercise_count == 0:
-            return jsonify({"error": "La rutina no contiene ejercicios"}), 400
-
-        empty_groups = [gid for gid in group_ids if group_usage.get(gid, 0) == 0]
-        if empty_groups:
-            return jsonify({"error": "Hay grupos vacios"}), 400
-
-        # Validate exercise ids exist
-        obj_ids = [ObjectId(eid) for eid in exercise_ids if ObjectId.is_valid(eid)]
-        if obj_ids:
-            found = extensions.db.exercises.count_documents({"_id": {"$in": obj_ids}})
-            if found != len(obj_ids):
-                return jsonify({"error": "Ejercicios no encontrados"}), 400
-
-        # Add timestamp
-        data["created_at"] = datetime.utcnow()
-
-        # Insert into ai_routines collection
-        result = extensions.db.ai_routines.insert_one(data)
-
-        return jsonify({"message": "Rutina guardada", "id": str(result.inserted_id)}), 200
+        routine_id, error, status = routine_service.save_routine(data, collection="ai_routines")
+        
+        if error:
+            return jsonify({"error": error}), status
+            
+        return jsonify({"message": "Rutina guardada", "id": routine_id}), 200
     except Exception as e:
         logger.error(f"Error guardando rutina mongo: {e}", exc_info=True)
         return jsonify({"error": "Error interno guardando rutina"}), 500
@@ -271,29 +130,11 @@ def api_check_exercises():
     try:
         data = request.get_json() or {}
         exercise_names = data.get("names", [])
-        if not exercise_names:
-            return jsonify({"exercises": []}), 200
-
+        
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503
 
-        results = []
-        for name in exercise_names:
-            clean_name = name.strip()
-            # Escape for regex and Case insensitive check, allow optional surrounding whitespace
-            escaped_name = re.escape(clean_name)
-            ex = extensions.db.exercises.find_one({
-                "$or": [
-                    {"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}},
-                    {"alternative_names": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}},
-                ]
-            })
-            results.append({
-                "name": name,
-                "exists": bool(ex),
-                "exercise_id": str(ex["_id"]) if ex else None
-            })
-        
+        results = routine_service.check_exercises(exercise_names)
         return jsonify({"exercises": results}), 200
     except Exception as e:
         logger.error(f"Error checking exercises: {e}", exc_info=True)
@@ -310,71 +151,11 @@ def api_add_exercises():
     try:
         data = request.get_json() or {}
         exercises_to_add = data.get("exercises", [])
-        if not exercises_to_add:
-            return jsonify({"message": "Nada que agregar"}), 200
-
+        
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503
 
-        added_count = 0
-        for item in exercises_to_add:
-            name = item.get("name") if isinstance(item, dict) else item
-            if not name: continue
-            
-            clean_name = name.strip()
-            escaped_name = re.escape(clean_name)
-            # Double check if exists with robust search
-            ex = extensions.db.exercises.find_one({"name": {"$regex": rf"^\s*{escaped_name}\s*$", "$options": "i"}})
-            if not ex:
-                if isinstance(item, dict):
-                    alternative_names = normalize_string_list(
-                        item.get("alternative_names") or item.get("alternative names")
-                    )
-                    equipment_list = normalize_equipment_list(item.get("equipment"))
-                    pattern = str(item.get("pattern") or "").strip()
-                    plane = str(item.get("plane") or "").strip()
-                    unilateral = normalize_bool(item.get("unilateral"), default=False)
-                    primary_muscle = str(item.get("primary_muscle") or "").strip()
-                    level = str(item.get("level") or "").strip()
-                else:
-                    alternative_names = []
-                    equipment_list = []
-                    pattern = ""
-                    plane = ""
-                    unilateral = False
-                    primary_muscle = ""
-                    level = ""
-
-                if not equipment_list:
-                    equipment_list = ["dumbbell"]
-
-                body_part = (
-                    normalize_body_part(item.get("body_part", "Other"), extensions.db)
-                    if isinstance(item, dict)
-                    else normalize_body_part("Other", extensions.db)
-                )
-
-                new_ex = {
-                    "name": name,
-                    "body_part": body_part,
-                    "type": "weight",
-                    "equipment": equipment_list,
-                    "description": item.get("description") if (isinstance(item, dict) and item.get("description")) else "Agregado automaticamente desde IA Generator",
-                    "video_url": "",
-                    "substitutes": [],
-                    "is_custom": False,
-                    "alternative_names": alternative_names,
-                    "pattern": pattern,
-                    "plane": plane,
-                    "unilateral": unilateral,
-                    "primary_muscle": primary_muscle,
-                    "level": level,
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
-                }
-                extensions.db.exercises.insert_one(new_ex)
-                added_count += 1
-        
+        added_count = routine_service.add_exercises_batch(exercises_to_add)
         return jsonify({"message": f"Se agregaron {added_count} ejercicios"}), 200
     except Exception as e:
         logger.error(f"Error adding exercises: {e}", exc_info=True)
@@ -386,19 +167,9 @@ def api_list_demo_routines():
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503
 
-        # List basic info
-        cursor = extensions.db.demo_routines.find({}, {
-            "routineName": 1, 
-            "level": 1, 
-            "goal": 1, 
-            "created_at": 1
-        }).sort("created_at", -1)
-        
-        routines = []
-        for doc in cursor:
-            doc["_id"] = str(doc["_id"])
-            routines.append(doc)
-            
+        # This simple query could stay in the route or move to service.
+        # Moving to service for consistency.
+        routines = routine_service.list_routines(collection="demo_routines")
         return jsonify({"routines": routines}), 200
     except Exception as e:
         logger.error(f"Error listing demo routines: {e}", exc_info=True)
@@ -414,12 +185,11 @@ def api_get_demo_routine(id):
         if not ObjectId.is_valid(id):
             return jsonify({"error": "ID invalido"}), 400
 
-        doc = extensions.db.demo_routines.find_one({"_id": ObjectId(id)})
-        if not doc:
+        routine = routine_service.get_routine_by_id(id, collection="demo_routines")
+        if not routine:
             return jsonify({"error": "No encontrada"}), 404
             
-        doc["_id"] = str(doc["_id"])
-        return jsonify(doc), 200
+        return jsonify(routine), 200
     except Exception as e:
         logger.error(f"Error getting demo routine: {e}", exc_info=True)
         return jsonify({"error": "Error interno"}), 500

@@ -7,6 +7,11 @@ from flask import Blueprint, request, jsonify
 import extensions
 from extensions import logger
 from config import Config
+from utils.validation_decorator import validate_request
+from schemas.push_schemas import (
+    SubscribeRequest, UnsubscribeRequest, SendPushRequest, 
+    SchedulePushRequest, CancelPushRequest, ClientLogRequest
+)
 
 try:
     from pywebpush import webpush, WebPushException
@@ -200,6 +205,7 @@ def get_vapid_public_key():
 
 
 @push_bp.post("/subscribe")
+@validate_request(SubscribeRequest)
 def subscribe():
     user_id = _get_user_id()
     if not user_id:
@@ -209,24 +215,27 @@ def subscribe():
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
 
-    data = request.get_json(silent=True) or {}
-    subscription = _get_subscription_payload(data)
+    data_obj = request.validated_data
+    
+    # Extract subscription info from various supported formats
+    subscription = None
+    if data_obj.subscription:
+        subscription = data_obj.subscription.model_dump()
+    elif data_obj.endpoint and data_obj.keys:
+        subscription = {
+            "endpoint": data_obj.endpoint,
+            "keys": data_obj.keys.model_dump()
+        }
+    
     if not subscription:
         return jsonify({"error": "Missing subscription"}), 400
 
-    endpoint = (subscription.get("endpoint") or "").strip()
-    keys = subscription.get("keys") or {}
-    p256dh = (keys.get("p256dh") or "").strip()
-    auth = (keys.get("auth") or "").strip()
-
-    if not endpoint or not p256dh or not auth:
-        return jsonify({"error": "Invalid subscription data"}), 400
-
+    endpoint = subscription["endpoint"]
     now = datetime.utcnow()
     doc = {
         "user_id": user_id,
         "endpoint": endpoint,
-        "keys": {"p256dh": p256dh, "auth": auth},
+        "keys": subscription["keys"],
         "subscription": subscription,
         "updated_at": now,
     }
@@ -242,6 +251,7 @@ def subscribe():
 
 
 @push_bp.post("/unsubscribe")
+@validate_request(UnsubscribeRequest)
 def unsubscribe():
     user_id = _get_user_id()
     if not user_id:
@@ -251,13 +261,13 @@ def unsubscribe():
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
 
-    data = request.get_json(silent=True) or {}
-    subscription = _get_subscription_payload(data)
+    data_obj = request.validated_data
     endpoint = ""
-    if subscription:
-        endpoint = (subscription.get("endpoint") or "").strip()
+    if data_obj.subscription:
+        endpoint = (data_obj.subscription.get("endpoint") or "").strip()
     if not endpoint:
-        endpoint = (data.get("endpoint") or "").strip()
+        endpoint = (data_obj.endpoint or "").strip()
+        
     if not endpoint:
         return jsonify({"error": "Missing endpoint"}), 400
 
@@ -266,6 +276,7 @@ def unsubscribe():
 
 
 @push_bp.post("/send")
+@validate_request(SendPushRequest)
 def send_push():
     user_id = _get_user_id()
     if not user_id:
@@ -281,24 +292,21 @@ def send_push():
     if db is None:
         return jsonify({"error": "DB not ready"}), 503
 
-    data = request.get_json(silent=True) or {}
-    title = (data.get("title") or "Synapse Fit").strip()
-    body = (data.get("body") or "").strip()
-    url = (data.get("url") or "/").strip()
-    context = (data.get("context") or "").strip() or None
+    data = request.validated_data
+    title = data.title.strip()
+    body = data.body.strip()
+    url = data.url.strip()
+    context = (data.context or "").strip() or None
 
     print(f"--- [DEBUG] Instant Push Requested for {user_id}: {title} ---", flush=True)
 
-    # Re-use _send_push_notification_sync since we are in context
-    # But wait, _send_push_notification_sync assumes we are IN context.
-    # However, its implementation was changed above to EXPECT context.
-    # So we can just call it directly since THIS route is in context.
     _send_push_notification_sync(user_id, title, body, url, context=context)
 
     return jsonify({"success": True}), 200
 
 
 @push_bp.post("/schedule")
+@validate_request(SchedulePushRequest)
 def schedule_push():
     from flask import current_app # Import here to ensure availability
     
@@ -309,27 +317,18 @@ def schedule_push():
     if webpush is None:
         return jsonify({"error": "pywebpush not installed"}), 503
 
-    data = request.get_json(silent=True) or {}
-    delay = data.get("delay", 0)
-    title = data.get("title", "Timer Finished")
-    body = data.get("body", "Time is up!")
-    url = data.get("url", "/")
-    context = (data.get("context") or "").strip() or None
-    client_visibility = (data.get("visibility") or "").strip() or None
-    display_mode = (data.get("display_mode") or "").strip() or None
+    data = request.validated_data
+    delay = data.delay
+    title = data.title
+    body = data.body
+    url = data.url
+    context = (data.context or "").strip() or None
+    client_visibility = (data.visibility or "").strip() or None
+    display_mode = (data.display_mode or "").strip() or None
     meta = {
         "visibility": client_visibility,
         "display_mode": display_mode
     }
-    
-    # Validation
-    try:
-        delay = float(delay)
-    except ValueError:
-        return jsonify({"error": "Invalid delay"}), 400
-        
-    if delay <= 0:
-        return jsonify({"error": "Delay must be positive"}), 400
 
     # Create task ID
     task_id = str(uuid.uuid4())
@@ -373,16 +372,14 @@ def schedule_push():
 
 
 @push_bp.post("/cancel-schedule")
+@validate_request(CancelPushRequest)
 def cancel_scheduled_push():
     user_id = _get_user_id()
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
     
-    data = request.get_json(silent=True) or {}
-    task_id = data.get("task_id")
-    
-    if not task_id:
-        return jsonify({"error": "Missing task_id"}), 400
+    data = request.validated_data
+    task_id = data.task_id
         
     timer = SCHEDULED_TASKS.pop(task_id, None)
     
@@ -430,10 +427,11 @@ def cancel_user_pushes(user_id):
 
 
 @push_bp.post("/client-log")
+@validate_request(ClientLogRequest)
 def client_log():
-    data = request.get_json(silent=True) or {}
-    message = data.get("message", "No message")
-    level = data.get("level", "INFO")
+    data = request.validated_data
+    message = data.message
+    level = data.level
     user_id = _get_user_id() or "Anonymous"
     
     print(f"--- [CLIENT LOG] [{user_id}] {level}: {message} ---", flush=True)

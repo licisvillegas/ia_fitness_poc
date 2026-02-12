@@ -21,6 +21,8 @@ from ai_agents.body_metrics_agent import BodyMetricsAgent
 from ai_agents.photo_assessment_agent import PhotoAssessmentAgent
 from ai_agents.photo_judge_agent import PhotoJudgeAgent
 from utils.id_helpers import normalize_user_id, maybe_object_id
+from utils.validation_decorator import validate_request
+from schemas.assessment_schemas import BodyAssessmentRecordRequest
 
 # Configuracion Cloudinary
 cloudinary.config(
@@ -544,12 +546,13 @@ def ai_body_assessment_photos():
 
 
 @ai_body_assessment_bp.post("/ai/body_assessment/record")
+@validate_request(BodyAssessmentRecordRequest)
 def ai_body_assessment_record():
     try:
-        payload = request.get_json(silent=True) or {}
-        backend = payload.get("backend") or "unknown"
-        context = payload.get("input")
-        output = payload.get("output")
+        data = request.validated_data
+        backend = data.backend or "unknown"
+        context = data.input
+        output = data.output
         if not isinstance(context, dict) or not isinstance(output, dict):
             return jsonify({"error": "Se requieren 'input' y 'output' validos"}), 400
 

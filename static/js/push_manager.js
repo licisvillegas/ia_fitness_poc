@@ -39,11 +39,6 @@
 
     const debugLog = (msg) => {
         console.log('[PushManager]', msg);
-        fetch('/api/push/client-log', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: msg })
-        }).catch(() => { });
     };
 
     const ensurePushSubscription = async () => {

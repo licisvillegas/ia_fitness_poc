@@ -4,6 +4,8 @@ from datetime import datetime
 import extensions
 from extensions import logger
 from utils.auth_helpers import check_admin_access
+from utils.validation_decorator import validate_request
+from schemas.nutrition_schemas import GenerateMealPlanRequest, SaveMealPlanRequest, EditMealPlanRequest
 from utils.db_helpers import log_agent_execution
 from ai_agents.meal_plan_agent import MealPlanAgent
 from utils.id_helpers import normalize_user_id, maybe_object_id
@@ -99,6 +101,7 @@ def ai_nutrition_plan(user_id: str):
 
 
 @nutrition_bp.post("/meal_plans/generate")
+@validate_request(GenerateMealPlanRequest)
 def generate_meal_plan():
     """Genera un plan de nutrición AI desde admin y lo guarda."""
     try:
@@ -108,19 +111,17 @@ def generate_meal_plan():
         ok, err = check_admin_access()
         if not ok: return err
 
-        data = request.get_json() or {}
-        user_id = normalize_user_id(data.get("user_id"))
+        data = request.validated_data
+        user_id = normalize_user_id(data.user_id)
         if not user_id:
              return jsonify({"error": "user_id requerido"}), 400
 
         # Leer parámetros
-        meals_val = data.get("meals_per_day")
-        try:
-            if meals_val is not None:
-                meals_val = max(3, min(6, int(meals_val)))
-        except: pass
+        meals_val = data.meals_per_day
+        if meals_val is not None:
+            meals_val = max(3, min(6, int(meals_val)))
         
-        prefs = data.get("preferences", "")
+        prefs = data.preferences or ""
         # Defaults
         exclude = ""
         cuisine = ""
@@ -239,18 +240,18 @@ def get_active_meal_plan(user_id: str):
 
 
 @nutrition_bp.post("/meal_plans/save")
+@validate_request(SaveMealPlanRequest)
 def save_meal_plan():
     """Guarda y activa un plan de nutrición enviado por el frontend."""
     try:
         if extensions.db is None:
             return jsonify({"error": "DB no inicializada"}), 503
-        if not request.is_json:
-            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
-        data = request.get_json() or {}
-        user_id = normalize_user_id(data.get("user_id"))
-        output = data.get("output") or {}
-        input_ctx = data.get("input") or {}
-        backend = data.get("backend") or "unknown"
+            
+        data = request.validated_data
+        user_id = normalize_user_id(data.user_id)
+        output = data.output
+        input_ctx = data.input
+        backend = data.backend
         if not user_id or not isinstance(output, dict):
             return jsonify({"error": "user_id y output son requeridos"}), 400
 
@@ -317,6 +318,7 @@ def list_meal_plans(user_id: str):
 
 @nutrition_bp.put("/meal_plans/<plan_id>")
 @nutrition_bp.post("/meal_plans/<plan_id>/edit")
+@validate_request(EditMealPlanRequest)
 def edit_meal_plan(plan_id: str):
     """Actualiza campos permitidos de un meal_plan. Requiere X-Admin-Token."""
     try:
@@ -329,41 +331,21 @@ def edit_meal_plan(plan_id: str):
             oid = ObjectId(plan_id)
         except Exception:
             return jsonify({"error": "plan_id invalido"}), 400
-        if not request.is_json:
-            return jsonify({"error": "El cuerpo debe ser JSON"}), 415
 
-        payload = request.get_json() or {}
+        payload = request.validated_data
         set_fields = {}
 
-        if "notes" in payload:
-            notes_val = payload.get("notes")
-            if notes_val is None:
-                set_fields["notes"] = None
-            else:
-                set_fields["notes"] = str(notes_val)
+        if payload.notes is not None:
+             set_fields["notes"] = str(payload.notes)
 
-        if "output" in payload:
-            if payload.get("output") is None:
-                set_fields["output"] = None
-            elif isinstance(payload.get("output"), dict):
-                set_fields["output"] = payload.get("output")
-            else:
-                return jsonify({"error": "'output' debe ser objeto JSON"}), 400
+        if payload.output is not None:
+             set_fields["output"] = payload.output
 
-        if "input" in payload:
-            if payload.get("input") is None:
-                set_fields["input"] = None
-            elif isinstance(payload.get("input"), dict):
-                set_fields["input"] = payload.get("input")
-            else:
-                return jsonify({"error": "'input' debe ser objeto JSON"}), 400
+        if payload.input is not None:
+             set_fields["input"] = payload.input
 
-        if "plan_id" in payload:
-            plan_val = payload.get("plan_id")
-            if plan_val is None:
-                set_fields["plan_id"] = None
-            else:
-                set_fields["plan_id"] = str(plan_val)
+        if payload.plan_id is not None:
+             set_fields["plan_id"] = str(payload.plan_id)
 
         if not set_fields:
             return jsonify({"error": "Sin cambios"}), 400

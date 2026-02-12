@@ -3,6 +3,8 @@ from bson import ObjectId
 from datetime import datetime
 from extensions import logger
 from utils.routine_utils import normalize_routine_items
+from utils.validation_decorator import validate_request
+from schemas.routine_schemas import RoutineSaveRequest
 from .utils import get_db, hydrate_routines_with_substitutes
 
 def api_get_user_routines():
@@ -140,6 +142,7 @@ def api_get_my_routine_detail(routine_id):
         logger.error(f"Error getting user routine {routine_id}: {e}")
         return jsonify({"error": "Internal Error"}), 500
 
+@validate_request(RoutineSaveRequest)
 def api_save_my_routine():
     """Guarda o actualiza una rutina del usuario."""
     try:
@@ -147,27 +150,27 @@ def api_save_my_routine():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.get_json() or {}
+        data_obj = request.validated_data
         db = get_db()
         if db is None: return jsonify({"error": "DB not ready"}), 503
 
-        rid = data.get("id")
+        rid = data_obj.id
         role_doc = db.user_roles.find_one({"user_id": user_id})
         is_admin = role_doc and role_doc.get("role") == "admin"
-        admin_template = bool(data.get("admin_template")) and is_admin
+        admin_template = bool(data_obj.admin_template) and is_admin
 
         doc = {
-            "name": data.get("name"),
-            "description": data.get("description"),
-            "routine_day": data.get("routine_day"),
-            "routine_body_parts": data.get("routine_body_parts", []),
-            "items": normalize_routine_items(data.get("items", [])),
+            "name": data_obj.name,
+            "description": data_obj.description,
+            "routine_day": data_obj.routine_day,
+            "routine_body_parts": data_obj.routine_body_parts,
+            "items": normalize_routine_items(data_obj.items),
             "updated_at": datetime.utcnow(),
         }
         if not admin_template:
             doc["user_id"] = user_id
-        if "is_active" in data:
-            doc["is_active"] = bool(data.get("is_active"))
+        if data_obj.is_active is not None:
+            doc["is_active"] = data_obj.is_active
 
         if rid:
             if not ObjectId.is_valid(rid):

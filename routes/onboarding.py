@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from datetime import date, datetime, timedelta
 from extensions import get_db, logger
-from enum import Enum
-from typing import List, Optional
-from pydantic import BaseModel, Field, conint, field_validator, ValidationError
+from utils.validation_decorator import validate_request
+from schemas.onboarding_schemas import OnboardingSubmission, ParQSubmission
 
 onboarding_bp = Blueprint('onboarding', __name__, url_prefix='/onboarding')
 
@@ -46,105 +45,8 @@ class HealthComplianceManager:
 
 manager = HealthComplianceManager()
 
-# --- NEW ONBOARDING MODELS (PYDANTIC) ---
+# Los modelos de Pydantic han sido movidos a schemas.onboarding_schemas
 
-class FitnessGoal(str, Enum):
-    FAT_LOSS = "fat_loss"
-    MUSCLE_GAIN = "muscle_gain"
-    MAINTENANCE = "maintenance"
-    STRENGTH = "strength"
-
-class ExperienceLevel(str, Enum):
-    BEGINNER = "beginner"
-    INTERMEDIATE = "intermediate"
-    ADVANCED = "advanced"
-
-class TrainingLocation(str, Enum):
-    GYM = "gym"
-    HOME_BASIC = "home_basic"
-    HOME_BODYWEIGHT = "home_bodyweight"
-    PARK = "park"
-
-class SessionDuration(str, Enum):
-    MIN_30 = "30_min"
-    MIN_45 = "45_min"
-    MIN_60 = "60_min"
-    MIN_90 = "90_min"
-
-class ActivityLevel(str, Enum):
-    SEDENTARY = "sedentary"
-    LIGHTLY_ACTIVE = "lightly_active"
-    MODERATELY_ACTIVE = "moderately_active"
-    VERY_ACTIVE = "very_active"
-    EXTRA_ACTIVE = "extra_active"
-
-class InjuryType(str, Enum):
-    NONE = "none"
-    KNEE = "knee"
-    LOWER_BACK = "lower_back"
-    SHOULDER = "shoulder"
-    WRIST = "wrist"
-    OTHER = "other"
-
-class OnboardingSubmission(BaseModel):
-    """
-    Modelo para validar los datos recibidos del formulario de onboarding.
-    """
-
-    # Paso 1: Objetivos
-    fitness_goal: FitnessGoal
-    experience_level: ExperienceLevel
-
-    # Paso 2: Logística
-    training_location: TrainingLocation
-    # Validamos que los días sean entre 1 y 7
-    days_available: int = Field(..., ge=1, le=7, description="Días disponibles para entrenar")
-    session_duration: SessionDuration
-    preferred_time: Optional[str] = None # Opcional
-
-    # Paso 3: Salud y Estilo
-    activity_level: ActivityLevel
-    injuries: List[InjuryType] = Field(default_factory=lambda: [InjuryType.NONE])
-    injuries_details: Optional[str] = None
-    habits: Optional[List[str]] = []
-
-    # Paso 4: Nutrición
-    # Validamos entre 2 y 6 comidas
-    meals_per_day: int = Field(..., ge=2, le=6) 
-    allergies_intolerances: Optional[List[str]] = []
-    disliked_foods: Optional[List[str]] = []
-
-    # --- Validaciones Personalizadas (Lógica de Negocio) ---
-
-    @field_validator('injuries_details')
-    def validate_injuries_details(cls, v, info):
-        """
-        Si el usuario marcó 'Other' en lesiones, los detalles son obligatorios.
-        """
-        values = info.data
-        injuries = values.get('injuries', [])
-        
-        # Si 'other' está en la lista de lesiones y no hay detalles...
-        if InjuryType.OTHER in injuries and not v:
-            raise ValueError('Debes especificar los detalles de tu lesión si seleccionaste "Otra".')
-        return v
-
-    class Config:
-        # Esto permite que los Enums se muestren como strings en la documentación (Swagger/OpenAPI)
-        use_enum_values = True
-        json_schema_extra = {
-            "example": {
-                "fitness_goal": "muscle_gain",
-                "experience_level": "intermediate",
-                "training_location": "gym",
-                "days_available": 4,
-                "session_duration": "60_min",
-                "activity_level": "sedentary",
-                "injuries": ["knee"],
-                "injuries_details": "Molestia leve al correr",
-                "meals_per_day": 3
-            }
-        }
 
 # --- ROUTES ---
 
@@ -155,6 +57,7 @@ def par_q_page():
     return render_template('onboarding_par_q.html', questions=questions)
 
 @onboarding_bp.route('/api/par-q', methods=['POST'])
+@validate_request(ParQSubmission)
 def submit_par_q():
     """Procesa el cuestionario PAR-Q+."""
     try:
@@ -162,8 +65,8 @@ def submit_par_q():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.get_json()
-        responses = data.get('responses', [])
+        data_obj = request.validated_data
+        responses = [r.model_dump() for r in data_obj.responses]
         
         # Validar que todas las preguntas estén respondidas
         if len(responses) != len(manager.standard_questions):
@@ -385,6 +288,7 @@ def wizard_page():
     return render_template('onboarding_wizard.html', onboarding_flow=onboarding_flow)
 
 @onboarding_bp.route('/api/wizard', methods=['POST'])
+@validate_request(OnboardingSubmission)
 def submit_wizard():
     """Recibe y valida el formulario completo de onboarding."""
     try:
@@ -392,15 +296,8 @@ def submit_wizard():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.json
-        print(f"--- [DEBUG] Received Wizard Data: {data}", flush=True)
-
-        try:
-            # Validar con Pydantic
-            submission = OnboardingSubmission(**data)
-        except ValidationError as e:
-            logger.warning(f"Validation Error for user {user_id}: {e.json()}")
-            return jsonify({"error": "Validation Failed", "details": e.errors()}), 400
+        submission = request.validated_data
+        print(f"--- [DEBUG] Received Wizard Data: {submission}", flush=True)
 
         # Guardar en DB
         db = get_db()
@@ -417,21 +314,14 @@ def submit_wizard():
             upsert=True 
         )
 
-        # 2. Upsert user_profile SKIPPED to avoid duplication
-        # We only store the flag in users and the full data in onboarding_submissions
-        # Middleware updated to check flag in users collection.
-
-        # 3. Save to specific collection (History/Archive) or just raw submission
-        # "guardar en una collection" request satisfied here.
+        # 2. Save to specific collection (History/Archive) or just raw submission
         db.onboarding_submissions.insert_one({
             "user_id": user_id,
             "submission_date": datetime.now(),
             "data": onboarding_data
         })
 
-        # 4. Sync initial preferences (Inheritance)
-        # We use $setOnInsert to ensures this only happens if the preference doc doesn't exist
-        # or if we are creating it for the first time.
+        # 3. Sync initial preferences (Inheritance)
         try:
             db.user_preferences.update_one(
                 {"user_id": user_id},

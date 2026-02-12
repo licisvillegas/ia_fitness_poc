@@ -658,7 +658,28 @@ def list_body_assessments():
 # ======================================================
 @admin_bp.get("/api/exercises")
 def list_exercises():
-    """Listado público/admin de ejercicios."""
+    """Listado público/admin de ejercicios
+    ---
+    tags:
+      - Exercises
+    responses:
+      200:
+        description: Lista de ejercicios
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: {type: string}
+                  name: {type: string}
+                  body_part: {type: string}
+                  equipment: {type: array, items: {type: string}}
+                  video_url: {type: string}
+      503:
+        description: DB no disponible
+    """
     # Podríamos requerir auth, pero el dashboard público lo usa
     if extensions.db is None: return jsonify({"error": "DB not ready"}), 503
     try:
@@ -675,6 +696,34 @@ def list_exercises():
 
 @admin_bp.post("/api/exercises/save")
 def save_exercise():
+    """Guardar/Crear ejercicio (Admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - adminAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              id: {type: string, description: "ID opcional para editar"}
+              name: {type: string}
+              body_part: {type: string}
+              equipment: {type: array, items: {type: string}}
+              video_url: {type: string}
+              primary_muscle: {type: string}
+    responses:
+      200:
+        description: Ejercicio guardado
+      400:
+        description: Datos inválidos
+      403:
+        description: No autorizado
+    """
     ok, err = check_admin_access()
     if not ok: return err
     
@@ -729,6 +778,23 @@ def save_exercise():
 
 @admin_bp.delete("/api/exercises/delete/<ex_id>")
 def delete_exercise(ex_id):
+    """Eliminar ejercicio (Admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - adminAuth: []
+    parameters:
+      - name: ex_id
+        in: path
+        required: true
+        schema: {type: string}
+    responses:
+      200:
+        description: Ejercicio eliminado
+      403:
+        description: No autorizado
+    """
     ok, err = check_admin_access()
     if not ok: return err
     try:

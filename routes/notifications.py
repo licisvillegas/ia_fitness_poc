@@ -18,7 +18,37 @@ def require_user():
 
 @notifications_bp.route('/pending', methods=['GET'])
 def get_pending_notifications():
-    """Returns a list of unread notifications for the current user."""
+    """Obtener notificaciones pendientes
+    ---
+    tags:
+      - Notifications
+    security:
+      - cookieAuth: []
+    responses:
+      200:
+        description: Lista de notificaciones no leídas
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count: {type: integer}
+                notifications:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: {type: string}
+                      title: {type: string}
+                      message: {type: string}
+                      type: {type: string}
+                      created_at: {type: string}
+                      link: {type: string}
+      401:
+        description: No autorizado
+      500:
+        description: Error interno
+    """
     try:
         user_id = g.user_id
         
@@ -56,7 +86,29 @@ def get_pending_notifications():
 @notifications_bp.route('/mark-read', methods=['POST'])
 @validate_request(MarkReadRequest)
 def mark_read():
-    """Marks one or all notifications as read."""
+    """Marcar notificaciones como leídas
+    ---
+    tags:
+      - Notifications
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              notification_id: {type: string, description: "ID opcional si no es 'all'"}
+              all: {type: boolean, description: "Marcar todas como leídas"}
+    responses:
+      200:
+        description: Notificaciones actualizadas
+      400:
+        description: Faltan parámetros
+      500:
+        description: Error interno
+    """
     try:
         user_id = g.user_id
         data = request.validated_data

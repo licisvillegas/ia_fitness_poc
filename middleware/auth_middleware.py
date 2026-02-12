@@ -34,6 +34,9 @@ def check_user_profile():
        request.path.startswith("/register") or \
        request.path.startswith("/admin") or \
        request.path.startswith("/onboarding") or \
+       request.path.startswith("/apidocs") or \
+       request.path.startswith("/apispec") or \
+       request.path.startswith("/flasgger_static") or \
        request.path == "/":
         return
     
@@ -47,6 +50,9 @@ def check_user_profile():
        request.path.startswith("/register") or \
        request.path.startswith("/admin") or \
        request.path.startswith("/onboarding") or \
+       request.path.startswith("/apidocs") or \
+       request.path.startswith("/apispec") or \
+       request.path.startswith("/flasgger_static") or \
        request.path == "/": # Landing or login page
         return
     
@@ -98,6 +104,9 @@ def check_onboarding_status():
        request.path.startswith("/register") or \
        request.path.startswith("/admin") or \
        request.path.startswith("/onboarding") or \
+       request.path.startswith("/apidocs") or \
+       request.path.startswith("/apispec") or \
+       request.path.startswith("/flasgger_static") or \
        request.path == "/": # Landing or login page
         return
 
@@ -190,6 +199,9 @@ def check_workout_lock():
     if request.path.startswith("/auth") or \
        request.path.startswith("/admin") or \
        request.path.startswith("/static") or \
+       request.path.startswith("/apidocs") or \
+       request.path.startswith("/apispec") or \
+       request.path.startswith("/flasgger_static") or \
        request.path.startswith("/onboarding"): # Exclude onboarding from workout lock too!
         return
         

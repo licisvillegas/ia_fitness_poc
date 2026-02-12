@@ -22,6 +22,47 @@ auth_service = AuthService()
 @limiter.limit("3 per 10 minutes")
 @validate_request(RegisterRequest)
 def auth_register():
+    """Registrar nuevo usuario
+    ---
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password, name, username]
+            properties:
+              email:
+                type: string
+                format: email
+                example: usuario@email.com
+              password:
+                type: string
+                minLength: 8
+                description: Debe contener al menos una mayúscula y un número
+              name:
+                type: string
+                example: Juan
+              username:
+                type: string
+                minLength: 3
+                maxLength: 20
+              last_name:
+                type: string
+              referral_code:
+                type: string
+    responses:
+      201:
+        description: Registro exitoso
+      400:
+        description: Datos inválidos
+      409:
+        description: Email o username ya registrado
+      500:
+        description: Error interno
+    """
     try:
         data = request.validated_data.model_dump()
         user, error, status = auth_service.register_user(data)
@@ -40,6 +81,36 @@ def auth_register():
 @limiter.limit("5 per minute")
 @validate_request(LoginRequest)
 def auth_login_api():
+    """Iniciar sesión
+    ---
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+    responses:
+      200:
+        description: Login exitoso (establece cookie user_session)
+        headers:
+          Set-Cookie:
+            description: Cookie user_session con ID del usuario
+            schema:
+              type: string
+      401:
+        description: Credenciales incorrectas
+      500:
+        description: Error interno
+    """
     try:
         data = request.validated_data
         identifier = data.email # LoginRequest now uses email as identifier
@@ -72,10 +143,28 @@ def auth_login_api():
 @auth_bp.post("/admin/login")
 @csrf.exempt
 def admin_login():
-    """Valida el token de administrador enviado por POST y establece cookie.
-
-    Acepta JSON { token: str } o form-urlencoded con campo 'token'.
-    Responde 200 con { ok: true } y set-cookie si es válido; 403 si no.
+    """Login de administrador
+    ---
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token:
+                type: string
+                description: Token de administrador
+    responses:
+      200:
+        description: Login admin exitoso (establece cookie admin_token)
+      403:
+        description: Token inválido
+      503:
+        description: ADMIN_TOKEN no configurado
     """
     try:
         admin_token = get_admin_token()
@@ -111,8 +200,27 @@ def admin_login():
 
 @auth_bp.get("/admin/validate")
 def admin_validate():
-    """Valida que el usuario tiene acceso admin mediante cookie o header.
-    Retorna 200 si ok; 403 si no autorizado.
+    """Validar sesión de administrador
+    ---
+    tags:
+      - Auth
+    security:
+      - adminAuth: []
+    responses:
+      200:
+        description: Sesión admin válida
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ok:
+                  type: boolean
+                  example: true
+      403:
+        description: No autorizado
+      503:
+        description: ADMIN_TOKEN no configurado
     """
     try:
         admin_token = get_admin_token()
@@ -135,7 +243,28 @@ from extensions import csrf
 @csrf.exempt
 @validate_request(TokenRequest)
 def verify_admin_token_endpoint():
-    """Valida token para funciones avanzadas de admin (frontend)."""
+    """Verificar token para funciones admin avanzadas
+    ---
+    tags:
+      - Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token:
+                type: string
+    responses:
+      200:
+        description: Token válido (establece cookies de sesión admin)
+      403:
+        description: Token inválido
+      503:
+        description: Token no configurado
+    """
     try:
         data = request.validated_data
         token = data.token
@@ -172,7 +301,26 @@ def verify_admin_token_endpoint():
 
 @auth_bp.post("/logout")
 def auth_logout():
-    """Cierra sesión eliminando todas las cookies de autenticación."""
+    """Cerrar sesión
+    ---
+    tags:
+      - Auth
+    security:
+      - cookieAuth: []
+    responses:
+      200:
+        description: Sesión cerrada correctamente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Sesión cerrada correctamente
+      500:
+        description: Error interno
+    """
     try:
         user_id = request.cookies.get("user_session")
         if user_id:

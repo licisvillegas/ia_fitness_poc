@@ -15,6 +15,8 @@ print("--- [DEBUG] INICIANDO APP.PY ---", file=sys.stdout, flush=True)
 from config import Config
 import extensions
 from extensions import logger, init_db, create_indexes, db, limiter, cors, csrf
+from flasgger import Swagger
+from docs.swagger.swagger_config import SWAGGER_CONFIG, SWAGGER_TEMPLATE
 from middleware.auth_middleware import check_user_profile, inject_user_role, check_workout_lock, check_onboarding_status
 
 # Blueprints
@@ -96,8 +98,28 @@ def create_app():
 
     print("--- [DEBUG] Blueprints registrados exitosamente ---", file=sys.stdout, flush=True)
 
+    # Swagger UI — accesible en /apidocs
+    Swagger(app, config=SWAGGER_CONFIG, template=SWAGGER_TEMPLATE)
+    print("--- [DEBUG] Swagger UI registrado en /apidocs ---", file=sys.stdout, flush=True)
+
     @app.get("/health")
     def healthcheck():
+        """Health check del sistema
+        ---
+        tags:
+          - System
+        responses:
+          200:
+            description: Sistema operativo
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: ok
+        """
         return {"status": "ok"}, 200
 
 

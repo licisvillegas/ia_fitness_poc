@@ -148,6 +148,37 @@ def offline_page():
 
 @user_bp.get("/api/user/body_assessment/latest")
 def api_latest_body_assessment():
+    """Obtener última evaluación corporal
+    ---
+    tags:
+      - User
+    parameters:
+      - name: user_id
+        in: query
+        schema:
+          type: string
+        description: ID del usuario (si no se envía, usa cookie de sesión)
+    security:
+      - cookieAuth: []
+    responses:
+      200:
+        description: Medidas de la última evaluación corporal
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                weight_kg:
+                  type: number
+                body_fat_percent:
+                  type: number
+                measurements:
+                  type: object
+      401:
+        description: No autenticado
+      503:
+        description: DB no disponible
+    """
     user_id = request.args.get("user_id") or request.cookies.get("user_session")
     if not user_id:
         return jsonify({"error": "No autenticado"}), 401
@@ -374,9 +405,34 @@ def api_simulate_payment():
 @user_bp.post("/api/user/change_password")
 @validate_request(ChangePasswordRequest)
 def api_user_change_password():
-    """
-    Permite al usuario cambiar su contraseña.
-    Requiere: current_password, new_password
+    """Cambiar contraseña del usuario
+    ---
+    tags:
+      - User
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [current_password, new_password]
+            properties:
+              current_password:
+                type: string
+              new_password:
+                type: string
+                minLength: 8
+    responses:
+      200:
+        description: Contraseña actualizada
+      401:
+        description: No autenticado
+      403:
+        description: Contraseña actual incorrecta
+      404:
+        description: Usuario no encontrado
     """
     try:
         user_id = request.cookies.get("user_session")
@@ -413,7 +469,38 @@ def api_user_change_password():
 @user_bp.post("/api/user/profile/save")
 @validate_request(ProfileSaveRequest)
 def api_user_profile_save():
-    """Actualiza perfil del usuario autenticado."""
+    """Actualizar perfil del usuario
+    ---
+    tags:
+      - User
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              sex:
+                type: string
+                enum: [male, female]
+              birth_date:
+                type: string
+                format: date
+                example: "1990-05-15"
+              phone:
+                type: string
+    responses:
+      200:
+        description: Perfil actualizado exitosamente
+      400:
+        description: Fecha de nacimiento inválida
+      401:
+        description: No autenticado
+    """
     try:
         user_id = request.cookies.get("user_session")
         if not user_id:
@@ -454,7 +541,44 @@ def api_user_profile_save():
 
 @user_bp.post("/api/user/profile/image")
 def api_user_profile_image():
-    """Sube la imagen de perfil del usuario y guarda la URL."""
+    """Subir imagen de perfil
+    ---
+    tags:
+      - User
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [image]
+            properties:
+              image:
+                type: string
+                format: binary
+                description: Archivo de imagen (JPEG, PNG, etc.)
+    responses:
+      200:
+        description: Imagen actualizada
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                profile_image_url:
+                  type: string
+                  format: uri
+      400:
+        description: Archivo inválido o faltante
+      401:
+        description: No autenticado
+      503:
+        description: Cloudinary no configurado
+    """
     try:
         user_id = request.cookies.get("user_session")
         if not user_id:
@@ -676,7 +800,43 @@ def get_progress(user_id):
 
 @user_bp.get("/api/user/my_profile")
 def get_my_profile_aggregated():
-    """Endpoint agregado para precargar formularios del usuario."""
+    """Obtener perfil completo del usuario
+    ---
+    tags:
+      - User
+    security:
+      - cookieAuth: []
+    responses:
+      200:
+        description: Datos agregados del perfil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                sex:
+                  type: string
+                age:
+                  type: integer
+                goal:
+                  type: string
+                activity_level:
+                  type: string
+                profile_image_url:
+                  type: string
+                measurements:
+                  type: object
+      401:
+        description: No autenticado
+      503:
+        description: DB no disponible
+    """
     user_id = request.cookies.get("user_session")
     if not user_id:
          return jsonify({"error": "No autenticado"}), 401
@@ -742,9 +902,35 @@ def get_my_profile_aggregated():
 
 @user_bp.get("/api/user/<user_id>/latest_metrics")
 def api_get_user_latest_metrics(user_id):
-    """
-    Obtiene las métricas más recientes (peso, grasa) desde body_assessments.
-    Prioridad: body_assessments > progress (legacy)
+    """Obtener métricas recientes del usuario
+    ---
+    tags:
+      - User
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID del usuario
+    responses:
+      200:
+        description: Métricas más recientes
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                weight_kg:
+                  type: number
+                body_fat:
+                  type: number
+                tmb:
+                  type: number
+                tdee:
+                  type: number
+      503:
+        description: DB no disponible
     """
     try:
         if extensions.db is None:

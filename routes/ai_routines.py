@@ -19,6 +19,30 @@ routine_service = RoutineService()
 
 @ai_routines_bp.post("/api/generate_routine")
 def api_generate_routine():
+    """Generar rutina (síncrono)
+    ---
+    tags:
+      - Routines
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [goal, level, days_per_week]
+            properties:
+              goal: {type: string}
+              level: {type: string}
+              days_per_week: {type: integer}
+              equipment: {type: array, items: {type: string}}
+    responses:
+      200:
+        description: Rutina generada
+      500:
+        description: Error interno
+    """
     try:
         data = request.get_json() or {}
         result = routine_service.generate_routine_sync(data)
@@ -55,7 +79,42 @@ def api_generate_routine_mongo():
 
 @ai_routines_bp.post("/api/generate_routine_async")
 def api_generate_routine_async():
-    """Iniciar generación asíncrona (fallback síncrono si Celery no disponible)"""
+    """Generar rutina (asíncrono/fallback)
+    ---
+    tags:
+      - Routines
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [goal, level]
+            properties:
+              goal: {type: string}
+              level: {type: string}
+              frequency: {type: integer}
+              equipment: {type: string}
+              body_parts: {type: array, items: {type: string}}
+              include_cardio: {type: boolean}
+    responses:
+      200:
+        description: Rutina generada (fallback síncrono)
+      202:
+        description: Tarea iniciada (retorna task_id)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_id: {type: string}
+                status: {type: string}
+                poll_url: {type: string}
+      500:
+        description: Error interno
+    """
     try:
         data = request.get_json() or {}
         result = routine_service.start_async_generation(data)
@@ -78,7 +137,29 @@ def api_generate_routine_async():
 
 @ai_routines_bp.get("/api/tasks/<task_id>")
 def api_get_task_status(task_id):
-    """Verificar estado de tarea"""
+    """Consultar estado de tarea asíncrona
+    ---
+    tags:
+      - Routines
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema: {type: string}
+    responses:
+      200:
+        description: Estado de la tarea y resultado si terminó
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_id: {type: string}
+                state: {type: string, enum: [PENDING, STARTED, SUCCESS, FAILURE]}
+                result: {type: object}
+      503:
+        description: Celery no disponible
+    """
     try:
         from celery_app.tasks.ai_tasks import generate_routine_async
     except (ImportError, ModuleNotFoundError):
@@ -122,6 +203,35 @@ def api_save_demo_routine():
 
 @ai_routines_bp.post("/api/save_routine_mongo")
 def api_save_routine_mongo():
+    """Guardar rutina generada
+    ---
+    tags:
+      - Routines
+    security:
+      - cookieAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, items]
+            properties:
+              name: {type: string}
+              description: {type: string}
+              items: {type: array, items: {type: object}}
+    responses:
+      200:
+        description: Rutina guardada
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message: {type: string}
+                id: {type: string}
+      500:
+        description: Error interno
+    """
     try:
         data = request.get_json()
         routine_id, error, status = routine_service.save_routine(data, collection="ai_routines")
@@ -136,6 +246,27 @@ def api_save_routine_mongo():
 
 @ai_routines_bp.post("/api/check_exercises")
 def api_check_exercises():
+    """Verificar existencia de ejercicios
+    ---
+    tags:
+      - Routines
+    security:
+      - cookieAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              names:
+                type: array
+                items: {type: string}
+    responses:
+      200:
+        description: Lista de ejercicios encontrados
+      503:
+        description: DB no disponible
+    """
     try:
         data = request.get_json() or {}
         exercise_names = data.get("names", [])
@@ -152,6 +283,31 @@ def api_check_exercises():
 
 @ai_routines_bp.post("/api/add_exercises")
 def api_add_exercises():
+    """Agregar ejercicios al catálogo (Admin)
+    ---
+    tags:
+      - Routines
+    security:
+      - adminAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              exercises:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: {type: string}
+                    muscle_group: {type: string}
+    responses:
+      200:
+        description: Ejercicios agregados
+      403:
+        description: No autorizado
+    """
     # Only admins can add exercises to global catalog
     from utils.auth_helpers import check_admin_access
     ok, err = check_admin_access()
@@ -172,6 +328,14 @@ def api_add_exercises():
 
 @ai_routines_bp.get("/api/demo_routines")
 def api_list_demo_routines():
+    """Listar rutinas de demostración
+    ---
+    tags:
+      - Routines
+    responses:
+      200:
+        description: Lista de rutinas demo
+    """
     try:
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503
@@ -187,6 +351,21 @@ def api_list_demo_routines():
 
 @ai_routines_bp.get("/api/demo_routines/<id>")
 def api_get_demo_routine(id):
+    """Obtener detalle de rutina demo
+    ---
+    tags:
+      - Routines
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+    responses:
+      200:
+        description: Detalle de rutina
+      404:
+        description: No encontrada
+    """
     try:
         if extensions.db is None:
             return jsonify({"error": "Base de datos no disponible"}), 503

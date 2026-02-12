@@ -21,7 +21,10 @@ EXEMPT_PREFIXES = [
     '/landing',
     '/payment',
     '/api/integrations',
-    '/health'
+    '/health',
+    '/apidocs',
+    '/apispec',
+    '/flasgger_static'
 ]
 
 def check_account_lock():

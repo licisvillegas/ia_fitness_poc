@@ -20,3 +20,5 @@ class RoutineSaveRequest(BaseModel):
     routine_day: Optional[str] = ""
     routine_body_parts: List[str] = []
     items: List[dict] = [] # Manual items structure is complex, using dict for now
+    admin_template: Optional[bool] = False
+    is_active: Optional[bool] = None

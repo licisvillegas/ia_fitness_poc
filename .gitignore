@@ -11,6 +11,9 @@ __pycache__/
 *.json
 !package.json
 !manifest.json
+# Archivos pesados/locales
+*.pdf
+data/
 # Logs
 *.log
 agent_debug.log
@@ -19,6 +22,32 @@ agent_debug.log
 .idea/
 # Carpetas de Caché
 .pytest_cache/
+# Herramientas y caches
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.cache/
+# Build/packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+wheels/
+*.whl
+# Jupyter
+.ipynb_checkpoints/
+# Sistema operativo
+.DS_Store
+Thumbs.db
+# Archivos de ejecucion
+*.pid
+# Archivos locales del proyecto
+.agent/
 # Archivos Temporales y Backups detectados en tu carpeta
 *.bak
 *_copy.txt
@@ -29,3 +58,20 @@ debug_routes.py
 unclassified_exercises.md
 /routes/__pycache__
 docs/referencia_tecnica/credentials.md
+*_output.txt
+*_help.txt
+*_log.txt
+*_list.txt
+result.xml
+routes_list.txt
+_routes.txt
+startup_log.txt
+validation_output.txt
+test_output.txt
+debug_output.txt
+server_help.txt
+mcp_help.txt
+mcp_help_full.txt
+pip_files.txt
+tmp_*.js
+query
